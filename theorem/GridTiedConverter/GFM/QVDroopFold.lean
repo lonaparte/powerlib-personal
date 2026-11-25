@@ -1,5 +1,6 @@
 import theorem.GridTiedConverter.GFM.QVDroopStability
 import theorem.NormalForm.LyapunovCoefficient
+import theorem.NormalForm.CoefficientLemmas
 import theorem.Dynamics.SaddleNodeReduction
 
 /-! # Grid-forming converter with Q–V droop: higher derivatives and the fold
@@ -21,7 +22,9 @@ coefficient `a = ½⟨p, B(q, q)⟩`); the saddle-node reduction
 `Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly`
 (`theorem/Dynamics/SaddleNodeReduction.lean`); the derivative laws of one-nonlinearity fields
 (`NormalForm.LyapunovCoefficient.bilinC_ridge`, `trilinC_ridge`, `bilinC_prodRidge`,
-`trilinC_prodRidge`). The fold coefficient was derived with exact computer algebra (factorisation
+`trilinC_prodRidge`) and the auxiliary laws of `theorem/NormalForm/CoefficientLemmas.lean`
+(translation of the derivative forms, iterated derivatives of the nonlinearities). The fold
+coefficient was derived with exact computer algebra (factorisation
 over `ℚ` after the fold relation `b c = k a`) and is proved here by `ring`.
 
 Results.
@@ -119,43 +122,6 @@ model. -/
     contDiff_ridge _ _ _ _ (by fun_prop), contDiff_prodRidge _ _ _ Real.contDiff_cos,
     contDiff_prodRidge _ _ _ Real.contDiff_sin⟩
 
-@[tmio M, powerlib_domain] private theorem derivs_E (c n : ℝ) (t : ℝ) :
-    iteratedDeriv 2 (fun t => (c - n * t) ^ 2) t = 2 * n ^ 2 ∧
-      iteratedDeriv 3 (fun t => (c - n * t) ^ 2) t = 0 := by
-  have h0 : ∀ t, HasDerivAt (fun t => c - n * t) (-n) t := fun t => by
-    simpa using ((hasDerivAt_id t).const_mul n).const_sub c
-  have h1 : ∀ t, HasDerivAt (fun t => (c - n * t) ^ 2) (-(2 * n * (c - n * t))) t :=
-    fun t => ((h0 t).pow 2).congr_deriv (by norm_num; ring)
-  have h2 : ∀ t, HasDerivAt (fun t => -(2 * n * (c - n * t))) (2 * n ^ 2) t :=
-    fun t => (((h0 t).const_mul (2 * n)).neg).congr_deriv (by ring)
-  have h3 : ∀ t, HasDerivAt (fun _ : ℝ => 2 * n ^ 2) 0 t := fun t => hasDerivAt_const t _
-  obtain ⟨-, e2, e3⟩ := iteratedDeriv_of_hasDerivAt h1 h2 h3 t
-  exact ⟨e2, e3⟩
-
-@[tmio M, powerlib_domain] private theorem derivs_cos (c : ℝ) (t : ℝ) :
-    iteratedDeriv 2 (fun t => c * Real.cos t) t = -(c * Real.cos t) ∧
-      iteratedDeriv 3 (fun t => c * Real.cos t) t = c * Real.sin t := by
-  have h1 : ∀ t, HasDerivAt (fun t => c * Real.cos t) (-(c * Real.sin t)) t := fun t =>
-    ((Real.hasDerivAt_cos t).const_mul c).congr_deriv (by ring)
-  have h2 : ∀ t, HasDerivAt (fun t => -(c * Real.sin t)) (-(c * Real.cos t)) t := fun t =>
-    ((Real.hasDerivAt_sin t).const_mul c).neg
-  have h3 : ∀ t, HasDerivAt (fun t => -(c * Real.cos t)) (c * Real.sin t) t := fun t =>
-    (((Real.hasDerivAt_cos t).const_mul c).neg).congr_deriv (by ring)
-  obtain ⟨-, e2, e3⟩ := iteratedDeriv_of_hasDerivAt h1 h2 h3 t
-  exact ⟨e2, e3⟩
-
-@[tmio M, powerlib_domain] private theorem derivs_sin (c : ℝ) (t : ℝ) :
-    iteratedDeriv 2 (fun t => c * Real.sin t) t = -(c * Real.sin t) ∧
-      iteratedDeriv 3 (fun t => c * Real.sin t) t = -(c * Real.cos t) := by
-  have h1 : ∀ t, HasDerivAt (fun t => c * Real.sin t) (c * Real.cos t) t := fun t =>
-    (Real.hasDerivAt_sin t).const_mul c
-  have h2 : ∀ t, HasDerivAt (fun t => c * Real.cos t) (-(c * Real.sin t)) t := fun t =>
-    ((Real.hasDerivAt_cos t).const_mul c).congr_deriv (by ring)
-  have h3 : ∀ t, HasDerivAt (fun t => -(c * Real.sin t)) (-(c * Real.cos t)) t := fun t =>
-    ((Real.hasDerivAt_sin t).const_mul c).neg
-  obtain ⟨-, e2, e3⟩ := iteratedDeriv_of_hasDerivAt h1 h2 h3 t
-  exact ⟨e2, e3⟩
-
 /-! ## Second and third derivatives in the Jacobian data -/
 
 /-- The second-derivative form in the Jacobian data `a, b, c, k` and `m = n_q/E`. -/
@@ -210,7 +176,8 @@ def cTab (M ω a c m : ℝ) (r i j l : Fin 3) : ℝ :=
       (fun t => (Real.hasDerivAt_sin t).neg),
     hess_prodRidge _ _ _ Real.contDiff_sin (fun t => Real.hasDerivAt_sin t)
       (fun t => Real.hasDerivAt_cos t)]
-  rw [(derivs_E q.level q.nq _).1, (derivs_cos q.level _).1, (derivs_sin q.level _).1]
+  rw [(iteratedDeriv_affine_sq q.level q.nq _).1, (iteratedDeriv_const_mul_cos q.level _).1,
+    (iteratedDeriv_const_mul_sin q.level _).1]
   have hE' : q.E0 - q.nq * (x₀ 2 - q.Qref) ≠ 0 := hE
   fin_cases r <;>
     simp [bTab, vE, vC, vS, Dynamics.coord_apply, gain, Pδ, PE, Qδ, QE, level, emf] <;>
@@ -234,15 +201,12 @@ def cTab (M ω a c m : ℝ) (r i j l : Fin 3) : ℝ :=
       (fun t => ((Real.hasDerivAt_cos t).neg).congr_deriv (neg_neg _)),
     third_prodRidge _ _ _ Real.contDiff_sin (fun t => Real.hasDerivAt_sin t)
       (fun t => Real.hasDerivAt_cos t) (fun t => (Real.hasDerivAt_sin t).neg)]
-  rw [(derivs_E q.level q.nq _).2, (derivs_cos q.level _).2, (derivs_sin q.level _).2]
+  rw [(iteratedDeriv_affine_sq q.level q.nq _).2, (iteratedDeriv_const_mul_cos q.level _).2,
+    (iteratedDeriv_const_mul_sin q.level _).2]
   have hE' : q.E0 - q.nq * (x₀ 2 - q.Qref) ≠ 0 := hE
   fin_cases r <;>
     simp [cTab, vE, vC, vS, Dynamics.coord_apply, Pδ, Qδ, level, emf] <;>
     field_simp <;> ring
-
-@[tmio M, powerlib_domain] private theorem coord_basisVec (i j : Fin 3) :
-    coord i (basisVec j) = if i = j then 1 else 0 := by
-  simp [Dynamics.coord_apply, basisVec]
 
 /-- **The second-derivative form** at a state with EMF `E ≠ 0` (`bForm`). Static evidence on the
 model. -/
@@ -299,20 +263,6 @@ evidence on the model. -/
 
 /-- The second-derivative form of the model field at the origin. Static evidence on the
 model. -/
-@[tmio T, powerlib_foundation] private theorem bilinC_comp_add (f : State 3 → State 3)
-    (x₀ : State 3) : bilinC (fun z => f (z + x₀)) 0 = bilinC f x₀ := by
-  have hH : hess (fun z => f (z + x₀)) 0 = hess f x₀ := by
-    funext k i j; simp only [hess, iteratedFDeriv_comp_add_right, zero_add]
-  simp only [bilinC, hH]
-
-@[tmio T, powerlib_foundation] private theorem trilinC_comp_add (f : State 3 → State 3)
-    (x₀ : State 3) : trilinC (fun z => f (z + x₀)) 0 = trilinC f x₀ := by
-  have hT : third (fun z => f (z + x₀)) 0 = third f x₀ := by
-    funext k i j l; simp only [third, iteratedFDeriv_comp_add_right, zero_add]
-  simp only [trilinC, hT]
-
-/-- The second-derivative form of the model field at the origin. Static evidence on the
-model. -/
 @[tmio M, powerlib_domain] theorem Model.bilinC_field (m : Model) (hE : m.q.emf m.Qf ≠ 0)
     (u w : Fin 3 → ℂ) :
     bilinC m.field 0 u w =
@@ -364,13 +314,6 @@ def foldQuad (a c k m : ℝ) : ℝ := (a ^ 2 + c ^ 2) * (c ^ 2 * m ^ 2 + k ^ 2) 
   simp only [eval_mul, eval_add, eval_pow, eval_X, eval_C, routhTrace]
   push_cast
   ring
-
-/-- The roots of `s² + α s + β` lie in the open left half plane for `α, β > 0`. -/
-@[tmio T, powerlib_foundation] private theorem quad_hurwitz {α β : ℝ} (hα : 0 < α) (hβ : 0 < β)
-    (s : ℂ)
-    (hs : (Polynomial.X ^ 2 + Polynomial.C (α : ℂ) * Polynomial.X + Polynomial.C (β : ℂ)).eval s =
-      0) : s.re < 0 :=
-  (Criteria.quadratic_roots_re_neg_iff α β).mpr ⟨hα, hβ⟩ s (by simpa using hs)
 
 /-- The right null vector `(k, 0, c)` of the Jacobian at a fold. -/
 def foldQ (k c : ℝ) : State 3 := WithLp.toLp 2 ![k, 0, c]
@@ -511,7 +454,8 @@ the fold coefficient is `k ω_q 𝔉/(2 c (D ω_q k² + b c)) ≠ 0`
   have heq0 : m.field 0 = 0 := by simpa [Model.field] using heq
   refine Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly
     (m.contDiff_field (k := 2)) heq0 (m.isNullPair_fold hM.ne' hC hN)
-    (m.charpoly_fold hM.ne' hC) (quad_hurwitz (div_pos hA hM) (div_pos ha1 hM)) ?_
+    (m.charpoly_fold hM.ne' hC) (fun s hs => (Criteria.quadratic_roots_re_neg_iff _ _).mpr
+      ⟨div_pos hA hM, div_pos ha1 hM⟩ s (by simpa using hs)) ?_
   intro h
   have key := m.foldCoeff_fold hM.ne' hC hE hN
   rw [h, mul_zero] at key

@@ -10,21 +10,28 @@ Scope.
   `PositiveRealAt` (`Re uᴴ (G + Gᴴ) u ≥ 0` for every complex `u`,
   `theorem/PH/PositiveReal.lean`); real orthogonal changes of frame (`Q Qᵀ = I`, any size).
 * The port law is pure matrix algebra (invertibility of `N + B K C_i` as hypothesis); no
-  realization, pole or stability statement.
+  realization, pole or stability statement. Positive realness on the whole imaginary axis (sign
+  of polynomials in `ω²`) is `theorem/PH/PositiveRealAxis.lean`.
 
 Source: the trace–determinant test for a `2 × 2` Hermitian matrix (R. A. Horn and C. R. Johnson,
 *Matrix Analysis*, 2nd ed., Cambridge 2013, §7.1, §7.2 (positive semidefiniteness of principal
 minors)); positive realness at one frequency, work-sync `theory/T-ph.md` §1.10; the port
 admittances of `theorem/GridTiedConverter/GFM/Port/Admittance.lean`,
 `theorem/GridTiedConverter/GFM/Port/DroopAdmittance.lean` and
-`theorem/GridTiedConverter/GFM/Port/CascadeAdmittance.lean`, which read these laws.
+`theorem/GridTiedConverter/GFM/Port/CascadeAdmittance.lean`, which read these laws (the
+PCC-measured droop admittance through `positiveRealAt_inv_mul_iff`).
 
 Results.
 * `syncY N T B K C_i C_v = (N + B K C_i)⁻¹ (T + B K C_v)` solves
   `(N + B K C_i) Y = T + B K C_v` (`syncY_spec`): the elimination of two feedback channels
   `c = −K (C_i i + C_v v)` from `N i + T v = B c`.
 * `positiveRealAt_fin_two_iff`: `G + Gᴴ ⪰ 0` iff `Re G₀₀ ≥ 0`, `Re G₁₁ ≥ 0` and
+  `|G₀₁ + conj G₁₀|² ≤ 4 Re G₀₀ Re G₁₁`; `positiveRealAt_fin_two_iff_trace`: the same test as
+  `trace (G + Gᴴ) ≥ 0` and `det (G + Gᴴ) ≥ 0`, i.e. `Re G₀₀ + Re G₁₁ ≥ 0` and
   `|G₀₁ + conj G₁₀|² ≤ 4 Re G₀₀ Re G₁₁`.
+* `positiveRealAt_inv_mul_iff` (any size): for invertible `A`, `A⁻¹ N` is positive real iff
+  `N Aᴴ` is (`A⁻¹ N + (A⁻¹ N)ᴴ = A⁻¹ (N Aᴴ + A Nᴴ) A⁻ᴴ`): the criterion for an admittance that is
+  not the inverse of an impedance, such as a port law `syncY` with a voltage channel.
 * `positiveRealAt_complexSymm_add_iff`: for `Z = (z I + x J) + K` with `x` real and `K` traceless
   on the diagonal (`K₁₁ = −K₀₀`), positive real iff `Re z ≥ 0` and
   `4 (Re K₀₀)² + |K₀₁ + conj K₁₀|² ≤ 4 (Re z)²`.
@@ -120,6 +127,44 @@ the Hermitian part `G + Gᴴ`). -/
       nlinarith [sq_nonneg (a * ‖u 0‖ ^ 2 - d * ‖u 1‖ ^ 2)]
     have hle := (pow_le_pow_iff_left₀ (by positivity) hS two_ne_zero).mp hsq
     linarith
+
+/-- **The trace–determinant test.** A `2 × 2` matrix is positive real iff the Hermitian part
+`G + Gᴴ` has nonnegative trace `2 (Re G₀₀ + Re G₁₁)` and nonnegative determinant
+`4 Re G₀₀ Re G₁₁ − |G₀₁ + conj G₁₀|²`. -/
+@[tmio T, powerlib_foundation] theorem positiveRealAt_fin_two_iff_trace
+    (G : Matrix (Fin 2) (Fin 2) ℂ) :
+    PositiveRealAt G ↔ 0 ≤ (G 0 0).re + (G 1 1).re ∧
+      Complex.normSq (G 0 1 + (starRingEnd ℂ) (G 1 0)) ≤ 4 * (G 0 0).re * (G 1 1).re := by
+  rw [positiveRealAt_fin_two_iff]
+  have hn := Complex.normSq_nonneg (G 0 1 + (starRingEnd ℂ) (G 1 0))
+  constructor
+  · rintro ⟨h0, h1, h2⟩
+    exact ⟨by linarith, h2⟩
+  · rintro ⟨h0, h2⟩
+    refine ⟨?_, ?_, h2⟩ <;> nlinarith
+
+/-- **Positive realness of `A⁻¹ N`.** For invertible `A`, the matrix `A⁻¹ N` is positive real iff
+`N Aᴴ` is: with `u = Aᴴ w`, `uᴴ A⁻¹ N u = wᴴ N Aᴴ w`, and `Aᴴ` is onto. -/
+@[tmio T, powerlib_foundation] theorem positiveRealAt_inv_mul_iff {κ : Type*} [Fintype κ]
+    [DecidableEq κ] {A N : Matrix κ κ ℂ} (hA : IsUnit A.det) :
+    PositiveRealAt (A⁻¹ * N) ↔ PositiveRealAt (N * Aᴴ) := by
+  have key : ∀ w : κ → ℂ, star (Aᴴ *ᵥ w) ⬝ᵥ ((A⁻¹ * N) *ᵥ (Aᴴ *ᵥ w)) =
+      star w ⬝ᵥ ((N * Aᴴ) *ᵥ w) := by
+    intro w
+    rw [Matrix.star_mulVec, conjTranspose_conjTranspose, ← Matrix.dotProduct_mulVec,
+      Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hA,
+      Matrix.one_mul]
+  have hAh : Aᴴ * A⁻¹ᴴ = 1 := by
+    rw [← conjTranspose_mul, Matrix.nonsing_inv_mul _ hA, conjTranspose_one]
+  rw [positiveRealAt_iff_re, positiveRealAt_iff_re]
+  constructor
+  · intro h w
+    rw [← key]
+    exact h _
+  · intro h u
+    have hu : u = Aᴴ *ᵥ (A⁻¹ᴴ *ᵥ u) := by rw [Matrix.mulVec_mulVec, hAh, Matrix.one_mulVec]
+    rw [hu, key]
+    exact h _
 
 /-- **A traceless perturbation of a complex-symmetric matrix.** For `Z = (z I + x J) + K` with
 `x` real and `K₁₁ = −K₀₀`: `Z + Zᴴ ⪰ 0` iff `Re z ≥ 0` and

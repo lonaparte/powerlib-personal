@@ -46,9 +46,26 @@ Results.
 * **`Line.VSMLPF.Model.sign_firstLyapunov_slice`** (sign law): for every critical pair,
   `sign ℓ₁ = −sign 𝔅(D/M, R/L, ω₀, ω)`.
 * `Line.VSMLPF.Model.sliceOmega`: the Hopf frequency read from the coefficients,
-  `ω = √(a₀ Δ₂/Δ₃)` (a boundary point `Δ₄ = 0`, `Δ₂, Δ₃ > 0` of the quintic Routh region is a Hopf
-  point at this `ω`); `Line.VSMLPF.Model.SliceDegenerate`: the degenerate balanced slice models
-  (`Δ₃ = 0` of the quintic, or `Δ₄ = 0`, `Δ₂, Δ₃ > 0` and `𝔅` vanishing at `sliceOmega`).
+  `ω = √(a₀ Δ₂/Δ₃)` (`Line.VSMLPF.Model.hopfAt_sliceOmega`: a boundary point `Δ₄ = 0`,
+  `Δ₂, Δ₃ > 0` of the quintic Routh region is a Hopf point at this `ω`);
+  `Line.VSMLPF.Model.SliceDegenerate`: the degenerate balanced slice models (`Δ₃ = 0` of the
+  quintic, or `Δ₄ = 0`, `Δ₂, Δ₃ > 0` and `𝔅` vanishing at `sliceOmega`).
+* The `ω` row of the critical pair (the only row the damping derivative of the Jacobian reads):
+  `Line.VSMLPF.sliceTransversality` `𝔗(d, σ, w, ω)` (degree 6, 17 terms,
+  `d Re Ĉ − ω Im Ĉ = 2 ω² w 𝔗`); `Line.VSMLPF.Model.re_sliceP_one_mul_sliceQ_one`:
+  `Re(conj p₁ q₁) = 2 w² ω⁴ ((σ² + w² − ω²)² + 4σ²ω²) 𝔗 / (Re² Ĉ + Im² Ĉ)`;
+  `Line.VSMLPF.Model.sign_re_sliceP_one_mul_sliceQ_one`: its sign is `sign 𝔗`.
+* The `δ` row (read by the inverse-inertia derivative of the Jacobian):
+  `Line.VSMLPF.sliceInertia` `𝔍(d, σ, w, ω)` (13 terms, `ω Re Ĉ + d Im Ĉ = ω w 𝔍`);
+  `Line.VSMLPF.Model.re_sliceP_one_mul_sliceQ_zero`:
+  `Re(conj p₁ q₀) = −w² ω² ((σ² + w² − ω²)² + 4σ²ω²) 𝔍 / (Re² Ĉ + Im² Ĉ)`;
+  `Line.VSMLPF.Model.sign_re_sliceP_one_mul_sliceQ_zero`: its sign is `−sign 𝔍`.
+* The two forms never vanish together: `Line.VSMLPF.sliceTransversality_sq_add_sliceInertia_sq`
+  (`ω² w² (4ω² 𝔗² + 𝔍²) = (d² + ω²)(Re² Ĉ + Im² Ĉ)`, an identity for all values) and
+  `Line.VSMLPF.Model.sliceInertia_ne_zero_of_sliceTransversality_eq_zero` (`𝔗 = 0 ⇒ 𝔍 ≠ 0` at a
+  slice Hopf point, `Re Ĉ > 0`). The transversality coefficients along the damping and the
+  inverse inertia and the Hopf cycles are in
+  `theorem/GridTiedConverter/GFM/LineVSMLPFHopfCycle.lean`.
 * Size obstruction off the slice (measured, not a theorem): in the frame rotated with `δ*` the
   two reduced pairings of the projection formula have 2061 and 2284 terms and the real-part
   numerator 7579 terms before the reduction modulo the frequency relations; that reduction did not
@@ -3036,6 +3053,24 @@ def Model.sliceOmega (m : Model) : ℝ :=
     Criteria.quinticHurwitzDet3 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q) (m.g.coeff1 m.Q)
       (m.g.coeff0 m.Q))
 
+/-- **The Hopf frequency read from the coefficients**: a physical slice model on the boundary
+`Δ₄ = 0` of the quintic Routh region with `Δ₂, Δ₃ > 0` has a Hopf point at
+`Line.VSMLPF.Model.sliceOmega` (`a₀ = c g w > 0` on the slice). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.hopfAt_sliceOmega {m : Model} (hp : Meets m .physical)
+    (hs : m.OnSlice)
+    (d2 : 0 < Criteria.quinticHurwitzDet2 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q))
+    (d3 : 0 < Criteria.quinticHurwitzDet3 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q)
+      (m.g.coeff1 m.Q) (m.g.coeff0 m.Q))
+    (d4 : Criteria.quinticHurwitzDet4 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q) (m.g.coeff1 m.Q)
+      (m.g.coeff0 m.Q) = 0) :
+    m.HopfAt m.sliceOmega := by
+  obtain ⟨-, c4, -, -, -, c0⟩ := sl_coeffs hp hs
+  obtain ⟨hd0, hσ, hG⟩ := sl_pos hp
+  have h4 : 0 < m.g.coeff4 := by rw [c4]; have := hp.2.2.2; positivity
+  have h0 : 0 < m.g.coeff0 m.Q := by rw [c0]; exact hG
+  obtain ⟨hω, e1, e2, e0, eg⟩ := sl_quintic_boundary h0 d2 d3 d4 (ω := m.sliceOmega) rfl
+  exact ⟨hω, e1, e2, h4, e0, eg⟩
+
 /-- **The degenerate balanced slice models**: a vanishing third Hurwitz determinant `Δ₃ = 0`
 of the quintic (two critical pairs, a multiple critical pair or worse), or a Hopf point
 (`Δ₄ = 0`, `Δ₂, Δ₃ > 0`) with a vanishing slice Bautin form `𝔅` at its frequency
@@ -3121,8 +3156,7 @@ point with `𝔅 < 0` (`Line.VSMLPF.mem_den_unstable_of_sliceBautin_neg`). -/
           unfold Criteria.quinticHurwitzDet5; positivity
         exact absurd (hr h4 d2 d3 h) (not_le.mpr h5)
       · exact h.symm
-    obtain ⟨hω, e1, e2, e0, eg⟩ := sl_quintic_boundary h0 d2 d3 d4 (ω := m.sliceOmega) rfl
-    have hH : m.HopfAt m.sliceOmega := ⟨hω, e1, e2, h4, e0, eg⟩
+    have hH : m.HopfAt m.sliceOmega := m.hopfAt_sliceOmega hp hs d2 d3 d4
     refine ⟨m.sliceOmega, hH, ?_⟩
     rcases lt_trichotomy (sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 m.sliceOmega) 0 with
       hB | hB | hB
@@ -3140,6 +3174,265 @@ point with `𝔅 < 0` (`Line.VSMLPF.mem_den_unstable_of_sliceBautin_neg`). -/
       · exact hr
     · exact mem_den_locallyAsymptoticallyStable_of_sliceBautin_pos m hp hb hs hH hB
 
+
+/-! ## The angular-speed row of the slice critical pair
+
+The parameter derivative of the Jacobian along the damping has the single entry `−1/M` in the
+`ω` row (`theorem/GridTiedConverter/GFM/LineVSMLPFHopfCycle.lean`), so its transversality
+coefficient reads only `Re(conj p₁ q₁)`, the `ω` components of the critical pair. -/
+
+/-- **The transversality form of the slice**, `𝔗(d, σ, w, ω)`: the reduced numerator of
+`Re(conj p₁ q₁)` at a slice Hopf point (`d Re Ĉ − ω Im Ĉ = 2 ω² w 𝔗`). -/
+def sliceTransversality (d σ w ω : ℝ) : ℝ :=
+  2 * ω ^ 6 + 3 * ω ^ 4 * d ^ 2 + 4 * ω ^ 4 * d * σ + 5 * ω ^ 4 * σ ^ 2 - 3 * ω ^ 4 * w ^ 2 -
+    ω ^ 2 * d ^ 2 * σ ^ 2 - 5 * ω ^ 2 * d ^ 2 * w ^ 2 - 2 * ω ^ 2 * d * σ ^ 3 -
+    2 * ω ^ 2 * d * σ * w ^ 2 + ω ^ 2 * σ ^ 4 + 2 * ω ^ 2 * σ ^ 2 * w ^ 2 + ω ^ 2 * w ^ 4 +
+    2 * d ^ 3 * σ ^ 3 + 2 * d ^ 3 * σ * w ^ 2 + 2 * d ^ 2 * σ ^ 4 + 4 * d ^ 2 * σ ^ 2 * w ^ 2 +
+    2 * d ^ 2 * w ^ 4
+
+/-- The `ω` components of the slice pattern: `Q_c (−c w − w ω i) q₁ = w ω² τ' d − w ω³ τ' i`,
+`τ' = (σ² + w² − ω²)² + 4σ²ω²`, modulo the first Hopf relation. -/
+@[tmio M, powerlib_domain] private theorem sl_row {d c σ w O : ℂ}
+    (h1 : c * (d * (σ ^ 2 + w ^ 2 - O ^ 2) - 2 * σ * O ^ 2) =
+      O ^ 2 * (σ ^ 2 + w ^ 2 - O ^ 2 + 2 * σ * d)) :
+    (-(c * w) - w * O * I) * (σ ^ (2:ℕ) * O * I - 2 * σ * O ^ (2:ℕ) + w ^ (2:ℕ) * O * I -
+        O ^ (3:ℕ) * I) * (d * (σ ^ 2 + w ^ 2 - O ^ 2) - 2 * σ * O ^ 2) =
+      w * O ^ 2 * ((σ ^ 2 + w ^ 2 - O ^ 2) ^ 2 + 4 * σ ^ 2 * O ^ 2) * d +
+        (-(w * O ^ 3 * ((σ ^ 2 + w ^ 2 - O ^ 2) ^ 2 + 4 * σ ^ 2 * O ^ 2))) * I := by
+  linear_combination (-w * (σ ^ (2:ℕ) * O * I - 2 * σ * O ^ (2:ℕ) + w ^ (2:ℕ) * O * I -
+      O ^ (3:ℕ) * I)) * h1 +
+    (-(O ^ 2 * w * (σ ^ 2 + w ^ 2 - O ^ 2) * (d * (σ ^ 2 + w ^ 2 - O ^ 2) - 2 * σ * O ^ 2))) *
+      I_sq
+
+/-- **The `ω` row of the slice critical pair**: at a Hopf point `ω` of a physical slice model,
+the `ω` components of (`Model.sliceQ`, `Model.sliceP`) satisfy
+`Re(conj p₁ q₁) = 2 w² ω⁴ ((σ² + w² − ω²)² + 4σ²ω²) 𝔗 / (Re² Ĉ + Im² Ĉ)`, `d = D/M`, `σ = R/L`,
+`w = ω₀`, `𝔗 = Line.VSMLPF.sliceTransversality d σ w ω`, `Ĉ = slicePairRe + i slicePairIm`.
+Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.re_sliceP_one_mul_sliceQ_one {m : Model}
+    (hp : Meets m .physical) (hs : m.OnSlice) {ω : ℝ} (hH : m.HopfAt ω) :
+    (starRingEnd ℂ (m.sliceP ω 1) * m.sliceQ ω 1).re =
+      2 * m.g.ω0 ^ 2 * ω ^ 4 *
+          (((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2) ^ 2 + 4 * (m.g.R / m.g.L) ^ 2 * ω ^ 2) *
+          sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω /
+        (slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+          slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2) := by
+  obtain ⟨h1, h2, -, -, -⟩ := sl_hopf hp hs hH
+  obtain ⟨hd, hσ, hG⟩ := sl_pos hp
+  have hω := hH.1
+  have hw := hp.1.ω0
+  set d := m.g.D / m.g.M with hd_def
+  set σ := m.g.R / m.g.L with hσ_def
+  set w := m.g.ω0 with hw_def
+  set c := m.g.ωc with hc_def
+  set g := m.g.E ^ 2 / (m.g.M * m.g.L) with hg_def
+  have hQ := sl_Qc_pos hG h1 h2
+  have hCr0 := sl_pairRe_pos hω hw hd hσ hQ
+  have hPa := sl_pairing_ne hω hw hd hσ hG h1 h2
+  have h1c : (c : ℂ) * ((d : ℂ) * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2 - (ω : ℂ) ^ 2) - 2 * σ * ω ^ 2) =
+      (ω : ℂ) ^ 2 * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2 - (ω : ℂ) ^ 2 + 2 * σ * d) := by exact_mod_cast h1
+  have eC := sl_C (j := I) h1c
+  rw [slicePairRe_cast, slicePairIm_cast] at eC
+  set Cr := slicePairRe d σ w ω with hCr_def
+  set Ci := slicePairIm d σ w ω with hCi_def
+  set Pa := slicePairing (d : ℂ) (c : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I with hPadef
+  set τ' := (σ ^ 2 + w ^ 2 - ω ^ 2) ^ 2 + 4 * σ ^ 2 * ω ^ 2 with hτ'
+  have hp1 : m.sliceP ω 1 = (starRingEnd ℂ Pa)⁻¹ * (-(c : ℂ) * w + w * ω * I) := by
+    simp [Model.sliceP, sliceScale, sliceVecP, hPadef, hd_def, hσ_def, hw_def, hc_def]
+  have hq1 : m.sliceQ ω 1 = (σ : ℂ) ^ (2:ℕ) * ω * I - 2 * σ * (ω : ℂ) ^ (2:ℕ) +
+      (w : ℂ) ^ (2:ℕ) * ω * I - (ω : ℂ) ^ (3:ℕ) * I := by
+    simp [Model.sliceQ, sliceScale, sliceVecQ, hσ_def, hw_def]
+  set X := starRingEnd ℂ (m.sliceP ω 1) * m.sliceQ ω 1 with hX
+  have hXc : X * ((Cr : ℂ) + (Ci : ℂ) * I) =
+      ((w * ω ^ 2 * τ' * d : ℝ) : ℂ) + ((-(w * ω ^ 3 * τ') : ℝ) : ℂ) * I := by
+    rw [← eC, hX, hp1, hq1]
+    simp only [map_mul, map_inv₀, Complex.conj_conj, map_add, map_neg, Complex.conj_ofReal,
+      Complex.conj_I]
+    have e := sl_row (d := (d : ℂ)) (c := (c : ℂ)) (σ := (σ : ℂ)) (w := (w : ℂ)) (O := (ω : ℂ))
+      h1c
+    have hinv : Pa⁻¹ * Pa = 1 := inv_mul_cancel₀ hPa
+    rw [hτ']
+    push_cast
+    linear_combination ((-(c : ℂ) * w + w * ω * -I) * ((σ : ℂ) ^ (2:ℕ) * ω * I -
+      2 * σ * (ω : ℂ) ^ (2:ℕ) + (w : ℂ) ^ (2:ℕ) * ω * I - (ω : ℂ) ^ (3:ℕ) * I) *
+      ((d : ℂ) * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2 - (ω : ℂ) ^ 2) - 2 * σ * ω ^ 2)) * hinv + e
+  have hre := congrArg Complex.re hXc
+  have him := congrArg Complex.im hXc
+  simp only [Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
+    Complex.ofReal_im, Complex.I_re, Complex.I_im] at hre him
+  have hC2 : Cr ^ 2 + Ci ^ 2 ≠ 0 := by positivity
+  have hT : d * Cr - ω * Ci = 2 * ω ^ 2 * w * sliceTransversality d σ w ω := by
+    simp only [hCr_def, hCi_def, slicePairRe, slicePairIm, sliceTransversality]
+    ring
+  rw [eq_div_iff hC2]
+  linear_combination Cr * hre + Ci * him + w * ω ^ 2 * τ' * hT
+
+/-- **The sign of the `ω` row**: at a Hopf point `ω` of a physical slice model,
+`sign Re(conj p₁ q₁) = sign 𝔗(D/M, R/L, ω₀, ω)` (`Line.VSMLPF.sliceTransversality`; the prefactor
+of `Line.VSMLPF.Model.re_sliceP_one_mul_sliceQ_one` is positive). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.sign_re_sliceP_one_mul_sliceQ_one {m : Model}
+    (hp : Meets m .physical) (hs : m.OnSlice) {ω : ℝ} (hH : m.HopfAt ω) :
+    SignType.sign (starRingEnd ℂ (m.sliceP ω 1) * m.sliceQ ω 1).re =
+      SignType.sign (sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω) := by
+  obtain ⟨h1, h2, -, -, -⟩ := sl_hopf hp hs hH
+  obtain ⟨hd, hσ, hG⟩ := sl_pos hp
+  have hω := hH.1
+  have hw := hp.1.ω0
+  have hQ := sl_Qc_pos hG h1 h2
+  have hCr := sl_pairRe_pos hω hw hd hσ hQ
+  have hτ : 0 < (m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2 := by
+    by_contra hn
+    push Not at hn
+    nlinarith [mul_nonneg hσ (sq_nonneg ω)]
+  have hC : 0 < slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+      slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 := by positivity
+  have hpre : 0 < 2 * m.g.ω0 ^ 2 * ω ^ 4 *
+      (((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2) ^ 2 + 4 * (m.g.R / m.g.L) ^ 2 * ω ^ 2) /
+      (slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+        slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2) := by positivity
+  rw [m.re_sliceP_one_mul_sliceQ_one hp hs hH, mul_div_right_comm, sign_mul, sign_pos hpre,
+    one_mul]
+
+/-- **The inertia form of the slice**, `𝔍(d, σ, w, ω)`: the reduced numerator of
+`Re(conj p₁ q₀)` at a slice Hopf point (`ω Re Ĉ + d Im Ĉ = ω w 𝔍`); the transversality
+coefficient along the inverse inertia reads it. -/
+def sliceInertia (d σ w ω : ℝ) : ℝ :=
+  -2 * ω ^ 6 * d + 4 * ω ^ 6 * σ - 4 * ω ^ 4 * d ^ 3 - 4 * ω ^ 4 * d ^ 2 * σ -
+    14 * ω ^ 4 * d * σ ^ 2 + 2 * ω ^ 4 * d * w ^ 2 - 2 * ω ^ 2 * d ^ 3 * σ ^ 2 +
+    6 * ω ^ 2 * d ^ 3 * w ^ 2 + 8 * ω ^ 2 * d ^ 2 * σ ^ 3 + 8 * ω ^ 2 * d ^ 2 * σ * w ^ 2 -
+    2 * d ^ 3 * σ ^ 4 - 4 * d ^ 3 * σ ^ 2 * w ^ 2 - 2 * d ^ 3 * w ^ 4
+
+/-- **The two forms never vanish together**: `ω² w² (4ω² 𝔗² + 𝔍²) = (d² + ω²)(Re² Ĉ + Im² Ĉ)`
+(`d Re Ĉ − ω Im Ĉ = 2ω²w 𝔗`, `ω Re Ĉ + d Im Ĉ = ωw 𝔍`), for all values. -/
+@[tmio M, powerlib_domain] theorem sliceTransversality_sq_add_sliceInertia_sq (d σ w ω : ℝ) :
+    ω ^ 2 * w ^ 2 * (4 * ω ^ 2 * sliceTransversality d σ w ω ^ 2 + sliceInertia d σ w ω ^ 2) =
+      (d ^ 2 + ω ^ 2) * (slicePairRe d σ w ω ^ 2 + slicePairIm d σ w ω ^ 2) := by
+  simp only [sliceTransversality, sliceInertia, slicePairRe, slicePairIm]
+  ring
+
+/-- The `δ` component of the slice pattern: `Q_c (−c w − w ω i) q₀ = −w ω² τ' − w ω τ' d i`,
+`τ' = (σ² + w² − ω²)² + 4σ²ω²`, modulo the first Hopf relation. -/
+@[tmio M, powerlib_domain] private theorem sl_row0 {d c σ w O : ℂ}
+    (h1 : c * (d * (σ ^ 2 + w ^ 2 - O ^ 2) - 2 * σ * O ^ 2) =
+      O ^ 2 * (σ ^ 2 + w ^ 2 - O ^ 2 + 2 * σ * d)) :
+    (-(c * w) - w * O * I) * (σ ^ (2:ℕ) + 2 * σ * O * I + w ^ (2:ℕ) - O ^ (2:ℕ)) *
+        (d * (σ ^ 2 + w ^ 2 - O ^ 2) - 2 * σ * O ^ 2) =
+      -(w * O ^ 2 * ((σ ^ 2 + w ^ 2 - O ^ 2) ^ 2 + 4 * σ ^ 2 * O ^ 2)) +
+        (-(w * O * ((σ ^ 2 + w ^ 2 - O ^ 2) ^ 2 + 4 * σ ^ 2 * O ^ 2) * d)) * I := by
+  linear_combination (-w * (σ ^ (2:ℕ) + 2 * σ * O * I + w ^ (2:ℕ) - O ^ (2:ℕ))) * h1 +
+    (-(2 * O ^ 2 * σ * w * (d * (σ ^ 2 + w ^ 2 - O ^ 2) - 2 * σ * O ^ 2))) * I_sq
+
+/-- **The `δ` row of the slice critical pair**: at a Hopf point `ω` of a physical slice model,
+`Re(conj p₁ q₀) = −w² ω² ((σ² + w² − ω²)² + 4σ²ω²) 𝔍 / (Re² Ĉ + Im² Ĉ)`
+(`𝔍 = Line.VSMLPF.sliceInertia (D/M) (R/L) ω₀ ω`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.re_sliceP_one_mul_sliceQ_zero {m : Model}
+    (hp : Meets m .physical) (hs : m.OnSlice) {ω : ℝ} (hH : m.HopfAt ω) :
+    (starRingEnd ℂ (m.sliceP ω 1) * m.sliceQ ω 0).re =
+      -(m.g.ω0 ^ 2 * ω ^ 2 *
+          (((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2) ^ 2 + 4 * (m.g.R / m.g.L) ^ 2 * ω ^ 2) *
+          sliceInertia (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω /
+        (slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+          slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2)) := by
+  obtain ⟨h1, h2, -, -, -⟩ := sl_hopf hp hs hH
+  obtain ⟨hd, hσ, hG⟩ := sl_pos hp
+  have hω := hH.1
+  have hw := hp.1.ω0
+  set d := m.g.D / m.g.M with hd_def
+  set σ := m.g.R / m.g.L with hσ_def
+  set w := m.g.ω0 with hw_def
+  set c := m.g.ωc with hc_def
+  set g := m.g.E ^ 2 / (m.g.M * m.g.L) with hg_def
+  have hQ := sl_Qc_pos hG h1 h2
+  have hCr0 := sl_pairRe_pos hω hw hd hσ hQ
+  have hPa := sl_pairing_ne hω hw hd hσ hG h1 h2
+  have h1c : (c : ℂ) * ((d : ℂ) * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2 - (ω : ℂ) ^ 2) - 2 * σ * ω ^ 2) =
+      (ω : ℂ) ^ 2 * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2 - (ω : ℂ) ^ 2 + 2 * σ * d) := by exact_mod_cast h1
+  have eC := sl_C (j := I) h1c
+  rw [slicePairRe_cast, slicePairIm_cast] at eC
+  set Cr := slicePairRe d σ w ω with hCr_def
+  set Ci := slicePairIm d σ w ω with hCi_def
+  set Pa := slicePairing (d : ℂ) (c : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I with hPadef
+  set τ' := (σ ^ 2 + w ^ 2 - ω ^ 2) ^ 2 + 4 * σ ^ 2 * ω ^ 2 with hτ'
+  have hp1 : m.sliceP ω 1 = (starRingEnd ℂ Pa)⁻¹ * (-(c : ℂ) * w + w * ω * I) := by
+    simp [Model.sliceP, sliceScale, sliceVecP, hPadef, hd_def, hσ_def, hw_def, hc_def]
+  have hq0 : m.sliceQ ω 0 = (σ : ℂ) ^ (2:ℕ) + 2 * σ * ω * I + (w : ℂ) ^ (2:ℕ) -
+      (ω : ℂ) ^ (2:ℕ) := by
+    simp [Model.sliceQ, sliceScale, sliceVecQ, hσ_def, hw_def]
+  set X := starRingEnd ℂ (m.sliceP ω 1) * m.sliceQ ω 0 with hX
+  have hXc : X * ((Cr : ℂ) + (Ci : ℂ) * I) =
+      (((-(w * ω ^ 2 * τ')) : ℝ) : ℂ) + (((-(w * ω * τ' * d)) : ℝ) : ℂ) * I := by
+    rw [← eC, hX, hp1, hq0]
+    simp only [map_mul, map_inv₀, Complex.conj_conj, map_add, map_neg, Complex.conj_ofReal,
+      Complex.conj_I]
+    have e := sl_row0 (d := (d : ℂ)) (c := (c : ℂ)) (σ := (σ : ℂ)) (w := (w : ℂ))
+      (O := (ω : ℂ)) h1c
+    have hinv : Pa⁻¹ * Pa = 1 := inv_mul_cancel₀ hPa
+    rw [hτ']
+    push_cast
+    linear_combination ((-(c : ℂ) * w + w * ω * -I) * ((σ : ℂ) ^ (2:ℕ) + 2 * σ * ω * I +
+      (w : ℂ) ^ (2:ℕ) - (ω : ℂ) ^ (2:ℕ)) *
+      ((d : ℂ) * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2 - (ω : ℂ) ^ 2) - 2 * σ * ω ^ 2)) * hinv + e
+  have hre := congrArg Complex.re hXc
+  have him := congrArg Complex.im hXc
+  simp only [Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
+    Complex.ofReal_im, Complex.I_re, Complex.I_im] at hre him
+  have hC2 : Cr ^ 2 + Ci ^ 2 ≠ 0 := by positivity
+  have hJ : ω * Cr + d * Ci = ω * w * sliceInertia d σ w ω := by
+    simp only [hCr_def, hCi_def, slicePairRe, slicePairIm, sliceInertia]
+    ring
+  rw [eq_neg_iff_add_eq_zero, add_div' _ _ _ hC2, div_eq_zero_iff]
+  left
+  linear_combination Cr * hre + Ci * him - w * ω * τ' * hJ
+
+/-- **The sign of the `δ` row**: at a Hopf point `ω` of a physical slice model,
+`sign Re(conj p₁ q₀) = −sign 𝔍(D/M, R/L, ω₀, ω)` (`Line.VSMLPF.sliceInertia`). Static evidence on
+the model. -/
+@[tmio M, powerlib_domain] theorem Model.sign_re_sliceP_one_mul_sliceQ_zero {m : Model}
+    (hp : Meets m .physical) (hs : m.OnSlice) {ω : ℝ} (hH : m.HopfAt ω) :
+    SignType.sign (starRingEnd ℂ (m.sliceP ω 1) * m.sliceQ ω 0).re =
+      -SignType.sign (sliceInertia (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω) := by
+  obtain ⟨h1, h2, -, -, -⟩ := sl_hopf hp hs hH
+  obtain ⟨hd, hσ, hG⟩ := sl_pos hp
+  have hω := hH.1
+  have hw := hp.1.ω0
+  have hQ := sl_Qc_pos hG h1 h2
+  have hCr := sl_pairRe_pos hω hw hd hσ hQ
+  have hτ : 0 < (m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2 := by
+    by_contra hn
+    push Not at hn
+    nlinarith [mul_nonneg hσ (sq_nonneg ω)]
+  have hC : 0 < slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+      slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 := by positivity
+  have hpre : 0 < m.g.ω0 ^ 2 * ω ^ 2 *
+      (((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2) ^ 2 + 4 * (m.g.R / m.g.L) ^ 2 * ω ^ 2) /
+      (slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+        slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2) := by positivity
+  rw [m.re_sliceP_one_mul_sliceQ_zero hp hs hH, mul_div_right_comm, Left.sign_neg, sign_mul,
+    sign_pos hpre, one_mul]
+
+/-- **The forms are never both zero at a slice Hopf point**: `𝔗 = 0` forces `𝔍 ≠ 0`
+(`Line.VSMLPF.sliceTransversality_sq_add_sliceInertia_sq`, `Re Ĉ > 0`). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem Model.sliceInertia_ne_zero_of_sliceTransversality_eq_zero
+    {m : Model} (hp : Meets m .physical) (hs : m.OnSlice) {ω : ℝ} (hH : m.HopfAt ω)
+    (hT : sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω = 0) :
+    sliceInertia (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0 := by
+  obtain ⟨h1, h2, -, -, -⟩ := sl_hopf hp hs hH
+  obtain ⟨hd, hσ, hG⟩ := sl_pos hp
+  have hω := hH.1
+  have hw := hp.1.ω0
+  have hCr := sl_pairRe_pos hω hw hd hσ (sl_Qc_pos hG h1 h2)
+  intro hJ
+  have e := sliceTransversality_sq_add_sliceInertia_sq (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω
+  rw [hT, hJ] at e
+  have hpos : 0 < ((m.g.D / m.g.M) ^ 2 + ω ^ 2) *
+      (slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+        slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2) := by positivity
+  have e' : ((m.g.D / m.g.M) ^ 2 + ω ^ 2) *
+      (slicePairRe (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2 +
+        slicePairIm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ^ 2) = 0 := by
+    rw [← e]; ring
+  exact hpos.ne' e'
 
 end VSMLPF
 end powerlib.GFM.Line

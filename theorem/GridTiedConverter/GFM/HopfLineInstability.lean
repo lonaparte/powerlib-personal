@@ -17,11 +17,11 @@ Model boundary.
   there (`NormalForm.LyapunovCoefficient.IsCriticalPair`), and `ℓ₁` is Kuznetsov's first Lyapunov
   coefficient `firstLyapunov` of the model field with that pair.
 * Level: Lyapunov instability and local asymptotic stability (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`) of the operating point. Not stated: the bifurcating cycles (their
-  existence is the generic `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the
-  transversality `τ ≠ 0`, instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the
-  transversality computation and the instance are missing, and uniqueness and orbital stability
-  are not proved), the degenerate points `ℓ₁ = 0`
+  `LocalAsymptoticStable`) of the operating point. The bifurcating cycles (the transversality
+  coefficients along the damping and the inverse inertia at every boundary point, never both
+  zero, and the cycles of `Dynamics.HopfCycle.exists_hopfCycle` at every boundary point with
+  `ℓ₁ ≠ 0`, private evidence) are `theorem/GridTiedConverter/GFM/LineVSMHopfCycle.lean`. Not
+  stated: uniqueness and orbital stability of the cycles, the degenerate points `ℓ₁ = 0`
   (`theorem/GridTiedConverter/GFM/HopfBautinLine.lean`, `HopfBautinPoint.lean`). The
   `ε = 1/ω_b` law of the source note — on every line of time scale `ε < ε₀` the Hopf boundary is
   nonempty and every boundary point is unstable if `(X² − R²)(5K² − P''²) > 0`, locally

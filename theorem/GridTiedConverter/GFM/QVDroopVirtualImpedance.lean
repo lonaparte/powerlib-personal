@@ -40,9 +40,12 @@ Model boundary.
 * Level: the equilibrium set and its count per period window `[a, a + 2π)` of the angle; the
   linearization (derived by `fderiv`) and local exponential stability and instability of an
   equilibrium from the cubic Routh–Hurwitz criterion, both directions; local asymptotic and
-  Lyapunov stability off the fold and Hopf surfaces. Excluded: the boundary itself (fold and Hopf
-  surface: no centre-manifold or first-Lyapunov computation), the active-power filter, line
-  dynamics, inner voltage and current loops, current limiting, PLL, delay, PWM.
+  Lyapunov stability off the fold and Hopf surfaces. The boundary itself is decided downstream:
+  the fold `C = 0` (saddle-node law) in
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualFold.lean`, the Hopf surface `G = 0`, `C > 0`
+  (first Lyapunov coefficient) in `theorem/GridTiedConverter/GFM/QVDroopVirtualHopf.lean`.
+  Excluded: the active-power filter, line dynamics, inner voltage and current loops, current
+  limiting, PLL, delay, PWM.
 
 Source: study note GFM equilibrium counting (topic t6 (b), virtual impedance: the terminal-power
 identity `|Z_t|² S̄_t = Z_g E² − Z_v V² − Z_g ζ + Z_v ζ*` with `ζ = E V e^{jδ}`, the R-linear map of
@@ -54,7 +57,9 @@ checked numerically there, derived here); Descartes' rule of signs (Mathlib
 (`SpecialFunctions.injOn_cexp_mul_I_Ico`); the Routh–Hurwitz criterion of the droop-loop Jacobian
 (`Criteria.isHurwitz_droopJacobian_iff`, `theorem/Criteria/DroopJacobian.lean`). The
 balanced-point identities of the linearization (`gain_of_balance`, `PtE_of_balance`,
-`coupling_of_lossless`) were derived with exact computer algebra and are proved by `ring`.
+`coupling_of_lossless`, and for `dz = 0` `pAmpSq_mul_Qtδ_of_balance`, `routhFold_of_dz_eq_zero`,
+`routhHopf_of_dz_eq_zero`) were derived with exact computer algebra (sympy, symbolic in all
+parameters) and are proved by `ring` and `linear_combination`.
 
 Results.
 * Terminal power, derived from the circuit: the identity
@@ -106,6 +111,16 @@ Results.
   `Qtδ_of_balance`), and with `E ≠ 0`: `E |Z_t|² A = tracePoly E`, `dz E |Z_t|⁴ C = foldPoly E`
   (degree four in `E`) and `dz E² |Z_t|⁴ G = hopfPoly E` (degree five) (`routhTrace_of_balance`,
   `routhFold_of_balance`, `routhHopf_of_balance`).
+* Closed forms for the degenerate impedance `dz = 0` (`|Z_v| = |Z_g|`), where the elimination
+  leaves `cos δ`, `sin δ` free up to the active-power sinusoid. The EMF is the positive root of
+  `U`, `E* = (−u₁ + √(u₁² − 4u₂u₀))/(2u₂)` (`emf_eq_of_dz_eq_zero`); the active-power balance
+  gives `|Z_t|⁴ (∂P_t/∂δ)² + b₁(E)² = pAmpSq E² V²` (`slope_sq_of_balance`, every `dz`;
+  `pAmpSq = (R_v − R_g)² + (X_g + X_v)²`), so `|Z_t|² |∂P_t/∂δ| = √(pAmpSq E² V² − b₁(E)²)`
+  (`abs_Ptδ_of_balance`), and `pAmpSq |Z_t|² ∂Q_t/∂δ = dz b₁(E) − 2 crossRX |Z_t|² ∂P_t/∂δ`
+  (`pAmpSq_mul_Qtδ_of_balance`, `crossRX = R_g X_v + R_v X_g`). With `E |Z_t|² A = tracePoly E`
+  (every `dz`): `pAmpSq E |Z_t|² C = (∂P_t/∂δ) foldPolyDz E` (`routhFold_of_dz_eq_zero`) and
+  `pAmpSq E² |Z_t|⁴ G = (∂P_t/∂δ) E |Z_t|² hopfSlopeDz E + hopfRestDz E`
+  (`routhHopf_of_dz_eq_zero`); `foldPolyDz > 0` for `R_g, R_v, P_ref ≥ 0` (`foldPolyDz_pos`).
 
 Family and connection conclusions.
 * `QVDroopVirtual.family`: a complete system (`QVDroopVirtual.Model`) is a parameter set with a
@@ -123,6 +138,14 @@ Family and connection conclusions.
 * `mem_den_locallyExponentiallyStable_iff_emf` (every virtual impedance with `dz ≠ 0`,
   `n_q ≠ 0`, `|Z_t| ≠ 0`): an equilibrium with EMF `E* ≠ 0` is locally exponentially stable iff
   `E* tracePoly E* > 0`, `dz E* foldPoly E* > 0` and `dz hopfPoly E* > 0`.
+* `mem_den_locallyExponentiallyStable_iff_of_dz_eq_zero` (the degenerate `dz = 0`): an
+  equilibrium with EMF `E* ≠ 0` and angle slope `∂P_t/∂δ` is locally exponentially stable iff
+  `E* tracePoly E* > 0`, `E* (∂P_t/∂δ) foldPolyDz E* > 0` and
+  `(∂P_t/∂δ) E* |Z_t|² hopfSlopeDz E* + hopfRestDz E* > 0`; in the physical range with
+  `foldPolyDz E* > 0` the descending equilibrium (`∂P_t/∂δ < 0`) is unstable
+  (`mem_den_unstable_of_dz_eq_zero_of_slope_neg`), and without damping every equilibrium with a
+  resistive cross term `crossRX > 0`, `PtEPoly E* > 0` and a nonzero slope is unstable
+  (`mem_den_unstable_of_dz_eq_zero_of_undamped`).
 * How the virtual reactance moves the boundary (lossless grid branch, `R_g = R_v = 0`): for
   `0 ≤ X_v ≤ X_g` and `D > 0` (or `D ≥ 0` with `X_v < X_g`, `P_ref ≠ 0`) a physical equilibrium is
   locally exponentially stable iff `C > 0` — the fold is the only boundary, as without virtual
@@ -139,10 +162,14 @@ Corrections and limits (study note, topic t6 (b)).
 * The bound of four zeros per period of a second-order trigonometric polynomial
   (`theorem/SpecialFunctions/TrigZeros.lean`) is not the physical count here: at most two.
 * The Jacobian and the stability of these equilibria (the study tested them only for `Z_v = 0`)
-  are formalized here, with closed forms of `A`, `C`, `G` in the EMF for `dz ≠ 0`. Not
-  formalized: closed forms for the degenerate `dz = 0` (the elimination gives only `U(E) = 0`,
-  `W(E) = 0`; `cos δ`, `sin δ` stay free up to the active-power sinusoid); the boundary itself
-  (fold `C = 0`, Hopf surface `G = 0`) for the virtual-impedance model.
+  are formalized here, with closed forms of `A`, `C`, `G` in the EMF for `dz ≠ 0` and in the EMF
+  and the angle slope for `dz = 0`. The boundary itself is formalized downstream: the fold
+  (`mem_den_unstable_of_fold` in `QVDroopVirtualFold`; the cusp set `𝔉 = 0` located, not
+  decided) and the Hopf surface (`QVDroopVirtualHopf`: `ℓ₁` in closed form, both signs occur; the
+  Bautin set `hopfNum = 0` and the double zero `C = G = 0` located, not decided), and the Hopf
+  cycles along the damping (`QVDroopVirtualHopfCycle`: `τ = −T/(A² + M² ω²)`, `τ < 0` on the
+  physical branch `E* > 0`, cycles wherever `hopfNum ≠ 0`, `τ ≠ 0`, as private evidence). Not
+  proved: uniqueness and orbital stability of the cycles.
 -/
 
 noncomputable section
@@ -1050,6 +1077,151 @@ in `E` (and `V`) through the adjugate combinations `U`, `W`. -/
   rw [hopfPoly, ← e1, ← e2, ← hPd, ← hQd, routhHopf, coupling]
   ring
 
+/-! ## Closed forms in the degenerate case `dz = 0` (`|Z_v| = |Z_g|`) -/
+
+/-- `|(R_v − R_g, X_g + X_v)|²`, the squared amplitude of the active-power sinusoid in `δ`. -/
+def pAmpSq : ℝ := (q.Rv - q.Rg) ^ 2 + (q.Xg + q.Xv) ^ 2
+
+/-- The cross term `R_g X_v + R_v X_g` that couples `∂Q_t/∂δ` to `∂P_t/∂δ` when `dz = 0`. -/
+def crossRX : ℝ := q.Rg * q.Xv + q.Rv * q.Xg
+
+/-- The fold factor for `dz = 0`: `pAmpSq · gainPoly + 2 n_q crossRX · PtEPoly`. -/
+def foldPolyDz (E : ℝ) : ℝ := q.pAmpSq * q.gainPoly E + 2 * q.nq * q.crossRX * q.PtEPoly E
+
+/-- The slope coefficient of the Hopf quantity for `dz = 0`:
+`pAmpSq D E |Z_t|² − 2 M ω_q n_q crossRX · PtEPoly`. -/
+def hopfSlopeDz (E : ℝ) : ℝ :=
+  q.pAmpSq * q.D * E * q.ztsq - 2 * q.M * q.ωq * q.nq * q.crossRX * q.PtEPoly E
+
+/-- The slope-free part of the Hopf quantity for `dz = 0`:
+`pAmpSq D gainPoly (D ω_q E |Z_t|² + M ω_q² gainPoly)`. -/
+def hopfRestDz (E : ℝ) : ℝ :=
+  q.pAmpSq * q.D * q.gainPoly E * (q.D * q.ωq * E * q.ztsq + q.M * q.ωq ^ 2 * q.gainPoly E)
+
+/-- The active-power balance as a sinusoid: at a point with `P_t = P_ref` (`|Z_t| ≠ 0`, every
+`dz`), `|Z_t|⁴ (∂P_t/∂δ)² + b₁(E)² = pAmpSq E² V²`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem slope_sq_of_balance (hZ : q.ztsq ≠ 0) {δ E : ℝ}
+    (h : q.Pt δ E = q.Pref) :
+    q.ztsq ^ 2 * q.Ptδ δ E ^ 2 + q.b1 E ^ 2 = q.pAmpSq * (E * q.V) ^ 2 := by
+  have hP : q.Ptδ δ E * q.ztsq = (q.Xg + q.Xv) * (E * q.V * cos δ) -
+      (q.Rv - q.Rg) * (E * q.V * sin δ) := div_mul_cancel₀ _ hZ
+  have hPt : q.Pt δ E * q.ztsq = q.Rg * E ^ 2 - q.Rv * q.V ^ 2 +
+      (q.Rv - q.Rg) * (E * q.V * cos δ) + (q.Xg + q.Xv) * (E * q.V * sin δ) := by
+    rw [Pt_eq]; exact div_mul_cancel₀ _ hZ
+  rw [h] at hPt
+  have hb : q.b1 E = (q.Rv - q.Rg) * (E * q.V * cos δ) + (q.Xg + q.Xv) * (E * q.V * sin δ) := by
+    unfold b1; linear_combination hPt
+  rw [show q.ztsq ^ 2 * q.Ptδ δ E ^ 2 = (q.Ptδ δ E * q.ztsq) ^ 2 by ring, hP, hb, pAmpSq]
+  linear_combination ((q.Rv - q.Rg) ^ 2 + (q.Xg + q.Xv) ^ 2) * (E * q.V) ^ 2 *
+    Real.sin_sq_add_cos_sq δ
+
+/-- **The angle slope from the active-power sinusoid**: at a point with `P_t = P_ref`
+(`|Z_t| > 0`), `|Z_t|² |∂P_t/∂δ| = √(pAmpSq E² V² − b₁(E)²)`; the two equilibria of a window on
+the same EMF have opposite slopes. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem abs_Ptδ_of_balance (hZ : 0 < q.ztsq) {δ E : ℝ}
+    (h : q.Pt δ E = q.Pref) :
+    q.ztsq * |q.Ptδ δ E| = √(q.pAmpSq * (E * q.V) ^ 2 - q.b1 E ^ 2) := by
+  rw [← q.slope_sq_of_balance hZ.ne' h, add_sub_cancel_right,
+    show q.ztsq ^ 2 * q.Ptδ δ E ^ 2 = (q.ztsq * |q.Ptδ δ E|) ^ 2 by rw [mul_pow, sq_abs],
+    Real.sqrt_sq (mul_nonneg hZ.le (abs_nonneg _))]
+
+/-- At a point with `P_t = P_ref` (`|Z_t| ≠ 0`, every `dz`):
+`pAmpSq |Z_t|² ∂Q_t/∂δ = dz b₁(E) − 2 crossRX |Z_t|² ∂P_t/∂δ`; for `dz = 0` the reactive slope is
+proportional to the active one. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem pAmpSq_mul_Qtδ_of_balance (hZ : q.ztsq ≠ 0) {δ E : ℝ}
+    (h : q.Pt δ E = q.Pref) :
+    q.pAmpSq * q.ztsq * q.Qtδ δ E = q.dz * q.b1 E - 2 * q.crossRX * (q.ztsq * q.Ptδ δ E) := by
+  have hP : q.Ptδ δ E * q.ztsq = (q.Xg + q.Xv) * (E * q.V * cos δ) -
+      (q.Rv - q.Rg) * (E * q.V * sin δ) := div_mul_cancel₀ _ hZ
+  have hQ : q.Qtδ δ E * q.ztsq = (q.Xg - q.Xv) * (E * q.V * sin δ) -
+      (q.Rg + q.Rv) * (E * q.V * cos δ) := div_mul_cancel₀ _ hZ
+  have hPt : q.Pt δ E * q.ztsq = q.Rg * E ^ 2 - q.Rv * q.V ^ 2 +
+      (q.Rv - q.Rg) * (E * q.V * cos δ) + (q.Xg + q.Xv) * (E * q.V * sin δ) := by
+    rw [Pt_eq]; exact div_mul_cancel₀ _ hZ
+  rw [h] at hPt
+  have hb : q.b1 E = (q.Rv - q.Rg) * (E * q.V * cos δ) + (q.Xg + q.Xv) * (E * q.V * sin δ) := by
+    unfold b1; linear_combination hPt
+  rw [show q.pAmpSq * q.ztsq * q.Qtδ δ E = q.pAmpSq * (q.Qtδ δ E * q.ztsq) by ring,
+    show q.ztsq * q.Ptδ δ E = q.Ptδ δ E * q.ztsq by ring, hQ, hP, hb]
+  simp only [pAmpSq, dz, crossRX]
+  ring
+
+/-- **The EMF for `dz = 0`** in closed form: in the physical range (`n_q > 0`, `X_g > 0`,
+`X_v ≥ 0`) a positive root of `U` is `E* = (−u₁ + √(u₁² − 4 u₂ u₀))/(2 u₂)`
+(`u₂ = |Z_t|²/2 > 0`, `u₁ > 0`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem emf_eq_of_dz_eq_zero (hnq : 0 < q.nq) (hXg : 0 < q.Xg)
+    (hXv : 0 ≤ q.Xv) (hD : q.dz = 0) {E : ℝ} (hE : 0 < E) (h : q.U E = 0) :
+    E = (-q.u1 + √(q.u1 ^ 2 - 4 * q.u2 * q.u0)) / (2 * q.u2) := by
+  have hZ := q.ztsq_pos hXg hXv
+  have hu2 : 0 < q.u2 := by linarith [q.two_mul_u2]
+  have hu1 : 0 < q.u1 := div_pos (mul_pos (by linarith) hZ) hnq
+  rw [← eval_Upoly] at h
+  simp only [Upoly, eval_add, eval_mul, eval_pow, eval_C, eval_X] at h
+  have hs : √(q.u1 ^ 2 - 4 * q.u2 * q.u0) = 2 * q.u2 * E + q.u1 := by
+    rw [show q.u1 ^ 2 - 4 * q.u2 * q.u0 = (2 * q.u2 * E + q.u1) ^ 2 by
+      linear_combination (-4 * q.u2) * h]
+    exact Real.sqrt_sq (by positivity)
+  rw [hs]
+  field_simp
+  ring
+
+/-- **The fold quantity for `dz = 0`** in closed form: at a balanced point with EMF `E ≠ 0`,
+`pAmpSq E |Z_t|² C = (∂P_t/∂δ) · foldPolyDz E` (the coupling is `n_q ∂P_t/∂E ∂Q_t/∂δ` with
+`pAmpSq ∂Q_t/∂δ = −2 crossRX ∂P_t/∂δ`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem routhFold_of_dz_eq_zero (hZ : q.ztsq ≠ 0) (hnq : q.nq ≠ 0)
+    (hD : q.dz = 0) {δ E : ℝ} (hE : E ≠ 0) (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    q.pAmpSq * E * q.ztsq * q.routhFold δ E = q.Ptδ δ E * q.foldPolyDz E := by
+  have hK := q.gain_of_balance hZ hnq hE h.2
+  have hPE := q.PtE_of_balance hZ hE h.1
+  have e1 : E * q.ztsq * q.gain δ E = q.gainPoly E := by rw [hK, gainPoly]; field_simp
+  have e2 : E * q.ztsq * q.PtE δ E = q.PtEPoly E := by rw [hPE, PtEPoly]; field_simp
+  have hQ := q.pAmpSq_mul_Qtδ_of_balance hZ h.1
+  rw [hD, zero_mul, zero_sub] at hQ
+  have hQ' : q.pAmpSq * q.Qtδ δ E = -(2 * q.crossRX * q.Ptδ δ E) := by
+    apply mul_left_cancel₀ hZ; linear_combination hQ
+  rw [foldPolyDz, ← e1, ← e2, routhFold, coupling]
+  linear_combination (-(q.nq * (E * q.ztsq * q.PtE δ E))) * hQ'
+
+/-- **The Hopf quantity for `dz = 0`** in closed form: at a balanced point with EMF `E ≠ 0`,
+`pAmpSq E² |Z_t|⁴ G = (∂P_t/∂δ) E |Z_t|² hopfSlopeDz E + hopfRestDz E`. Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem routhHopf_of_dz_eq_zero (hZ : q.ztsq ≠ 0) (hnq : q.nq ≠ 0)
+    (hD : q.dz = 0) {δ E : ℝ} (hE : E ≠ 0) (h : q.Pt δ E = q.Pref ∧ q.Qt δ E = q.qOf E) :
+    q.pAmpSq * E ^ 2 * q.ztsq ^ 2 * q.routhHopf δ E =
+      q.Ptδ δ E * E * q.ztsq * q.hopfSlopeDz E + q.hopfRestDz E := by
+  have hK := q.gain_of_balance hZ hnq hE h.2
+  have hPE := q.PtE_of_balance hZ hE h.1
+  have e1 : E * q.ztsq * q.gain δ E = q.gainPoly E := by rw [hK, gainPoly]; field_simp
+  have e2 : E * q.ztsq * q.PtE δ E = q.PtEPoly E := by rw [hPE, PtEPoly]; field_simp
+  have hQ := q.pAmpSq_mul_Qtδ_of_balance hZ h.1
+  rw [hD, zero_mul, zero_sub] at hQ
+  have hQ' : q.pAmpSq * q.Qtδ δ E = -(2 * q.crossRX * q.Ptδ δ E) := by
+    apply mul_left_cancel₀ hZ; linear_combination hQ
+  rw [hopfSlopeDz, hopfRestDz, ← e1, ← e2, routhHopf, coupling]
+  linear_combination (q.M * q.ωq * q.nq * E * q.ztsq * (E * q.ztsq * q.PtE δ E)) * hQ'
+
+/-- In the physical range with nonnegative resistances and a nonnegative power set-point
+(`n_q > 0`, `X_g > 0`, `X_v ≥ 0`, `E₀ + n_q Q_ref > 0`, `R_g, R_v, P_ref ≥ 0`) the fold factor is
+positive: `foldPolyDz E > 0` for every `E`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem foldPolyDz_pos (hnq : 0 < q.nq) (hXg : 0 < q.Xg)
+    (hXv : 0 ≤ q.Xv) (hc : 0 < q.E0 + q.nq * q.Qref) (hRg : 0 ≤ q.Rg) (hRv : 0 ≤ q.Rv)
+    (hP : 0 ≤ q.Pref) (E : ℝ) : 0 < q.foldPolyDz E := by
+  have hZ := q.ztsq_pos hXg hXv
+  have hA : 0 < q.pAmpSq := by
+    have : 0 < (q.Xg + q.Xv) ^ 2 := by positivity
+    unfold pAmpSq; positivity
+  have hg : 0 < q.gainPoly E := by
+    unfold gainPoly
+    have h1 : 0 ≤ q.nq * q.Xg * E ^ 2 := by positivity
+    have h2 : 0 ≤ q.nq * q.Xv * q.V ^ 2 := by positivity
+    have h3 : 0 < (q.E0 + q.nq * q.Qref) * q.ztsq := mul_pos hc hZ
+    linarith
+  have hcr : 0 ≤ q.crossRX := by unfold crossRX; positivity
+  have hpe : 0 ≤ q.PtEPoly E := by unfold PtEPoly; positivity
+  unfold foldPolyDz
+  have : 0 ≤ 2 * q.nq * q.crossRX * q.PtEPoly E := by positivity
+  nlinarith [mul_pos hA hg]
+
 /-! ## The terminal-measured Q–V droop family -/
 
 /-- A Q–V droop model with a virtual impedance read about a selected point `(δ*, 0, Q_f*)`. -/
@@ -1230,6 +1402,98 @@ virtual impedance included). -/
     exact (mul_pos_iff_of_pos_left (by positivity)).symm
   rw [k1 (m.q.routhTrace _ _), k2 (m.q.routhFold _ _), k3 (m.q.routhHopf _ _), hA, hC, hG]
   exact ⟨fun h => h.2, fun h => ⟨heq, h⟩⟩
+
+/-- **The exact boundary for the degenerate impedance `dz = 0`** (`|Z_v| = |Z_g|`). For
+`M, ω_q > 0`, `n_q ≠ 0`, `|Z_t| ≠ 0` and `pAmpSq ≠ 0`, an equilibrium with EMF `E* ≠ 0` (the
+positive root of `U`, `emf_eq_of_dz_eq_zero`) and angle slope `∂P_t/∂δ` (of modulus
+`√(pAmpSq E*² V² − b₁(E*)²)/|Z_t|²`, `abs_Ptδ_of_balance`) is locally exponentially stable iff
+`E* tracePoly E* > 0`, `E* (∂P_t/∂δ) foldPolyDz E* > 0` and
+`(∂P_t/∂δ) E* |Z_t|² hopfSlopeDz E* + hopfRestDz E* > 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_dz_eq_zero
+    (m : Model) (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : m.q.nq ≠ 0) (hZ : m.q.ztsq ≠ 0)
+    (hp : m.q.pAmpSq ≠ 0) (hD : m.q.dz = 0) (heq : m.q.field m.point = 0)
+    (hE : m.q.emf m.Qf ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      (0 < m.q.emf m.Qf * m.q.tracePoly (m.q.emf m.Qf) ∧
+        0 < m.q.emf m.Qf * m.q.Ptδ m.δ (m.q.emf m.Qf) * m.q.foldPolyDz (m.q.emf m.Qf) ∧
+        0 < m.q.Ptδ m.δ (m.q.emf m.Qf) * m.q.emf m.Qf * m.q.ztsq *
+          m.q.hopfSlopeDz (m.q.emf m.Qf) + m.q.hopfRestDz (m.q.emf m.Qf))) := by
+  have hles := mem_den_locallyExponentiallyStable_iff m hM hω
+  unfold powerlib.TMIO.Statement at hles ⊢
+  rw [hles, Set.mem_ofPred_eq]
+  have hb := balance_at hM.ne' hω.ne' hnq heq
+  set E := m.q.emf m.Qf
+  have hA := m.q.routhTrace_of_balance hZ hnq hE hb
+  have hC := m.q.routhFold_of_dz_eq_zero hZ hnq hD hE hb
+  have hG := m.q.routhHopf_of_dz_eq_zero hZ hnq hD hE hb
+  have hZp : 0 < m.q.ztsq := lt_of_le_of_ne (by unfold ztsq; positivity) (Ne.symm hZ)
+  have hpp : 0 < m.q.pAmpSq := lt_of_le_of_ne (by unfold pAmpSq; positivity) (Ne.symm hp)
+  have hE2 : 0 < E ^ 2 := by positivity
+  have k1 : ∀ r : ℝ, 0 < r ↔ 0 < E * (E * m.q.ztsq * r) := fun r => by
+    rw [show E * (E * m.q.ztsq * r) = (E ^ 2 * m.q.ztsq) * r by ring]
+    exact (mul_pos_iff_of_pos_left (mul_pos hE2 hZp)).symm
+  have k2 : ∀ r : ℝ, 0 < r ↔ 0 < E * (m.q.pAmpSq * E * m.q.ztsq * r) := fun r => by
+    rw [show E * (m.q.pAmpSq * E * m.q.ztsq * r) = (m.q.pAmpSq * E ^ 2 * m.q.ztsq) * r by ring]
+    exact (mul_pos_iff_of_pos_left (by positivity)).symm
+  have k3 : ∀ r : ℝ, 0 < r ↔ 0 < m.q.pAmpSq * E ^ 2 * m.q.ztsq ^ 2 * r := fun r =>
+    (mul_pos_iff_of_pos_left (by positivity)).symm
+  rw [k1 (m.q.routhTrace _ _), k2 (m.q.routhFold _ _), k3 (m.q.routhHopf _ _), hA, hC, hG,
+    ← mul_assoc]
+  exact ⟨fun h => h.2, fun h => ⟨heq, h⟩⟩
+
+/-- **For `dz = 0` the descending equilibria are unstable.** In the physical range with
+`foldPolyDz E* > 0` (e.g. `R_g, R_v, P_ref ≥ 0`, `foldPolyDz_pos`), `dz = 0`, an equilibrium with
+`E* > 0` and a negative angle slope `∂P_t/∂δ < 0` has `C < 0`, so it is unstable. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_dz_eq_zero_of_slope_neg (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : 0 < m.q.nq) (hXg : 0 < m.q.Xg)
+    (hXv : 0 ≤ m.q.Xv) (hD : m.q.dz = 0) (heq : m.q.field m.point = 0)
+    (hE : 0 < m.q.emf m.Qf) (hF : 0 < m.q.foldPolyDz (m.q.emf m.Qf))
+    (hs : m.q.Ptδ m.δ (m.q.emf m.Qf) < 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  refine mem_den_unstable_of_violation m hM hω heq (Or.inr (Or.inl ?_))
+  have hZ := m.q.ztsq_pos hXg hXv
+  have hpp : 0 < m.q.pAmpSq := by
+    have : 0 < (m.q.Xg + m.q.Xv) ^ 2 := by positivity
+    unfold pAmpSq; positivity
+  have hC := m.q.routhFold_of_dz_eq_zero hZ.ne' hnq.ne' hD hE.ne'
+    (balance_at hM.ne' hω.ne' hnq.ne' heq)
+  have hk : 0 < m.q.pAmpSq * m.q.emf m.Qf * m.q.ztsq := by positivity
+  have hneg : m.q.pAmpSq * m.q.emf m.Qf * m.q.ztsq * m.q.routhFold m.δ (m.q.emf m.Qf) < 0 := by
+    rw [hC]; exact mul_neg_of_neg_of_pos hs hF
+  exact neg_of_mul_neg_right hneg hk.le
+
+/-- **Without damping, `dz = 0` with a resistive cross term is unstable.** In the physical range
+(`n_q > 0`, `X_g > 0`, `X_v ≥ 0`), `dz = 0`, `D = 0`, `crossRX = R_g X_v + R_v X_g > 0`, an
+equilibrium with `E* > 0`, `PtEPoly E* > 0`, `foldPolyDz E* > 0` and a nonzero angle slope is
+unstable: a descending one has `C < 0` (`mem_den_unstable_of_dz_eq_zero_of_slope_neg`), an
+ascending one `G < 0` (`hopfRestDz = 0`, `hopfSlopeDz < 0`). The lossless counterpart is
+`mem_den_unstable_of_virtual_gt`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_dz_eq_zero_of_undamped (m : Model)
+    (hM : 0 < m.q.M) (hω : 0 < m.q.ωq) (hnq : 0 < m.q.nq) (hXg : 0 < m.q.Xg)
+    (hXv : 0 ≤ m.q.Xv) (hD : m.q.dz = 0) (hD0 : m.q.D = 0) (hcr : 0 < m.q.crossRX)
+    (heq : m.q.field m.point = 0) (hE : 0 < m.q.emf m.Qf)
+    (hPE : 0 < m.q.PtEPoly (m.q.emf m.Qf)) (hF : 0 < m.q.foldPolyDz (m.q.emf m.Qf))
+    (hs : m.q.Ptδ m.δ (m.q.emf m.Qf) ≠ 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  rcases hs.lt_or_gt with hs | hs
+  · exact mem_den_unstable_of_dz_eq_zero_of_slope_neg m hM hω hnq hXg hXv hD heq hE hF hs
+  refine mem_den_unstable_of_violation m hM hω heq (Or.inr (Or.inr ?_))
+  have hZ := m.q.ztsq_pos hXg hXv
+  have hpp : 0 < m.q.pAmpSq := by
+    have : 0 < (m.q.Xg + m.q.Xv) ^ 2 := by positivity
+    unfold pAmpSq; positivity
+  have hG := m.q.routhHopf_of_dz_eq_zero hZ.ne' hnq.ne' hD hE.ne'
+    (balance_at hM.ne' hω.ne' hnq.ne' heq)
+  rw [hopfSlopeDz, hopfRestDz, hD0] at hG
+  have hk : 0 < m.q.pAmpSq * m.q.emf m.Qf ^ 2 * m.q.ztsq ^ 2 := by positivity
+  have hneg : m.q.pAmpSq * m.q.emf m.Qf ^ 2 * m.q.ztsq ^ 2 *
+      m.q.routhHopf m.δ (m.q.emf m.Qf) < 0 := by
+    rw [hG]
+    have : 0 < m.q.Ptδ m.δ (m.q.emf m.Qf) * m.q.emf m.Qf * m.q.ztsq *
+        (2 * m.q.M * m.q.ωq * m.q.nq * m.q.crossRX * m.q.PtEPoly (m.q.emf m.Qf)) := by
+      positivity
+    nlinarith
+  exact neg_of_mul_neg_right hneg hk.le
 
 /-! ## How the virtual reactance moves the boundary (lossless grid branch) -/
 

@@ -27,11 +27,19 @@ Model boundary.
   `NormalForm.LyapunovCoefficient.firstLyapunov_conj` carries `ℓ₁` back.
 * Level: exact identities and signs for all parameters and every angle, and Lyapunov
   instability / local asymptotic stability of the operating point (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`). Not stated: the bifurcating cycles (their existence is the generic
-  `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the transversality `τ ≠ 0`,
-  instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the transversality
-  computation and the instance are missing, and uniqueness and orbital stability are not
-  proved), the degenerate points `𝔅_δ = 0` themselves.
+  `LocalAsymptoticStable`). The bifurcating cycles, at every angle, are
+  `theorem/GridTiedConverter/GFM/LineVSMHopfCycle.lean`: at the critical pair below the
+  transversality coefficient along the damping is `τ = −2σ 𝔗/(M(a₁a₃³ + (a₂a₃ − 2a₁)²))`,
+  `𝔗(D/M, R/L, ω₀, Q/M)` the transversality form (`Line.VSM.Model.paramTrace_crit`;
+  `sign τ = −sign 𝔗`,
+  `Line.VSM.Model.sign_paramTrace_crit`; `τ < 0` for `D/M ≤ 2R/L`, no fixed sign otherwise), and
+  along the inverse inertia `1/M ↦ 1/M + μ` the coefficient `τ_M` has the sign of the inertia
+  form `𝔍 = ω₀² − σ² − σd + κ` (`Line.VSM.Model.sign_paramTrace_inert_crit`); `𝔗` and `𝔍` never
+  vanish together (`Line.VSM.transForm_eq_inertForm`), so the cycles of
+  `Dynamics.HopfCycle.exists_hopfCycle` exist at every boundary point with `𝔅_δ ≠ 0`, along the
+  damping if `𝔗 ≠ 0` and along the inverse inertia if `𝔗 = 0` (private evidence
+  `Line.VSM.Model.exists_hopfCycle_of_bautinFormAngle_ne`). Not stated: uniqueness and orbital
+  stability of the cycles, the degenerate points `𝔅_δ = 0` themselves.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, the VSM without filter on a dynamic
 R–L line); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4

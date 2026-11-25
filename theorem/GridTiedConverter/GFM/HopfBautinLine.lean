@@ -20,15 +20,16 @@ Model boundary.
 * Level: exact rational-function identities along the path, the sign of `ℓ₁`, the existence of
   its zero, and Lyapunov instability / local asymptotic stability (LeanForControl's `Unstable`,
   `LocalAsymptoticStable`) where `ℓ₁ ≠ 0`; the stability of the degenerate point itself is in
-  `theorem/GridTiedConverter/GFM/HopfBautinPoint.lean`. Not stated: the bifurcating cycles.
-  Their existence where `ℓ₁ ≠ 0` is the generic `Dynamics.HopfCycle.exists_hopfCycle` (given the
-  transversality `τ ≠ 0`), instantiated only for `VSMLPF` (`VSMLPFHopfCycle`); for this model
-  the transversality computation and the instance are missing, uniqueness and orbital stability
-  of the cycles are not proved, and the library has no Bautin (second-coefficient) cycle
-  theorem. The `ε = 1/ω_b` law of
-  the source note is `theorem/GridTiedConverter/GFM/HopfLineScale.lean`: for every parameter set
-  with `(X² − R²)(5K² − P''²) ≠ 0` no boundary point of a line of time scale `ε < ε₀` has
-  `ℓ₁ = 0` (the path here has `ω₀ = 1`, not a fast line).
+  `theorem/GridTiedConverter/GFM/HopfBautinPoint.lean`. Along the damping the critical
+  eigenvalues cross transversally at every point of the path (`τ < 0`,
+  `Line.VSM.bautinPath_paramTrace_neg` in `theorem/GridTiedConverter/GFM/LineVSMHopfCycle.lean`),
+  so the bifurcating cycles exist at every point with `ℓ₁ ≠ 0`, for small `μ` with `μ ℓ₁ > 0`
+  (private evidence `Line.VSM.Model.exists_hopfCycle_damping`). Not stated: uniqueness and
+  orbital stability of the cycles, and the cycles at the degenerate point itself (the library has
+  no Bautin (second-coefficient) cycle theorem). The `ε = 1/ω_b` law of the source note is
+  `theorem/GridTiedConverter/GFM/HopfLineScale.lean`: for every parameter set with
+  `(X² − R²)(5K² − P''²) ≠ 0` no boundary point of a line of time scale `ε < ε₀` has `ℓ₁ = 0`
+  (the path here has `ω₀ = 1`, not a fast line).
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, the VSM without filter on a dynamic
 R–L line; both signs of `ℓ₁` on the boundary,

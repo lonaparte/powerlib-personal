@@ -1,7 +1,8 @@
 import theorem.GridTiedConverter.GFM.Line.PSC
 import theorem.Dynamics.HopfDichotomy
+import theorem.Dynamics.SaddleNodeReduction
 
-/-! # Hopf points of power synchronization on a dynamic R–L line: `ℓ₁` in closed form
+/-! # Hopf and fold points of power synchronization on a dynamic R–L line
 
 Model boundary.
 * The three-state power-synchronization (pure droop) law `Line.PSC` of
@@ -14,7 +15,8 @@ Model boundary.
   `R ≥ 0`, any `δ* ∈ ℝ`) on the Hopf boundary of the monic characteristic cubic
   `s³ + a₂ s² + a₁ s + a₀` (`Line.PSC.coeff2` … `coeff0`): `a₂ a₁ = a₀` with `a₁, a₀ > 0`, where
   it factors as `(s² + a₁)(s + a₂)`, `a₂ > 0`: eigenvalues `±iω`, `ω² = a₁`, and the stable root
-  `−a₂`. The boundary forces `R > 0`.
+  `−a₂`. The boundary forces `R > 0`. The fold laws: every balanced physical model with `K = 0`;
+  the membership theorems: every physical model, balanced or not.
 * Notation: `σ = R/L`, `b = E/L`, `κ = K_p Q` (`Q = Q(δ*)`), `ν = K_p P_ref`, `ρ = σ² + ω₀²`; the
   angle term `t = ω₀ν − σκ = K_p E V sin δ*/L` (`Line.PSC.Model.angleShift`). On the boundary
   `a₂ = 2σ − κ`, `a₁ = ω² = ρ − 2σκ` and `K_p E b ω₀ = 2σ(ω² + κ²)`.
@@ -23,14 +25,17 @@ Model boundary.
   the coordinate invariance `NormalForm.LyapunovCoefficient.firstLyapunov_conj` carries `ℓ₁` back.
 * Level: exact identities and signs for all parameters and every angle, and Lyapunov instability /
   local asymptotic stability of the operating point (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`). Not stated: the bifurcating cycles (their existence is the generic
-  `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the transversality `τ ≠ 0`,
-  instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the transversality
-  computation and the instance are missing, and uniqueness and orbital stability are not
-  proved), the behaviour at the degenerate
-  points `𝔅_P = 0` (located here, not decided) and at the fold `a₀ = 0` (`K = 0`, a zero
-  eigenvalue; not locally exponentially stable by `Line.PSC.mem_den_locallyExponentiallyStable_iff`,
-  Lyapunov stability not decided).
+  `LocalAsymptoticStable`, `LyapunovStable`). The bifurcating cycles along the gain `K_p` are
+  private evidence of `theorem/GridTiedConverter/GFM/LinePSCHopfCycle.lean`
+  (`Dynamics.HopfCycle.exists_hopfCycle`, wherever `𝔅_P ≠ 0` and the transversality coefficient
+  does not vanish); their uniqueness and orbital stability are not proved. Not decided: the
+  degenerate points `Line.PSC.Model.Degenerate` (located): the zeros of `𝔅_P` on the Hopf
+  boundary and the fold points `K = 0` at the Bogdanov–Takens gain `K_p D_line = 1` (`a₁ = 0`,
+  a double zero) or at a zero–Hopf point (`a₂ = 0`, eigenvalues `0, ±i√a₁`).
+* The fold `a₀ = K_p ρ K = 0` (`K = 0`, a zero eigenvalue): there `Q = E² X/|Z|²`,
+  `det(sI − J) = s (s² + a₂ s + a₁)` and `a₁ = ρ (1 − K_p D_line)`,
+  `D_line = 2E²RXL/|Z|⁴` (`Line.Network.Dline`); the null vectors are the tangent
+  `(1, i_s'(δ*))` of the quasi-steady set and its left partner normalised by `1 − K_p D_line`.
 
 Source: the four-state template `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean` (same
 method); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4
@@ -38,7 +43,12 @@ method); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 an
 (1981), §2.4. The closed form was derived with SymPy in exact rational arithmetic in the rotated
 frame (Gröbner reduction modulo the boundary relations, factorisation over `ℚ`; untrusted
 discovery); every identity is proved here by `linear_combination` with its polynomial
-certificate. The family laws are `theorem/Dynamics/HopfDichotomy.lean`.
+certificate. The family laws are `theorem/Dynamics/HopfDichotomy.lean`. The fold: the
+saddle-node law `Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly`
+(`theorem/Dynamics/SaddleNodeReduction.lean`; Kuznetsov, §3.2 and §5.4, the fold coefficient
+`a = ½⟨p, B(q, q)⟩`), as for `Line.VSM` in `theorem/GridTiedConverter/GFM/HopfLineMembership.lean`;
+the null pair and the fold coefficient were derived with SymPy (untrusted) and are proved here by
+`field_simp` and `linear_combination`.
 
 Results.
 * The field in pieces (`Line.PSC.field_eq_pieces`, `Line.PSC.affinePart`, `Line.PSC.constPart`);
@@ -70,8 +80,17 @@ Results.
   degenerate point `V = 6/5`, `K_p = 20` (`κ = −2`, `ℌ_P(−2, 1, 1) = 0`;
   `Line.PSC.unitLine_bautin_firstLyapunov`: a critical pair exists and every critical pair has
   `ℓ₁ = 0`).
-* `Line.PSC.Model.Degenerate`: the degenerate balanced points (the fold `K = 0` and the zeros of
-  `𝔅_P` on the Hopf boundary).
+* The fold data at every angle: the tangent `Line.PSC.Model.foldQ` and the left null vector
+  `Line.PSC.Model.foldP`, `Line.PSC.Model.coeff_fold` (at `K = 0`: `Q = E² X/|Z|²`,
+  `a₁ = ρ (1 − K_p D_line)`), `Line.PSC.Model.isNullPair_fold` (a normalised null pair at `K = 0`,
+  `K_p D_line ≠ 1`), `Line.PSC.Model.charpoly_fold` (`s (s² + a₂ s + a₁)`) and
+  `Line.PSC.Model.foldCoeff_fold`: the fold coefficient in closed form,
+  `a = K_p (P(δ*) − c₀)/(2 (1 − K_p D_line))`, `c₀ = E² R/|Z|²`; at a fold `P(δ*) − c₀ = ± A ≠ 0`,
+  so the fold coefficient vanishes nowhere on the fold off `K_p D_line = 1`
+  (`Line.PSC.Model.foldCoeff_fold_ne_zero`).
+* `Line.PSC.Model.Degenerate`: the degenerate balanced points still undecided: the fold points with
+  `a₁, a₂ ≥ 0` and `a₁ = 0` (Bogdanov–Takens) or `a₂ = 0` (zero–Hopf), and the zeros of `𝔅_P` on
+  the Hopf boundary.
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.PSC.family`.
@@ -85,11 +104,16 @@ No new family: connection conclusions on `Line.PSC.family`.
   gain) and `Line.PSC.unitLine_subcritical_mem_den_unstable`; hence neither the local asymptotic
   nor the instability translation of `Line.PSC.family` is exact within physical models
   (`Line.PSC.not_exactUnder_locallyAsymptoticallyStable`, `Line.PSC.not_exactUnder_unstable`).
-* **`Line.PSC.mem_den_locallyAsymptoticallyStable_iff`** (complete membership off the degenerate
-  set, the counterpart of `GFL.RatePLL.mem_den_locallyAsymptoticallyStable_iff`): a physical model
-  is locally asymptotically stable iff it is balanced and either meets the strict cubic Routh
-  conditions or lies on the Hopf boundary with `𝔅_P > 0`; every other non-degenerate physical
-  model is unstable.
+* **`Line.PSC.mem_den_unstable_of_fold`** (the fold is a saddle-node): a balanced physical model
+  at `K = 0` with `a₁, a₂ > 0` is unstable; **`Line.PSC.mem_den_unstable_of_fold_of_ne`** (the
+  fold decided): at `K = 0` with `a₁ ≠ 0` and `a₂ ≠ 0` it is unstable (a strict Routh violation,
+  or the saddle-node law).
+* **`Line.PSC.mem_den_locallyAsymptoticallyStable_iff`** and
+  **`Line.PSC.mem_den_lyapunovStable_iff`** (complete membership off the degenerate set, the
+  counterpart of `GFL.RatePLL.mem_den_locallyAsymptoticallyStable_iff`): a physical model is
+  locally asymptotically stable, equivalently Lyapunov stable, iff it is balanced and either
+  meets the strict cubic Routh conditions or lies on the Hopf boundary with `𝔅_P > 0`; every
+  other non-degenerate physical model is unstable or not an equilibrium.
 -/
 
 noncomputable section
@@ -2847,22 +2871,289 @@ Routh boundary and is locally asymptotically stable
   · simp [family, translate, Spectral.localTable, Spectral.table]
   · exact unitLine_not_routh
 
-/-! ## Complete local asymptotic membership off the degenerate set -/
+/-! ## The fold: a saddle-node point -/
 
-/-- The degenerate balanced points of power synchronization on the line: the fold `K = 0`
-(`a₀ = 0`, a zero eigenvalue) and the Bautin-type points of the Hopf boundary (`a₂ a₁ = a₀`,
-`a₁, a₀ > 0`, `𝔅_P = 0`). -/
+section Fold
+
+open scoped RealInnerProductSpace
+open powerlib.NormalForm.BogdanovTakens (IsNullPair foldCoeff isNullPair_toEuclideanCLM_iff)
+
+/-- The tangent `(1, i_s'(δ*))` of the quasi-steady set at the operating point,
+`i_s'(δ) = j E e^{jδ}/(R + jX)`: the right null vector at a fold. -/
+def Model.foldQ (m : Model) : Fin 3 → ℝ :=
+  ![1, m.g.E * (m.g.X * Real.cos m.δ - m.g.R * Real.sin m.δ) / m.g.absSq,
+    m.g.E * (m.g.X * Real.sin m.δ + m.g.R * Real.cos m.δ) / m.g.absSq]
+
+/-- The left null vector at a fold, normalised against `Line.PSC.Model.foldQ` by
+`1 − K_p D_line` (`D_line = 2E²RXL/|Z|⁴`, `Line.Network.Dline`):
+`p = (1, K_p E L (X sin δ* − R cos δ*)/|Z|², −K_p E L (X cos δ* + R sin δ*)/|Z|²)` divided by
+`1 − K_p D_line`. -/
+def Model.foldP (m : Model) : Fin 3 → ℝ :=
+  (1 - m.g.Kp * m.g.Dline)⁻¹ • ![1,
+    m.g.Kp * m.g.E * m.g.L * (m.g.X * Real.sin m.δ - m.g.R * Real.cos m.δ) / m.g.absSq,
+    -(m.g.Kp * m.g.E * m.g.L * (m.g.X * Real.cos m.δ + m.g.R * Real.sin m.δ) / m.g.absSq)]
+
+@[tmio M, powerlib_domain] private theorem fold_fderiv (m : Model) :
+    fderiv ℝ m.field 0 = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) m.jac := by
+  rw [show m.field = fun z => m.g.field (z + m.point) from rfl, fderiv_comp_add_right,
+    zero_add, m.fderiv_point]
+
+@[tmio M, powerlib_domain] private theorem fold_Q {m : Model} (hZ : 0 < m.g.absSq)
+    (hK : m.K = 0) : m.Q = m.g.E ^ 2 * m.g.X / m.g.absSq := by
+  have h := m.g.syncCoeff_add_qssReactive hZ m.δ
+  rw [show m.g.syncCoeff m.δ = m.K from rfl, hK, zero_add] at h
+  rw [Model.Q, h, Network.κ]
+
+/-- **The reactive power and the coefficient `a₁` at a fold**: for `L ≠ 0`, `|Z|² > 0` and
+`K = 0`, `Q = E² X/|Z|²` (`Line.Network.κ`) and `a₁ = ρ (1 − K_p D_line)` (`ρ = σ² + ω₀²`). Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.coeff_fold (m : Model) (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hK : m.K = 0) :
+    m.Q = m.g.κ ∧ m.g.coeff1 m.Q = m.g.ρ * (1 - m.g.Kp * m.g.Dline) := by
+  have hQ := fold_Q hZ hK
+  refine ⟨by rw [hQ, Network.κ], ?_⟩
+  have hρ : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+    simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+  have hZ' := hZ.ne'
+  rw [coeff1, hQ, hρ, Network.Dline, Network.σ]
+  field_simp
+
+/-- **The null pair of a fold**: at a physical model with `K = 0` and `K_p D_line ≠ 1`, the
+tangent `q = (1, i_s'(δ*))` (`Line.PSC.Model.foldQ`) and `p = Line.PSC.Model.foldP` are a
+normalised null pair of the Jacobian at the operating point (`J q = 0`, `pᵀ J = 0`,
+`⟨p, q⟩ = 1`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.isNullPair_fold {m : Model} (hp : Meets m .physical)
+    (hK : m.K = 0) (hD : m.g.Kp * m.g.Dline ≠ 1) :
+    IsNullPair (fderiv ℝ m.field 0) (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldP) := by
+  obtain ⟨hN, -⟩ := hp
+  have hL := hN.L.ne'
+  have hZ := hN.absSq_pos
+  have hZ' := hZ.ne'
+  have hQ := fold_Q hZ hK
+  have hX : m.g.X = m.g.ω0 * m.g.L := rfl
+  have hcs := Real.cos_sq_add_sin_sq m.δ
+  have hDD : 1 - m.g.Kp * m.g.Dline ≠ 0 := sub_ne_zero.mpr (Ne.symm hD)
+  have hA : m.g.absSq = m.g.R ^ 2 + (m.g.ω0 * m.g.L) ^ 2 := by rw [Network.absSq, hX]
+  rw [fold_fderiv, isNullPair_toEuclideanCLM_iff, m.jac_eq hL]
+  refine ⟨?_, ?_, ?_⟩
+  · ext i
+    fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three, Model.foldQ, hQ, hX] <;>
+      field_simp
+    · linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.ω0 * m.g.L)) * hcs
+    · linear_combination (-(m.g.E * Real.sin m.δ)) * hA
+    · linear_combination (m.g.E * Real.cos m.δ) * hA
+  · ext j
+    fin_cases j <;> simp [Matrix.vecMul, dotProduct, Fin.sum_univ_three, Model.foldP, hQ, hX] <;>
+      field_simp
+    · linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.ω0 * m.g.L)) * hcs
+    · linear_combination (-(m.g.Kp * m.g.E * Real.cos m.δ)) * hA
+    · linear_combination (-(m.g.Kp * m.g.E * Real.sin m.δ)) * hA
+  · simp only [dotProduct, Fin.sum_univ_three, Model.foldP, Model.foldQ, Pi.smul_apply,
+      smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+      Matrix.tail_cons, Matrix.head_cons, hX]
+    have hDl : m.g.Dline * m.g.absSq ^ 2 = 2 * m.g.E ^ 2 * m.g.R * (m.g.ω0 * m.g.L) * m.g.L := by
+      rw [Network.Dline, hX]; field_simp
+    field_simp
+    linear_combination m.g.Kp * hDl -
+      (2 * m.g.Kp * m.g.E ^ 2 * m.g.L ^ 2 * m.g.ω0 * m.g.R) * hcs
+
+@[tmio M, powerlib_domain] private theorem fold_fderiv2 (m : Model) (u : State 3) (r : Fin 3) :
+    (fderiv ℝ (fderiv ℝ m.field) 0 u u r : ℂ) = bilinC m.field 0 (toC u) (toC u) r := by
+  rw [bilinC_toC, iteratedFDeriv_two_apply]
+  simp
+
+/-- **The fold coefficient**: for `L ≠ 0`, `|Z|² > 0` and `K_p D_line ≠ 1`, Kuznetsov's quadratic
+coefficient `a = ½ ⟨p, B(q, q)⟩` of the tangent `q = Line.PSC.Model.foldQ` and
+`p = Line.PSC.Model.foldP` is `a = K_p (P(δ*) − c₀)/(2 (1 − K_p D_line))`, `c₀ = E² R/|Z|²` (at
+every angle; at a fold `K = 0` it is the coefficient of the saddle-node). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem Model.foldCoeff_fold (m : Model) (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hD : m.g.Kp * m.g.Dline ≠ 1) :
+    foldCoeff m.field 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldP) =
+      m.g.Kp * (m.g.qssPower m.δ - m.g.c0) / (2 * (1 - m.g.Kp * m.g.Dline)) := by
+  have hDD : 1 - m.g.Kp * m.g.Dline ≠ 0 := sub_ne_zero.mpr (Ne.symm hD)
+  have hZ' := hZ.ne'
+  have hcs := Real.cos_sq_add_sin_sq m.δ
+  have v0 := fold_fderiv2 m (WithLp.toLp 2 m.foldQ) 0
+  have v1 := fold_fderiv2 m (WithLp.toLp 2 m.foldQ) 1
+  have v2 := fold_fderiv2 m (WithLp.toLp 2 m.foldQ) 2
+  rw [m.bilinC_field] at v0 v1 v2
+  rw [foldCoeff]
+  generalize fderiv ℝ (fderiv ℝ m.field) 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldQ) = v
+    at v0 v1 v2 ⊢
+  simp only [toC, Model.foldQ, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons] at v0 v1 v2
+  have e0 : v 0 = m.g.Kp * m.g.qssPower m.δ +
+      m.g.Kp * m.g.E * Real.sin m.δ * (2 * (m.g.E * (m.g.X * Real.cos m.δ -
+        m.g.R * Real.sin m.δ) / m.g.absSq)) -
+      m.g.Kp * m.g.E * Real.cos m.δ * (2 * (m.g.E * (m.g.X * Real.sin m.δ +
+        m.g.R * Real.cos m.δ) / m.g.absSq)) := by
+    apply Complex.ofReal_injective; rw [v0]; push_cast; ring
+  have e1 : v 1 = -(m.g.E / m.g.L * Real.cos m.δ) := by
+    apply Complex.ofReal_injective; rw [v1]; push_cast; ring
+  have e2 : v 2 = -(m.g.E / m.g.L * Real.sin m.δ) := by
+    apply Complex.ofReal_injective; rw [v2]; push_cast; ring
+  simp only [Model.foldP, PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial,
+    Pi.smul_apply, smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, e0, e1, e2]
+  rw [Network.c0]
+  field_simp
+  linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.R)) * hcs
+
+/-- **The characteristic polynomial at a fold**: for `L ≠ 0`, `|Z|² > 0` and `K = 0` (`a₀ = 0`),
+`det(sI − J) = s (s² + a₂ s + a₁)`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.charpoly_fold (m : Model) (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hK : m.K = 0) :
+    (jacobianC m.field 0).charpoly =
+      X * (X ^ 2 + C ((m.g.coeff2 m.Q : ℝ) : ℂ) * X + C ((m.g.coeff1 m.Q : ℝ) : ℂ)) := by
+  have h0 : m.g.coeff0 m.Q = 0 := by rw [m.coeff0_eq hL hZ, hK]; simp
+  refine Polynomial.funext fun s => ?_
+  rw [m.jacobianC_field, ← Linear.det_characteristicMatrix_eq_eval, m.det_characteristicMatrix,
+    h0]
+  simp only [eval_mul, eval_add, eval_pow, eval_X, eval_C]
+  push_cast
+  ring
+
+@[tmio M, powerlib_domain] private theorem fold_P_sub_c0_ne {m : Model} (hp : Meets m .physical)
+    (hK : m.K = 0) : m.g.qssPower m.δ - m.g.c0 ≠ 0 := by
+  have hZ := hp.1.absSq_pos
+  have hA : m.g.A ≠ 0 :=
+    div_ne_zero (mul_pos hp.1.E hp.1.V).ne' (Real.sqrt_pos.mpr hZ).ne'
+  have hcos : Real.cos (m.δ - m.g.α) = 0 :=
+    (mul_eq_zero.mp (show m.g.A * Real.cos (m.δ - m.g.α) = 0 from hK)).resolve_left hA
+  have h : 0 < (m.g.qssPower m.δ - m.g.c0) ^ 2 := by
+    rw [m.g.qssPower_eq_polar hZ, add_sub_cancel_left, mul_pow,
+      show Real.sin (m.δ - m.g.α) ^ 2 = 1 by
+        nlinarith [Real.sin_sq_add_cos_sq (m.δ - m.g.α)], mul_one]
+    positivity
+  intro h0
+  rw [h0] at h
+  simp at h
+
+/-- **The fold coefficient vanishes nowhere on the fold** off the Bogdanov–Takens gain: at a
+physical model with `K = 0` and `K_p D_line ≠ 1`,
+`a = K_p (P(δ*) − c₀)/(2 (1 − K_p D_line)) ≠ 0` (`P(δ*) − c₀ = ± A`, `A = E V/|Z|`). Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.foldCoeff_fold_ne_zero {m : Model}
+    (hp : Meets m .physical) (hK : m.K = 0) (hD : m.g.Kp * m.g.Dline ≠ 1) :
+    foldCoeff m.field 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldP) ≠ 0 := by
+  rw [m.foldCoeff_fold hp.1.L.ne' hp.1.absSq_pos hD]
+  exact div_ne_zero (mul_ne_zero hp.2.ne' (fold_P_sub_c0_ne hp hK))
+    (mul_ne_zero two_ne_zero (sub_ne_zero.mpr (Ne.symm hD)))
+
+@[tmio M, powerlib_domain] private theorem fold_ρ_pos {m : Model} (hp : Meets m .physical) :
+    0 < m.g.ρ := by
+  have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+    simp only [Network.ρ, Network.σ, Network.absSq]; field_simp [hp.1.L.ne']
+  rw [this]; exact div_pos hp.1.absSq_pos (pow_pos hp.1.L 2)
+
+/-- **The fold is a saddle-node**
+(`Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly`): a balanced physical
+model at a fold `K = 0` whose other two eigenvalues are stable (`a₁, a₂ > 0`) is unstable. Its
+fold coefficient `a = K_p (P_ref − c₀)/(2 (1 − K_p D_line))` (`Line.PSC.Model.foldCoeff_fold`)
+never vanishes there: `P_ref − c₀ = ± A ≠ 0` at a fold, and `a₁ = ρ (1 − K_p D_line) > 0`
+(`Line.PSC.Model.coeff_fold`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold (m : Model) (hp : Meets m .physical)
+    (hb : Meets m .balanced) (hK : m.K = 0) (h1 : 0 < m.g.coeff1 m.Q)
+    (h2 : 0 < m.g.coeff2 m.Q) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
+  have hL := hp.1.L.ne'
+  have hZ := hp.1.absSq_pos
+  have hD : m.g.Kp * m.g.Dline ≠ 1 := by
+    intro hD
+    rw [(m.coeff_fold hL hZ hK).2, hD, sub_self, mul_zero] at h1
+    exact lt_irrefl 0 h1
+  have hF : ContDiff ℝ 2 m.field := (m.g.contDiff_field (k := 2)).comp
+    (contDiff_id.add contDiff_const)
+  have hF0 : m.field 0 = 0 := by
+    show m.g.field (0 + m.point) = 0
+    rw [zero_add]
+    exact (m.field_point_eq_zero_iff hp.2.ne' hL hZ.ne').mpr hb
+  refine Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly hF hF0
+    (m.isNullPair_fold hp hK hD) (m.charpoly_fold hL hZ hK) ?_ ?_
+  · intro s hs
+    simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at hs
+    exact (Criteria.quadratic_roots_re_neg_iff _ _).mpr ⟨h2, h1⟩ s hs
+  · exact m.foldCoeff_fold_ne_zero hp hK hD
+
+/-- **The fold decided off its degenerate set**: a balanced physical model at a fold `K = 0`
+with `a₁ ≠ 0` (off the Bogdanov–Takens gain `K_p D_line = 1`) and `a₂ ≠ 0` (off the zero–Hopf
+points `K_p κ = 2σ`) is unstable: a strict Routh violation (`Line.PSC.mem_den_unstable`), or the
+saddle-node law (`Line.PSC.mem_den_unstable_of_fold`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold_of_ne (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hK : m.K = 0)
+    (h1 : m.g.coeff1 m.Q ≠ 0) (h2 : m.g.coeff2 m.Q ≠ 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  rcases h1.lt_or_gt with h1 | h1
+  · exact mem_den_unstable m hp hb (Or.inr (Or.inl h1))
+  rcases h2.lt_or_gt with h2 | h2
+  · exact mem_den_unstable m hp hb (Or.inl h2)
+  exact mem_den_unstable_of_fold m hp hb hK h1 h2
+
+end Fold
+
+/-! ## Complete Lyapunov and local asymptotic membership off the degenerate set -/
+
+/-- The degenerate balanced points of power synchronization on the line: the fold points `K = 0`
+(`a₀ = 0`, a zero eigenvalue) with `a₁, a₂ ≥ 0` at the Bogdanov–Takens gain (`a₁ = 0`, i.e.
+`K_p D_line = 1`: a double zero) or with a pair of imaginary eigenvalues (`a₂ = 0`, i.e.
+`K_p Q = 2σ`: zero–Hopf), and the Bautin-type points of the Hopf boundary (`a₂ a₁ = a₀`,
+`a₁, a₀ > 0`, `𝔅_P = 0`). The other fold points are decided
+(`Line.PSC.mem_den_unstable_of_fold_of_ne`). -/
 def Model.Degenerate (m : Model) : Prop :=
-  Meets m .balanced ∧ (m.K = 0 ∨ (m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q ∧
-    0 < m.g.coeff1 m.Q ∧ 0 < m.g.coeff0 m.Q ∧
-    bautinForm (m.g.Kp * m.Q) (m.g.R / m.g.L) m.g.ω0 m.angleShift = 0))
+  Meets m .balanced ∧ ((m.K = 0 ∧ 0 ≤ m.g.coeff1 m.Q ∧ 0 ≤ m.g.coeff2 m.Q ∧
+    (m.g.coeff1 m.Q = 0 ∨ m.g.coeff2 m.Q = 0)) ∨
+    (m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q ∧ 0 < m.g.coeff1 m.Q ∧
+      0 < m.g.coeff0 m.Q ∧ bautinForm (m.g.Kp * m.Q) (m.g.R / m.g.L) m.g.ω0 m.angleShift = 0))
+
+/-- Off the degenerate set, a balanced physical model that is neither Routh-stable nor a
+supercritical Hopf point is unstable (strict Routh violation, the fold law, the subcritical law). -/
+@[tmio TM, powerlib_domain] private theorem mem_den_unstable_of_nondegenerate (m : Model)
+    (hp : Meets m .physical) (hd : ¬ m.Degenerate) (hb : Meets m .balanced)
+    (hn : ¬ (m.Routh ∨ (m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q ∧
+        0 < m.g.coeff1 m.Q ∧ 0 < m.g.coeff0 m.Q ∧
+        0 < bautinForm (m.g.Kp * m.Q) (m.g.R / m.g.L) m.g.ω0 m.angleShift))) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  by_cases hv : m.RouthViolation
+  · exact mem_den_unstable m hp hb hv
+  obtain ⟨hr, hh⟩ := not_or.mp hn
+  unfold Model.RouthViolation at hv
+  unfold Model.Routh at hr
+  push Not at hv hr hh
+  obtain ⟨v2, v1, v0, v3⟩ := hv
+  rcases v0.lt_or_eq with h0 | h0
+  · have h2 : 0 < m.g.coeff2 m.Q := by
+      rcases v2.lt_or_eq with h | h
+      · exact h
+      · rw [← h, zero_mul] at v3
+        linarith
+    have hH : m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q := le_antisymm (hr h2 h0) v3
+    have h1 : 0 < m.g.coeff1 m.Q := by
+      by_contra h1
+      push Not at h1
+      nlinarith
+    rcases (hh hH h1 h0).lt_or_eq with hB | hB
+    · exact mem_den_unstable_of_bautinForm_neg m hp hb hH h1 h0 hB
+    · exact absurd ⟨hb, Or.inr ⟨hH, h1, h0, hB⟩⟩ hd
+  · have hK : m.K = 0 := by
+      rw [m.coeff0_eq hp.1.L.ne' hp.1.absSq_pos] at h0
+      rcases mul_eq_zero.mp h0.symm with h' | h'
+      · exact absurd h' hp.2.ne'
+      · exact (mul_eq_zero.mp h').resolve_left (fold_ρ_pos hp).ne'
+    refine mem_den_unstable_of_fold_of_ne m hp hb hK (fun h => hd ?_) (fun h => hd ?_)
+    · exact ⟨hb, Or.inl ⟨hK, v1, v2, Or.inl h⟩⟩
+    · exact ⟨hb, Or.inl ⟨hK, v1, v2, Or.inr h⟩⟩
 
 /-- **Complete local asymptotic membership** (the counterpart of the rate-coupled GFL PLL's
 `GFL.RatePLL.mem_den_locallyAsymptoticallyStable_iff`): a physical model off the degenerate set
 (`Line.PSC.Model.Degenerate`) is locally asymptotically stable iff it is balanced and either meets
 the strict cubic Routh conditions or lies on the Hopf boundary (`a₂ a₁ = a₀`, `a₁, a₀ > 0`) with
 `𝔅_P > 0`. Every other physical non-degenerate model is unstable or not an equilibrium: a strict
-Routh violation (linear instability), the Hopf boundary with `𝔅_P < 0` (subcritical). -/
+Routh violation (linear instability), the fold off its degenerate set
+(`Line.PSC.mem_den_unstable_of_fold_of_ne`), the Hopf boundary with `𝔅_P < 0` (subcritical). -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model)
     (hp : Meets m .physical) (hd : ¬ m.Degenerate) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
@@ -2872,13 +3163,6 @@ Routh violation (linear instability), the Hopf boundary with `𝔅_P < 0` (subcr
   unfold TMIO.Statement
   have hs := chain_le_semantics
   unfold powerlib.TMIO.Statement at hs
-  have hunst : m ∈ family.den (.flow .unstable) →
-      m ∉ family.den (.flow .locallyAsymptoticallyStable) := by
-    intro hu hl
-    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hu hl
-    change Unstable m.field 0 at hu
-    change LocalAsymptoticStable m.field 0 at hl
-    exact hu hl.1
   constructor
   · intro hl
     have hb : Meets m .balanced := by
@@ -2891,50 +3175,11 @@ Routh violation (linear instability), the Hopf boundary with `𝔅_P < 0` (subcr
       rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hl
       change LocalAsymptoticStable m.field 0 at hl
       exact Dynamics.unstable_of_ne_zero m.contDiff_field hne hl.1
-    refine ⟨hb, ?_⟩
-    by_cases hv : m.RouthViolation
-    · exact absurd hl (hunst (mem_den_unstable m hp hb hv))
-    by_cases hr : m.Routh
-    · exact Or.inl hr
-    right
-    unfold Model.RouthViolation at hv
-    unfold Model.Routh at hr
-    push Not at hv hr
-    obtain ⟨v2, v1, v0, v3⟩ := hv
-    have hZ := hp.1.absSq_pos
-    have hρ : 0 < m.g.ρ := by
-      have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
-        simp only [Network.ρ, Network.σ, Network.absSq]; field_simp [hp.1.L.ne']
-      rw [this]; exact div_pos hZ (pow_pos hp.1.L 2)
-    have h0 : 0 < m.g.coeff0 m.Q := by
-      rcases v0.lt_or_eq with h | h
-      · exact h
-      · exfalso
-        apply hd
-        refine ⟨hb, Or.inl ?_⟩
-        rw [m.coeff0_eq hp.1.L.ne' hZ] at h
-        rcases mul_eq_zero.mp h.symm with h' | h'
-        · exact absurd h' hp.2.ne'
-        · rcases mul_eq_zero.mp h' with h'' | h''
-          · exact absurd h'' hρ.ne'
-          · exact h''
-    have h2 : 0 < m.g.coeff2 m.Q := by
-      rcases v2.lt_or_eq with h | h
-      · exact h
-      · rw [← h, zero_mul] at v3
-        linarith
-    have hH : m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q :=
-      le_antisymm (hr h2 h0) v3
-    have h1 : 0 < m.g.coeff1 m.Q := by
-      by_contra h1
-      push Not at h1
-      nlinarith
-    refine ⟨hH, h1, h0, ?_⟩
-    rcases lt_trichotomy (bautinForm (m.g.Kp * m.Q) (m.g.R / m.g.L) m.g.ω0 m.angleShift) 0 with
-      hB | hB | hB
-    · exact absurd hl (hunst (mem_den_unstable_of_bautinForm_neg m hp hb hH h1 h0 hB))
-    · exact absurd ⟨hb, Or.inr ⟨hH, h1, h0, hB⟩⟩ hd
-    · exact hB
+    refine ⟨hb, by_contra fun hn => ?_⟩
+    have hu := mem_den_unstable_of_nondegenerate m hp hd hb hn
+    unfold powerlib.TMIO.Statement at hu
+    exact Spectral.not_mem_den_lyapunovStable_of_unstable hu
+      (Spectral.den_las_subset_lyapunovStable hl)
   · rintro ⟨hb, hr | ⟨hH, h1, h0, hB⟩⟩
     · refine (Family.chain_le_semantics_iff.mp hs _) ((TMIO.mem_realize _ _ _).mpr ?_)
       intro q hq
@@ -2945,6 +3190,34 @@ Routh violation (linear instability), the Hopf boundary with `𝔅_P < 0` (subcr
       · exact hp
       · exact hr
     · exact mem_den_locallyAsymptoticallyStable_of_bautinForm_pos m hp hb hH h1 h0 hB
+
+/-- **Complete Lyapunov membership**: off the degenerate set (`Line.PSC.Model.Degenerate`) a
+physical model is Lyapunov stable iff it is locally asymptotically stable, i.e. iff it is balanced
+and either meets the strict cubic Routh conditions or lies on the Hopf boundary with `𝔅_P > 0`
+(`Line.PSC.mem_den_locallyAsymptoticallyStable_iff`); every other non-degenerate physical model is
+unstable or not an equilibrium. -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model)
+    (hp : Meets m .physical) (hd : ¬ m.Degenerate) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      Meets m .balanced ∧ (m.Routh ∨ (m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q ∧
+        0 < m.g.coeff1 m.Q ∧ 0 < m.g.coeff0 m.Q ∧
+        0 < bautinForm (m.g.Kp * m.Q) (m.g.R / m.g.L) m.g.ω0 m.angleShift))) := by
+  have hlas := mem_den_locallyAsymptoticallyStable_iff m hp hd
+  unfold powerlib.TMIO.Statement at hlas ⊢
+  constructor
+  · intro hl
+    have heq : m.g.field m.point = 0 :=
+      Dynamics.isEquilibrium_of_lyapunovStable m.g.contDiff_field
+        ((Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field)
+          (pt := Model.point) family_isAutonomous).mp hl)
+    have hb : Meets m .balanced :=
+      (m.field_point_eq_zero_iff hp.2.ne' hp.1.L.ne' hp.1.absSq_pos.ne').mp heq
+    refine ⟨hb, by_contra fun hn => ?_⟩
+    have hu := mem_den_unstable_of_nondegenerate m hp hd hb hn
+    unfold powerlib.TMIO.Statement at hu
+    exact Spectral.not_mem_den_lyapunovStable_of_unstable hu hl
+  · intro h
+    exact Spectral.den_las_subset_lyapunovStable (hlas.mpr h)
 
 end PSC
 end powerlib.GFM.Line

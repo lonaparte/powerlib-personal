@@ -24,11 +24,11 @@ Model boundary.
   laws; the limit of `ℓ₁/(|q₀|² ε³)` (`|q₀|²` normalises the critical vector to angle component
   `1`) uniformly over the boundary dampings and critical pairs. Not stated: the next order of
   `ℓ₁` (in the degenerate cases `R = X` and `5K² = P''²` the leading term vanishes and the sign
-  is not decided here), the bifurcating cycles (their existence is the generic
-  `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the transversality `τ ≠ 0`,
-  instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for the line model the transversality
-  computation and the instance are missing, and uniqueness and orbital stability are not
-  proved).
+  is not decided here), the uniqueness and orbital stability of the
+  bifurcating cycles. Their existence at every boundary point with `ℓ₁ ≠ 0` (hence on fast
+  lines wherever `(X² − R²)(5K² − P''²) ≠ 0`), along the damping or, where it is not transversal,
+  along the inverse inertia, is `theorem/GridTiedConverter/GFM/LineVSMHopfCycle.lean` (private
+  evidence `Line.VSM.Model.exists_hopfCycle_of_bautinFormAngle_ne`).
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c) and its script
 `s5f_slow_manifold.py` (`D_H = ε 2E²RX²/|Z|⁴ + O(ε²)`, `ℓ₁ = ε³ L₃ + O(ε⁴)`,

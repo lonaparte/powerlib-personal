@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFM.QVDroopFold
+import theorem.NormalForm.CoefficientLemmas
 import theorem.Dynamics.HopfDichotomy
 
 /-! # Grid-forming converter with Q–V droop: the first Lyapunov coefficient on the Hopf surface
@@ -15,11 +16,11 @@ Model boundary.
 * Level: Kuznetsov's first Lyapunov coefficient `ℓ₁` (`NormalForm.LyapunovCoefficient`) at an
   explicit critical pair, as an exact rational function of the parameters; Lyapunov instability
   and local asymptotic stability (LeanForControl's `Unstable`, `LocalAsymptoticStable`) of the
-  operating point from its sign. Not stated: the bifurcating cycles (their existence is the
-  generic `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the transversality `τ ≠ 0`,
-  instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the transversality
-  computation and the instance are missing, and uniqueness and orbital stability are not
-  proved); the Bautin set `ℓ₁ = 0`
+  operating point from its sign. The bifurcating cycles are in
+  `theorem/GridTiedConverter/GFM/QVDroopHopfCycle.lean` (the damping family, the transversality
+  coefficient in closed form on the whole Hopf surface and its sign, and the cycles of the
+  generic `Dynamics.HopfCycle.exists_hopfCycle` wherever `hopfNum ≠ 0` and `τ ≠ 0`, as private
+  evidence); their uniqueness and orbital stability are not proved. The Bautin set `ℓ₁ = 0`
   (second Lyapunov coefficient) is located, not decided.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (the
@@ -35,7 +36,10 @@ Results.
   `ω`, the Hopf surface is `a = M ω² − D ω_q k`, `ω_q b c = −D (ω² + ω_q² k²)` (`hopfA`, `hopfB`,
   `Model.hopf_relations`).
 * The critical pair `hopfQ = (ω_q k + iω, iω (ω_q k + iω), ω_q c)`, `hopfP` (the left eigenvector
-  `((D + iMω)(ω_q k + iω), M (ω_q k + iω), b)` normalised).
+  `((D + iMω)(ω_q k + iω), M (ω_q k + iω), b)` normalised), with the eigen-relations of the droop
+  Jacobian on the Hopf surface (`hopf_right`, `hopf_leftY`, `hopf_dotYQ`, `hopfN0_ne`, `hopf_det`,
+  `hopf_det2`, for every datum; also read by
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualHopf.lean`).
 * **`ℓ₁ = hopfNum/hopfDen`** (`hopf_isCriticalPair_firstLyapunov` for every field with the
   droop Jacobian data and these derivatives; `Model.hopf_data` on the model), with
   `hopfDen = 4 c² ω³ (D + M ω_q k)((D + M ω_q k)² + M² ω²)((D + M ω_q k)² + 4 M² ω²) > 0` and
@@ -59,6 +63,12 @@ No new family: connection conclusions on `QVDroop.family`.
 Corrections and limits.
 * Located, not decided: the Bautin set (needs the second Lyapunov coefficient), the double zero
   `C = G = 0` (Bogdanov–Takens) and the cusp set (`QVDroopFold`).
+* Hopf cycles (`QVDroopHopfCycle`): along the damping, `μ = D − D_H`, the transversality
+  coefficient is `τ = −T/(A² + M² ω²)`, `T = P_δ + 2 D ω_q K + M ω_q² K²`, negative for `K ≥ 0`
+  (in particular in the physical range with `E* > 0`), zero only where `K < 0`; for
+  `hopfNum ≠ 0`, `T ≠ 0` nonconstant periodic orbits with `κμ/8 ≤ ‖critπ p z‖² ≤ 8κμ` exist on
+  the side `sign μ = sign κ = sign (T · hopfNum)`. Not proved: uniqueness, orbital stability,
+  cycles at the Bautin set or where `τ = 0`.
 -/
 
 noncomputable section
@@ -1182,7 +1192,9 @@ abbrev hopfJ (M D ω w k c : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 variable {M D ω w k c μ : ℝ}
 
-@[tmio M, powerlib_domain] private theorem hopf_right (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
+/-- The critical right eigenvector of the droop Jacobian on the Hopf surface:
+`J hopfQ = iω hopfQ` (`M, ω_q, c ≠ 0`). -/
+@[tmio M, powerlib_domain] theorem hopf_right (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
     Linear.complexify (hopfJ M D ω w k c) *ᵥ hopfQ ω w k c = ((w : ℂ) * I) • hopfQ ω w k c := by
   ext i; fin_cases i
   all_goals simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three, droopJacobian, hopfQ, hopfA,
@@ -1191,7 +1203,9 @@ variable {M D ω w k c μ : ℝ}
   all_goals (try refine ⟨?_, ?_⟩)
   all_goals (field_simp; try ring)
 
-@[tmio M, powerlib_domain] private theorem hopf_leftY (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
+/-- The unnormalised conjugate left eigenvector of the droop Jacobian on the Hopf surface:
+`Jᵀ hopfY = iω hopfY` (`M, ω_q, c ≠ 0`). -/
+@[tmio M, powerlib_domain] theorem hopf_leftY (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
     (Linear.complexify (hopfJ M D ω w k c))ᵀ *ᵥ hopfY M D ω w k c =
       ((w : ℂ) * I) • hopfY M D ω w k c := by
   ext i; fin_cases i
@@ -1201,7 +1215,8 @@ variable {M D ω w k c μ : ℝ}
   all_goals (try refine ⟨?_, ?_⟩)
   all_goals (field_simp; try ring)
 
-@[tmio M, powerlib_domain] private theorem hopf_dotYQ (hω : ω ≠ 0) (hc : c ≠ 0) :
+/-- The pairing of the critical eigenvectors: `hopfY · hopfQ = hopfN0`. -/
+@[tmio M, powerlib_domain] theorem hopf_dotYQ (hω : ω ≠ 0) (hc : c ≠ 0) :
     hopfY M D ω w k c ⬝ᵥ hopfQ ω w k c = hopfN0 M D ω w k := by
   simp [dotProduct, Fin.sum_univ_three, hopfY, hopfQ, hopfN0, hopfB, Complex.ext_iff,
     -Complex.ofReal_mul, -Complex.ofReal_div, -Complex.ofReal_pow, -Complex.ofReal_neg,
@@ -1209,7 +1224,9 @@ variable {M D ω w k c μ : ℝ}
   all_goals (try refine ⟨?_, ?_⟩)
   all_goals (field_simp; try ring)
 
-@[tmio M, powerlib_domain] private theorem hopfN0_ne (hw : 0 < w) (hL : 0 < hopfL M D ω k) :
+/-- The normalisation `hopfN0 = 2iω (ω_q k + iω)(D + M ω_q k + iMω)` is nonzero for `ω > 0`,
+`L = D + M ω_q k > 0`. -/
+@[tmio M, powerlib_domain] theorem hopfN0_ne (hw : 0 < w) (hL : 0 < hopfL M D ω k) :
     hopfN0 M D ω w k ≠ 0 := by
   have e : hopfN0 M D ω w k = (2 * (w : ℂ) * I) * (((ω * k : ℝ) : ℂ) + (w : ℂ) * I) *
       (((D + M * k * ω : ℝ) : ℂ) + ((M * w : ℝ) : ℂ) * I) := by
@@ -1222,7 +1239,8 @@ variable {M D ω w k c μ : ℝ}
   · intro h; have := congrArg Complex.im h; simp at this; exact hw.ne' this
   · intro h; have := congrArg Complex.re h; simp [hopfL] at this hL; linarith
 
-@[tmio M, powerlib_domain] private theorem hopf_det (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
+/-- The determinant of the droop Jacobian on the Hopf surface: `det J = −ω² L/M`. -/
+@[tmio M, powerlib_domain] theorem hopf_det (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
     (Linear.complexify (hopfJ M D ω w k c)).det =
       ((-(w ^ 2 * hopfL M D ω k / M) : ℝ) : ℂ) := by
   rw [Matrix.det_fin_three]
@@ -1232,7 +1250,8 @@ variable {M D ω w k c μ : ℝ}
   field_simp
   ring
 
-@[tmio M, powerlib_domain] private theorem hopf_det2 (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
+/-- The determinant of `2iω − J` on the Hopf surface: `−3ω² L/M − 6ω³ i`. -/
+@[tmio M, powerlib_domain] theorem hopf_det2 (hM : M ≠ 0) (hω : ω ≠ 0) (hc : c ≠ 0) :
     (shift2 (Linear.complexify (hopfJ M D ω w k c)) w).det =
       ((-(3 * w ^ 2 * hopfL M D ω k / M)) : ℝ) + ((-6 * w ^ 3 : ℝ) : ℂ) * I := by
   rw [shift2, Matrix.det_fin_three]
@@ -1373,21 +1392,6 @@ cleared pairing numerators. -/
   field_simp
   linear_combination (-1 : ℝ) * key
 
-/-- Conjugating a left eigenvector of a real matrix. -/
-@[tmio T, powerlib_foundation] private theorem conj_left {A : Matrix (Fin 3) (Fin 3) ℝ}
-    {y : Fin 3 → ℂ} {z ν : ℂ} (h : (Linear.complexify A)ᵀ *ᵥ y = ν • y) :
-    (Linear.complexify A)ᵀ *ᵥ (fun j => starRingEnd ℂ (y j) / z) =
-      starRingEnd ℂ ν • (fun j => starRingEnd ℂ (y j) / z) := by
-  ext j
-  have hj := congrArg (starRingEnd ℂ) (congrFun h j)
-  simp only [Matrix.mulVec, dotProduct, Pi.smul_apply, smul_eq_mul, map_add, map_mul,
-    Fin.sum_univ_three, Matrix.transpose_apply, Linear.complexify, Matrix.map_apply,
-    Complex.coe_algebraMap, Complex.conj_ofReal] at hj ⊢
-  rw [show ((A 0 j : ℂ) * (starRingEnd ℂ (y 0) / z) + (A 1 j : ℂ) * (starRingEnd ℂ (y 1) / z) +
-      (A 2 j : ℂ) * (starRingEnd ℂ (y 2) / z)) = ((A 0 j : ℂ) * starRingEnd ℂ (y 0) +
-      (A 1 j : ℂ) * starRingEnd ℂ (y 1) + (A 2 j : ℂ) * starRingEnd ℂ (y 2)) / z by ring, hj]
-  ring
-
 /-- **The Hopf point algebra.** A field whose Jacobian, second and third derivatives at `x₀` are
 the droop-loop data on the Hopf surface (`a = M ω² − D ω_q k`, `b = −D(ω² + ω_q² k²)/(ω_q c)`,
 `M, ω_q, ω > 0`, `c ≠ 0`, `L = D + M ω_q k > 0`) and that vanishes at `x₀` has the critical pair
@@ -1415,7 +1419,7 @@ the droop-loop data on the Hopf surface (`a = M ω² − D ω_q k`, `b = −D(ω
   refine ⟨⟨h0, hw, ?_, ?_, ?_⟩, ?_⟩
   · rw [hJ]; exact hopf_right hM.ne' hω.ne' hc
   · rw [hJ]
-    have h := conj_left (z := starRingEnd ℂ (hopfN0 M D ω w k))
+    have h := transpose_mulVec_conj_div (z := starRingEnd ℂ (hopfN0 M D ω w k))
       (hopf_leftY (D := D) (w := w) (k := k) hM.ne' hω.ne' hc)
     have e : starRingEnd ℂ ((w : ℂ) * I) = -((w : ℂ) * I) := by simp
     rw [e] at h
@@ -1578,13 +1582,6 @@ the model. -/
   push_cast
   ring
 
-/-- The roots of `s + λ` lie in the open left half plane for `λ > 0`. -/
-@[tmio T, powerlib_foundation] private theorem lin_hurwitz {l : ℝ} (hl : 0 < l) (s : ℂ)
-    (hs : (Polynomial.X + Polynomial.C (l : ℂ)).eval s = 0) : s.re < 0 := by
-  simp only [eval_add, eval_X, eval_C] at hs
-  have : s = -(l : ℂ) := by linear_combination hs
-  rw [this]; simp; exact hl
-
 /-- **The sign law of `ℓ₁`.** At a Hopf point with `M, D, ω_q > 0`, `E* ≠ 0`, the first Lyapunov
 coefficient of every critical pair has the sign of `hopfNum` at the data of the point
 (`hopfDen > 0`; `NormalForm.LyapunovCoefficient.sign_firstLyapunov_eq_of_charpoly`). Static
@@ -1597,7 +1594,7 @@ evidence on the model. -/
   obtain ⟨hw, -, hc, -⟩ := m.hopf_relations hM hD hω h
   have hA := h.2.1
   rw [Dynamics.CenterManifold.sign_firstLyapunov_eq_of_charpoly hchar
-    (lin_hurwitz (div_pos hA hM)) hcp hqp, hl]
+    (re_neg_of_eval_X_add_C (div_pos hA hM)) hcp hqp, hl]
   have hL : 0 < hopfL m.q.M m.q.D m.q.ωq (m.q.gain m.δ (m.q.emf m.Qf)) := by
     have : hopfL m.q.M m.q.D m.q.ωq (m.q.gain m.δ (m.q.emf m.Qf)) =
         m.q.routhTrace m.δ (m.q.emf m.Qf) := by simp only [hopfL, routhTrace]; ring
@@ -1626,7 +1623,8 @@ evidence on the model. -/
   have hs := m.sign_firstLyapunov_hopf hM hD hω hE h hcp
   rw [sign_pos hN, sign_eq_one_iff] at hs
   exact Dynamics.CenterManifold.unstable_of_firstLyapunov_pos_of_charpoly
-    (m.contDiff_field (k := 1)) m.analyticAt_field hcp hchar (lin_hurwitz (div_pos h.2.1 hM)) hs
+    (m.contDiff_field (k := 1)) m.analyticAt_field hcp hchar
+    (re_neg_of_eval_X_add_C (div_pos h.2.1 hM)) hs
 
 /-- **A supercritical Hopf point is locally asymptotically stable.** For `M, D, ω_q > 0`,
 `E* ≠ 0`, a Hopf point with `hopfNum < 0` is locally asymptotically stable
@@ -1642,7 +1640,8 @@ locally exponentially stable (`G = 0`, `mem_den_locallyExponentiallyStable_iff`)
   have hs := m.sign_firstLyapunov_hopf hM hD hω hE h hcp
   rw [sign_neg hN, sign_eq_neg_one_iff] at hs
   exact Dynamics.CenterManifold.localAsymptoticStable_of_firstLyapunov_neg_of_charpoly
-    (m.contDiff_field (k := 1)) m.analyticAt_field hcp hchar (lin_hurwitz (div_pos h.2.1 hM)) hs
+    (m.contDiff_field (k := 1)) m.analyticAt_field hcp hchar
+    (re_neg_of_eval_X_add_C (div_pos h.2.1 hM)) hs
 
 /-! ## The complete local asymptotic and Lyapunov denotations -/
 

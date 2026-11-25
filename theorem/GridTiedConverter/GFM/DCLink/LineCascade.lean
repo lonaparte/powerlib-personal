@@ -90,9 +90,21 @@ Family and connection conclusions.
   points are unstable (`Line.VSM.mem_den_unstable_of_fold_of_ne`) — and the Bautin-type points
   `𝔅_δ = 0` of the Hopf boundary.
 
-Not decided here: Lyapunov stability for `I_s = 0` (the DC voltage is a line of equilibria and
-the node does not contract; it is Lyapunov stable when `∫ (P_e − P_e*) dt` stays small along the
-drive, which the library does not state).
+* **A constant-power source, `I_s = 0`** (the DC voltage is a line of equilibria, the node does
+  not contract; it integrates the power mismatch, `C V V̇ = P(x*) − P(y)`):
+  `LineCascade.mem_den_lyapunovStable_of_Is_eq_zero` (regular, balanced, line-VSM Routh: Lyapunov
+  stable, by the drive–node law `Dynamics.lyapunovStable_cascade_of_exponential` — the AC part is
+  locally exponentially stable and `|V − V*| = O(‖x₀ − x*‖)`; never locally asymptotically stable)
+  and the exact decision off the line-VSM Routh boundary,
+  `LineCascade.mem_den_lyapunovStable_iff_of_offBoundary_of_Is_eq_zero` (Lyapunov stable iff
+  balanced and Routh).
+
+Not decided here: Lyapunov stability for `I_s = 0` on the line-VSM Routh boundary. There the AC
+part is at best asymptotically, not exponentially, stable (Hopf points with `𝔅_δ > 0`), the drive
+error need not be integrable in time, and the DC voltage moves by
+`∫ (P(x*) − P(y(t))) dt/(C V)`: deciding it needs the averaged drift of `P` along the slowly
+decaying critical oscillation (its mean quadratic part on the centre manifold), which the library
+does not state.
 -/
 
 noncomputable section
@@ -633,7 +645,8 @@ fold `K = 0` and its Bautin-type points `𝔅_δ = 0`). -/
 within regular parameters the operating point is Lyapunov stable iff it is balanced, its AC part
 is a Lyapunov stable member of `Line.VSM.family`, and `I_s/(C V*) < 0`
 (`Dynamics.lyapunovStable_cascade`, `Dynamics.lyapunovStable_drive_of_cascade`). For `I_s = 0` the
-DC voltage is a line of equilibria and the node does not contract; that case is not decided. -/
+DC voltage is a line of equilibria and the node does not contract: that case is decided off the
+line-VSM Routh boundary by `mem_den_lyapunovStable_iff_of_offBoundary_of_Is_eq_zero`. -/
 @[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff_vsm (m : Model) (h : m.Regular)
     (hI : m.g.Is ≠ 0) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
@@ -663,6 +676,115 @@ DC voltage is a line of equilibria and the node does not contract; that case is 
     rw [← proj54_point] at hvsm
     exact Dynamics.lyapunovStable_cascade Dynamics.norm_incl45 Dynamics.norm_proj54_le
       Dynamics.norm_sub_incl45_proj54_le (proj54_field m) hρ hc hL hnode hvsm
+
+/-! ## A constant-power source: the DC voltage integrates the power mismatch -/
+
+/-- **The DC node is slaved to the drive for a constant-power source.** At a regular balanced
+point with `I_s = 0`, near the operating point `|V̇| ≤ L ‖π y − π x‖`, `π` the AC coordinates:
+`C V V̇ = P(x*) − P(y)` with `P` Lipschitz near the operating point and `|V| ≥ |V*|/2`. -/
+@[tmio M, powerlib_domain] private theorem exists_node_bound (m : Model) (h : m.Regular)
+    (hb : m.Balanced) (hI : m.g.Is = 0) :
+    ∃ ρ L : ℝ, 0 < ρ ∧ 0 ≤ L ∧ ∀ y : State 5, ‖y - m.point‖ < ρ →
+      ‖m.g.field m.g.Pref y - Dynamics.incl45 (Dynamics.proj54 (m.g.field m.g.Pref y))‖ ≤
+        L * ‖Dynamics.proj54 y - Dynamics.proj54 m.point‖ := by
+  obtain ⟨hV, -, -, hC, -⟩ := h
+  set Pv : State 4 → ℝ := fun v => m.g.power (v 0) (v 2) (v 3) with hPv
+  have hPc : ContDiff ℝ 1 Pv := by
+    simp only [hPv, Line.Network.power_eq]
+    fun_prop
+  obtain ⟨K, t, ht, hK⟩ := (hPc.contDiffAt (x := Dynamics.proj54 m.point)).exists_lipschitzOnWith
+  obtain ⟨ρP, hρP, hball⟩ := Metric.mem_nhds_iff.mp ht
+  have hVa : 0 < |m.V| := abs_pos.mpr hV
+  have hCV : 0 < |m.g.C * m.V| := abs_pos.mpr (mul_ne_zero hC hV)
+  refine ⟨min (|m.V| / 2) ρP, 2 * K / |m.g.C * m.V|, by positivity, by positivity,
+    fun y hy => ?_⟩
+  rw [Dynamics.norm_sub_incl45_proj54]
+  have hf4 : m.g.field m.g.Pref y 4 =
+      GFL.DCLink.nodeRate m.g.C m.g.Is (m.g.Ps - m.g.power (y 0) (y 2) (y 3)) (y 4) := by
+    simp [DynamicLine.field]
+  rw [hf4]
+  have hab : |y 4 - m.V| < |m.V| / 2 := by
+    have := (Dynamics.abs_coord_sub_le m.point y 4).trans_lt (hy.trans_le (min_le_left _ _))
+    simpa [Model.point, DynamicLine.point] using this
+  have hmem : ∀ z, ‖z - Dynamics.proj54 m.point‖ < ρP → z ∈ t := fun z hz =>
+    hball (by rw [Metric.mem_ball, dist_eq_norm]; exact hz)
+  have hyP : ‖Dynamics.proj54 y - Dynamics.proj54 m.point‖ < ρP := by
+    rw [← map_sub]
+    exact (Dynamics.norm_proj54_le _).trans_lt (hy.trans_le (min_le_right _ _))
+  have hdP := hK.dist_le_mul (Dynamics.proj54 y) (hmem _ hyP) (Dynamics.proj54 m.point)
+    (hmem _ (by rw [sub_self, norm_zero]; exact hρP))
+  rw [Real.dist_eq, dist_eq_norm] at hdP
+  have hPy : Pv (Dynamics.proj54 y) = m.g.power (y 0) (y 2) (y 3) := by
+    simp [hPv, Dynamics.proj54]
+  have hPx : Pv (Dynamics.proj54 m.point) = m.g.Ps := by
+    have h2 := hb.2
+    rw [hI, zero_mul, add_zero] at h2
+    rw [h2]
+    simp [hPv, Dynamics.proj54, Model.point, DynamicLine.point, Line.Network.qssPower]
+  rw [hPy, hPx, abs_sub_comm] at hdP
+  set d := ‖Dynamics.proj54 y - Dynamics.proj54 m.point‖ with hd
+  set N := m.g.Ps - m.g.power (y 0) (y 2) (y 3) with hN
+  have hy4 : |m.V| / 2 ≤ |y 4| := by
+    have := abs_add_le (y 4 - m.V) m.V
+    rw [sub_add_cancel] at this
+    have := abs_sub_abs_le_abs_sub m.V (y 4)
+    rw [abs_sub_comm] at this
+    linarith
+  have hCy : |m.g.C * m.V| / 2 ≤ |m.g.C * y 4| := by
+    rw [abs_mul, abs_mul, mul_div_assoc]
+    exact mul_le_mul_of_nonneg_left hy4 (abs_nonneg _)
+  have hCy0 : 0 < |m.g.C * m.V| / 2 := by positivity
+  rw [GFL.DCLink.nodeRate, hI, zero_add]
+  calc |N / y 4 / m.g.C| = |N| / |m.g.C * y 4| := by
+        rw [abs_div, abs_div, abs_mul, div_div, mul_comm |y 4|]
+    _ ≤ |N| / (|m.g.C * m.V| / 2) := div_le_div_of_nonneg_left (abs_nonneg _) hCy0 hCy
+    _ ≤ K * d / (|m.g.C * m.V| / 2) := div_le_div_of_nonneg_right hdP hCy0.le
+    _ = 2 * K / |m.g.C * m.V| * d := by field_simp
+
+/-- **A constant-power source behind an exponentially stable line VSM is Lyapunov stable.** At a
+regular balanced point with `I_s = 0` whose line VSM meets its quartic Routh conditions, the
+operating point is Lyapunov stable: the AC part is locally exponentially stable and the DC
+voltage, which integrates the power mismatch `P(x*) − P(y)`, moves by `O(‖x₀ − x*‖)`
+(`Dynamics.lyapunovStable_cascade_of_exponential`). It is not locally asymptotically stable
+(`not_mem_den_locallyAsymptoticallyStable_of_Is_eq_zero`: the DC voltage is a line of
+equilibria). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_Is_eq_zero (m : Model)
+    (h : m.Regular) (hb : m.Balanced) (hI : m.g.Is = 0) (hR : m.toVSM.Routh) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
+  change LyapunovStable _ _
+  have heq := (m.field_point_eq_zero_iff h).mpr hb
+  have hdrive0 : m.toVSM.g.field m.toVSM.point = 0 := by
+    rw [← proj54_point, ← proj54_field, heq, map_zero]
+  have hles : LocallyExponentiallyStable m.toVSM.g.field m.toVSM.point :=
+    hurwitz_linearization_locally_exponentially_stable m.toVSM.jac m.toVSM.g.contDiff_field
+      hdrive0 m.toVSM.fderiv_point
+      ((Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
+        m.toVSM.det_characteristicMatrix).mpr hR)
+  obtain ⟨ρ, L, hρ, hL, hnode⟩ := exists_node_bound m h hb hI
+  rw [← proj54_point] at hles
+  exact Dynamics.lyapunovStable_cascade_of_exponential Dynamics.norm_incl45
+    Dynamics.norm_proj54_le Dynamics.norm_sub_incl45_proj54_le (proj54_field m) hρ hL hnode hles
+
+/-- **Exact Lyapunov stability for a constant-power source off the line-VSM Routh boundary.**
+Within regular parameters, with `I_s = 0` and the line VSM meeting its quartic Routh conditions or
+violating them strictly, the operating point is Lyapunov stable iff it is balanced and the line
+VSM meets its Routh conditions (`mem_den_lyapunovStable_of_Is_eq_zero`; necessity
+`closedRouth_of_mem_den_lyapunovStable`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff_of_offBoundary_of_Is_eq_zero
+    (m : Model) (h : m.Regular) (hoff : m.toVSM.Routh ∨ m.toVSM.RouthViolation)
+    (hI : m.g.Is = 0) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔ m.Balanced ∧ m.toVSM.Routh) := by
+  unfold TMIO.Statement
+  constructor
+  · intro hs
+    obtain ⟨hb, hv, -⟩ := closedRouth_of_mem_den_lyapunovStable m h hs
+    exact ⟨hb, hoff.resolve_right hv⟩
+  · rintro ⟨hb, hR⟩
+    have hl := mem_den_lyapunovStable_of_Is_eq_zero m h hb hI hR
+    unfold TMIO.Statement at hl
+    exact hl
 
 end LineCascade
 

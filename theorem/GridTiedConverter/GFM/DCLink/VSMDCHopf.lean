@@ -28,12 +28,15 @@ Results.
   so its forms at the point are those of the surrogate (`NormalForm.LyapunovCoefficient.biRidge`
   laws): `hopfModel_bilinC` (`B(u, w) = (0, 0, (A/C)(u₀w₂ + u₂w₀) − (2I_s/C) u₂w₂, 0)`),
   `hopfModel_trilinC` (`C(u, w, z) = (0, (A/M) u₀w₀z₀, (A/C) u₀w₀z₀ − (2A/C)(u₀w₂z₂ + u₂w₀z₂ +
-  u₂w₂z₀) + (6I_s/C) u₂w₂z₂, 0)`), `hopfModel_jacobianC` (the Jacobian of `VSMDC.lean`).
+  u₂w₂z₀) + (6I_s/C) u₂w₂z₂, 0)`), `hopfModel_fderiv` (the derivative is `hopfJac`, the
+  Jacobian of `VSMDC.lean` on the slice), `hopfModel_jacobianC`.
 * `hopfSup := hopfModel 1 1 1 1 (−1) 1 1`: characteristic polynomial `(s² + 1)(s + 1)²`
   (`hopfSup_charpoly`; `a₃ = 2`, `a₂ = 2`, `a₁ = 2`, `a₀ = 1`, on the Hopf boundary
-  `a₃ a₂ a₁ = a₁² + a₃² a₀ = 8`), critical pair `q = (1 − i, 1 + i, i, 1)`
-  (`hopfSup_isCriticalPair`), `ℓ₁ = −1/25` (`hopfSup_firstLyapunov`): supercritical.
-* `hopfSub := hopfModel 2 2 2 2 (−1/2) 2 (1/2)`: `(s² + 1)(s² + 5s/4 + 1/4)` (`hopfSub_charpoly`),
+  `a₃ a₂ a₁ = a₁² + a₃² a₀ = 8`; the other roots `hopfSup_r_roots`), critical pair
+  `q = (1 − i, 1 + i, i, 1)` (`hopfSup_isCriticalPair`), `ℓ₁ = −1/25` (`hopfSup_firstLyapunov`):
+  supercritical.
+* `hopfSub := hopfModel 2 2 2 2 (−1/2) 2 (1/2)`: `(s² + 1)(s² + 5s/4 + 1/4)` (`hopfSub_charpoly`,
+  `hopfSub_r_roots`),
   `q = (1 − i/4, 1/4 + i, i, 1)` (`hopfSub_isCriticalPair`), `ℓ₁ = 8/85`
   (`hopfSub_firstLyapunov`): subcritical.
 * Both are balanced with `V* = 1` and meet neither requirement (`hopfSup_not_meets`,
@@ -49,6 +52,11 @@ Family and connection conclusions.
   requirements, none, and differ). With `theorem/GridTiedConverter/GFM/DCLink/VSMDCBoundary.lean`
   the Lyapunov, local asymptotic and instability sentences of the VSM–DC family (`V* ≠ 0`) are
   decided off the Routh boundary and inexpressible on it; local exponential stability is exact.
+* The bifurcating cycles at the two witnesses (unfolded in the damping, transversality
+  `τ = −1/2` at `hopfSup`, `τ = −1/4` at `hopfSub`; supercritical cycles for damping just below
+  the boundary, subcritical ones just above, all in `V > 0`) are private evidence of
+  `theorem/GridTiedConverter/GFM/DCLink/VSMDCHopfCycle.lean`; their uniqueness and orbital
+  stability are not proved.
 -/
 
 noncomputable section
@@ -208,11 +216,16 @@ def hopfSurrogate : State 4 → State 4 :=
   · ring
   · ring
 
-/-- The Jacobian of the translated field at the point (`Params.jacobian` of `VSMDC.lean`). -/
-@[tmio M, powerlib_domain] theorem Model.hopfModel_jacobianC :
-    jacobianC (hopfModel M D C A Is Kp Ki).field 0 =
-      (!![0, 1, 0, 0; -A / M, -D / M, Kp / M, Ki / M; -A / C, 0, Is / C, 0; 0, 0, 1, 0] :
-        Matrix (Fin 4) (Fin 4) ℝ).map (fun x => (x : ℂ)) := by
+/-- The Jacobian of the slice at the point,
+`[[0, 1, 0, 0], [−A/M, −D/M, K_p/M, K_i/M], [−A/C, 0, I_s/C, 0], [0, 0, 1, 0]]`. -/
+def hopfJac : Matrix (Fin 4) (Fin 4) ℝ :=
+  !![0, 1, 0, 0; -A / M, -D / M, Kp / M, Ki / M; -A / C, 0, Is / C, 0; 0, 0, 1, 0]
+
+/-- The derivative of the translated field at the point (`Params.jacobian` of `VSMDC.lean` on the
+slice). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.hopfModel_fderiv :
+    fderiv ℝ (hopfModel M D C A Is Kp Ki).field 0 =
+      Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (hopfJac M D C A Is Kp Ki) := by
   set m := hopfModel M D C A Is Kp Ki
   have hV : m.p.Vref ≠ 0 := by simp [m, hopfModel]
   have h1 : HasFDerivAt (fun z : State 4 => z + m.point) (ContinuousLinearMap.id ℝ _) 0 :=
@@ -223,10 +236,19 @@ def hopfSurrogate : State 4 → State 4 :=
     have h := h2.comp (0 : State 4) h1
     rw [zero_add] at h
     exact h
-  rw [jacobianC, hF.fderiv, cmat_toEuclideanCLM]
+  rw [hF.fderiv]
+  congr 1
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [m, hopfModel, Params.jacobian, Model.point, Plant.k, Plant.nodeSlope, Plant.Pe]
+    simp [m, hopfModel, hopfJac, Params.jacobian, Model.point, Plant.k, Plant.nodeSlope,
+      Plant.Pe]
+
+/-- The Jacobian of the translated field at the point (`Params.jacobian` of `VSMDC.lean`). -/
+@[tmio M, powerlib_domain] theorem Model.hopfModel_jacobianC :
+    jacobianC (hopfModel M D C A Is Kp Ki).field 0 =
+      (!![0, 1, 0, 0; -A / M, -D / M, Kp / M, Ki / M; -A / C, 0, Is / C, 0; 0, 0, 1, 0] :
+        Matrix (Fin 4) (Fin 4) ℝ).map (fun x => (x : ℂ)) := by
+  rw [jacobianC, Model.hopfModel_fderiv, cmat_toEuclideanCLM, hopfJac]
 
 /-- The translated field vanishes at the point (a balanced point with `V* = 1`). -/
 @[tmio M, powerlib_domain] theorem Model.hopfModel_field_zero :
@@ -310,7 +332,8 @@ evidence on the model. -/
     Criteria.principalMinorSum3Fin4, Criteria.det_fin_four]
   ring
 
-@[tmio M, powerlib_domain] private theorem hopfSup_r_roots (s : ℂ)
+/-- The other roots of `hopfSup`, `s = −1` (double), lie in the open left half-plane. -/
+@[tmio M, powerlib_domain] theorem hopfSup_r_roots (s : ℂ)
     (h : (X ^ 2 + Polynomial.C 2 * X + Polynomial.C (1 : ℂ)).eval s = 0) : s.re < 0 := by
   simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at h
   have h' : (s + 1) ^ 2 = 0 := by linear_combination h
@@ -427,7 +450,8 @@ Static evidence on the model. -/
     Criteria.principalMinorSum3Fin4, Criteria.det_fin_four]
   ring
 
-@[tmio M, powerlib_domain] private theorem hopfSub_r_roots (s : ℂ)
+/-- The other roots of `hopfSub`, `s = −1, −1/4`, lie in the open left half-plane. -/
+@[tmio M, powerlib_domain] theorem hopfSub_r_roots (s : ℂ)
     (h : (X ^ 2 + Polynomial.C (5 / 4) * X + Polynomial.C (1 / 4 : ℂ)).eval s = 0) :
     s.re < 0 := by
   simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at h

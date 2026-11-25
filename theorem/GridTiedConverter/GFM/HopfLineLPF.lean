@@ -16,15 +16,20 @@ Model boundary.
   `s³ + a₄ s² + (a₃ − ω²) s + (a₂ − a₄ ω²)` is Hurwitz; this is the boundary `Δ₄ = 0` of the
   quintic Routh region of `Line.VSMLPF.family` with a simple pair `±iω`.
 * Level: Lyapunov instability and local asymptotic stability (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`) of the operating point. Not stated: the bifurcating cycles (their
-  existence is the generic `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the
-  transversality `τ ≠ 0`, instantiated only for `VSMLPF` in `VSMLPFHopfCycle`; for this model the
-  transversality computation and the instance are missing, and uniqueness and orbital stability
-  are not proved); a closed
-  form of `ℓ₁` for all parameters (the exact real-part numerator in the frame rotated with `δ*`
-  has thousands of terms before the reduction modulo the two frequency relations; open), hence
-  no sign law and no complete local asymptotic membership for this model off the zero-current
-  slice; on the slice `δ* = 0`, `V = E` they are in
+  `LocalAsymptoticStable`) of the operating point. The bifurcating cycles along the damping
+  (the generic `Dynamics.HopfCycle.exists_hopfCycle`, given `ℓ₁ ≠ 0` and the transversality
+  `τ ≠ 0`) are in `theorem/GridTiedConverter/GFM/LineVSMLPFHopfCycle.lean`: the damping family,
+  `τ = −(2/M) Re(conj p₁ q₁)` for every pair, its closed form and sign law on the zero-current
+  slice (no fixed sign: a slice witness with `τ > 0`), its exact values at the two witnesses
+  below (`τ < 0` at both), the inverse-inertia family with its closed form on the slice (the two
+  coefficients never vanish together there) and, as private evidence, the cycles at every slice
+  Hopf point with `ℓ₁ ≠ 0` and at both witnesses (supercritical for `μ < 0`, subcritical for
+  `μ > 0`); uniqueness and orbital stability of the cycles are not proved. The
+  fold `K = 0` (a saddle-node) is in `theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`. Not
+  stated: a closed form of `ℓ₁` (and of `τ`) for all parameters (the exact real-part numerator in
+  the frame rotated with `δ*` has thousands of terms before the reduction modulo the two
+  frequency relations; open), hence no sign law and no complete local asymptotic membership for
+  this model off the zero-current slice; on the slice `δ* = 0`, `V = E` they are in
   `theorem/GridTiedConverter/GFM/HopfLineLPFSlice.lean`.
 
 Source: the four-state laws `theorem/GridTiedConverter/GFM/HopfLineInstability.lean` (same
@@ -49,7 +54,11 @@ Results.
   `D = 21/50`, `ω_c = 7`; `Line.VSMLPF.hopfWitnessSup_isCriticalPair`,
   `Line.VSMLPF.hopfWitnessSup_firstLyapunov`: `ℓ₁ = −14341/14450`) and `Line.VSMLPF.hopfWitness`
   (`R = 1/5`, `ω₀ = 3`, `M = 15000/40501`, `D = 1500/40501`, `ω_c = 20`;
-  `Line.VSMLPF.hopfWitness_isCriticalPair`, `Line.VSMLPF.hopfWitness_firstLyapunov`: `ℓ₁ > 0`).
+  `Line.VSMLPF.hopfWitness_isCriticalPair`, `Line.VSMLPF.hopfWitness_firstLyapunov`: `ℓ₁ > 0`);
+  both are physical, balanced and Hopf points at `ω = 1` (`Line.VSMLPF.hopfWitnessSup_physical`,
+  `Line.VSMLPF.hopfWitnessSup_balanced`, `Line.VSMLPF.hopfWitnessSup_hopfAt`,
+  `Line.VSMLPF.hopfWitness_physical`, `Line.VSMLPF.hopfWitness_balanced`,
+  `Line.VSMLPF.hopfWitness_hopfAt`).
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.VSMLPF.family`.
@@ -337,12 +346,13 @@ def hopfWitnessSup : Model := ⟨⟨⟨⟨1, 1, 1, 1, 1⟩, 7 / 50, 21 / 50, 0�
   ext i
   fin_cases i <;> simp [Model.point, qss, hopfWitnessSup, Network.is, Dynamics.mk3]
 
-@[tmio M, powerlib_domain] private theorem hopfWitnessSup_physical : Meets hopfWitnessSup
-    .physical := by
+/-- The witness `hopfWitnessSup` is physical. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem hopfWitnessSup_physical : Meets hopfWitnessSup .physical := by
   refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩ <;> norm_num [hopfWitnessSup]
 
-@[tmio M, powerlib_domain] private theorem hopfWitnessSup_balanced : Meets hopfWitnessSup
-    .balanced := by
+/-- The witness `hopfWitnessSup` is balanced (`P_ref = 0` at `δ* = 0`). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem hopfWitnessSup_balanced : Meets hopfWitnessSup .balanced := by
   change hopfWitnessSup.g.qssPower hopfWitnessSup.δ = hopfWitnessSup.g.Pref
   norm_num [Network.qssPower, hopfWitnessSup, Network.is, Network.power_eq]
 
@@ -360,7 +370,9 @@ def hopfWitnessSup : Model := ⟨⟨⟨⟨1, 1, 1, 1, 1⟩, 7 / 50, 21 / 50, 0�
         Network.ρ,
       Network.σ, Network.X]
 
-@[tmio M, powerlib_domain] private theorem hopfWitnessSup_hopfAt : hopfWitnessSup.HopfAt 1 := by
+/-- The quintic of `hopfWitnessSup` has a Hopf point at `ω = 1`:
+`(s² + 1)(s³ + 12 s² + 42 s + 50)`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem hopfWitnessSup_hopfAt : hopfWitnessSup.HopfAt 1 := by
   obtain ⟨h4, h3, h2, h1, h0⟩ := hopfWitnessSup_coeffs
   refine ⟨one_pos, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [h4, h3, h2, h1, h0] <;> norm_num
 
@@ -475,10 +487,13 @@ def hopfWitness : Model := ⟨⟨⟨⟨1, 1, 1 / 5, 1, 3⟩, 15000 / 40501, 1500
   ext i
   fin_cases i <;> simp [Model.point, qss, hopfWitness, Network.is, Dynamics.mk3]
 
-@[tmio M, powerlib_domain] private theorem hopfWitness_physical : Meets hopfWitness .physical := by
+/-- The witness `hopfWitness` is physical. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem hopfWitness_physical : Meets hopfWitness .physical := by
   refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩ <;> norm_num [hopfWitness]
 
-@[tmio M, powerlib_domain] private theorem hopfWitness_balanced : Meets hopfWitness .balanced := by
+/-- The witness `hopfWitness` is balanced (`P_ref = 0` at `δ* = 0`). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem hopfWitness_balanced : Meets hopfWitness .balanced := by
   change hopfWitness.g.qssPower hopfWitness.δ = hopfWitness.g.Pref
   norm_num [Network.qssPower, hopfWitness, Network.is, Network.power_eq]
 
@@ -496,7 +511,9 @@ def hopfWitness : Model := ⟨⟨⟨⟨1, 1, 1 / 5, 1, 3⟩, 15000 / 40501, 1500
         Network.ρ,
       Network.σ, Network.X]
 
-@[tmio M, powerlib_domain] private theorem hopfWitness_hopfAt : hopfWitness.HopfAt 1 := by
+/-- The quintic of `hopfWitness` has a Hopf point at `ω = 1` with a Hurwitz cubic cofactor.
+Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem hopfWitness_hopfAt : hopfWitness.HopfAt 1 := by
   obtain ⟨h4, h3, h2, h1, h0⟩ := hopfWitness_coeffs
   refine ⟨one_pos, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [h4, h3, h2, h1, h0] <;> norm_num
 

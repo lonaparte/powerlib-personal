@@ -87,6 +87,15 @@ Results.
   frequency relations; the four-state and the PSC laws are in
   `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean` and
   `theorem/GridTiedConverter/GFM/HopfLinePSC.lean`).
+* The fold `K = 0` of the five-state model (`theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`):
+  the null pair, the fold coefficient `(P(δ*) − c₀)/(2 (D − D_line))` (nonzero off
+  `D = D_line`), `det(sI − J) = s (s⁴ + a₄ s³ + a₃ s² + a₂ s + a₁)` and the degenerate fold
+  points (the Bogdanov–Takens damping `a₁ = 0` and the zero–Hopf points `Δ₃ = 0`).
+* Hopf cycles along the damping and the inverse inertia
+  (`theorem/GridTiedConverter/GFM/LineVSMLPFHopfCycle.lean`): both families, their transversality
+  coefficients in closed form on the zero-current slice (`sign τ_D = −sign 𝔗`, no fixed sign;
+  `sign τ_M = sign 𝔍`; never both zero) and at both witnesses; the cycles at every slice Hopf
+  point with `ℓ₁ ≠ 0` are private evidence (uniqueness and orbital stability not proved).
 
 Family and connection conclusions.
 * `Line.VSMLPF.family`: static requirements `balanced` (`P(δ*) = P_ref`), `physical`
@@ -103,7 +112,9 @@ Family and connection conclusions.
 * `VSMLPF.mem_den_locallyExponentiallyStable_iff`: the exact boundary, for a balanced physical
   model: local exponential stability iff `K > 0` and `Δ₂, Δ₃, Δ₄ > 0` (`Δ₁ = a₄ > 0` always,
   `Δ₅ = a₀ Δ₄`). `VSMLPF.mem_den_unstable_of_K_neg`: `K < 0` makes `a₀ = ω_c ρ K/M` negative,
-  so the full model is unstable whenever its reduction is a saddle.
+  so the full model is unstable whenever its reduction is a saddle. At the fold `K = 0`
+  (`theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`): `VSMLPF.mem_den_unstable_of_fold` and
+  `VSMLPF.mem_den_unstable_of_fold_of_ne` (unstable for `a₁ ≠ 0`, `Δ₃ ≠ 0`: a saddle-node).
 * The phasor model is stable but the full model unstable (connection of `Line.VSMLPF.family` and
   `GFM.VSMLPFLossy.family` through `VSMLPF.Model.toLossy`, scaffold
   `theorem/GridTiedConverter/GFM/Line/LineReduction.agda`): every balanced physical model whose

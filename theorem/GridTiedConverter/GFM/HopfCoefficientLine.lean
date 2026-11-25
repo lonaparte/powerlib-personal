@@ -25,10 +25,11 @@ Model boundary.
   `theorem/GridTiedConverter/GFM/HopfLineScale.lean` (`Line.VSM.Model.exists_atScale_hopf`,
   `Line.VSM.Model.exists_atScale_sign_firstLyapunov`), with the leading coefficient
   `ℓ₁/(|q₀|² ε³) → L₃` (`Line.VSM.Model.exists_atScale_firstLyapunov_div_cube`). The bifurcating
-  cycles are not stated for this model: their existence is the generic
-  `Dynamics.HopfCycle.exists_hopfCycle` (given `ℓ₁ ≠ 0` and the transversality `τ ≠ 0`),
-  instantiated only for `VSMLPF` (`VSMLPFHopfCycle`); here the transversality computation and
-  the instance are missing, and uniqueness and orbital stability are not proved.
+  cycles are `theorem/GridTiedConverter/GFM/LineVSMHopfCycle.lean`: the transversality
+  coefficients along the damping and the inverse inertia at every boundary point in closed form
+  (`sign τ_D = −sign 𝔗`, `sign τ_M = sign 𝔍`, never both zero), and the cycles of
+  `Dynamics.HopfCycle.exists_hopfCycle` at every boundary point with `𝔅_δ ≠ 0` (private
+  evidence); uniqueness and orbital stability of the cycles are not proved.
 
 Source: study note `gfm/t3-bifurcation/REPORT-coord.md` (c, "Subcritical EXISTS: VSM without
 filter on dynamic RL line") and its scripts `s5b_dynline.py`, `s5f_slow_manifold.py` (discovery

@@ -26,7 +26,8 @@ Scope.
 Source: the cascade (drive–node) argument for asymptotic stability, Khalil, *Nonlinear Systems*
 (3rd ed.), §4.9 (Lemma 4.7 and the local input-to-state stability of an exponentially stable
 node); Definitions 4.1 and 4.5; the comparison principle for scalar differential inequalities
-(Mathlib's `image_le_of_deriv_right_lt_deriv_boundary'`).
+(Mathlib's `image_le_of_deriv_right_lt_deriv_boundary'`) and the norm bound by a derivative
+bound (Mathlib's `image_norm_le_of_norm_deriv_right_le_deriv_boundary`).
 
 Results.
 * Scalar comparison: `le_max_of_hasDerivWithinAt_le` (`w' ≤ −a w + b` keeps `w` below
@@ -35,7 +36,10 @@ Results.
 * **Cascade laws.** `lyapunovStable_cascade`: a Lyapunov stable drive at `π x` with a contracting
   node makes `x` Lyapunov stable for `f`; `localAsymptoticStable_cascade`: a locally
   asymptotically stable drive makes `x` locally asymptotically stable (the node's square obeys
-  `w' ≤ −c w + (L²/c) ‖π φ − π x‖²`).
+  `w' ≤ −c w + (L²/c) ‖π φ − π x‖²`). `lyapunovStable_cascade_of_exponential`: a locally
+  exponentially stable drive with a node that need not contract but whose rate is bounded by the
+  drive's distance, `‖Q f(y)‖ ≤ L ‖π y − π x‖` (it vanishes at the drive's equilibrium), makes `x`
+  Lyapunov stable (the node moves by at most `(L C/a) ‖π φ(t₀) − π x‖`).
 * **Converse laws.** `lyapunovStable_drive_of_cascade`, `localAsymptoticStable_drive_of_cascade`:
   if `f` is `C¹` near `x`, `h` is `C¹` near `π x`, and `x` is Lyapunov stable (locally
   asymptotically stable) for `f`, so is `π x` for `h`: a solution of the drive is the projection
@@ -301,6 +305,98 @@ converges, and the node's square obeys `w' ≤ −c w + (L²/c) ‖π φ − π 
     have hq := node_ineq (L := L) (q := ‖(φ t - x) - ι (π (φ t - x))‖)
       (d := ‖π (φ t) - π x‖) hc
     nlinarith
+
+/-- **Cascade with an exponentially stable drive and a slaved node.** If the drive `h` is locally
+exponentially stable at `π x` and, near `x`, the node rate is bounded by the drive's distance,
+`‖Q f(y)‖ ≤ L ‖π y − π x‖` (`Q y = y − ι π y`: the node moves only while the drive is off its
+equilibrium, e.g. a voltage integrating a power mismatch), then `x` is Lyapunov stable for `f`:
+the node moves by at most `(L C/a) ‖π φ(t₀) − π x‖`, `C e^{−a t}` the drive's decay. The node
+need not contract. -/
+@[tmio T, powerlib_foundation] theorem lyapunovStable_cascade_of_exponential (hι : ∀ u, ‖ι u‖ = ‖u‖)
+    (hπ : ∀ y, ‖π y‖ ≤ ‖y‖) (hQ : ∀ y, ‖y - ι (π y)‖ ≤ ‖y‖) (hf : ∀ y, π (f y) = h (π y))
+    {ρ L : ℝ} (hρ : 0 < ρ) (hL : 0 ≤ L)
+    (hnode : ∀ y, ‖y - x‖ < ρ → ‖f y - ι (π (f y))‖ ≤ L * ‖π y - π x‖)
+    (hh : LocallyExponentiallyStable h (π x)) : LyapunovStable f x := by
+  obtain ⟨r, C, a, hr, hC, ha, hexp⟩ := hh
+  intro ε hε
+  set R := min ε ρ with hR
+  have hR0 : 0 < R := lt_min hε hρ
+  set K := 1 + C + L * C / a with hK
+  have hK0 : 0 < K := by positivity
+  refine ⟨min r (R / (2 * K)), by positivity, fun t₀ t₁ φ hφ h0 => ?_⟩
+  set e₀ := ‖φ t₀ - x‖ with he₀
+  set d₀ := ‖π (φ t₀) - π x‖ with hd₀
+  have hd₀e : d₀ ≤ e₀ := by rw [hd₀, ← map_sub]; exact hπ _
+  have hdr : d₀ < r := hd₀e.trans_lt (h0.trans_le (min_le_left _ _))
+  have hdrive : ∀ t ∈ Icc t₀ t₁, ‖π (φ t) - π x‖ ≤ C * Real.exp (-a * (t - t₀)) * d₀ :=
+    hexp t₀ t₁ _ (isIntegralCurveOn_proj_cascade hf hφ) hdr
+  set P : State n →L[ℝ] State n := ContinuousLinearMap.id ℝ (State n) - ι.comp π with hP
+  have hPe : ∀ v, P v = v - ι (π v) := fun v => by simp [hP]
+  have hgd : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt (fun t => (φ t - x) - ι (π (φ t - x)))
+      (f (φ t) - ι (π (f (φ t)))) (Icc t₀ t₁) t := fun t ht => by
+    have hd := P.hasFDerivAt.comp_hasDerivWithinAt t ((hφ t ht).sub_const x)
+    simp only [Function.comp_def, hPe] at hd
+    exact hd
+  have key : ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ < R := by
+    have hK1 : 1 ≤ 2 * K := by
+      have : 0 ≤ L * C / a := by positivity
+      linarith
+    refine forall_norm_sub_lt_of_bootstrap hφ.continuousOn
+      (h0.trans_le ((min_le_right _ _).trans (div_le_self hR0.le hK1))) fun s hs hin => ?_
+    have hg := image_norm_le_of_norm_deriv_right_le_deriv_boundary (a := t₀) (b := s)
+      (f := fun t => (φ t - x) - ι (π (φ t - x))) (f' := fun t => f (φ t) - ι (π (f (φ t))))
+      (B := fun t => ‖(φ t₀ - x) - ι (π (φ t₀ - x))‖ +
+        L * C * d₀ / a * (1 - Real.exp (-a * (t - t₀))))
+      (B' := fun t => L * C * d₀ * Real.exp (-a * (t - t₀)))
+      (fun t ht => (hgd t ⟨ht.1, ht.2.trans hs.2⟩).continuousWithinAt.mono
+        (Icc_subset_Icc le_rfl hs.2))
+      (fun t ht => (hgd t ⟨ht.1, ht.2.le.trans hs.2⟩).mono_of_mem_nhdsWithin
+        (Icc_mem_nhdsGE_of_mem ⟨ht.1, ht.2.trans_le hs.2⟩))
+      (by simp) (fun t => by
+        have he := (((hasDerivAt_id t).sub_const t₀).const_mul (-a)).exp
+        simp only [id_eq, mul_one] at he
+        have h2 := ((he.const_sub 1).const_mul (L * C * d₀ / a)).const_add
+          ‖(φ t₀ - x) - ι (π (φ t₀ - x))‖
+        refine h2.congr_deriv ?_
+        calc L * C * d₀ / a * -(Real.exp (-a * (t - t₀)) * -a)
+            = L * C * d₀ * Real.exp (-a * (t - t₀)) * (a / a) := by ring
+          _ = L * C * d₀ * Real.exp (-a * (t - t₀)) := by rw [div_self ha.ne', mul_one])
+      (fun t ht => by
+        have ht' : t ∈ Icc t₀ s := Ico_subset_Icc_self ht
+        have hn := hnode (φ t) ((hin t ht').trans_le (min_le_right _ _))
+        have hd := hdrive t ⟨ht'.1, ht'.2.trans hs.2⟩
+        calc ‖f (φ t) - ι (π (f (φ t)))‖ ≤ L * ‖π (φ t) - π x‖ := hn
+          _ ≤ L * (C * Real.exp (-a * (t - t₀)) * d₀) := mul_le_mul_of_nonneg_left hd hL
+          _ = L * C * d₀ * Real.exp (-a * (t - t₀)) := by ring) ⟨hs.1, le_rfl⟩
+    have hq0 : ‖(φ t₀ - x) - ι (π (φ t₀ - x))‖ ≤ e₀ := hQ _
+    have hex : 0 < Real.exp (-a * (s - t₀)) := Real.exp_pos _
+    have hLCd : 0 ≤ L * C * d₀ / a := by positivity
+    have hgs : ‖(φ s - x) - ι (π (φ s - x))‖ ≤ e₀ + L * C * d₀ / a := by
+      have : L * C * d₀ / a * (1 - Real.exp (-a * (s - t₀))) ≤ L * C * d₀ / a := by
+        nlinarith
+      linarith [hg]
+    have hds := hdrive s hs
+    have hex1 : Real.exp (-a * (s - t₀)) ≤ 1 :=
+      Real.exp_le_one_iff.mpr (by nlinarith [hs.1])
+    have hCd : C * Real.exp (-a * (s - t₀)) * d₀ ≤ C * e₀ := by
+      have := norm_nonneg (π (φ t₀) - π x)
+      have hC0 : 0 ≤ C := by linarith
+      calc C * Real.exp (-a * (s - t₀)) * d₀ ≤ C * 1 * d₀ := by gcongr
+        _ ≤ C * e₀ := by rw [mul_one]; exact mul_le_mul_of_nonneg_left hd₀e hC0
+    have hsplit : ‖φ s - x‖ ≤ ‖π (φ s) - π x‖ + ‖(φ s - x) - ι (π (φ s - x))‖ := by
+      calc ‖φ s - x‖ = ‖ι (π (φ s - x)) + ((φ s - x) - ι (π (φ s - x)))‖ := by
+            rw [add_sub_cancel]
+        _ ≤ ‖ι (π (φ s - x))‖ + ‖(φ s - x) - ι (π (φ s - x))‖ := norm_add_le _ _
+        _ = ‖π (φ s) - π x‖ + ‖(φ s - x) - ι (π (φ s - x))‖ := by rw [hι, map_sub]
+    have hLd : L * C * d₀ / a ≤ L * C / a * e₀ := by
+      rw [mul_div_right_comm, mul_comm (L * C / a)]
+      exact mul_le_mul_of_nonneg_left hd₀e (by positivity) |>.trans_eq' (by ring)
+    have he : e₀ < R / (2 * K) := h0.trans_le (min_le_right _ _)
+    have hKe : K * e₀ ≤ R / 2 := by
+      have := (lt_div_iff₀ (by positivity : (0 : ℝ) < 2 * K)).mp he
+      nlinarith
+    nlinarith
+  exact fun t ht => (key t ht).trans_le (min_le_left _ _)
 
 /-- A solution of a field `C¹` near a Lyapunov stable point, started near it, that is extended
 for all forward time and stays where the field is the cascade field. -/
