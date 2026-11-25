@@ -303,6 +303,7 @@ import theorem.ParametricResonance.ThirdOrderCore
 import theorem.ParametricResonance.ResonantNormalForm
 import theorem.ParametricResonance.PeriodicAveraging
 import theorem.ParametricResonance.TwoToOneAveraging
+import theorem.ParametricResonance.BlockAveraging
 import theorem.ParametricResonance.TongueQuadratic
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
