@@ -395,6 +395,11 @@ import theorem.Signal.MovingAverage
 import theorem.Signal.Butterworth
 import theorem.Signal.Interpolation
 import theorem.Signal.Detection
+import theorem.Signal.Window
+import theorem.Signal.ButterworthRealization
+import theorem.Signal.Prony
+import theorem.Signal.TimeFrequency
+import theorem.Signal.AntiAliasing
 import theorem.PowerSystem.Synchronous.DampedEAC
 import theorem.PowerSystem.Synchronous.EqualArea
 import theorem.PowerSystem.Synchronous.FaultSequence
