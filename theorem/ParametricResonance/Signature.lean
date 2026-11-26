@@ -1,6 +1,7 @@
 import theorem.Periodic.ForcedRegime
 import theorem.ParametricResonance.Meissner
 import theorem.LTI.StartUp
+import theorem.LTI.StartUpForced
 import theorem.LTI.HarmonicTransfer
 import theorem.LTI.Sampling
 
@@ -76,8 +77,8 @@ Results.
 * `peakToPeak_floquet`, `peakToPeak_floquet_period`, `peakToPeak_floquet_pos`,
   `peakToPeak_floquet_eq_envelope` — `X_{i+1} = |μ| X_i`, `X_i = |μ|ⁱ X₀`, `X₀ > 0`, and the
   natural envelope (3-3) with `σ = ln |μ|/T`.
-* `olsSlope_congr`, `slope_floquet`, `classify_floquet`, `classify_floquet_eq_natural` — the
-  TR-110 slope of a parametric start-up is `ln |μ|`; the verdict is never "forced", is "natural"
+* `slope_floquet` (via `LTI.StartUp.olsSlope_congr`), `classify_floquet`,
+  `classify_floquet_eq_natural` — the TR-110 slope of a parametric start-up is `ln |μ|`; the verdict is never "forced", is "natural"
   iff `ε < ln |μ|`, and equals that of every natural start-up with `σT = ln |μ|`.
 * `frozen_hurwitz` — positive damping and stiffness `ω₀²(1 ± ε)`, `|ε| < 1`: every frozen state
   matrix is Hurwitz.
@@ -520,15 +521,6 @@ positive peak-to-peak value over the first period. -/
     Real.exp_log (abs_pos.mpr hq)]
   ring
 
-/-- The least-squares slope depends only on the data on the index set. -/
-@[tmio T, powerlib_foundation] theorem olsSlope_congr {ι : Type*} {s : Finset ι} {u z z' : ι → ℝ}
-    (h : ∀ i ∈ s, z i = z' i) : olsSlope s u z = olsSlope s u z' := by
-  have he : Finset.expect s z = Finset.expect s z' := Finset.expect_congr rfl h
-  unfold olsSlope
-  rw [he]
-  congr 1
-  exact Finset.sum_congr rfl fun i hi => by rw [h i hi]
-
 /-- **The TR-110 slope of a parametric start-up.** For a continuous Floquet signal with
 `|q| > 1`, not identically zero on the first period, the least-squares slope of the log
 increments of the peak-to-peak values over `i = 1, …, N` (`N ≥ 2`) is `ln |q|`. -/
@@ -555,7 +547,7 @@ increments of the peak-to-peak values over `i = 1, …, N` (`N ≥ 2`) is `ln |q
     have hprev := peakToPeak_floquet_eq_envelope hT hq0 hx (i - 1)
     rw [Nat.cast_sub hi1, Nat.cast_one, sub_add_cancel] at hprev
     rw [peakToPeak_floquet_eq_envelope hT hq0 hx i, hprev]
-  rw [olsSlope_congr hcongr, LTI.StartUp.slope_envelope hT (Or.inl ⟨hX₀, hσ⟩) hN]
+  rw [LTI.StartUp.olsSlope_congr hcongr, LTI.StartUp.slope_envelope hT (Or.inl ⟨hX₀, hσ⟩) hN]
   field_simp
 
 /-- **The start-up classifier on a parametric oscillation.** The verdict is never "forced", and
