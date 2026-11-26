@@ -53,6 +53,8 @@ import theorem.Map.LinearReading
 import theorem.LTI.Oscillator2
 import theorem.LTI.SecondOrderResonance
 import theorem.LTI.BoundedForcing
+import theorem.LTI.StartUp
+import theorem.LTI.HarmonicTransfer
 import theorem.SpecialFunctions.AmplitudePhase
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
@@ -60,6 +62,7 @@ import theorem.SpecialFunctions.Clamp
 import theorem.SpecialFunctions.Elementary
 import theorem.SpecialFunctions.Sinusoid
 import theorem.SpecialFunctions.TrigZeros
+import theorem.SpecialFunctions.PeriodicWaves
 import theorem.PDE.Partial
 import theorem.PDE.Transport
 import theorem.PDE.Heat
@@ -338,6 +341,7 @@ import theorem.Stochastic.RotatingOU
 import theorem.Stochastic.LagLimit
 import theorem.Stochastic.RandomPhase
 import theorem.Stochastic.GaussianExceedance
+import theorem.Signal.CrossSpectrum
 import theorem.PowerSystem.Synchronous.DampedEAC
 import theorem.PowerSystem.Synchronous.EqualArea
 import theorem.PowerSystem.Synchronous.FaultSequence
@@ -365,6 +369,7 @@ import theorem.Numerics.EulerPorts
 import theorem.Passive.PortEuler
 import theorem.GridTiedConverter.GFL.DCLink.PortEuler
 import theorem.PowerSystem.Synchronous.PortEuler
+import theorem.PowerSystem.Synchronous.OscillationPhasor
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

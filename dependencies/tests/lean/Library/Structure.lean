@@ -75,6 +75,10 @@ directly in it) or a single module.
 * `PH`: generic port-Hamiltonian theory, including the mathematical counterexample family of
   `PH/Structure` (a tilted double well) and the lossless LC counterexample of `PH/Observability`;
   concrete component instances are in `Passive/PH/`.
+* `Signal`: signal processing on arbitrary records — sampling and aliasing, single-bin DFTs and
+  cross-spectra, moving averages, Butterworth magnitude laws, interpolation and threshold
+  detection; the grid-code clauses that use them are engineering
+  (`PowerSystem/ForcedOscillation`).
 * `Spectral`: the spectral family template, parametrized by an arbitrary model type.
 * `Stack`: the four-layer stack of models, implementations and records over arbitrary families. -/
 def genericEntries : Array Name := #[
@@ -87,8 +91,8 @@ def genericEntries : Array Name := #[
   `theorem.PowerSystem.Network.Synchronization, `theorem.PowerSystem.Network.WeightedLaplacian,
   `theorem.Nonlinear, `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH,
   `theorem.ParametricResonance, `theorem.Periodic, `theorem.PhasePlane, `theorem.Port,
-  `theorem.Potential, `theorem.SingularPerturbation, `theorem.SpecialFunctions, `theorem.Spectral,
-  `theorem.Stack, `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
+  `theorem.Potential, `theorem.Signal, `theorem.SingularPerturbation, `theorem.SpecialFunctions,
+  `theorem.Spectral, `theorem.Stack, `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
   `theorem.generated.ImpedanceInterconnection]
 
 /-- Engineering models of power electronics and power systems: model families, their connection
