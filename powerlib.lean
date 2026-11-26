@@ -212,6 +212,7 @@ import theorem.GridTiedConverter.GFM.VoltageModulationQVLink
 import theorem.GridTiedConverter.GFM.VoltageModulationQVHopf
 import theorem.GridTiedConverter.GFM.VoltageModulationQVFilter
 import theorem.GridTiedConverter.GFM.VoltageModulationQVNetwork
+import theorem.GridTiedConverter.GFM.VoltageModulationQVNetworkHopf
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber

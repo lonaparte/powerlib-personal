@@ -33,7 +33,8 @@ Results.
   explicit conditions.
 * `rhoEff`, `gV_compact`, `gV_hopf` — `g_V = −ω₀ω_c(τjΩ + b)ρ_eff/(2H·2jΩ(q − τΩ² + jpΩ))`.
 * `fderiv_comb`, `dδ_comb`, `dE_comb`, `dV_comb`, `lossyP`, `lossyQ`, `lossy_zero_R`,
-  `contDiff_lossyP`, `contDiff_lossyQ`, `lossyCore`, `lossy_partials` — the impedance instance.
+  `contDiff_lossyP`, `contDiff_lossyQ`, `lossyCore`, `lossy_partials`, `lossy_second_partials` —
+  the impedance instance, with all first and second partials in closed form.
 * `orbit_link_hopf_stable`, `orbit_link_hopf_unstable`, `orbit_lossy_hopf_stable`,
   `orbit_lossy_hopf_unstable` — the lossless and lossy links at any operating point.
 
@@ -578,6 +579,37 @@ omit c in
   simp only [eP, eQ, dδ_comb hQ hP, dE_comb hQ hP, dV_comb hQ hP,
     dδ_linkP, dE_linkP, dV_linkP, dδ_linkQ, dE_linkQ, dV_linkQ]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> ring
+
+omit c in
+/-- The second partial derivatives of the impedance port maps, in closed form (`Z² = R² + X²`):
+`P_δδ = EV(R cos δ − X sin δ)/Z²`, `P_δE = V(R sin δ + X cos δ)/Z²`, `P_EE = 2R/Z²`,
+`P_δV = E(R sin δ + X cos δ)/Z²`, `P_EV = (X sin δ − R cos δ)/Z²`,
+`Q_δδ = EV(X cos δ + R sin δ)/Z²`, `Q_δE = V(X sin δ − R cos δ)/Z²`, `Q_EE = 2X/Z²`,
+`Q_δV = E(X sin δ − R cos δ)/Z²`, `Q_EV = −(X cos δ + R sin δ)/Z²`. -/
+@[tmio M, powerlib_domain] theorem lossy_second_partials (R X : ℝ) (q : (ℝ × ℝ) × ℝ) :
+    dδ (dδ (lossyP R X)) q = q.1.2 * q.2 * (R * Real.cos q.1.1 - X * Real.sin q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dE (dδ (lossyP R X)) q = q.2 * (R * Real.sin q.1.1 + X * Real.cos q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dE (dE (lossyP R X)) q = 2 * R / (R ^ 2 + X ^ 2) ∧
+    dV (dδ (lossyP R X)) q = q.1.2 * (R * Real.sin q.1.1 + X * Real.cos q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dV (dE (lossyP R X)) q = (X * Real.sin q.1.1 - R * Real.cos q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dδ (dδ (lossyQ R X)) q = q.1.2 * q.2 * (X * Real.cos q.1.1 + R * Real.sin q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dE (dδ (lossyQ R X)) q = q.2 * (X * Real.sin q.1.1 - R * Real.cos q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dE (dE (lossyQ R X)) q = 2 * X / (R ^ 2 + X ^ 2) ∧
+    dV (dδ (lossyQ R X)) q = q.1.2 * (X * Real.sin q.1.1 - R * Real.cos q.1.1) / (R ^ 2 + X ^ 2) ∧
+    dV (dE (lossyQ R X)) q = -(X * Real.cos q.1.1 + R * Real.sin q.1.1) / (R ^ 2 + X ^ 2) := by
+  have hP := (contDiff_linkP 1 (n := 1)).differentiable (by norm_num)
+  have hQ := (contDiff_linkQ 1 (n := 1)).differentiable (by norm_num)
+  have hPδ : Differentiable ℝ (dδ (linkP 1)) := by rw [dδ_linkP]; fun_prop
+  have hQδ : Differentiable ℝ (dδ (linkQ 1)) := by rw [dδ_linkQ]; fun_prop
+  have hPE : Differentiable ℝ (dE (linkP 1)) := by rw [dE_linkP]; fun_prop
+  have hQE : Differentiable ℝ (dE (linkQ 1)) := by rw [dE_linkQ]; fun_prop
+  have eP : lossyP R X = fun q => (R * linkQ 1 q + X * linkP 1 q) / (R ^ 2 + X ^ 2) := rfl
+  have eQ : lossyQ R X = fun q => (X * linkQ 1 q + -R * linkP 1 q) / (R ^ 2 + X ^ 2) := rfl
+  simp only [eP, eQ, dδ_comb hQ hP, dE_comb hQ hP, dδ_comb hQδ hPδ, dE_comb hQδ hPδ,
+    dV_comb hQδ hPδ, dE_comb hQE hPE, dV_comb hQE hPE]
+  simp only [dδ_dδ_linkP, dE_dδ_linkP, dE_dE_linkP, dV_dδ_linkP, dV_dE_linkP, dδ_dδ_linkQ,
+    dE_dδ_linkQ, dE_dE_linkQ, dV_dδ_linkQ, dV_dE_linkQ]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> ring
 
 /-- The EMF behind a reactance with a dynamic Q–V loop at any operating point, end-to-end, stability, with explicit conditions (`orbit_qv_hopf_stable` with the port maps of the link). -/
 @[tmio M, powerlib_domain] theorem orbit_link_hopf_stable {ω0 H D ωc τ kq X δ0 E0 V0 Ω : ℝ}

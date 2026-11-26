@@ -14,11 +14,13 @@ Model boundary.
 * States `(δ, Δω, P_f, E, i_d, i_q)` (`nfield`), `P = E(cos δ i_d + sin δ i_q)`,
   `Q = E(sin δ i_d − cos δ i_q)`, constant `R`, `X ≠ 0`, `R² + X² ≠ 0`, base frequency `ω_b`;
   grid voltage `V₀ + εV̂ cos 2Ωt` on the real axis of the grid frame.
-* The six-state Jacobian has no closed-form eigen-data: the eigenvectors `r`, `u` of `±jΩ`
-  (`u r = 1`), geometric simplicity of `jΩ` and the left-half-plane condition on the other
-  eigenvalues are hypotheses on the explicit matrix `njac`.
-* The connection to the quasi-static model is at the operating point and its powers
-  (`network_static`); the limit `ω_b → ∞` of the multipliers is not stated.
+* Here the eigenvectors `r`, `u` of `±jΩ` (`u r = 1`), geometric simplicity of `jΩ` and the
+  left-half-plane condition on the other eigenvalues are hypotheses on the explicit matrix
+  `njac`; `VoltageModulationQVNetworkHopf` derives all of them in closed form from explicit Hopf
+  and Routh–Hurwitz conditions on the sextic characteristic polynomial.
+* The connection to the quasi-static model here is at the operating point and its powers
+  (`network_static`); the limit `ω_b → ∞` of the characteristic function and of the dynamic
+  partials is in `VoltageModulationQVNetworkHopf`, the limit of the multipliers is not stated.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2, §5 (network dynamics and sidebands); the dynamic Q–V loop with a dynamic line
