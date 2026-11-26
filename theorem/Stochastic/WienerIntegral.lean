@@ -40,14 +40,15 @@ Results.
   (`wienerIntegral_add_path`, `wienerIntegral_smul_path`) and in the integrand
   (`wienerIntegral_add_integrand`, `wienerIntegral_smul_integrand`); `wienerIntegral_const`
   (`∫₀ᵗ v dw = (w(t) − w(0)) v`); `wienerIntegral_add_const` (only the increments of the path
-  matter); `wienerIntegral_congr` (only the path on `[0, t]` matters); `wienerIntegral_map`
-  (continuous linear maps commute with the integral).
+  matter); `wienerIntegral_eq_incr` (`∫₀ᵗ g dw = ŵ(t) g(t) − ∫₀ᵗ ŵ g'`, `ŵ = w − w(0)`);
+  `wienerIntegral_congr` (only the path on `[0, t]` matters); `wienerIntegral_map` (continuous
+  linear maps commute with the integral); `continuous_wienerIntegral` (continuity in time).
 * `wienerIntegral_eq_integral` — **consistency**: for a `C¹` path, `∫₀ᵗ g dw = ∫₀ᵗ w'(s) g(s) ds`.
 * `wienerIntegral_stopped` — for `C¹` `p` and `c ≥ 0`,
   `∫₀ᵗ g d(p(min(·, c))) = ∫₀^{min(t, c)} p'(s) g(s) ds` (the deterministic kernel computation
   behind the isometry).
-* `memLp_wienerIntegral` — the integral of a process with bounded second moments is square
-  integrable; `integral_mul_wienerIntegral` — **the expectation commutes with the integral**,
+* `measurable_wienerIntegral` — measurability in the sample; `memLp_wienerIntegral` — the
+  integral of a process with bounded second moments is square integrable; `integral_mul_wienerIntegral` — **the expectation commutes with the integral**,
   `E[Y ∫₀ᵗ g dW] = ∫₀ᵗ g dφ` with the deterministic path `φ(u) = E[Y W(u)]` (Fubini);
   `integral_wienerIntegral` — mean zero for centred noise; `sqMoment_le` — the second moments of
   a Brownian-type covariance are bounded on `(0, t]`.
@@ -144,6 +145,25 @@ omit [CompleteSpace F] in
   rw [intervalIntegral.integral_add (intervalIntegrable_smul_deriv hg hw 0 t) hc,
     intervalIntegral.integral_smul, hI, smul_sub]
   abel
+
+/-- The integral in terms of the increments `ŵ = w − w(0)`:
+`∫₀ᵗ g dw = ŵ(t) g(t) − ∫₀ᵗ ŵ(s) g'(s) ds`. -/
+@[tmio T, powerlib_foundation] theorem wienerIntegral_eq_incr {g : ℝ → F} (hg : ContDiff ℝ 1 g)
+    {w : ℝ → ℝ} (hw : Continuous w) (t : ℝ) :
+    wienerIntegral g w t = (w t - w 0) • g t - ∫ s in (0 : ℝ)..t, (w s - w 0) • deriv g s := by
+  have h := wienerIntegral_add_const hg (w := fun s => w s - w 0) (hw.sub continuous_const) (w 0) t
+  have e : (fun s => (w s - w 0) + w 0) = w := funext fun s => by ring
+  rw [e] at h
+  rw [h]
+  simp [wienerIntegral]
+
+/-- The integral is continuous in time for a continuous path. -/
+@[tmio T, powerlib_foundation] theorem continuous_wienerIntegral {g : ℝ → F} (hg : ContDiff ℝ 1 g)
+    {w : ℝ → ℝ} (hw : Continuous w) : Continuous (wienerIntegral g w) := by
+  have hI : Continuous fun t => ∫ s in (0 : ℝ)..t, w s • deriv g s :=
+    continuous_iff_continuousAt.2 fun t =>
+      ((hw.smul (hg.continuous_deriv le_rfl)).integral_hasStrictDerivAt 0 t).hasDerivAt.continuousAt
+  exact ((hw.smul hg.continuous).sub continuous_const).sub hI
 
 omit [CompleteSpace F] in
 /-- The integral at time `t` depends only on the path on `[0, t]`. -/
@@ -257,6 +277,23 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbability
   (measurable_uncurry_of_continuous_of_measurable hc hm).comp measurable_swap
 
 variable {W : ℝ → Ω → ℝ}
+
+omit [IsProbabilityMeasure P] in
+/-- The pathwise integral of a process with continuous paths and measurable marginals is a
+measurable random variable. -/
+@[tmio T, powerlib_foundation] theorem measurable_wienerIntegral
+    (hc : ∀ ω, Continuous fun u => W u ω) (hm : ∀ u, Measurable (W u)) {g : ℝ → ℝ}
+    (hg : ContDiff ℝ 1 g) (t : ℝ) :
+    Measurable fun ω => wienerIntegral g (fun u => W u ω) t := by
+  have hmeas := measurable_process hc hm
+  have hF : StronglyMeasurable fun p : Ω × ℝ => W p.2 p.1 * deriv g p.2 :=
+    (hmeas.mul ((hg.continuous_deriv le_rfl).measurable.comp measurable_snd)).stronglyMeasurable
+  have h1 := hF.integral_prod_right' (ν := volume.restrict (Ioc (0 : ℝ) t))
+  have h2 := hF.integral_prod_right' (ν := volume.restrict (Ioc t (0 : ℝ)))
+  have hI : Measurable fun ω => ∫ u in (0 : ℝ)..t, W u ω * deriv g u :=
+    h1.measurable.sub h2.measurable
+  simp only [wienerIntegral, smul_eq_mul]
+  exact (((hm t).mul_const _).sub ((hm 0).mul_const _)).sub hI
 
 /-- Square integrability of the process on `Ω × (0, t]` under bounded second moments. -/
 @[tmio T, powerlib_foundation] private theorem integrable_sq_prod
