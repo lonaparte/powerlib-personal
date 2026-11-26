@@ -353,6 +353,7 @@ import theorem.ParametricResonance.Kapitza
 import theorem.ParametricResonance.SlowFlowBranches
 import theorem.ParametricResonance.SaturatedAmplitude
 import theorem.ParametricResonance.DuffingMathieu
+import theorem.ParametricResonance.BoundaryUndecided
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -372,6 +373,7 @@ import theorem.Periodic.LevelsNonlinear
 import theorem.Periodic.RobustThreshold
 import theorem.Periodic.CombinationResonance
 import theorem.Periodic.UniformEscape
+import theorem.Periodic.CriticalMultiplier
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
