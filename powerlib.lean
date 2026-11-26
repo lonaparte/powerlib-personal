@@ -401,6 +401,12 @@ import theorem.Stochastic.RandomPhase
 import theorem.Stochastic.GaussianExceedance
 import theorem.Stochastic.SpectralMeasure
 import theorem.Stochastic.PeriodogramFit
+import theorem.Stochastic.WienerIntegral
+import theorem.Stochastic.LinearSDE
+import theorem.Stochastic.OUSDE
+import theorem.Stochastic.SmallNoise
+import theorem.Stochastic.NoisyHopf
+import theorem.Stochastic.HopfPhase
 import theorem.Signal.CrossSpectrum
 import theorem.Signal.Sampling
 import theorem.Signal.MovingAverage
