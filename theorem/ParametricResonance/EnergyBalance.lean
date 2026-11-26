@@ -19,7 +19,13 @@ Scope.
   differentiable solution `δ` (derivatives `δ'`, `δ''` written out in the statements). Periodic
   statements ask `K` and `δ` to be `T`-periodic for the same `T`; the input need not be periodic.
 * Pure analysis: no model family. The quadratic energy is `E = ½ m δ̇² + ½ K δ²`; no sign of `m` or
-  `K` is needed for the balance. The matrix (port-Hamiltonian) generalization is not formalized.
+  `K` is needed for the balance.
+* Matrix form: `ẋ = (J(t) − R(t)) Q(t) x + G(t) u(t)` on `Fin n → ℝ` with skew `J(t)`, symmetric
+  `Q(t)` (entrywise differentiable, continuous derivative), continuous `R`, `G`, `u`; energy
+  `H = ½ xᵀ Q x`, output `y = Gᵀ Q x`. The constant-coefficient port-Hamiltonian theory is
+  `theorem/PH/Linear.lean`; here `Q` varies in time. The scalar oscillator is the case
+  `x = (δ, m δ̇)`, `Q = diag(K, 1/m)`, `J = !![0, 1; −1, 0]`, `R = diag(0, D)`, `G = (0, 1)`
+  (`m ≠ 0`); that reduction is not stated as a theorem.
 
 Source: the energy mechanism of sustained oscillations behind IEEE PES TR-110 "Forced Oscillations
 in Power Systems" (2023) §3.1 (a natural oscillation is sustained only at zero or negative
@@ -50,6 +56,9 @@ Results.
 * `damping_eq_supply_div`, `sustained_supply_pos` — for every nonconstant periodic solution
   `D = (∫ u δ̇ + ½ ∫ K̇ δ²) / ∫ δ̇²`, so a sustained oscillation with `D > 0` needs a positive total
   supply from the input or the parameter.
+* `hasDerivAt_dotProduct_mulVec`, `hasDerivAt_phEnergy`, `ph_energy_balance` — the matrix form:
+  `Ḣ = ½ xᵀ Q̇ x + yᵀ u − (Qx)ᵀ R (Qx)` and, over a period of a periodic solution with periodic
+  `Q`, `∮ ½ xᵀ Q̇ x + ∮ yᵀ u = ∮ (Qx)ᵀ R (Qx)` (pump work plus port supply equals dissipation).
 -/
 
 noncomputable section
@@ -301,5 +310,103 @@ energy supply from the input or the stiffness variation: `∫₀ᵀ u δ̇ + ½ 
     0 < (∫ t in (0 : ℝ)..T, u t * δ' t) + (∫ t in (0 : ℝ)..T, K' t * δ t ^ 2) / 2 := by
   rw [← energy_balance hδ hδ' hK hK' hu heq hδT hKT]
   exact mul_pos hD (integral_sq_deriv_pos hδ (continuous_of_hasDerivAt hδ') hT hδT hnc)
+
+/-! ## Linear port-Hamiltonian systems with a time-varying energy matrix -/
+
+section Matrix
+
+open Matrix
+
+variable {n k : ℕ}
+
+/-- Product rule for `x ⬝ᵥ (Q y)` with an entrywise differentiable matrix `Q(t)`:
+`(x ⬝ᵥ Q y)' = x' ⬝ᵥ Q y + x ⬝ᵥ Q' y + x ⬝ᵥ Q y'`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_dotProduct_mulVec {x x' y y' : ℝ → Fin n → ℝ}
+    {Q Q' : ℝ → Matrix (Fin n) (Fin n) ℝ} {t : ℝ} (hx : HasDerivAt x (x' t) t)
+    (hy : HasDerivAt y (y' t) t) (hQ : ∀ i j, HasDerivAt (fun s => Q s i j) (Q' t i j) t) :
+    HasDerivAt (fun s => x s ⬝ᵥ (Q s *ᵥ y s))
+      (x' t ⬝ᵥ (Q t *ᵥ y t) + x t ⬝ᵥ (Q' t *ᵥ y t) + x t ⬝ᵥ (Q t *ᵥ y' t)) t := by
+  have hxi : ∀ i, HasDerivAt (fun s => x s i) (x' t i) t := fun i => hasDerivAt_pi.mp hx i
+  have hyj : ∀ j, HasDerivAt (fun s => y s j) (y' t j) t := fun j => hasDerivAt_pi.mp hy j
+  have h : HasDerivAt (fun s => ∑ i, x s i * ∑ j, Q s i j * y s j)
+      (∑ i, (x' t i * ∑ j, Q t i j * y t j +
+        x t i * ∑ j, (Q' t i j * y t j + Q t i j * y' t j))) t :=
+    HasDerivAt.fun_sum fun i _ =>
+      (hxi i).mul (HasDerivAt.fun_sum fun j _ => (hQ i j).mul (hyj j))
+  convert h using 1
+  · funext s
+    simp only [dotProduct, mulVec]
+  · simp only [dotProduct, mulVec, mul_add, Finset.sum_add_distrib]
+    ring
+
+/-- Power balance of `ẋ = (J(t) − R(t)) Q(t) x + G(t) u(t)` with skew `J(t)` and symmetric
+`Q(t)`: the energy `H = ½ xᵀ Q x` obeys `Ḣ = ½ xᵀ Q̇ x + yᵀ u − (Q x)ᵀ R (Q x)`, `y = Gᵀ Q x`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_phEnergy {x : ℝ → Fin n → ℝ}
+    {Q Q' J R : ℝ → Matrix (Fin n) (Fin n) ℝ} {G : ℝ → Matrix (Fin n) (Fin k) ℝ}
+    {u : ℝ → Fin k → ℝ} (hx : ∀ t, HasDerivAt x ((J t - R t) *ᵥ (Q t *ᵥ x t) + G t *ᵥ u t) t)
+    (hJ : ∀ t, (J t)ᵀ = -J t) (hQs : ∀ t, (Q t)ᵀ = Q t)
+    (hQ : ∀ t i j, HasDerivAt (fun s => Q s i j) (Q' t i j) t) (t : ℝ) :
+    HasDerivAt (fun s => x s ⬝ᵥ (Q s *ᵥ x s) / 2)
+      (x t ⬝ᵥ (Q' t *ᵥ x t) / 2 + ((G t)ᵀ *ᵥ (Q t *ᵥ x t)) ⬝ᵥ u t -
+        (Q t *ᵥ x t) ⬝ᵥ (R t *ᵥ (Q t *ᵥ x t))) t := by
+  have h := (hasDerivAt_dotProduct_mulVec
+    (x' := fun s => (J s - R s) *ᵥ (Q s *ᵥ x s) + G s *ᵥ u s)
+    (y' := fun s => (J s - R s) *ᵥ (Q s *ᵥ x s) + G s *ᵥ u s) (hx t) (hx t) (hQ t)).div_const 2
+  convert h using 1
+  set z := Q t *ᵥ x t
+  set v := (J t - R t) *ᵥ z + G t *ᵥ u t
+  have hsym : x t ⬝ᵥ (Q t *ᵥ v) = v ⬝ᵥ z := by
+    rw [dotProduct_mulVec, ← mulVec_transpose, hQs, dotProduct_comm]
+  have hskew : z ⬝ᵥ (J t *ᵥ z) = 0 := by
+    have h1 : z ⬝ᵥ (J t *ᵥ z) = -(z ⬝ᵥ (J t *ᵥ z)) := by
+      conv_lhs => rw [dotProduct_mulVec, ← mulVec_transpose, hJ, neg_mulVec, dotProduct_comm]
+      rw [dotProduct_neg]
+    linarith
+  have hv : v ⬝ᵥ z = -(z ⬝ᵥ (R t *ᵥ z)) + ((G t)ᵀ *ᵥ z) ⬝ᵥ u t := by
+    simp only [v, sub_mulVec, add_dotProduct, sub_dotProduct]
+    rw [dotProduct_comm (J t *ᵥ z), hskew, dotProduct_comm (R t *ᵥ z), mulVec_transpose,
+      ← dotProduct_mulVec, dotProduct_comm (G t *ᵥ u t)]
+    ring
+  have hfirst : v ⬝ᵥ (Q t *ᵥ x t) = v ⬝ᵥ z := rfl
+  rw [hsym, hfirst, hv]
+  ring
+
+/-- The period energy balance of a linear port-Hamiltonian system with a `T`-periodic energy
+matrix: for a `T`-periodic solution, `∮ ½ xᵀ Q̇ x + ∮ yᵀ u = ∮ (Q x)ᵀ R (Q x)`, `y = Gᵀ Q x`: the
+pump work of the varying energy matrix and the port supply equal the dissipation. -/
+@[tmio T, powerlib_foundation] theorem ph_energy_balance {T : ℝ} {x : ℝ → Fin n → ℝ}
+    {Q Q' J R : ℝ → Matrix (Fin n) (Fin n) ℝ} {G : ℝ → Matrix (Fin n) (Fin k) ℝ}
+    {u : ℝ → Fin k → ℝ} (hx : ∀ t, HasDerivAt x ((J t - R t) *ᵥ (Q t *ᵥ x t) + G t *ᵥ u t) t)
+    (hJ : ∀ t, (J t)ᵀ = -J t) (hQs : ∀ t, (Q t)ᵀ = Q t)
+    (hQ : ∀ t i j, HasDerivAt (fun s => Q s i j) (Q' t i j) t) (hQ' : Continuous Q')
+    (hR : Continuous R) (hG : Continuous G) (hu : Continuous u) (hxT : Periodic x T)
+    (hQT : Periodic Q T) :
+    (∫ t in (0 : ℝ)..T, x t ⬝ᵥ (Q' t *ᵥ x t) / 2) +
+        ∫ t in (0 : ℝ)..T, ((G t)ᵀ *ᵥ (Q t *ᵥ x t)) ⬝ᵥ u t =
+      ∫ t in (0 : ℝ)..T, (Q t *ᵥ x t) ⬝ᵥ (R t *ᵥ (Q t *ᵥ x t)) := by
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t => (hx t).continuousAt
+  have hQc : Continuous Q := continuous_pi fun i => continuous_pi fun j =>
+    continuous_iff_continuousAt.2 fun t => (hQ t i j).continuousAt
+  have c1 : Continuous fun t => x t ⬝ᵥ (Q' t *ᵥ x t) / 2 :=
+    (hxc.dotProduct (hQ'.matrix_mulVec hxc)).div_const 2
+  have c2 : Continuous fun t => ((G t)ᵀ *ᵥ (Q t *ᵥ x t)) ⬝ᵥ u t :=
+    (hG.matrix_transpose.matrix_mulVec (hQc.matrix_mulVec hxc)).dotProduct hu
+  have c3 : Continuous fun t => (Q t *ᵥ x t) ⬝ᵥ (R t *ᵥ (Q t *ᵥ x t)) :=
+    (hQc.matrix_mulVec hxc).dotProduct (hR.matrix_mulVec (hQc.matrix_mulVec hxc))
+  have c123 : Continuous fun t => x t ⬝ᵥ (Q' t *ᵥ x t) / 2 +
+      ((G t)ᵀ *ᵥ (Q t *ᵥ x t)) ⬝ᵥ u t - (Q t *ᵥ x t) ⬝ᵥ (R t *ᵥ (Q t *ᵥ x t)) := (c1.add c2).sub c3
+  have h := intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t _ => hasDerivAt_phEnergy hx hJ hQs hQ t) (c123.intervalIntegrable 0 T)
+  have h0 := hxT 0
+  have h1 := hQT 0
+  simp only [zero_add] at h0 h1
+  have c12 : Continuous fun t => x t ⬝ᵥ (Q' t *ᵥ x t) / 2 +
+      ((G t)ᵀ *ᵥ (Q t *ᵥ x t)) ⬝ᵥ u t := c1.add c2
+  rw [h0, h1, sub_self, intervalIntegral.integral_sub (c12.intervalIntegrable 0 T)
+    (c3.intervalIntegrable 0 T), intervalIntegral.integral_add (c1.intervalIntegrable 0 T)
+    (c2.intervalIntegrable 0 T)] at h
+  linarith
+
+end Matrix
 
 end powerlib.ParametricResonance.EnergyBalance
