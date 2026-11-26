@@ -22,6 +22,10 @@ Model boundary.
 * The MFPT is treated as the solution of the backward boundary-value problem
   `D T'' − V' T' = −γ`, `T(θ_c) = 0`, `T'(θ_r) = 0` (an ODE statement). That this solution equals
   `E[τ_c]` for the diffusion requires Dynkin's formula / Itô calculus and is **not** formalized.
+  For two absorbing points (`u = 0` at both ends, no reflection) Dynkin's formula does identify
+  the solution with the mean exit time: `Ito.lintegral_exitTime_eq_of_isCompact`
+  (`theorem/Stochastic/ExitTimeDynkin.lean`), e.g. `Ito.lintegral_exitTime_Icc_brownian` for
+  `mfpt_free_diffusion`; the reflecting point `θ_r` needs a reflected diffusion.
   The high-barrier Laplace asymptotics of §1.4 are not formalized either; only the algebra that
   combines the two Gaussian factors into the prefactor.
 

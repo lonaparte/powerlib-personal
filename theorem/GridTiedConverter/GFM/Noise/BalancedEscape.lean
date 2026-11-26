@@ -7,48 +7,73 @@ import theorem.Dynamics.LagFilter
 import theorem.GridTiedConverter.GFM.Noise.UphillAction
 import theorem.GridTiedConverter.GFM.Noise.EscapeExponent
 
-/-! # The power filter lowers the escape exponent at every bandwidth (balanced set point)
+/-! # The power filter lowers the escape exponent: balanced set point, and a fast filter
 
-Domain module: for the balanced set point `P_ref = c₀`, the three-state escape exponent
-`V₃ = GFM.Noise.Params3.setPointQP` from the stable equilibrium to the saddle is strictly below
-the two-state value `V₂ = 2D ΔU/σ_P²` for every filter bandwidth `ω_c > 0`, with the explicit
-deficit `V₂ − V₃ ≥ D M J/(σ_P² ω_c)`, `J = Params3.balancedGain > 0`. No perturbation in `ω_c`:
-the upper bound is an admissible pair built from a trajectory of the uphill field
-(`GFM.Noise.UphillAction`), obtained by a shooting argument on the time-reversed field.
+Domain module: the three-state escape exponent `V₃ = GFM.Noise.Params3.setPointQP` from the
+stable equilibrium to the saddle is strictly below the two-state value `V₂ = 2D ΔU/σ_P²`
+(1) for the balanced set point `P_ref = c₀` at every filter bandwidth `ω_c > 0`, with the
+explicit deficit `V₂ − V₃ ≥ D M J/(σ_P² ω_c)`, `J = Params3.balancedGain > 0`, and (2) at every
+set point `c₀ ≤ P_ref < c₀ + A` for every bandwidth with `(M ω_c + D) ω_c ≥ 12 A`, with the
+explicit deficit `D M J/(σ_P² ω_c)`, `J = Params3.fastFilterGain > 0`, and (3) at every
+bandwidth for the set points in a (non-explicit) window `[c₀, c₀ + ε)`. No perturbation in
+`ω_c`: the upper bounds of (1), (2) are admissible pairs built from a trajectory of the uphill
+field (`GFM.Noise.UphillAction`), obtained by a shooting argument on the time-reversed field;
+(3) perturbs a pair of (1) in the set point.
 
 Model boundary.
 * The models of `GFM.Noise.EscapeExponent` (voltage source behind a lossy quasi-static line,
   `P(δ) = c₀ + A sin(δ − α)`, per unit; three states `(δ, ω, P_f)`, set-point noise column
-  `(0, σ_P/M, 0)`) with `P_ref = c₀` (`s = 0`): stable equilibrium `(α, 0, c₀)`, saddle
-  `(π + α, 0, c₀)`, barrier `ΔU = 2A`; `D > 0`, `σ_P ≠ 0`, any `M, A, ω_c > 0`.
+  `(0, σ_P/M, 0)`), `D > 0`, `σ_P ≠ 0`, any `M, A, ω_c > 0`. (1) `P_ref = c₀` (`s = 0`): stable
+  equilibrium `(α, 0, c₀)`, saddle `(π + α, 0, c₀)`, barrier `ΔU = 2A`. (2) `c₀ ≤ P_ref < c₀ + A`
+  (`s = (P_ref − c₀)/A ∈ [0, 1)`, `θ_s = arcsin s`): stable equilibrium `(θ_s + α, 0, P_ref)`,
+  saddle `(π − θ_s + α, 0, P_ref)`, barrier `ΔU = Params.escBarrier`, and the fast-filter
+  condition `(M ω_c + D) ω_c ≥ 12 A` (no condition on `s`). (3) A balanced base model and the
+  moved models `Params3.withPref P` (the same parameters with the set point `P`),
+  `c₀ ≤ P < c₀ + ε`.
 * The reversed field `Params3.downField` (the uphill field `Params3.upField` reversed in time
   with the frequency flipped: the damped swing with the anti-stable filter
   `Ṗ_f = ω_c (P_f − P(δ))`) is used inside proofs through its forward flow
   (`Dynamics.forwardSolution`, globally Lipschitz); no behavioural statement about it is made.
-* `P_ref ≠ c₀` is excluded: the shooting argument below uses the point reflection about the
-  saddle (`Params3.reflect`), a symmetry of the reversed field only when `P_ref = c₀`.
+* Excluded: `c₀ < P_ref < c₀ + A` with `(M ω_c + D) ω_c < 12 A` (the reflection of (1) needs
+  `P_ref = c₀`; the strict-exit estimate of the wedge of (2) needs the fast filter). For the
+  smallest bandwidths `GFM.Noise.Params.setPointQP_lt_swingQP_slow` covers part of it, and (3)
+  a non-explicit window above `c₀` at each bandwidth.
 * Deterministic variational statements only, as in `GFM.Noise.EscapeExponent`.
 
 Source: Freidlin, Wentzell, *Random Perturbations of Dynamical Systems* (1984), Ch. 4 (uphill
 paths, quasi-potential); the uphill energy identity of `GFM.Noise.UphillAction` (derived and
 checked symbolically, sympy, exact, symbolic parameters, in the audit scratch notes outside the
-repository, together with the reversal and the reflection symmetry used here); LaSalle along an
-orbit (`Dynamics.tendsto_nhdsSet_of_antitone`; Khalil, *Nonlinear Systems*, Thm. 4.4); the
-shooting (connectedness) argument for heteroclinic orbits, e.g. J. Hale, H. Koçak,
-*Dynamics and Bifurcations* (1991), Ch. 1.
+repository, together with the reversal and the reflection symmetry used here); the wedge of (2)
+and its strict-exit inequality `(M ω_c + D) ω² − 4A|ω|x − A ω_c x² ≥ 0` for `2|ω| ≥ ω_c x`
+(derived by hand, an exact identity checked by `ring`); LaSalle along an orbit
+(`Dynamics.tendsto_nhdsSet_of_antitone`; Khalil, *Nonlinear Systems*, Thm. 4.4); the shooting
+(connectedness) argument for heteroclinic orbits and isolating blocks with strict exits
+(Ważewski's principle), e.g. J. Hale, H. Koçak, *Dynamics and Bifurcations* (1991), Ch. 1;
+C. Conley, *Isolated Invariant Sets and the Morse Index* (1978), Ch. II.
 
 Results.
-* `Params3.setPointQP_le_balanced_rest`, `Params.setPointQP_le_balanced`: for every `ω_c > 0`,
-  `V₃ ≤ 2D (U(δ_u) − U(δ_s))/σ_P² − D M J/(σ_P² ω_c)`, `J = Params3.balancedGain =
-  3 D w₀⁴/(64 A)`, `w₀ = Params3.balancedSpeed = min(A/(8D), π ω_c/12, √(π A/(48 M)))`.
+* `Params3.setPointQP_le_balanced_rest`, `Params.setPointQP_le_balanced`: for `P_ref = c₀` and
+  every `ω_c > 0`, `V₃ ≤ 2D (U(δ_u) − U(δ_s))/σ_P² − D M J/(σ_P² ω_c)`,
+  `J = Params3.balancedGain = 3 D w₀⁴/(64 A)`,
+  `w₀ = Params3.balancedSpeed = min(A/(8D), π ω_c/12, √(π A/(48 M)))`.
 * `Params.setPointQP_lt_swingQP_balanced`: `V₃ < V₂ = Params.swingQP` for every `ω_c > 0`.
+* `Params3.setPointQP_le_fastFilter_rest`, `Params.setPointQP_le_fastFilter`: for
+  `c₀ ≤ P_ref < c₀ + A` and `(M ω_c + D) ω_c ≥ 12 A`,
+  `V₃ ≤ 2D (U(δ_u) − U(δ_s))/σ_P² − D M J/(σ_P² ω_c)`,
+  `J = Params3.fastFilterGain = 9 D w₀⁴/(128 ΔU)`, `w₀ = Params3.fastFilterSpeed =
+  min(f₀/(4D), L f₀ ω_c/(6 Z₀), √(L f₀/(24 M)))` (`f₀ = Params.escBandGap`,
+  `L = π/2 − arcsin s`, `Z₀ = P_ref − c₀ + A + f₀`); `Params3.fastFilterGain_pos`.
+* `Params.setPointQP_lt_swingQP_fastFilter`: `V₃ < V₂` there, at every such set point.
+* `Params3.withPref` (the model with the set point moved to `P`),
+  `Params3.exists_setPointQP_lt_swingQP_withPref`: for `P_ref = c₀` and every `ω_c > 0` there is
+  `ε > 0` (not explicit) with `V₃ < V₂` for every moved set point `P ∈ [c₀, c₀ + ε)`.
 * `Params3.downField`, `Params3.lipschitzWith_downField`, `Params3.reflect`,
   `Params3.downField_reflect` (the reflection about the saddle reverses the reversed field,
   `P_ref = c₀`), `Params3.downEnergy`, `Params3.hasFDerivAt_downEnergy`,
   `Params3.uphillEnergy_flip` (`F_R(x) = F(δ, −ω, P_f)`), `Params3.upField`,
   `Params3.uphill_field` (the controlled field with the feedback `σ_P u = 2Dω`),
   `Params3.balancedGain_pos`.
-* Proof. (1) Shooting: on the arc `a ↦ (π + α + ε cos a, −η sin a, c₀ + ε sin a)`,
+* Proof of (1). (a) Shooting: on the arc `a ↦ (π + α + ε cos a, −η sin a, c₀ + ε sin a)`,
   `a ∈ [0, π]` (its ends exchanged by the reflection; `F_R < A` on it), the sets of starts whose
   reversed orbit leaves the strip `(π + α − 2π, π + α + 2π)` first to the right, resp. first
   to the left, are open (continuity of the flow), disjoint and exchanged by the reflection;
@@ -56,13 +81,33 @@ Results.
   flow and `F_R = A` at a rest point on the walls, every contact with a wall is a strict
   crossing, so that orbit stays in the strip; there `|P_f − c₀| ≤ A` (else `M ω + D δ` drifts
   out) and `|ω| ≤ A/D`, and LaSalle along the orbit gives convergence to `(α, 0, c₀)` or, after
-  the reflection, from the reflected start. (2) Read backwards, the orbit is an uphill pair of
+  the reflection, from the reflected start. (b) Read backwards, the orbit is an uphill pair of
   action `(2D/σ_P²)(F(end) − F(start) − (M/ω_c)∫ ω̇²)`; its angle crosses `[π/6, 5π/6]`,
   where the filter, after `2/ω_c`, is above `c₀ + A/4` and decelerates the frequency, so
   `|ω|` exceeds `w₀` there and `∫ ω̇² ≥ J` (interpolation, `Dynamics.abs_sq_sub_sq_le`).
-  (3) Cubic angle profiles with an end bump, its amplitude fixed by the intermediate value
+  (c) Cubic angle profiles with an end bump, its amplitude fixed by the intermediate value
   theorem, join the equilibria to the ends with action `O(ρ²)` (local controllability through
   the frequency row and the filter, `cos(δ_r − α) ≠ 0`).
+* Proof of (2). (a) The wedge `δ_u − 2π < δ`, `|P_f − P(δ)| < A (δ_u − δ)` around the
+  filter-rest set, pinched at the saddle angle. On it, `F_R < U(θ_u)` forces
+  `2|ω| < ω_c (δ_u − δ)` when `(M ω_c + D) ω_c ≥ 12 A` (`U(θ_u) − U(θ) ≤ A(θ_u − θ)²/2`), so
+  the anti-stable filter carries every contact with the upper or lower wall strictly out; the
+  pinch is unreachable (`F_R ≥ U(θ_u)` there), the left wall is a strict exit
+  (`U(θ_u − 2π) ≥ U(θ_u)`) and no exit meets both the left and the lower wall. (b) Shooting on
+  the segment `τ ↦ (δ_u − ε, 0, P(δ_u − ε) + τ A ε)`: its ends leave at once through the lower
+  resp. the upper wall; the sets "lower wall first" and "upper or left wall first" are open and
+  disjoint, so some start never leaves, and LaSalle gives convergence to the stable equilibrium
+  (the only rest point of the closed wedge below the saddle level). (c) As in (1)(b)–(c), with
+  the band `[θ_a, π − θ_a]` of `Params.escBandAngle`, the filter comparison after
+  `t_w = 2Z₀/(f₀ ω_c)`, `|P_f − c₀| ≤ A` along the orbit (beyond it the reversed filter only
+  moves away), and the end `ε`-close to the saddle with `ε → 0`.
+* Proof of (3). A pair of the balanced model with action below `V₂ − min(G/2, V₂/2)` stays
+  admissible for the moved set point `P` with its control shifted by `(P − c₀)/σ_P` (the control
+  is the right derivative of the frequency, hence integrable: `measurable_derivWithin_Ici`); its
+  action grows by at most `l S + (1 + 1/l)(P − c₀)² T/(2σ_P²)`. Glue pairs with constants
+  uniform in `P` (`|cos θ_s| ≥ 1/2` for `P − c₀ ≤ A/2`) join the moved equilibria, and the
+  barrier `ΔU(P)` is continuous at `c₀`. The window `ε` depends on the duration `T` of the pair,
+  which the shooting argument does not bound.
 -/
 
 noncomputable section
@@ -364,38 +409,49 @@ private def arc (ε a : ℝ) : Fin 3 → ℝ :=
     nlinarith [mul_pos h1 hpos]
 
 /-- The exit sets are open (continuity of the flow in the initial state, `dist_dsol_le`). -/
-@[tmio M, powerlib_domain] private theorem isOpen_exit (g : (Fin 3 → ℝ) → ℝ)
-    (hg : ∀ x y, |g x - g y| ≤ dist x y) (c d : ℝ) :
-    IsOpen {x | ∃ t, 0 ≤ t ∧ c < g (q.dsol x t) ∧ ∀ s ∈ Icc 0 t, d < g (q.dsol x s)} := by
-  have hgc : Continuous g := (LipschitzWith.of_dist_le_mul (K := 1) fun x y => by
-    rw [Real.dist_eq, NNReal.coe_one, one_mul]; exact hg x y).continuous
+@[tmio M, powerlib_domain] private theorem isOpen_exit₂ (g h : (Fin 3 → ℝ) → ℝ) {K : ℝ}
+    (hK : 0 ≤ K) (hg : ∀ x y, |g x - g y| ≤ K * dist x y)
+    (hh : ∀ x y, |h x - h y| ≤ K * dist x y) (c d : ℝ) :
+    IsOpen {x | ∃ t, 0 ≤ t ∧ c < g (q.dsol x t) ∧ ∀ s ∈ Icc 0 t, d < h (q.dsol x s)} := by
+  have hlip : ∀ f : (Fin 3 → ℝ) → ℝ, (∀ x y, |f x - f y| ≤ K * dist x y) → Continuous f :=
+    fun f hf => (LipschitzWith.of_dist_le_mul (K := ⟨K, hK⟩) fun x y => by
+      rw [Real.dist_eq]; exact hf x y).continuous
   rw [Metric.isOpen_iff]
   rintro x ⟨t, ht, hct, hall⟩
-  have hcont : ContinuousOn (fun s => g (q.dsol x s)) (Icc 0 t) :=
-    hgc.comp_continuousOn ((q.dsol_continuousOn x).mono Icc_subset_Ici_self)
+  have hcont : ContinuousOn (fun s => h (q.dsol x s)) (Icc 0 t) :=
+    (hlip h hh).comp_continuousOn ((q.dsol_continuousOn x).mono Icc_subset_Ici_self)
   obtain ⟨s₀, hs₀, hmin⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 ht) hcont
-  set η := min (g (q.dsol x t) - c) (g (q.dsol x s₀) - d) with hηdef
+  set η := min (g (q.dsol x t) - c) (h (q.dsol x s₀) - d) with hηdef
   have hη : 0 < η := lt_min (by linarith) (by linarith [hall s₀ hs₀])
   have hE := Real.exp_pos (q.downLip * t)
-  refine ⟨η / Real.exp (q.downLip * t), by positivity, fun y hy => ⟨t, ht, ?_, fun s hs => ?_⟩⟩
-  · have key : |g (q.dsol y t) - g (q.dsol x t)| < η := by
-      refine (hg _ _).trans_lt ((q.dist_dsol_le y x ht).trans_lt ?_)
-      rw [Metric.mem_ball] at hy
-      rwa [lt_div_iff₀ hE] at hy
+  have hKE : 0 < (K + 1) * Real.exp (q.downLip * t) := by positivity
+  refine ⟨η / ((K + 1) * Real.exp (q.downLip * t)), by positivity,
+    fun y hy => ⟨t, ht, ?_, fun s hs => ?_⟩⟩
+  · have hd := q.dist_dsol_le y x ht
+    rw [Metric.mem_ball, lt_div_iff₀ hKE] at hy
+    have key : |g (q.dsol y t) - g (q.dsol x t)| < η := by
+      refine (hg _ _).trans_lt ?_
+      have h1 : K * dist (q.dsol y t) (q.dsol x t) ≤ (K + 1) * (dist y x *
+          Real.exp (q.downLip * t)) :=
+        mul_le_mul (by linarith) hd dist_nonneg (by linarith)
+      nlinarith
     have := (abs_lt.1 key).1
-    have := min_le_left (g (q.dsol x t) - c) (g (q.dsol x s₀) - d)
+    have := min_le_left (g (q.dsol x t) - c) (h (q.dsol x s₀) - d)
     linarith
-  · have key : |g (q.dsol y s) - g (q.dsol x s)| < η := by
-      refine (hg _ _).trans_lt ((q.dist_dsol_le y x hs.1).trans_lt ?_)
-      rw [Metric.mem_ball] at hy
-      have h1 : dist y x * Real.exp (q.downLip * s) ≤ dist y x * Real.exp (q.downLip * t) :=
-        mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hs.2
-          (q.downLip).2)) dist_nonneg
-      rw [lt_div_iff₀ hE] at hy
-      linarith
+  · have hd := q.dist_dsol_le y x hs.1
+    rw [Metric.mem_ball, lt_div_iff₀ hKE] at hy
+    have he : Real.exp (q.downLip * s) ≤ Real.exp (q.downLip * t) :=
+      Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hs.2 (q.downLip).2)
+    have key : |h (q.dsol y s) - h (q.dsol x s)| < η := by
+      refine (hh _ _).trans_lt ?_
+      have h1 : K * dist (q.dsol y s) (q.dsol x s) ≤ (K + 1) * (dist y x *
+          Real.exp (q.downLip * t)) := by
+        refine mul_le_mul (by linarith) (hd.trans ?_) dist_nonneg (by linarith)
+        exact mul_le_mul_of_nonneg_left he dist_nonneg
+      nlinarith
     have h1 := (abs_lt.1 key).1
-    have h2 := min_le_right (g (q.dsol x t) - c) (g (q.dsol x s₀) - d)
-    have h3 : g (q.dsol x s₀) ≤ g (q.dsol x s) := hmin hs
+    have h2 := min_le_right (g (q.dsol x t) - c) (h (q.dsol x s₀) - d)
+    have h3 : h (q.dsol x s₀) ≤ h (q.dsol x s) := hmin hs
     linarith
 
 /-- **Shooting** (`P_ref = c₀`): some point of the arc leaves the strip
@@ -411,10 +467,13 @@ private def arc (ε a : ℝ) : Fin 3 → ℝ :=
   set L := {x | ∃ t, 0 ≤ t ∧ q.dsol x t 0 < lo ∧ ∀ s ∈ Icc 0 t, q.dsol x s 0 < hi}
   have hc0 : ∀ x y : Fin 3 → ℝ, |x 0 - y 0| ≤ dist x y := fun x y => by
     have := dist_le_pi_dist x y 0; rwa [Real.dist_eq] at this
-  have hRo : IsOpen R := q.isOpen_exit (fun x => x 0) hc0 hi lo
+  have hc0' : ∀ x y : Fin 3 → ℝ, |x 0 - y 0| ≤ 1 * dist x y := fun x y => by
+    rw [one_mul]; exact hc0 x y
+  have hRo : IsOpen R := q.isOpen_exit₂ (fun x => x 0) (fun x => x 0) zero_le_one hc0' hc0' hi lo
   have hLo : IsOpen L := by
-    have h := q.isOpen_exit (fun x => -x 0) (fun x y => by
-      rw [show -x 0 - -y 0 = -(x 0 - y 0) by ring, abs_neg]; exact hc0 x y) (-lo) (-hi)
+    have hn : ∀ x y : Fin 3 → ℝ, |-x 0 - -y 0| ≤ 1 * dist x y := fun x y => by
+      rw [show -x 0 - -y 0 = -(x 0 - y 0) by ring, abs_neg]; exact hc0' x y
+    have h := q.isOpen_exit₂ (fun x => -x 0) (fun x => -x 0) zero_le_one hn hn (-lo) (-hi)
     convert h using 1
     ext x
     exact ⟨fun ⟨t, ht, h1, h2⟩ => ⟨t, ht, neg_lt_neg h1, fun s hs => neg_lt_neg (h2 s hs)⟩,
@@ -1138,6 +1197,83 @@ def balancedGain : ℝ := 3 * q.D * q.balancedSpeed ^ 4 / (64 * q.A)
   have : Real.exp 2 = Real.exp 1 * Real.exp 1 := by rw [← Real.exp_add]; norm_num
   rw [this]; nlinarith
 
+/-- **Band crossing times**: a continuous `θ` on `[0, T]` with `θ(0) ≤ a < b ≤ θ(T)` has times
+`0 ≤ t₁ < t₂ ≤ T` with `θ(t₁) ≤ a`, `b ≤ θ(t₂)` and `a ≤ θ ≤ b` on `[t₁, t₂]` (the last exit
+from `θ ≤ a` before the first entry into `θ ≥ b`). -/
+@[tmio T, powerlib_foundation] private theorem band_times {θ : ℝ → ℝ} {T a b : ℝ}
+    (hT0 : 0 ≤ T) (hθc : ContinuousOn θ (Icc 0 T)) (hab : a < b) (h0 : θ 0 ≤ a)
+    (hT : b ≤ θ T) :
+    ∃ t₁ t₂, 0 ≤ t₁ ∧ t₁ < t₂ ∧ t₂ ≤ T ∧ θ t₁ ≤ a ∧ b ≤ θ t₂ ∧
+      ∀ t ∈ Icc t₁ t₂, a ≤ θ t ∧ θ t ≤ b := by
+  -- the last entry time `t₂` into `θ ≥ b`
+  set S₂ := Icc 0 T ∩ θ ⁻¹' Ici (b) with hS₂
+  have hS₂c : IsClosed S₂ := hθc.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Ici
+  have hS₂n : S₂.Nonempty := ⟨T, ⟨hT0, le_rfl⟩, hT⟩
+  have hS₂b : BddBelow S₂ := ⟨0, fun t ht => ht.1.1⟩
+  set t₂ := sInf S₂
+  have ht₂S : t₂ ∈ S₂ := hS₂c.csInf_mem hS₂n hS₂b
+  have hbelow₂ : ∀ t ∈ Icc 0 T, t < t₂ → θ t < b := fun t ht htt => by
+    by_contra h; push Not at h
+    exact absurd (csInf_le hS₂b ⟨ht, h⟩) (not_le.2 htt)
+  have ht₂0 : 0 < t₂ := by
+    rcases ht₂S.1.1.lt_or_eq with h | h
+    · exact h
+    · exfalso; have := ht₂S.2; rw [← h] at this
+      have : b ≤ θ 0 := this
+      linarith
+  -- the last exit time `t₁ ≤ t₂` from `θ ≤ a`
+  set S₁ := Icc 0 t₂ ∩ θ ⁻¹' Iic (a) with hS₁
+  have hS₁c : IsClosed S₁ :=
+    (hθc.mono (Icc_subset_Icc le_rfl ht₂S.1.2)).preimage_isClosed_of_isClosed
+      isClosed_Icc isClosed_Iic
+  have hS₁n : S₁.Nonempty := ⟨0, ⟨le_rfl, ht₂0.le⟩, h0⟩
+  have hS₁b : BddAbove S₁ := ⟨t₂, fun t ht => ht.1.2⟩
+  set t₁ := sSup S₁
+  have ht₁S : t₁ ∈ S₁ := hS₁c.csSup_mem hS₁n hS₁b
+  have habove₁ : ∀ t ∈ Icc 0 t₂, t₁ < t → a < θ t := fun t ht htt => by
+    by_contra h; push Not at h
+    exact absurd (le_csSup hS₁b ⟨ht, h⟩) (not_le.2 htt)
+  have hθt₁ : θ t₁ ≤ a := ht₁S.2
+  have hθt₂ : b ≤ θ t₂ := ht₂S.2
+  have ht₁t₂ : t₁ < t₂ := by
+    rcases ht₁S.1.2.lt_or_eq with h | h
+    · exact h
+    · exfalso; rw [h] at hθt₁; linarith
+  have ht₁0 : 0 ≤ t₁ := ht₁S.1.1
+  have ht₂T : t₂ ≤ T := ht₂S.1.2
+  have hband : ∀ t ∈ Icc t₁ t₂, a ≤ θ t ∧ θ t ≤ b := by
+    intro t ht
+    rcases ht.1.lt_or_eq with h1 | h1
+    · rcases ht.2.lt_or_eq with h2 | h2
+      · exact ⟨(habove₁ t ⟨by linarith, ht.2⟩ h1).le,
+          (hbelow₂ t ⟨by linarith, by linarith⟩ h2).le⟩
+      · rw [h2]
+        refine ⟨by linarith [hθt₂], ?_⟩
+        -- `θ(t₂) ≤ b` by continuity from the left
+        by_contra hgt; push Not at hgt
+        have hct : ContinuousWithinAt θ (Icc 0 T) t₂ := hθc t₂ ht₂S.1
+        have hev := hct.eventually (lt_mem_nhds hgt)
+        obtain ⟨s, hs1, hs2⟩ : ∃ s ∈ Ioo t₁ t₂, b < θ s := by
+          have h3 : ∀ᶠ s in 𝓝[<] t₂, s ∈ Icc 0 T := by
+            filter_upwards [Ioo_mem_nhdsLT ht₂0] with s hs
+            exact ⟨hs.1.le, hs.2.le.trans ht₂T⟩
+          have h4 := (nhdsWithin_le_iff.2 h3 |> fun hle => hev.filter_mono hle)
+          exact ((h4.and (Ioo_mem_nhdsLT ht₁t₂))).exists.imp fun s hs => ⟨hs.2, hs.1⟩
+        exact absurd (hbelow₂ s ⟨by linarith [hs1.1], by linarith [hs1.2]⟩ hs1.2) (not_lt.2 hs2.le)
+    · rw [← h1]; refine ⟨?_, by linarith⟩
+      -- `θ(t₁) ≥ a` by continuity from the right
+      by_contra hlt; push Not at hlt
+      have hct : ContinuousWithinAt θ (Icc 0 T) t₁ := hθc t₁ ⟨ht₁0, by linarith⟩
+      have hev := hct.eventually (gt_mem_nhds hlt)
+      obtain ⟨s, hs1, hs2⟩ : ∃ s ∈ Ioo t₁ t₂, θ s < a := by
+        have h3 : ∀ᶠ s in 𝓝[>] t₁, s ∈ Icc 0 T := by
+          filter_upwards [Ioo_mem_nhdsGT ht₁t₂] with s hs
+          exact ⟨by linarith [hs.1], hs.2.le.trans ht₂T⟩
+        have h4 := (nhdsWithin_le_iff.2 h3 |> fun hle => hev.filter_mono hle)
+        exact ((h4.and (Ioo_mem_nhdsGT ht₁t₂))).exists.imp fun s hs => ⟨hs.2, hs.1⟩
+      exact absurd (habove₁ s ⟨by linarith [hs1.1], hs1.2.le⟩ hs1.1) (not_lt.2 hs2.le)
+  exact ⟨t₁, t₂, ht₁0, ht₁t₂, ht₂T, hθt₁, hθt₂, hband⟩
+
 /-- **Speed on the band** (`P_ref = c₀`, `D > 0`): an uphill path on `[0, T]` from an angle
 `≤ α + π/6` to an angle `≥ α + 5π/6`, with the filter within `A` of `c₀`, reaches the
 frequency `|ω| > w₀ = balancedSpeed`. Otherwise the crossing of `[π/6, 5π/6]` takes at least
@@ -1166,73 +1302,8 @@ at the rate `A/(8M)`, which bounds the crossing time by `2/ω_c + 16 M w₀/A`. 
   have hcoord : ∀ i : Fin 3, ∀ t ∈ Ico 0 T,
       HasDerivAt (fun s => φ s i) (q.upField (φ t) i) t := fun i t ht =>
     hasDerivAt_pi.1 (hφ t ht) i
-  -- the last entry time `t₂` into `θ ≥ 5π/6`
-  set S₂ := Icc 0 T ∩ θ ⁻¹' Ici (5 * π / 6) with hS₂
-  have hS₂c : IsClosed S₂ := hθc.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Ici
-  have hS₂n : S₂.Nonempty := ⟨T, ⟨hT0, le_rfl⟩, hT⟩
-  have hS₂b : BddBelow S₂ := ⟨0, fun t ht => ht.1.1⟩
-  set t₂ := sInf S₂
-  have ht₂S : t₂ ∈ S₂ := hS₂c.csInf_mem hS₂n hS₂b
-  have hbelow₂ : ∀ t ∈ Icc 0 T, t < t₂ → θ t < 5 * π / 6 := fun t ht htt => by
-    by_contra h; push Not at h
-    exact absurd (csInf_le hS₂b ⟨ht, h⟩) (not_le.2 htt)
-  have ht₂0 : 0 < t₂ := by
-    rcases ht₂S.1.1.lt_or_eq with h | h
-    · exact h
-    · exfalso; have := ht₂S.2; rw [← h] at this
-      have : 5 * π / 6 ≤ θ 0 := this
-      simp only [hθ] at this; linarith
-  -- the last exit time `t₁ ≤ t₂` from `θ ≤ π/6`
-  set S₁ := Icc 0 t₂ ∩ θ ⁻¹' Iic (π / 6) with hS₁
-  have hS₁c : IsClosed S₁ :=
-    (hθc.mono (Icc_subset_Icc le_rfl ht₂S.1.2)).preimage_isClosed_of_isClosed
-      isClosed_Icc isClosed_Iic
-  have hS₁n : S₁.Nonempty := ⟨0, ⟨le_rfl, ht₂0.le⟩, h0⟩
-  have hS₁b : BddAbove S₁ := ⟨t₂, fun t ht => ht.1.2⟩
-  set t₁ := sSup S₁
-  have ht₁S : t₁ ∈ S₁ := hS₁c.csSup_mem hS₁n hS₁b
-  have habove₁ : ∀ t ∈ Icc 0 t₂, t₁ < t → π / 6 < θ t := fun t ht htt => by
-    by_contra h; push Not at h
-    exact absurd (le_csSup hS₁b ⟨ht, h⟩) (not_le.2 htt)
-  have hθt₁ : θ t₁ ≤ π / 6 := ht₁S.2
-  have hθt₂ : 5 * π / 6 ≤ θ t₂ := ht₂S.2
-  have ht₁t₂ : t₁ < t₂ := by
-    rcases ht₁S.1.2.lt_or_eq with h | h
-    · exact h
-    · exfalso; rw [h] at hθt₁; linarith
-  have ht₁0 : 0 ≤ t₁ := ht₁S.1.1
-  have ht₂T : t₂ ≤ T := ht₂S.1.2
-  have hband : ∀ t ∈ Icc t₁ t₂, π / 6 ≤ θ t ∧ θ t ≤ 5 * π / 6 := by
-    intro t ht
-    rcases ht.1.lt_or_eq with h1 | h1
-    · rcases ht.2.lt_or_eq with h2 | h2
-      · exact ⟨(habove₁ t ⟨by linarith, ht.2⟩ h1).le,
-          (hbelow₂ t ⟨by linarith, by linarith⟩ h2).le⟩
-      · rw [h2]
-        refine ⟨by linarith [hθt₂], ?_⟩
-        -- `θ(t₂) ≤ 5π/6` by continuity from the left
-        by_contra hgt; push Not at hgt
-        have hct : ContinuousWithinAt θ (Icc 0 T) t₂ := hθc t₂ ht₂S.1
-        have hev := hct.eventually (lt_mem_nhds hgt)
-        obtain ⟨s, hs1, hs2⟩ : ∃ s ∈ Ioo t₁ t₂, 5 * π / 6 < θ s := by
-          have h3 : ∀ᶠ s in 𝓝[<] t₂, s ∈ Icc 0 T := by
-            filter_upwards [Ioo_mem_nhdsLT ht₂0] with s hs
-            exact ⟨hs.1.le, hs.2.le.trans ht₂T⟩
-          have h4 := (nhdsWithin_le_iff.2 h3 |> fun hle => hev.filter_mono hle)
-          exact ((h4.and (Ioo_mem_nhdsLT ht₁t₂))).exists.imp fun s hs => ⟨hs.2, hs.1⟩
-        exact absurd (hbelow₂ s ⟨by linarith [hs1.1], by linarith [hs1.2]⟩ hs1.2) (not_lt.2 hs2.le)
-    · rw [← h1]; refine ⟨?_, by linarith⟩
-      -- `θ(t₁) ≥ π/6` by continuity from the right
-      by_contra hlt; push Not at hlt
-      have hct : ContinuousWithinAt θ (Icc 0 T) t₁ := hθc t₁ ⟨ht₁0, by linarith⟩
-      have hev := hct.eventually (gt_mem_nhds hlt)
-      obtain ⟨s, hs1, hs2⟩ : ∃ s ∈ Ioo t₁ t₂, θ s < π / 6 := by
-        have h3 : ∀ᶠ s in 𝓝[>] t₁, s ∈ Icc 0 T := by
-          filter_upwards [Ioo_mem_nhdsGT ht₁t₂] with s hs
-          exact ⟨by linarith [hs.1], hs.2.le.trans ht₂T⟩
-        have h4 := (nhdsWithin_le_iff.2 h3 |> fun hle => hev.filter_mono hle)
-        exact ((h4.and (Ioo_mem_nhdsGT ht₁t₂))).exists.imp fun s hs => ⟨hs.2, hs.1⟩
-      exact absurd (habove₁ s ⟨by linarith [hs1.1], hs1.2.le⟩ hs1.1) (not_lt.2 hs2.le)
+  obtain ⟨t₁, t₂, ht₁0, ht₁t₂, ht₂T, hθt₁, hθt₂, hband⟩ :=
+    band_times hT0 hθc (by linarith) h0 hT
   -- (i) the crossing takes at least `(2π/3)/w₀`
   have hcross : 2 * π / 3 ≤ w₀ * (t₂ - t₁) := by
     obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope θ (fun t => φ t 1) ht₁t₂
@@ -1324,20 +1395,16 @@ at the rate `A/(8M)`, which bounds the crossing time by `2/ω_c + 16 M w₀/A`. 
   have := mul_le_mul_of_nonneg_left hshort hw0.le
   nlinarith
 
-/-- **The gain of an uphill crossing** (`P_ref = c₀`, `D > 0`): an uphill path as in
-`exists_speed` that starts with `ω(0)² ≤ w₀²/4` and has `∫ ω² ≤ N` satisfies
-`∫₀ᵀ ω̇² ≥ 9 w₀⁴/(64 N)` (`Dynamics.abs_sq_sub_sq_le` on `[0, t*]`, `|ω(t*)| > w₀`). -/
-@[tmio M, powerlib_domain] private theorem gain_le (hP : q.Pref = q.c0) (hD : 0 < q.D)
-    {T : ℝ} (hT0 : 0 ≤ T) {φ : ℝ → Fin 3 → ℝ} (hc : ContinuousOn φ (Icc 0 T))
-    (hφ : ∀ t ∈ Ico 0 T, HasDerivAt φ (q.upField (φ t)) t)
-    (hz : ∀ t ∈ Icc 0 T, |φ t 2 - q.c0| ≤ q.A)
-    (h0 : φ 0 0 - q.α ≤ π / 6) (hT : 5 * π / 6 ≤ φ T 0 - q.α)
-    (hw0 : φ 0 1 ^ 2 ≤ q.balancedSpeed ^ 2 / 4) {N : ℝ} (hN0 : 0 < N)
+/-- **The gain of an uphill path that reaches a speed** (`w > 0`): an uphill path on `[0, T]`
+with `|ω(t*)| > w` for some `t*`, `ω(0)² ≤ w²/4` and `∫ ω² ≤ N` satisfies
+`∫₀ᵀ ω̇² ≥ 9 w⁴/(64 N)` (`Dynamics.abs_sq_sub_sq_le` on `[0, t*]`). -/
+@[tmio M, powerlib_domain] private theorem gain_of_speed {T : ℝ} (hT0 : 0 ≤ T)
+    {φ : ℝ → Fin 3 → ℝ} (hc : ContinuousOn φ (Icc 0 T))
+    (hφ : ∀ t ∈ Ico 0 T, HasDerivAt φ (q.upField (φ t)) t) {w₀ : ℝ} (hw : 0 < w₀)
+    (hsp : ∃ t ∈ Icc 0 T, w₀ < |φ t 1|) (hw0 : φ 0 1 ^ 2 ≤ w₀ ^ 2 / 4) {N : ℝ} (hN0 : 0 < N)
     (hN : ∫ t in (0 : ℝ)..T, φ t 1 ^ 2 ≤ N) :
-    9 * q.balancedSpeed ^ 4 / (64 * N) ≤ ∫ t in (0 : ℝ)..T, q.uphillAcc (φ t) ^ 2 := by
-  obtain ⟨t, ht, hspeed⟩ := q.exists_speed hP hD hT0 hc hφ hz h0 hT
-  set w₀ := q.balancedSpeed
-  have hw := q.balancedSpeed_pos hD
+    9 * w₀ ^ 4 / (64 * N) ≤ ∫ t in (0 : ℝ)..T, q.uphillAcc (φ t) ^ 2 := by
+  obtain ⟨t, ht, hspeed⟩ := hsp
   have hc1 : ContinuousOn (fun s => φ s 1) (Icc 0 T) := (continuous_apply 1).comp_continuousOn hc
   have hca : ContinuousOn (fun s => q.uphillAcc (φ s)) (Icc 0 T) := by
     have h2 : ContinuousOn (fun s => φ s 2) (Icc 0 T) := (continuous_apply 2).comp_continuousOn hc
@@ -1593,7 +1660,7 @@ and `A((5 + K)ρ)² ≤ ρ`, some `|l| ≤ Kρ` makes the filter arrive exactly 
 @[tmio M, powerlib_domain] private theorem glue_amplitude {δr : ℝ}
     (hr : q.c0 + q.A * Real.sin (δr - q.α) = q.Pref) (hκ : Real.cos (δr - q.α) ≠ 0)
     {a b : Fin 3 → ℝ} {ρ K : ℝ} (hρ : 0 < ρ)
-    (hK : K = (5 * q.A + 4) / (|q.A * Real.cos (δr - q.α)| * (q.ωc * Real.exp (-q.ωc) / 30)))
+    (hK : (5 * q.A + 4) / (|q.A * Real.cos (δr - q.α)| * (q.ωc * Real.exp (-q.ωc) / 30)) ≤ K)
     (hρK : q.A * ((5 + K) * ρ) ^ 2 ≤ ρ)
     (ha0 : |a 0 - δr| ≤ ρ) (hb0 : |b 0 - δr| ≤ ρ) (ha1 : |a 1| ≤ ρ) (hb1 : |b 1| ≤ ρ)
     (ha2 : |a 2 - q.Pref| ≤ ρ) (hb2 : |b 2 - q.Pref| ≤ ρ) :
@@ -1603,7 +1670,7 @@ and `A((5 + K)ρ)² ≤ ρ`, some `|l| ≤ Kρ` makes the filter arrive exactly 
   have hκ0 : 0 < |κ| := abs_pos.2 (mul_ne_zero hA.ne' hκ)
   set Iβ := q.ωc * Real.exp (-q.ωc) / 30 with hIβ
   have hIβ0 : 0 < Iβ := by positivity
-  have hK0 : 0 < K := by rw [hK]; positivity
+  have hK0 : 0 < K := lt_of_lt_of_le (by positivity) hK
   set L := K * ρ with hL
   have hL0 : 0 < L := by positivity
   set Fβ := Dynamics.lagFilter q.ωc 0 Dynamics.endBump 1
@@ -1622,10 +1689,12 @@ and `A((5 + K)ρ)² ≤ ρ`, some `|l| ≤ Kρ` makes the filter arrive exactly 
   have hν1 : |ν| = 1 := by rw [hν, abs_div, abs_abs, div_self hκ0.ne']
   have hνL : |ν * L| = L := by rw [abs_mul, hν1, one_mul, abs_of_pos hL0]
   have hmL : |-(ν * L)| = L := by rw [abs_neg, hνL]
-  have hkey : |κ| * L * Iβ = (5 * q.A + 4) * ρ := by
-    rw [hL, hK]; field_simp
-  have hgain : (5 * q.A + 4) * ρ ≤ |κ| * L * Fβ := by
-    rw [← hkey]; exact mul_le_mul_of_nonneg_left hFβ (by positivity)
+  have hkey : (5 * q.A + 4) * ρ ≤ |κ| * L * Iβ := by
+    have h1 : 5 * q.A + 4 ≤ K * (|κ| * Iβ) := by
+      rw [div_le_iff₀ (by positivity)] at hK; exact hK
+    rw [hL]; nlinarith
+  have hgain : (5 * q.A + 4) * ρ ≤ |κ| * L * Fβ :=
+    hkey.trans (mul_le_mul_of_nonneg_left hFβ (by positivity))
   have hb2' := abs_le.1 hb2
   have hup : b 2 < g (ν * L) := by
     have h := abs_le.1 (q.glue_filter_near hr ha0 hb0 ha1 hb1 ha2 hνL.le)
@@ -1811,23 +1880,38 @@ by its power is an admissible pair on `[0, 1]` from `a` to `(b₀, b₁, z(1))` 
   rw [e2]
   linarith
 
-/-- **Local controllability at a rest point** (`σ_P ≠ 0`): at a rest angle `δ_r`
-(`P(δ_r) = P_ref`) with `cos(δ_r − α) ≠ 0`, any two states within `ρ ≤ ρ₀` of `(δ_r, 0, P_ref)`
-are joined by an admissible pair of action `≤ C ρ²` (`glue_pair` with the amplitude of
-`glue_amplitude`). -/
-@[tmio M, powerlib_domain] private theorem glue {σP : ℝ} (hσ : σP ≠ 0) {δr : ℝ}
-    (hr : q.c0 + q.A * Real.sin (δr - q.α) = q.Pref) (hκ : Real.cos (δr - q.α) ≠ 0) :
-    ∃ ρ₀ > 0, ∃ C > 0, ∀ ρ, 0 < ρ → ρ ≤ ρ₀ → ∀ a b : Fin 3 → ℝ,
+/-- The amplitude gain `K = (5A + 4)/(A κ₀ ω_c e^{−ω_c}/30)` of the glue for a lower bound `κ₀`
+of `|cos(δ_r − α)|`. -/
+private def glueK (κ₀ : ℝ) : ℝ := (5 * q.A + 4) / (q.A * κ₀ * (q.ωc * Real.exp (-q.ωc) / 30))
+
+/-- The control constant `C_u = M(20 + 2K) + 1 + ω_c A (5 + K) + D (5 + K)` of the glue. -/
+private def glueCu (κ₀ : ℝ) : ℝ :=
+  q.M * (20 + 2 * q.glueK κ₀) + (1 + q.ωc * (q.A * (5 + q.glueK κ₀))) + q.D * (5 + q.glueK κ₀)
+
+/-- **Local controllability at a rest point, uniform constants** (`σ_P ≠ 0`): at a rest angle
+`δ_r` (`P(δ_r) = P_ref`) with `κ₀ ≤ |cos(δ_r − α)|`, `κ₀ > 0`, any two states within
+`ρ ≤ 1/(A(5 + K)²)` of `(δ_r, 0, P_ref)` are joined by an admissible pair of action
+`≤ (C_u²/(2σ_P²)) ρ²` (`glueK`, `glueCu`: independent of `δ_r` and `P_ref`; `glue_pair` with the
+amplitude of `glue_amplitude`). -/
+@[tmio M, powerlib_domain] private theorem glue_unif {σP : ℝ} (hσ : σP ≠ 0) {δr κ₀ : ℝ}
+    (hr : q.c0 + q.A * Real.sin (δr - q.α) = q.Pref) (hκ₀ : 0 < κ₀)
+    (hκ : κ₀ ≤ |Real.cos (δr - q.α)|) :
+    ∀ ρ, 0 < ρ → ρ ≤ 1 / (q.A * (5 + q.glueK κ₀) ^ 2) → ∀ a b : Fin 3 → ℝ,
       (∀ i, |a i - ![δr, 0, q.Pref] i| ≤ ρ) → (∀ i, |b i - ![δr, 0, q.Pref] i| ≤ ρ) →
-      q.setPointQP σP a b ≤ ENNReal.ofReal (C * ρ ^ 2) := by
+      q.setPointQP σP a b ≤ ENNReal.ofReal (q.glueCu κ₀ ^ 2 / (2 * σP ^ 2) * ρ ^ 2) := by
   have hA := q.A_pos; have hω := q.ωc_pos; have hM := q.M_pos; have hD := q.D_nonneg
-  have hκ0 : 0 < |q.A * Real.cos (δr - q.α)| := abs_pos.2 (mul_ne_zero hA.ne' hκ)
-  set K := (5 * q.A + 4) / (|q.A * Real.cos (δr - q.α)| * (q.ωc * Real.exp (-q.ωc) / 30))
-    with hK
-  have hK0 : 0 < K := by rw [hK]; positivity
-  set Cu := q.M * (20 + 2 * K) + (1 + q.ωc * (q.A * (5 + K))) + q.D * (5 + K)
-  refine ⟨1 / (q.A * (5 + K) ^ 2), by positivity, Cu ^ 2 / (2 * σP ^ 2), by positivity,
-    fun ρ hρ hρρ a b ha hb => ?_⟩
+  have hκ' : Real.cos (δr - q.α) ≠ 0 := fun h => by
+    rw [h, abs_zero] at hκ; linarith
+  have hIβ : 0 < q.ωc * Real.exp (-q.ωc) / 30 := by positivity
+  set K := q.glueK κ₀ with hKdef
+  have hK0 : 0 < K := by rw [hKdef, glueK]; positivity
+  have hK : (5 * q.A + 4) / (|q.A * Real.cos (δr - q.α)| * (q.ωc * Real.exp (-q.ωc) / 30)) ≤
+      K := by
+    rw [hKdef, glueK]
+    refine div_le_div_of_nonneg_left (by positivity) (by positivity) ?_
+    rw [abs_mul, abs_of_pos hA]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hκ hA.le) hIβ.le
+  intro ρ hρ hρρ a b ha hb
   have hρK : q.A * ((5 + K) * ρ) ^ 2 ≤ ρ := by
     rw [le_div_iff₀ (by positivity)] at hρρ
     nlinarith
@@ -1837,7 +1921,7 @@ are joined by an admissible pair of action `≤ C ρ²` (`glue_pair` with the am
   have hb0 : |b 0 - δr| ≤ ρ := by simpa using hb 0
   have hb1 : |b 1| ≤ ρ := by simpa using hb 1
   have hb2 : |b 2 - q.Pref| ≤ ρ := by simpa using hb 2
-  obtain ⟨l, hl, hgl⟩ := q.glue_amplitude hr hκ hρ hK hρK ha0 hb0 ha1 hb1 ha2 hb2
+  obtain ⟨l, hl, hgl⟩ := q.glue_amplitude hr hκ' hρ hK hρK ha0 hb0 ha1 hb1 ha2 hb2
   have hb : b = ![b 0, b 1, Dynamics.lagFilter q.ωc (a 2) (q.gsig a b l) 1] := by
     ext i; fin_cases i
     · rfl
@@ -1845,6 +1929,22 @@ are joined by an admissible pair of action `≤ C ρ²` (`glue_pair` with the am
     · exact hgl.symm
   rw [hb]
   exact q.glue_pair hσ hr hK0.le ha0 hb0 ha1 hb1 ha2 hl
+
+/-- **Local controllability at a rest point** (`σ_P ≠ 0`): at a rest angle `δ_r`
+(`P(δ_r) = P_ref`) with `cos(δ_r − α) ≠ 0`, any two states within `ρ ≤ ρ₀` of `(δ_r, 0, P_ref)`
+are joined by an admissible pair of action `≤ C ρ²` (`glue_unif` with `κ₀ = |cos(δ_r − α)|`). -/
+@[tmio M, powerlib_domain] private theorem glue {σP : ℝ} (hσ : σP ≠ 0) {δr : ℝ}
+    (hr : q.c0 + q.A * Real.sin (δr - q.α) = q.Pref) (hκ : Real.cos (δr - q.α) ≠ 0) :
+    ∃ ρ₀ > 0, ∃ C > 0, ∀ ρ, 0 < ρ → ρ ≤ ρ₀ → ∀ a b : Fin 3 → ℝ,
+      (∀ i, |a i - ![δr, 0, q.Pref] i| ≤ ρ) → (∀ i, |b i - ![δr, 0, q.Pref] i| ≤ ρ) →
+      q.setPointQP σP a b ≤ ENNReal.ofReal (C * ρ ^ 2) := by
+  have hA := q.A_pos; have hω := q.ωc_pos; have hM := q.M_pos; have hD := q.D_nonneg
+  have hκ0 : 0 < |Real.cos (δr - q.α)| := abs_pos.2 hκ
+  have hK0 : 0 < q.glueK |Real.cos (δr - q.α)| := by unfold glueK; positivity
+  have hCu : 0 < q.glueCu |Real.cos (δr - q.α)| := by unfold glueCu; positivity
+  exact ⟨1 / (q.A * (5 + q.glueK |Real.cos (δr - q.α)|) ^ 2), by positivity,
+    q.glueCu |Real.cos (δr - q.α)| ^ 2 / (2 * σP ^ 2), by positivity,
+    q.glue_unif hσ hr hκ0 le_rfl⟩
 
 /-! ## The escape exponent at every bandwidth -/
 
@@ -1959,7 +2059,7 @@ equilibria. -/
     nlinarith
   -- the gain
   have hgain : J ≤ I := by
-    have h := q.gain_le hP hD hT0 hψc hψd
+    have h := q.gain_of_speed hT0 hψc hψd hw0 (q.exists_speed hP hD hT0 hψc hψd
       (fun t ht => by
         show |(flip3 (q.dsol y (T - t))) 2 - q.c0| ≤ q.A
         exact hyz (T - t) (by linarith [ht.2]))
@@ -1974,7 +2074,7 @@ equilibria. -/
         show 5 * π / 6 ≤ y 0 - q.α
         have := (abs_le.1 (hyc 0)).1
         simp only [Matrix.cons_val_zero] at this
-        linarith)
+        linarith))
       (by
         rw [hψ0]
         show (-(q.dsol y T 1)) ^ 2 ≤ w₀ ^ 2 / 4
@@ -2048,6 +2148,1900 @@ equilibria. -/
       2 * q.D / σP ^ 2 * η := by ring
   linarith
 
+/-! ## A fast filter: a shooting in a wedge around the filter-rest set -/
+
+/-- The stable shifted angle `θ_s = arcsin s`, `s = (P_ref − c₀)/A`. -/
+private def thS : ℝ := Real.arcsin ((q.Pref - q.c0) / q.A)
+
+/-- The saddle angle `δ_u = π − θ_s + α`. -/
+private def dU : ℝ := π - q.thS + q.α
+
+/-- The electrical power `P(δ) = c₀ + A sin(δ − α)`. -/
+private def pw (d : ℝ) : ℝ := q.c0 + q.A * Real.sin (d - q.α)
+
+/-- The upper wall of the wedge: `P_f − P(δ) − A (δ_u − δ)`. -/
+private def wTop (x : Fin 3 → ℝ) : ℝ := x 2 - q.pw (x 0) - q.A * (q.dU - x 0)
+
+/-- The lower wall of the wedge: `P(δ) − P_f − A (δ_u − δ)`. -/
+private def wBot (x : Fin 3 → ℝ) : ℝ := -(x 2 - q.pw (x 0)) - q.A * (q.dU - x 0)
+
+@[tmio M, powerlib_domain] private theorem thS_facts (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) :
+    0 ≤ q.thS ∧ q.thS < π / 2 ∧ q.A * Real.sin q.thS = q.Pref - q.c0 ∧
+      0 < Real.cos q.thS := by
+  have hA := q.A_pos
+  have hs0 : 0 ≤ (q.Pref - q.c0) / q.A := div_nonneg (by linarith) hA.le
+  have hs1 : (q.Pref - q.c0) / q.A < 1 := by rw [div_lt_one hA]; linarith
+  refine ⟨Real.arcsin_nonneg.2 hs0, Real.arcsin_lt_pi_div_two.2 hs1, ?_, ?_⟩
+  · simp only [thS]
+    rw [Real.sin_arcsin (by linarith) hs1.le]
+    field_simp
+  · simp only [thS]
+    rw [Real.cos_arcsin]
+    apply Real.sqrt_pos.2
+    nlinarith
+
+@[tmio M, powerlib_domain] private theorem potential_eq (θ : ℝ) :
+    q.potential θ = -(q.Pref - q.c0) * θ - q.A * Real.cos θ := by
+  simp [Params.potential, Params.toSM]
+
+@[tmio M, powerlib_domain] private theorem pw_dU (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) : q.pw q.dU = q.Pref := by
+  have := (q.thS_facts h0 h1).2.2.1
+  simp only [pw, dU, show π - q.thS + q.α - q.α = π - q.thS by ring, Real.sin_pi_sub]
+  linarith
+
+/-- **The potential below the saddle**: `U(θ_u) − U(θ) ≤ A (θ_u − θ)²/2` for `θ ≤ θ_u`
+(`U' = A(sin θ − sin θ_u)`, `|sin θ − sin θ_u| ≤ θ_u − θ`). -/
+@[tmio M, powerlib_domain] private theorem potential_sub_le (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) {θ : ℝ} (hθ : θ ≤ π - q.thS) :
+    q.potential (π - q.thS) - q.potential θ ≤ q.A * (π - q.thS - θ) ^ 2 / 2 := by
+  have hA := q.A_pos
+  set θu := π - q.thS with hθu
+  have hsu : q.A * Real.sin θu = q.Pref - q.c0 := by
+    rw [hθu, Real.sin_pi_sub]; exact (q.thS_facts h0 h1).2.2.1
+  have hanti : AntitoneOn (fun t => q.A * (θu - t) ^ 2 / 2 + q.potential t) (Iic θu) := by
+    have hd : ∀ t, HasDerivAt (fun t => q.A * (θu - t) ^ 2 / 2 + q.potential t)
+        (-(q.A * (θu - t)) + (q.A * Real.sin t - (q.Pref - q.c0))) t := fun t => by
+      have h1 := (((hasDerivAt_id' t).const_sub θu).pow 2).const_mul (q.A / 2)
+      have h2 := q.hasDerivAt_potential t
+      convert h1.add h2 using 1
+      · funext s; simp only [Pi.add_apply, Pi.pow_apply]; ring
+      · simp [Params.potentialDeriv, Params.toSM]; ring
+    refine antitoneOn_of_hasDerivWithinAt_nonpos (convex_Iic θu)
+      (fun t _ => (hd t).continuousAt.continuousWithinAt)
+      (fun t _ => (hd t).hasDerivWithinAt) (fun t ht => ?_)
+    rw [interior_Iic] at ht
+    have hs := Real.abs_sin_sub_sin_le t θu
+    rw [abs_sub_comm t θu, abs_of_pos (show 0 < θu - t by linarith [ht.out])] at hs
+    have := (abs_le.1 hs).2
+    nlinarith
+  have := hanti (mem_Iic.2 hθ) (mem_Iic.2 le_rfl) hθ
+  simp only [sub_self] at this
+  nlinarith
+
+/-- **The speed on the wedge** (`(M ω_c + D) ω_c ≥ 12 A`): a state between the two walls with
+`F_R < U(θ_u)` has `2|ω| < ω_c (δ_u − δ)`. Otherwise
+`(M ω_c + D) ω² − 4 A |ω| x − A ω_c x² ≥ 0` (`x = δ_u − δ`), so `F_R ≥ U(θ_u)`. -/
+@[tmio M, powerlib_domain] private theorem speed_lt (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hΛ : 12 * q.A ≤ (q.M * q.ωc + q.D) * q.ωc) {y : Fin 3 → ℝ}
+    (hT : q.wTop y ≤ 0) (hB : q.wBot y ≤ 0)
+    (hE : q.downEnergy y < q.potential (π - q.thS)) :
+    2 * |y 1| < q.ωc * (q.dU - y 0) := by
+  have hA := q.A_pos; have hM := q.M_pos; have hω := q.ωc_pos; have hD := q.D_nonneg
+  set x := q.dU - y 0 with hx
+  have he1 : y 2 - q.pw (y 0) ≤ q.A * x := by simp only [wTop] at hT; linarith
+  have he2 : -(q.A * x) ≤ y 2 - q.pw (y 0) := by simp only [wBot] at hB; linarith
+  have hx0 : 0 ≤ x := by
+    by_contra h
+    push Not at h
+    have := mul_neg_of_pos_of_neg hA h
+    linarith
+  have hθ : y 0 - q.α = π - q.thS - x := by simp only [hx, dU]; ring
+  have hU := q.potential_sub_le h0 h1 (θ := y 0 - q.α) (by rw [hθ]; linarith)
+  rw [hθ, show π - q.thS - (π - q.thS - x) = x by ring] at hU
+  have hsu : q.A * Real.sin (π - q.thS) = q.Pref - q.c0 := by
+    rw [Real.sin_pi_sub]; exact (q.thS_facts h0 h1).2.2.1
+  have hP : |q.pw (y 0) - q.Pref| ≤ q.A * x := by
+    have e : q.pw (y 0) - q.Pref = q.A * (Real.sin (y 0 - q.α) - Real.sin (π - q.thS)) := by
+      simp only [pw]; linarith
+    rw [e, abs_mul, abs_of_pos hA]
+    refine mul_le_mul_of_nonneg_left ((Real.abs_sin_sub_sin_le _ _).trans ?_) hA.le
+    rw [hθ, show π - q.thS - x - (π - q.thS) = -x by ring, abs_neg, abs_of_nonneg hx0]
+  have hr : |y 2 - q.Pref| ≤ 2 * q.A * x := by
+    have : y 2 - q.Pref = (y 2 - q.pw (y 0)) + (q.pw (y 0) - q.Pref) := by ring
+    rw [this]
+    refine (abs_add_le _ _).trans ?_
+    have : |y 2 - q.pw (y 0)| ≤ q.A * x := abs_le.2 ⟨he2, he1⟩
+    linarith
+  set w := y 1 with hw
+  have hE' : q.M * w ^ 2 / 2 + q.potential (y 0 - q.α) + w * (y 2 - q.Pref) / q.ωc +
+      q.D * w ^ 2 / (2 * q.ωc) < q.potential (π - q.thS) := hE
+  rw [hθ] at hE'
+  have hmul : (q.M * w ^ 2 / 2 + w * (y 2 - q.Pref) / q.ωc + q.D * w ^ 2 / (2 * q.ωc)) *
+      (2 * q.ωc) = (q.M * q.ωc + q.D) * w ^ 2 + 2 * (w * (y 2 - q.Pref)) := by
+    field_simp; ring
+  have hlt : (q.M * q.ωc + q.D) * w ^ 2 + 2 * (w * (y 2 - q.Pref)) < q.A * q.ωc * x ^ 2 := by
+    rw [← hmul]
+    have : q.M * w ^ 2 / 2 + w * (y 2 - q.Pref) / q.ωc + q.D * w ^ 2 / (2 * q.ωc) <
+        q.A * x ^ 2 / 2 := by linarith
+    have := mul_lt_mul_of_pos_right this (by positivity : (0 : ℝ) < 2 * q.ωc)
+    linarith
+  have hwr : -(|w| * (2 * q.A * x)) ≤ w * (y 2 - q.Pref) := by
+    have h := neg_abs_le (w * (y 2 - q.Pref))
+    rw [abs_mul] at h
+    have := mul_le_mul_of_nonneg_left hr (abs_nonneg w)
+    linarith
+  by_contra hcon
+  push Not at hcon
+  set u := |w| with hu
+  have hu2 : u ^ 2 = w ^ 2 := sq_abs w
+  set Λ := q.M * q.ωc + q.D with hΛdef
+  have hΛ0 : 0 ≤ Λ := by positivity
+  set v := u - q.ωc * x / 2 with hv
+  have hv0 : 0 ≤ v := by linarith
+  have hid : Λ * u ^ 2 - 4 * q.A * u * x - q.A * q.ωc * x ^ 2 =
+      x ^ 2 * q.ωc * (Λ * q.ωc / 4 - 3 * q.A) + v * x * (Λ * q.ωc - 4 * q.A) + Λ * v ^ 2 := by
+    simp only [hv]; ring
+  have hk1 : 0 ≤ Λ * q.ωc / 4 - 3 * q.A := by linarith
+  have hk2 : 0 ≤ Λ * q.ωc - 4 * q.A := by linarith
+  have key : 0 ≤ Λ * u ^ 2 - 4 * q.A * u * x - q.A * q.ωc * x ^ 2 := by
+    rw [hid]; positivity
+  rw [hu2] at key
+  nlinarith
+
+/-- The rate of the upper wall along the reversed field. -/
+private def wTopRate (y : Fin 3 → ℝ) : ℝ :=
+  q.ωc * (y 2 - q.pw (y 0)) + q.A * (1 - Real.cos (y 0 - q.α)) * y 1
+
+/-- The rate of the lower wall along the reversed field. -/
+private def wBotRate (y : Fin 3 → ℝ) : ℝ :=
+  -(q.ωc * (y 2 - q.pw (y 0))) + q.A * (1 + Real.cos (y 0 - q.α)) * y 1
+
+@[tmio M, powerlib_domain] private theorem continuous_wTop : Continuous q.wTop := by
+  unfold wTop pw; fun_prop
+
+@[tmio M, powerlib_domain] private theorem continuous_wBot : Continuous q.wBot := by
+  unfold wBot pw; fun_prop
+
+@[tmio M, powerlib_domain] private theorem continuous_wTopRate : Continuous q.wTopRate := by
+  unfold wTopRate pw; fun_prop
+
+@[tmio M, powerlib_domain] private theorem continuous_wBotRate : Continuous q.wBotRate := by
+  unfold wBotRate pw; fun_prop
+
+@[tmio M, powerlib_domain] private theorem hasDerivAt_wTop (x : Fin 3 → ℝ) {t : ℝ}
+    (ht : 0 < t) :
+    HasDerivAt (fun s => q.wTop (q.dsol x s)) (q.wTopRate (q.dsol x t)) t := by
+  have h0 := q.dsol_coord_hasDerivAt x 0 ht
+  have h2 := q.dsol_coord_hasDerivAt x 2 ht
+  have hs := (((h0.sub_const q.α).sin).const_mul q.A).const_add q.c0
+  have h := (h2.sub hs).sub ((h0.const_sub q.dU).const_mul q.A)
+  convert h using 1
+  · funext s; simp [wTop, pw]
+  · simp only [wTopRate, pw, downField, Matrix.cons_val_zero, Matrix.cons_val_two,
+      Matrix.tail_cons, Matrix.head_cons]
+    ring
+
+@[tmio M, powerlib_domain] private theorem hasDerivAt_wBot (x : Fin 3 → ℝ) {t : ℝ}
+    (ht : 0 < t) :
+    HasDerivAt (fun s => q.wBot (q.dsol x s)) (q.wBotRate (q.dsol x t)) t := by
+  have h0 := q.dsol_coord_hasDerivAt x 0 ht
+  have h2 := q.dsol_coord_hasDerivAt x 2 ht
+  have hs := (((h0.sub_const q.α).sin).const_mul q.A).const_add q.c0
+  have h := (h2.sub hs).neg.sub ((h0.const_sub q.dU).const_mul q.A)
+  convert h using 1
+  · funext s; simp [wBot, pw]
+  · simp only [wBotRate, pw, downField, Matrix.cons_val_zero, Matrix.cons_val_two,
+      Matrix.tail_cons, Matrix.head_cons]
+    ring
+
+/-- **Strict exits through the walls** (`(M ω_c + D) ω_c ≥ 12 A`, `F_R < U(θ_u)`): on the
+upper wall the upper-wall function grows, on the lower wall the lower-wall function grows. -/
+@[tmio M, powerlib_domain] private theorem wall_rate_pos (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hΛ : 12 * q.A ≤ (q.M * q.ωc + q.D) * q.ωc) {y : Fin 3 → ℝ}
+    (hT : q.wTop y ≤ 0) (hB : q.wBot y ≤ 0)
+    (hE : q.downEnergy y < q.potential (π - q.thS)) :
+    (q.wTop y = 0 → 0 < q.wTopRate y) ∧ (q.wBot y = 0 → 0 < q.wBotRate y) := by
+  have hA := q.A_pos
+  have hs := q.speed_lt h0 h1 hΛ hT hB hE
+  have hc := Real.abs_cos_le_one (y 0 - q.α)
+  have hc1 := (abs_le.1 hc).1
+  have hc2 := (abs_le.1 hc).2
+  have hw1 := neg_abs_le (y 1)
+  have hw2 := le_abs_self (y 1)
+  constructor
+  · intro h
+    have he : y 2 - q.pw (y 0) = q.A * (q.dU - y 0) := by simp only [wTop] at h; linarith
+    simp only [wTopRate, he]
+    have : -(2 * |y 1|) ≤ (1 - Real.cos (y 0 - q.α)) * y 1 := by
+      rcases le_total 0 (y 1) with hy | hy
+      · nlinarith
+      · nlinarith
+    nlinarith
+  · intro h
+    have he : y 2 - q.pw (y 0) = -(q.A * (q.dU - y 0)) := by simp only [wBot] at h; linarith
+    simp only [wBotRate, he]
+    have : -(2 * |y 1|) ≤ (1 + Real.cos (y 0 - q.α)) * y 1 := by
+      rcases le_total 0 (y 1) with hy | hy
+      · nlinarith
+      · nlinarith
+    nlinarith
+
+/-- `F_R` on the left wall `δ = δ_u − 2π`. -/
+@[tmio M, powerlib_domain] private theorem downEnergy_left {y : Fin 3 → ℝ}
+    (hy : y 0 = q.dU - 2 * π) :
+    q.downEnergy y = q.potential (π - q.thS) + 2 * π * (q.Pref - q.c0) +
+      (q.M / 2 + q.D / (2 * q.ωc)) * y 1 ^ 2 + y 1 * (y 2 - q.Pref) / q.ωc := by
+  have hθ : y 0 - q.α = π - q.thS - 2 * π := by rw [hy]; simp only [dU]; ring
+  simp only [downEnergy, hθ, potential_eq]
+  rw [Real.cos_sub_two_pi]
+  ring
+
+/-- On the left wall with `F_R < U(θ_u)` the frequency is not zero, and a crossing with `ω < 0`
+does not meet the lower wall. -/
+@[tmio M, powerlib_domain] private theorem left_wall (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) {y : Fin 3 → ℝ} (hy : y 0 = q.dU - 2 * π)
+    (hE : q.downEnergy y < q.potential (π - q.thS)) :
+    y 1 ≠ 0 ∧ (y 1 < 0 → q.wBot y < 0) := by
+  have hM := q.M_pos; have hω := q.ωc_pos; have hD := q.D_nonneg; have hA := q.A_pos
+  have hL := q.downEnergy_left hy
+  have hk : 0 ≤ q.M / 2 + q.D / (2 * q.ωc) := by positivity
+  constructor
+  · intro h0'
+    rw [hL, h0'] at hE
+    simp at hE
+    have : 0 ≤ 2 * π * (q.Pref - q.c0) := by have := Real.pi_pos; nlinarith
+    linarith
+  · intro hneg
+    by_contra hcon
+    push Not at hcon
+    have hpw : q.pw (y 0) = q.Pref := by
+      have hs := (q.thS_facts h0 h1).2.2.1
+      simp only [pw, hy, dU, show π - q.thS + q.α - 2 * π - q.α = π - q.thS - 2 * π by ring,
+        Real.sin_sub_two_pi, Real.sin_pi_sub]
+      linarith
+    have hb : q.wBot y = -(y 2 - q.Pref) - q.A * (2 * π) := by
+      simp only [wBot]; rw [hpw, hy]; ring
+    have h2 : y 2 - q.Pref ≤ -(q.A * (2 * π)) := by linarith
+    have h3 : 0 < y 1 * (y 2 - q.Pref) / q.ωc := by
+      apply div_pos _ hω
+      have : 0 < q.A * (2 * π) := by positivity
+      nlinarith
+    rw [hL] at hE
+    have : 0 ≤ (q.M / 2 + q.D / (2 * q.ωc)) * y 1 ^ 2 := by positivity
+    have : 0 ≤ 2 * π * (q.Pref - q.c0) := by have := Real.pi_pos; nlinarith
+    linarith
+
+
+/-- A function continuous within `[τ, ∞)` at `τ` and positive there stays positive on
+`[τ, τ + h]`. -/
+@[tmio T, powerlib_foundation] private theorem pos_near {g : ℝ → ℝ} {τ : ℝ}
+    (hg : ContinuousWithinAt g (Ici τ) τ) (hpos : 0 < g τ) :
+    ∃ h > 0, ∀ t ∈ Icc τ (τ + h), 0 < g t := by
+  obtain ⟨r, hr, hsub⟩ := Metric.mem_nhdsWithin_iff.1 (hg.eventually (lt_mem_nhds hpos))
+  refine ⟨r / 2, by positivity, fun t ht => hsub ⟨?_, ht.1⟩⟩
+  rw [Metric.mem_ball, Real.dist_eq, abs_lt]
+  constructor <;> linarith [ht.1, ht.2]
+
+/-- A positive derivative, continuous from the right at `τ`, makes `f` exceed `f τ` just after
+`τ` (mean value theorem). -/
+@[tmio T, powerlib_foundation] private theorem pos_after {f f' : ℝ → ℝ} {τ : ℝ}
+    (hc : ContinuousOn f (Ici τ)) (hd : ∀ t, τ < t → HasDerivAt f (f' t) t)
+    (hf' : ContinuousWithinAt f' (Ici τ) τ) (hpos : 0 < f' τ) :
+    ∃ h > 0, ∀ t ∈ Ioc τ (τ + h), f τ < f t := by
+  obtain ⟨h, hh, hball⟩ := pos_near hf' hpos
+  refine ⟨h, hh, fun t ht => ?_⟩
+  obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope f f' ht.1
+    (hc.mono Icc_subset_Ici_self) (fun s hs => hd s hs.1)
+  have h1 := hball ξ ⟨hξ.1.le, by linarith [hξ.2, ht.2]⟩
+  rw [hslope] at h1
+  have ht0 : 0 < t - τ := by linarith [ht.1]
+  have := (div_pos_iff_of_pos_right ht0).1 h1
+  linarith
+
+/-- A positive derivative, continuous at `τ > 0`, makes `f` smaller than `f τ` just before
+`τ`. -/
+@[tmio T, powerlib_foundation] private theorem lt_before {f f' : ℝ → ℝ} {τ : ℝ}
+    (hd : ∀ t, 0 < t → HasDerivAt f (f' t) t) (hf' : ContinuousAt f' τ) (hτ : 0 < τ)
+    (hpos : 0 < f' τ) : ∃ t ∈ Ioo 0 τ, f t < f τ := by
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hf'.eventually (lt_mem_nhds hpos))
+  set t := max (τ / 2) (τ - r / 2) with htdef
+  have ht1 : τ / 2 ≤ t := le_max_left _ _
+  have ht2 : τ - r / 2 ≤ t := le_max_right _ _
+  have htτ : t < τ := max_lt (by linarith) (by linarith)
+  have ht0 : 0 < t := by linarith
+  refine ⟨t, ⟨ht0, htτ⟩, ?_⟩
+  obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope f f' htτ
+    (fun s hs => ((hd s (by linarith [hs.1])).continuousAt).continuousWithinAt)
+    (fun s hs => hd s (by linarith [hs.1]))
+  have h1 := hball ξ (by
+    rw [Metric.mem_ball, Real.dist_eq, abs_lt]
+    constructor <;> linarith [hξ.1, hξ.2])
+  rw [hslope] at h1
+  have := (div_pos_iff_of_pos_right (by linarith : (0 : ℝ) < τ - t)).1 h1
+  linarith
+
+/-- A continuous function negative on `[0, τ)` is `≤ 0` at `τ > 0`. -/
+@[tmio T, powerlib_foundation] private theorem nonpos_of_neg_before {f : ℝ → ℝ} {τ : ℝ}
+    (hc : ContinuousAt f τ) (hτ : 0 < τ) (hb : ∀ t, 0 ≤ t → t < τ → f t < 0) : f τ ≤ 0 := by
+  by_contra h
+  push Not at h
+  obtain ⟨t, ht1, ht2⟩ := ((hc.eventually (lt_mem_nhds h)).filter_mono
+    nhdsWithin_le_nhds |>.and (Ioo_mem_nhdsLT hτ)).exists
+  exact absurd (hb t ht2.1.le ht2.2) (not_lt.2 ht1.le)
+
+@[tmio T, powerlib_foundation] private theorem coord_le (x y : Fin 3 → ℝ) (i : Fin 3) :
+    |x i - y i| ≤ dist x y := by
+  have := dist_le_pi_dist x y i; rwa [Real.dist_eq] at this
+
+@[tmio M, powerlib_domain] private theorem lip_wTop (x y : Fin 3 → ℝ) :
+    |q.wTop x - q.wTop y| ≤ (1 + 2 * q.A) * dist x y := by
+  have hA := q.A_pos
+  have hs : |Real.sin (x 0 - q.α) - Real.sin (y 0 - q.α)| ≤ dist x y :=
+    (Real.abs_sin_sub_sin_le _ _).trans (by rw [sub_sub_sub_cancel_right]; exact coord_le x y 0)
+  have e : q.wTop x - q.wTop y = (x 2 - y 2) - q.A * (Real.sin (x 0 - q.α) -
+      Real.sin (y 0 - q.α)) + q.A * (x 0 - y 0) := by simp only [wTop, pw]; ring
+  have ha := abs_le.1 (coord_le x y 2)
+  have hb := abs_le.1 hs
+  have hc := abs_le.1 (coord_le x y 0)
+  rw [e, abs_le]
+  constructor <;> nlinarith [mul_le_mul_of_nonneg_left hb.1 hA.le,
+    mul_le_mul_of_nonneg_left hb.2 hA.le, mul_le_mul_of_nonneg_left hc.1 hA.le,
+    mul_le_mul_of_nonneg_left hc.2 hA.le]
+
+@[tmio M, powerlib_domain] private theorem lip_wBot (x y : Fin 3 → ℝ) :
+    |q.wBot x - q.wBot y| ≤ (1 + 2 * q.A) * dist x y := by
+  have hA := q.A_pos
+  have hs : |Real.sin (x 0 - q.α) - Real.sin (y 0 - q.α)| ≤ dist x y :=
+    (Real.abs_sin_sub_sin_le _ _).trans (by rw [sub_sub_sub_cancel_right]; exact coord_le x y 0)
+  have e : q.wBot x - q.wBot y = -(x 2 - y 2) + q.A * (Real.sin (x 0 - q.α) -
+      Real.sin (y 0 - q.α)) + q.A * (x 0 - y 0) := by simp only [wBot, pw]; ring
+  have ha := abs_le.1 (coord_le x y 2)
+  have hb := abs_le.1 hs
+  have hc := abs_le.1 (coord_le x y 0)
+  rw [e, abs_le]
+  constructor <;> nlinarith [mul_le_mul_of_nonneg_left hb.1 hA.le,
+    mul_le_mul_of_nonneg_left hb.2 hA.le, mul_le_mul_of_nonneg_left hc.1 hA.le,
+    mul_le_mul_of_nonneg_left hc.2 hA.le]
+
+/-- The starts leaving first through the lower wall (before any contact with the upper or the left
+wall) form an open set. -/
+@[tmio M, powerlib_domain] private theorem isOpen_colA :
+    IsOpen {x : Fin 3 → ℝ | ∃ t, 0 ≤ t ∧ 0 < q.wBot (q.dsol x t) ∧
+      ∀ s ∈ Icc 0 t, 0 < min (-q.wTop (q.dsol x s)) (q.dsol x s 0 - (q.dU - 2 * π))} := by
+  have hK : (0 : ℝ) ≤ 1 + 2 * q.A := by have := q.A_pos; positivity
+  refine q.isOpen_exit₂ q.wBot (fun y => min (-q.wTop y) (y 0 - (q.dU - 2 * π))) hK
+    q.lip_wBot (fun x y => ?_) 0 0
+  refine (abs_min_sub_min_le_max _ _ _ _).trans (max_le ?_ ?_)
+  · rw [show -q.wTop x - -q.wTop y = -(q.wTop x - q.wTop y) by ring, abs_neg]
+    exact q.lip_wTop x y
+  · rw [show x 0 - (q.dU - 2 * π) - (y 0 - (q.dU - 2 * π)) = x 0 - y 0 by ring]
+    have := q.A_pos
+    nlinarith [coord_le x y 0, dist_nonneg (x := x) (y := y)]
+
+/-- The starts leaving first through the upper or the left wall (before any contact with the lower
+wall) form an open set. -/
+@[tmio M, powerlib_domain] private theorem isOpen_colB :
+    IsOpen {x : Fin 3 → ℝ | ∃ t, 0 ≤ t ∧
+      0 < max (q.wTop (q.dsol x t)) (q.dU - 2 * π - q.dsol x t 0) ∧
+      ∀ s ∈ Icc 0 t, 0 < -q.wBot (q.dsol x s)} := by
+  have hK : (0 : ℝ) ≤ 1 + 2 * q.A := by have := q.A_pos; positivity
+  refine q.isOpen_exit₂ (fun y => max (q.wTop y) (q.dU - 2 * π - y 0)) (fun y => -q.wBot y) hK
+    (fun x y => ?_) (fun x y => ?_) 0 0
+  · refine (abs_max_sub_max_le_max _ _ _ _).trans (max_le (q.lip_wTop x y) ?_)
+    rw [show q.dU - 2 * π - x 0 - (q.dU - 2 * π - y 0) = -(x 0 - y 0) by ring, abs_neg]
+    have := q.A_pos
+    nlinarith [coord_le x y 0, dist_nonneg (x := x) (y := y)]
+  · rw [show -q.wBot x - -q.wBot y = -(q.wBot x - q.wBot y) by ring, abs_neg]
+    exact q.lip_wBot x y
+
+@[tmio M, powerlib_domain] private theorem not_colA_colB {x : Fin 3 → ℝ}
+    (hA : ∃ t, 0 ≤ t ∧ 0 < q.wBot (q.dsol x t) ∧
+      ∀ s ∈ Icc 0 t, 0 < min (-q.wTop (q.dsol x s)) (q.dsol x s 0 - (q.dU - 2 * π)))
+    (hB : ∃ t, 0 ≤ t ∧ 0 < max (q.wTop (q.dsol x t)) (q.dU - 2 * π - q.dsol x t 0) ∧
+      ∀ s ∈ Icc 0 t, 0 < -q.wBot (q.dsol x s)) : False := by
+  obtain ⟨t₁, ht₁, h₁, a₁⟩ := hA
+  obtain ⟨t₂, ht₂, h₂, a₂⟩ := hB
+  rcases le_total t₁ t₂ with h | h
+  · linarith [a₂ t₁ ⟨ht₁, h⟩]
+  · obtain ⟨e1, e2⟩ := lt_min_iff.1 (a₁ t₂ ⟨ht₂, h⟩)
+    rcases lt_max_iff.1 h₂ with e3 | e3 <;> linarith
+
+/-- The shooting segment `τ ↦ (δ_u − ε, 0, P(δ_u − ε) + τ A ε)`, `τ ∈ [−1, 1]`. -/
+private def seg (ε τ : ℝ) : Fin 3 → ℝ := ![q.dU - ε, 0, q.pw (q.dU - ε) + τ * (q.A * ε)]
+
+@[tmio M, powerlib_domain] private theorem continuous_seg (ε : ℝ) : Continuous (q.seg ε) := by
+  refine continuous_pi fun i => ?_
+  fin_cases i <;> simp [seg] <;> fun_prop
+
+@[tmio M, powerlib_domain] private theorem seg_walls (ε τ : ℝ) :
+    q.wTop (q.seg ε τ) = (τ - 1) * (q.A * ε) ∧ q.wBot (q.seg ε τ) = -(τ + 1) * (q.A * ε) ∧
+      q.seg ε τ 0 = q.dU - ε ∧ q.seg ε τ 1 = 0 := by
+  refine ⟨?_, ?_, rfl, rfl⟩ <;> simp [wTop, wBot, seg] <;> ring
+
+
+@[tmio M, powerlib_domain] private theorem wTop_add_wBot (y : Fin 3 → ℝ) :
+    q.wTop y + q.wBot y = -(2 * q.A * (q.dU - y 0)) := by
+  simp only [wTop, wBot]; ring
+
+@[tmio M, powerlib_domain] private theorem hasDerivAt_angle (x : Fin 3 → ℝ) {t : ℝ}
+    (ht : 0 < t) : HasDerivAt (fun s => q.dsol x s 0) (q.dsol x t 1) t :=
+  q.dsol_coord_hasDerivAt x 0 ht
+
+/-- The upper end of the segment leaves through the upper wall first. -/
+@[tmio M, powerlib_domain] private theorem seg_one_mem {ε : ℝ} (hε : 0 < ε) :
+    ∃ t, 0 ≤ t ∧ 0 < max (q.wTop (q.dsol (q.seg ε 1) t)) (q.dU - 2 * π - q.dsol (q.seg ε 1) t 0) ∧
+      ∀ s ∈ Icc 0 t, 0 < -q.wBot (q.dsol (q.seg ε 1) s) := by
+  have hA := q.A_pos; have hω := q.ωc_pos
+  obtain ⟨hT, hB, -, h1⟩ := q.seg_walls ε 1
+  set x := q.seg ε 1 with hx
+  have hc0 : (0 : ℝ) ∈ Ici (0 : ℝ) := mem_Ici.2 le_rfl
+  have hr : q.wTopRate (q.dsol x 0) = q.ωc * (q.A * ε) := by
+    rw [q.dsol_zero]
+    have e : x 2 - q.pw (x 0) = q.A * ε := by simp [hx, seg]
+    simp only [wTopRate, e, h1, mul_zero, add_zero]
+  obtain ⟨h₁, hh₁, hp₁⟩ := pos_after (f := fun t => q.wTop (q.dsol x t))
+    (f' := fun t => q.wTopRate (q.dsol x t)) (τ := 0)
+    (q.continuous_wTop.comp_continuousOn (q.dsol_continuousOn x))
+    (fun t ht => q.hasDerivAt_wTop x ht)
+    ((q.continuous_wTopRate.comp_continuousOn (q.dsol_continuousOn x)) 0 hc0)
+    (by rw [hr]; positivity)
+  obtain ⟨h₂, hh₂, hp₂⟩ := pos_near (g := fun t => -q.wBot (q.dsol x t)) (τ := 0)
+    ((q.continuous_wBot.comp_continuousOn (q.dsol_continuousOn x)).neg 0 hc0)
+    (by simp only [q.dsol_zero, hB]; nlinarith)
+  have hm : 0 < min h₁ h₂ := lt_min hh₁ hh₂
+  refine ⟨min h₁ h₂, hm.le, lt_max_of_lt_left ?_, fun s hs => hp₂ s ⟨hs.1, ?_⟩⟩
+  · have := hp₁ (min h₁ h₂) ⟨hm, by rw [zero_add]; exact min_le_left _ _⟩
+    simp only [q.dsol_zero, hT, sub_self, zero_mul] at this
+    exact this
+  · rw [zero_add]; exact hs.2.trans (min_le_right _ _)
+
+/-- The lower end of the segment leaves through the lower wall first. -/
+@[tmio M, powerlib_domain] private theorem seg_neg_one_mem {ε : ℝ} (hε : 0 < ε)
+    (hε2 : ε < 2 * π) :
+    ∃ t, 0 ≤ t ∧ 0 < q.wBot (q.dsol (q.seg ε (-1)) t) ∧
+      ∀ s ∈ Icc 0 t, 0 < min (-q.wTop (q.dsol (q.seg ε (-1)) s))
+        (q.dsol (q.seg ε (-1)) s 0 - (q.dU - 2 * π)) := by
+  have hA := q.A_pos; have hω := q.ωc_pos
+  obtain ⟨hT, hB, h0, h1⟩ := q.seg_walls ε (-1)
+  set x := q.seg ε (-1) with hx
+  have hc0 : (0 : ℝ) ∈ Ici (0 : ℝ) := mem_Ici.2 le_rfl
+  have hr : q.wBotRate (q.dsol x 0) = q.ωc * (q.A * ε) := by
+    rw [q.dsol_zero]
+    have e : x 2 - q.pw (x 0) = -(q.A * ε) := by simp [hx, seg]
+    simp only [wBotRate, e, h1, mul_zero, add_zero]; ring
+  obtain ⟨h₁, hh₁, hp₁⟩ := pos_after (f := fun t => q.wBot (q.dsol x t))
+    (f' := fun t => q.wBotRate (q.dsol x t)) (τ := 0)
+    (q.continuous_wBot.comp_continuousOn (q.dsol_continuousOn x))
+    (fun t ht => q.hasDerivAt_wBot x ht)
+    ((q.continuous_wBotRate.comp_continuousOn (q.dsol_continuousOn x)) 0 hc0)
+    (by rw [hr]; positivity)
+  have hgc : Continuous fun y : Fin 3 → ℝ => min (-q.wTop y) (y 0 - (q.dU - 2 * π)) :=
+    (q.continuous_wTop.neg).min ((continuous_apply 0).sub continuous_const)
+  obtain ⟨h₂, hh₂, hp₂⟩ := pos_near
+    (g := fun t => min (-q.wTop (q.dsol x t)) (q.dsol x t 0 - (q.dU - 2 * π))) (τ := 0)
+    ((hgc.comp_continuousOn (q.dsol_continuousOn x)) 0 hc0)
+    (by
+      simp only [q.dsol_zero, hT, h0]
+      exact lt_min (by nlinarith) (by linarith))
+  have hm : 0 < min h₁ h₂ := lt_min hh₁ hh₂
+  refine ⟨min h₁ h₂, hm.le, ?_, fun s hs => hp₂ s ⟨hs.1, ?_⟩⟩
+  · have := hp₁ (min h₁ h₂) ⟨hm, by rw [zero_add]; exact min_le_left _ _⟩
+    simp only [q.dsol_zero, hB] at this
+    linarith
+  · rw [zero_add]; exact hs.2.trans (min_le_right _ _)
+
+/-- **Shooting in the wedge**: some interior point of the segment leaves neither through the lower
+wall first nor through the upper or left wall first. -/
+@[tmio M, powerlib_domain] private theorem exists_seg_stay {ε : ℝ} (hε : 0 < ε)
+    (hε2 : ε < 2 * π) :
+    ∃ τ ∈ Ioo (-1 : ℝ) 1, ¬ (∃ t, 0 ≤ t ∧ 0 < q.wBot (q.dsol (q.seg ε τ) t) ∧
+        ∀ s ∈ Icc 0 t, 0 < min (-q.wTop (q.dsol (q.seg ε τ) s))
+          (q.dsol (q.seg ε τ) s 0 - (q.dU - 2 * π))) ∧
+      ¬ (∃ t, 0 ≤ t ∧
+        0 < max (q.wTop (q.dsol (q.seg ε τ) t)) (q.dU - 2 * π - q.dsol (q.seg ε τ) t 0) ∧
+        ∀ s ∈ Icc 0 t, 0 < -q.wBot (q.dsol (q.seg ε τ) s)) := by
+  set CA := {x : Fin 3 → ℝ | ∃ t, 0 ≤ t ∧ 0 < q.wBot (q.dsol x t) ∧
+    ∀ s ∈ Icc 0 t, 0 < min (-q.wTop (q.dsol x s)) (q.dsol x s 0 - (q.dU - 2 * π))} with hCA
+  set CB := {x : Fin 3 → ℝ | ∃ t, 0 ≤ t ∧
+    0 < max (q.wTop (q.dsol x t)) (q.dU - 2 * π - q.dsol x t 0) ∧
+    ∀ s ∈ Icc 0 t, 0 < -q.wBot (q.dsol x s)} with hCB
+  by_contra hcon'
+  have hcon : ∀ τ ∈ Ioo (-1 : ℝ) 1, q.seg ε τ ∉ CA → q.seg ε τ ∈ CB := fun τ hτ hA => by
+    by_contra hB
+    exact hcon' ⟨τ, hτ, hA, hB⟩
+  have hA1 := q.seg_neg_one_mem hε hε2
+  have hB1 := q.seg_one_mem hε
+  have hcov : Icc (-1 : ℝ) 1 ⊆ q.seg ε ⁻¹' CA ∪ q.seg ε ⁻¹' CB := by
+    intro τ hτ
+    rcases hτ.1.lt_or_eq with h1 | h1
+    · rcases hτ.2.lt_or_eq with h2 | h2
+      · by_cases hA : q.seg ε τ ∈ CA
+        · exact Or.inl hA
+        · exact Or.inr (hcon τ ⟨h1, h2⟩ hA)
+      · rw [h2]; exact Or.inr hB1
+    · rw [← h1]; exact Or.inl hA1
+  obtain ⟨a, -, ha1, ha2⟩ := isPreconnected_Icc _ _
+    (q.isOpen_colA.preimage (q.continuous_seg ε))
+    (q.isOpen_colB.preimage (q.continuous_seg ε))
+    hcov ⟨-1, ⟨le_rfl, by norm_num⟩, hA1⟩ ⟨1, ⟨by norm_num, le_rfl⟩, hB1⟩
+  exact q.not_colA_colB ha1 ha2
+
+/-- **The selected orbit never leaves the wedge** (`(M ω_c + D) ω_c ≥ 12 A`): a start inside
+with `F_R < U(θ_u)` that is in neither exit set stays strictly between the walls forever (every
+wall contact would be a strict crossing, `wall_rate_pos`, `left_wall`). -/
+@[tmio M, powerlib_domain] private theorem stays_in_wedge (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hΛ : 12 * q.A ≤ (q.M * q.ωc + q.D) * q.ωc) {x : Fin 3 → ℝ}
+    (hx : q.wTop x < 0 ∧ q.wBot x < 0 ∧ q.dU - 2 * π < x 0)
+    (hE : q.downEnergy x < q.potential (π - q.thS))
+    (hxA : ¬ (∃ t, 0 ≤ t ∧ 0 < q.wBot (q.dsol x t) ∧
+      ∀ s ∈ Icc 0 t, 0 < min (-q.wTop (q.dsol x s)) (q.dsol x s 0 - (q.dU - 2 * π))))
+    (hxB : ¬ (∃ t, 0 ≤ t ∧ 0 < max (q.wTop (q.dsol x t)) (q.dU - 2 * π - q.dsol x t 0) ∧
+      ∀ s ∈ Icc 0 t, 0 < -q.wBot (q.dsol x s))) :
+    ∀ t, 0 ≤ t →
+      q.wTop (q.dsol x t) < 0 ∧ q.wBot (q.dsol x t) < 0 ∧ q.dU - 2 * π < q.dsol x t 0 := by
+  have hA := q.A_pos
+  set O := {y : Fin 3 → ℝ | q.wTop y < 0 ∧ q.wBot y < 0 ∧ q.dU - 2 * π < y 0} with hOdef
+  have hO : IsOpen O := (isOpen_lt q.continuous_wTop continuous_const).inter
+    ((isOpen_lt q.continuous_wBot continuous_const).inter
+      (isOpen_lt continuous_const (continuous_apply 0)))
+  by_contra hcon
+  push Not at hcon
+  obtain ⟨t₁, ht₁, hout⟩ := hcon
+  set S := Ici (0 : ℝ) ∩ q.dsol x ⁻¹' Oᶜ with hS
+  have hSc : IsClosed S := (q.dsol_continuousOn x).preimage_isClosed_of_isClosed isClosed_Ici
+    hO.isClosed_compl
+  have hSne : S.Nonempty := ⟨t₁, ht₁, fun h => by
+    obtain ⟨a, b, c⟩ := h
+    exact absurd c (not_lt.2 (hout a b))⟩
+  have hSb : BddBelow S := ⟨0, fun t ht => ht.1⟩
+  set τ := sInf S with hτdef
+  have hτS : τ ∈ S := hSc.csInf_mem hSne hSb
+  have hτ0 : 0 < τ := by
+    rcases (mem_Ici.1 hτS.1).lt_or_eq with h | h
+    · exact h
+    · exfalso; have := hτS.2; rw [← h, mem_preimage, q.dsol_zero] at this; exact this hx
+  have hbefore : ∀ t, 0 ≤ t → t < τ → q.dsol x t ∈ O := by
+    intro t ht htτ
+    by_contra hn
+    exact absurd (csInf_le hSb ⟨ht, hn⟩) (not_le.2 htτ)
+  set y := q.dsol x τ with hy
+  have hyO : y ∉ O := hτS.2
+  have hyE : q.downEnergy y < q.potential (π - q.thS) := (q.downEnergy_le x hτ0.le).trans_lt hE
+  have hcI : ∀ f : (Fin 3 → ℝ) → ℝ, Continuous f → ContinuousOn (fun s => f (q.dsol x s)) (Ici τ) :=
+    fun f hf => (hf.comp_continuousOn (q.dsol_continuousOn x)).mono (Ici_subset_Ici.2 hτ0.le)
+  have hcA : ∀ f : (Fin 3 → ℝ) → ℝ, Continuous f → ContinuousAt (fun s => f (q.dsol x s)) τ :=
+    fun f hf => hf.continuousAt.comp (q.dsol_hasDerivAt x hτ0).continuousAt
+  have hcW : ∀ f : (Fin 3 → ℝ) → ℝ, Continuous f →
+      ContinuousWithinAt (fun s => f (q.dsol x s)) (Ici τ) τ :=
+    fun f hf => (hcA f hf).continuousWithinAt
+  have hyT : q.wTop y ≤ 0 := nonpos_of_neg_before (f := fun s => q.wTop (q.dsol x s))
+    (hcA _ q.continuous_wTop) hτ0
+    (fun t ht htτ => (hbefore t ht htτ).1)
+  have hyB : q.wBot y ≤ 0 := nonpos_of_neg_before (f := fun s => q.wBot (q.dsol x s))
+    (hcA _ q.continuous_wBot) hτ0
+    (fun t ht htτ => (hbefore t ht htτ).2.1)
+  have hyL : q.dU - 2 * π ≤ y 0 := by
+    have := nonpos_of_neg_before (f := fun s => q.dU - 2 * π - q.dsol x s 0)
+      (hcA (fun z => q.dU - 2 * π - z 0) (continuous_const.sub (continuous_apply 0))) hτ0
+      (fun t ht htτ => by have := (hbefore t ht htτ).2.2; linarith)
+    rw [hy]; linarith
+  have hleft : y 0 = q.dU - 2 * π → y 1 < 0 := by
+    intro hy0
+    obtain ⟨hne, -⟩ := q.left_wall h0 h1 hy0 hyE
+    rcases lt_or_gt_of_ne hne with h | h
+    · exact h
+    · exfalso
+      obtain ⟨t, ht, hlt⟩ := lt_before (f := fun s => q.dsol x s 0)
+        (f' := fun s => q.dsol x s 1) (fun s hs => q.hasDerivAt_angle x hs)
+        (hcA (fun z => z 1) (continuous_apply 1)) hτ0 h
+      have := (hbefore t ht.1.le ht.2).2.2
+      try simp only at hlt
+      rw [← hy, hy0] at hlt
+      linarith
+  by_cases hT0 : q.wTop y = 0
+  · -- the upper wall: an upper exit first
+    have hrate := (q.wall_rate_pos h0 h1 hΛ hyT hyB hyE).1 hT0
+    obtain ⟨h₁, hh₁, hp₁⟩ := pos_after (f := fun s => q.wTop (q.dsol x s))
+      (f' := fun s => q.wTopRate (q.dsol x s)) (hcI _ q.continuous_wTop)
+      (fun t ht => q.hasDerivAt_wTop x (by linarith)) (hcW _ q.continuous_wTopRate) hrate
+    have hs := q.speed_lt h0 h1 hΛ hyT hyB hyE
+    have hyB' : q.wBot y < 0 := by
+      have := q.wTop_add_wBot y
+      have : 0 < q.dU - y 0 := by
+        have := abs_nonneg (y 1); have := q.ωc_pos; nlinarith
+      nlinarith
+    obtain ⟨h₂, hh₂, hp₂⟩ := pos_near (g := fun s => -q.wBot (q.dsol x s))
+      ((hcW _ q.continuous_wBot).neg) (by show 0 < -q.wBot (q.dsol x τ); linarith)
+    have hm : 0 < min h₁ h₂ := lt_min hh₁ hh₂
+    refine hxB ⟨τ + min h₁ h₂, by linarith, lt_max_of_lt_left ?_, fun s hs => ?_⟩
+    · have := hp₁ (τ + min h₁ h₂) ⟨by linarith, by linarith [min_le_left h₁ h₂]⟩
+      try simp only at this
+      rw [← hy, hT0] at this
+      exact this
+    · rcases lt_or_ge s τ with hs' | hs'
+      · exact neg_pos.2 (hbefore s hs.1 hs').2.1
+      · exact hp₂ s ⟨hs', by linarith [min_le_right h₁ h₂, hs.2]⟩
+  · have hyT' : q.wTop y < 0 := lt_of_le_of_ne hyT hT0
+    by_cases hB0 : q.wBot y = 0
+    · -- the lower wall: a lower exit first
+      have hyL' : q.dU - 2 * π < y 0 := by
+        rcases hyL.lt_or_eq with h | h
+        · exact h
+        · exfalso
+          have := (q.left_wall h0 h1 h.symm hyE).2 (hleft h.symm)
+          linarith
+      have hrate := (q.wall_rate_pos h0 h1 hΛ hyT hyB hyE).2 hB0
+      obtain ⟨h₁, hh₁, hp₁⟩ := pos_after (f := fun s => q.wBot (q.dsol x s))
+        (f' := fun s => q.wBotRate (q.dsol x s)) (hcI _ q.continuous_wBot)
+        (fun t ht => q.hasDerivAt_wBot x (by linarith)) (hcW _ q.continuous_wBotRate) hrate
+      have hgc : Continuous fun z : Fin 3 → ℝ => min (-q.wTop z) (z 0 - (q.dU - 2 * π)) :=
+        (q.continuous_wTop.neg).min ((continuous_apply 0).sub continuous_const)
+      obtain ⟨h₂, hh₂, hp₂⟩ := pos_near
+        (g := fun s => min (-q.wTop (q.dsol x s)) (q.dsol x s 0 - (q.dU - 2 * π)))
+        (hcW _ hgc) (by
+          show 0 < min (-q.wTop (q.dsol x τ)) (q.dsol x τ 0 - (q.dU - 2 * π))
+          rw [← hy]; exact lt_min (by linarith) (by linarith))
+      have hm : 0 < min h₁ h₂ := lt_min hh₁ hh₂
+      refine hxA ⟨τ + min h₁ h₂, by linarith, ?_, fun s hs => ?_⟩
+      · have := hp₁ (τ + min h₁ h₂) ⟨by linarith, by linarith [min_le_left h₁ h₂]⟩
+        try simp only at this
+        rw [← hy, hB0] at this
+        exact this
+      · rcases lt_or_ge s τ with hs' | hs'
+        · have := hbefore s hs.1 hs'
+          exact lt_min (by linarith [this.1]) (by linarith [this.2.2])
+        · exact hp₂ s ⟨hs', by linarith [min_le_right h₁ h₂, hs.2]⟩
+    · -- the left wall: a left exit first
+      have hyB' : q.wBot y < 0 := lt_of_le_of_ne hyB hB0
+      have hy0 : y 0 = q.dU - 2 * π := by
+        rcases hyL.lt_or_eq with h | h
+        · exact absurd ⟨hyT', hyB', h⟩ hyO
+        · exact h.symm
+      have hw := hleft hy0
+      obtain ⟨h₁, hh₁, hp₁⟩ := pos_after (f := fun s => q.dU - 2 * π - q.dsol x s 0)
+        (f' := fun s => -q.dsol x s 1)
+        (hcI (fun z => q.dU - 2 * π - z 0) (continuous_const.sub (continuous_apply 0)))
+        (fun t ht => (q.hasDerivAt_angle x (by linarith)).const_sub _)
+        ((hcW (fun z => z 1) (continuous_apply 1)).neg)
+        (by show 0 < -q.dsol x τ 1; rw [← hy]; linarith)
+      obtain ⟨h₂, hh₂, hp₂⟩ := pos_near (g := fun s => -q.wBot (q.dsol x s))
+        ((hcW _ q.continuous_wBot).neg) (by show 0 < -q.wBot (q.dsol x τ); linarith)
+      have hm : 0 < min h₁ h₂ := lt_min hh₁ hh₂
+      refine hxB ⟨τ + min h₁ h₂, by linarith, lt_max_of_lt_right ?_, fun s hs => ?_⟩
+      · have := hp₁ (τ + min h₁ h₂) ⟨by linarith, by linarith [min_le_left h₁ h₂]⟩
+        try simp only at this
+        rw [← hy, hy0, sub_self] at this
+        exact this
+      · rcases lt_or_ge s τ with hs' | hs'
+        · exact neg_pos.2 (hbefore s hs.1 hs').2.1
+        · exact hp₂ s ⟨hs', by linarith [min_le_right h₁ h₂, hs.2]⟩
+
+
+/-- The stable equilibrium `x_s = (θ_s + α, 0, P_ref)`. -/
+private def xs : Fin 3 → ℝ := ![q.thS + q.α, 0, q.Pref]
+
+@[tmio M, powerlib_domain] private theorem wedge_angle {y : Fin 3 → ℝ} (hT : q.wTop y ≤ 0)
+    (hB : q.wBot y ≤ 0) : y 0 ≤ q.dU := by
+  have hA := q.A_pos
+  have := q.wTop_add_wBot y
+  by_contra h
+  push Not at h
+  have : 0 < q.A * (y 0 - q.dU) := mul_pos hA (by linarith)
+  linarith
+
+/-- **The only rest point in the closed wedge below the saddle level is `x_s`** (`D > 0`): an
+orbit with constant `F_R` has `ω = 0`, `P_f = P_ref`, `sin(δ − α) = s`; in
+`[θ_u − 2π, θ_u]` the solutions are `θ_s`, `θ_u − 2π`, `θ_u`, and the last two are at or above
+the saddle level. -/
+@[tmio M, powerlib_domain] private theorem rest_wedge (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hD : 0 < q.D) {p : Fin 3 → ℝ} (hpT : q.wTop p ≤ 0)
+    (hpB : q.wBot p ≤ 0) (hpL : q.dU - 2 * π ≤ p 0)
+    (hpE : q.downEnergy p < q.potential (π - q.thS))
+    (hconst : ∀ t, 0 ≤ t → q.downEnergy (q.dsol p t) = q.downEnergy p) : p = q.xs := by
+  have hM := q.M_pos; have hω := q.ωc_pos; have hA := q.A_pos; have hpi := Real.pi_pos
+  obtain ⟨hs0, hs1, hsin, -⟩ := q.thS_facts h0 h1
+  have hrate : ∀ t, 0 < t → q.dsol p t 1 = 0 ∧ q.dsol p t 2 = q.Pref := by
+    intro t ht
+    have h1 := (q.hasDerivWithinAt_downEnergy p ht.le).hasDerivAt (Ici_mem_nhds ht)
+    have h2 : HasDerivAt (fun s => q.downEnergy (q.dsol p s)) 0 t :=
+      (hasDerivAt_const t (q.downEnergy p)).congr_of_eventuallyEq
+        (Filter.mem_of_superset (Ioi_mem_nhds ht) fun s hs => hconst s (le_of_lt hs))
+    have h3 := h1.unique h2
+    set w := q.dsol p t 1
+    set a := (q.Pref - q.dsol p t 2 - q.D * w) / q.M
+    have hw2 : 0 ≤ q.D * w ^ 2 := by positivity
+    have ha2 : 0 ≤ q.M / q.ωc * a ^ 2 := by positivity
+    have hw : w = 0 := by
+      have : q.D * w ^ 2 = 0 := by linarith
+      exact pow_eq_zero_iff (n := 2) (by norm_num) |>.1
+        ((mul_eq_zero.1 this).resolve_left hD.ne')
+    have ha : a = 0 := by
+      have : q.M / q.ωc * a ^ 2 = 0 := by linarith
+      exact pow_eq_zero_iff (n := 2) (by norm_num) |>.1
+        ((mul_eq_zero.1 this).resolve_left (by positivity))
+    refine ⟨hw, ?_⟩
+    have : q.Pref - q.dsol p t 2 - q.D * w = 0 := by
+      rw [div_eq_zero_iff] at ha; exact ha.resolve_right hM.ne'
+    rw [hw] at this; linarith
+  have hsinp : ∀ t, 0 < t → q.c0 + q.A * Real.sin (q.dsol p t 0 - q.α) = q.Pref := by
+    intro t ht
+    have h1 := q.dsol_coord_hasDerivAt p 2 ht
+    have h2 : HasDerivAt (fun s => q.dsol p s 2) 0 t :=
+      (hasDerivAt_const t q.Pref).congr_of_eventuallyEq
+        (Filter.mem_of_superset (Ioi_mem_nhds ht) fun s hs => (hrate s hs).2)
+    have h3 := h1.unique h2
+    simp only [downField, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons,
+      (hrate t ht).2] at h3
+    have := (mul_eq_zero.1 h3).resolve_left hω.ne'
+    linarith
+  have hlim : Tendsto (q.dsol p) (𝓝[>] 0) (𝓝 p) := by
+    have := ((q.dsol_continuousOn p) 0 (mem_Ici.2 le_rfl)).tendsto
+    rw [q.dsol_zero] at this
+    exact this.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self)
+  have hev : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < t := self_mem_nhdsWithin
+  have hp1 : p 1 = 0 := by
+    have h := ((continuous_apply 1).tendsto p).comp hlim
+    exact tendsto_nhds_unique h (tendsto_const_nhds.congr' (hev.mono fun t ht =>
+      ((hrate t ht).1).symm))
+  have hp2 : p 2 = q.Pref := by
+    have h := ((continuous_apply 2).tendsto p).comp hlim
+    exact tendsto_nhds_unique h (tendsto_const_nhds.congr' (hev.mono fun t ht =>
+      ((hrate t ht).2).symm))
+  have hp0 : q.c0 + q.A * Real.sin (p 0 - q.α) = q.Pref := by
+    have hc : Continuous fun y : Fin 3 → ℝ => q.c0 + q.A * Real.sin (y 0 - q.α) := by fun_prop
+    have h := (hc.tendsto p).comp hlim
+    exact tendsto_nhds_unique h (tendsto_const_nhds.congr' (hev.mono fun t ht =>
+      ((hsinp t ht)).symm))
+  have hss : Real.sin (p 0 - q.α) = Real.sin q.thS := by
+    have : q.A * Real.sin (p 0 - q.α) = q.A * Real.sin q.thS := by linarith
+    exact mul_left_cancel₀ hA.ne' this
+  have hpu := q.wedge_angle hpT hpB
+  set θ := p 0 - q.α with hθ
+  have hθ1 : θ ≤ π - q.thS := by simp only [hθ, dU] at hpu ⊢; linarith
+  have hθ2 : -π - q.thS ≤ θ := by simp only [hθ, dU] at hpL ⊢; linarith
+  have hE : q.downEnergy p = q.potential θ := by
+    simp only [downEnergy, hp1, hθ]; ring
+  obtain ⟨k, hk⟩ := Real.sin_eq_sin_iff.1 hss
+  rcases hk with hk | hk
+  · -- `θ_s = 2kπ + θ`: `k = 0`
+    have hk1 : (k : ℝ) < 1 := by
+      have : (k : ℝ) * π < 1 * π := by nlinarith
+      exact lt_of_mul_lt_mul_right this hpi.le
+    have hk2 : (-1 : ℝ) < k := by
+      have : (-1 : ℝ) * π < k * π := by nlinarith
+      exact lt_of_mul_lt_mul_right this hpi.le
+    have hk0 : k = 0 := by
+      have h1' : k < 1 := by exact_mod_cast hk1
+      have h2' : -1 < k := by exact_mod_cast hk2
+      omega
+    rw [hk0] at hk
+    simp only [Int.cast_zero, mul_zero, zero_mul, zero_add] at hk
+    ext i; fin_cases i
+    · show p 0 = q.thS + q.α
+      linarith
+    · exact hp1
+    · exact hp2
+  · -- `θ_s = (2k + 1)π − θ`: `θ ∈ {θ_u, θ_u − 2π}`, at or above the saddle level
+    exfalso
+    have hk1 : (k : ℝ) < 1 := by
+      have : (k : ℝ) * π < 1 * π := by nlinarith
+      exact lt_of_mul_lt_mul_right this hpi.le
+    have hk2 : (-2 : ℝ) < k := by
+      have : (-2 : ℝ) * π < k * π := by nlinarith
+      exact lt_of_mul_lt_mul_right this hpi.le
+    have h1' : k < 1 := by exact_mod_cast hk1
+    have h2' : -2 < k := by exact_mod_cast hk2
+    have hk' : k = 0 ∨ k = -1 := by omega
+    rcases hk' with h | h
+    · rw [h] at hk
+      simp only [Int.cast_zero, mul_zero, zero_add, one_mul] at hk
+      have : θ = π - q.thS := by linarith
+      rw [hE, this] at hpE
+      exact lt_irrefl _ hpE
+    · rw [h] at hk
+      have : θ = π - q.thS - 2 * π := by push_cast at hk; linarith
+      rw [hE, this, q.potential_eq (π - q.thS - 2 * π), Real.cos_sub_two_pi,
+        q.potential_eq] at hpE
+      nlinarith
+
+/-- **The selected orbit converges to the stable equilibrium** (`D > 0`,
+`(M ω_c + D) ω_c ≥ 12 A`): an orbit that stays in the wedge with `F_R < U(θ_u)` converges to
+`x_s` (LaSalle along the orbit, `Dynamics.tendsto_nhdsSet_of_antitone`, `rest_wedge`). -/
+@[tmio M, powerlib_domain] private theorem tendsto_xs (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hD : 0 < q.D) (hΛ : 12 * q.A ≤ (q.M * q.ωc + q.D) * q.ωc)
+    {x : Fin 3 → ℝ} (hE : q.downEnergy x < q.potential (π - q.thS))
+    (hstay : ∀ t, 0 ≤ t →
+      q.wTop (q.dsol x t) < 0 ∧ q.wBot (q.dsol x t) < 0 ∧ q.dU - 2 * π < q.dsol x t 0) :
+    Tendsto (q.dsol x) atTop (𝓝 q.xs) := by
+  have hA := q.A_pos; have hω := q.ωc_pos; have hpi := Real.pi_pos
+  set B := {y : Fin 3 → ℝ | q.dU - 2 * π ≤ y 0} ∩ {y | q.wTop y ≤ 0} ∩ {y | q.wBot y ≤ 0} ∩
+    {y | |y 1| ≤ π * q.ωc} ∩ {y | q.downEnergy y ≤ q.downEnergy x} with hB
+  have hBc : IsCompact B := by
+    refine Metric.isCompact_of_isClosed_isBounded ?_ ?_
+    · exact ((((isClosed_le continuous_const (continuous_apply 0)).inter
+        (isClosed_le q.continuous_wTop continuous_const)).inter
+        (isClosed_le q.continuous_wBot continuous_const)).inter
+        (isClosed_le (continuous_apply 1).abs continuous_const)).inter
+        (isClosed_le q.continuous_downEnergy continuous_const)
+    · refine isBounded_iff_forall_norm_le.2
+        ⟨|q.dU| + 2 * π + π * q.ωc + |q.c0| + q.A + 2 * π * q.A, ?_⟩
+      rintro y ⟨⟨⟨⟨h0', hT⟩, hB'⟩, h1'⟩, -⟩
+      have h0' : q.dU - 2 * π ≤ y 0 := h0'
+      have hT : q.wTop y ≤ 0 := hT
+      have hB' : q.wBot y ≤ 0 := hB'
+      have h1' : |y 1| ≤ π * q.ωc := h1'
+      have hu := q.wedge_angle hT hB'
+      have hpw : |q.pw (y 0)| ≤ |q.c0| + q.A := by
+        simp only [pw]
+        refine (abs_add_le _ _).trans ?_
+        rw [abs_mul, abs_of_pos hA]
+        nlinarith [Real.abs_sin_le_one (y 0 - q.α)]
+      have he : |y 2 - q.pw (y 0)| ≤ 2 * π * q.A := by
+        simp only [wTop, wBot] at hT hB'
+        rw [abs_le]; constructor <;> nlinarith
+      have hn : 0 ≤ |q.dU| + 2 * π + π * q.ωc + |q.c0| + q.A + 2 * π * q.A := by positivity
+      refine (pi_norm_le_iff_of_nonneg hn).2 fun i => ?_
+      rw [Real.norm_eq_abs]
+      fin_cases i
+      · show |y 0| ≤ _
+        have : |y 0| ≤ |q.dU| + 2 * π := by
+          rw [abs_le]; constructor
+          · linarith [neg_abs_le q.dU]
+          · linarith [le_abs_self q.dU]
+        have := abs_nonneg q.c0
+        nlinarith
+      · show |y 1| ≤ _
+        have := abs_nonneg q.c0; have := abs_nonneg q.dU
+        nlinarith
+      · show |y 2| ≤ _
+        have : |y 2| ≤ |q.pw (y 0)| + |y 2 - q.pw (y 0)| := by
+          calc |y 2| = |q.pw (y 0) + (y 2 - q.pw (y 0))| := by ring_nf
+            _ ≤ _ := abs_add_le _ _
+        have := abs_nonneg q.dU
+        nlinarith
+  have hxB : ∀ t : ℝ, 0 ≤ t → forwardSolution q.lipschitzWith_downField x t ∈ B := by
+    intro t ht
+    obtain ⟨hT, hB', hL⟩ := hstay t ht
+    have hs := q.speed_lt h0 h1 hΛ hT.le hB'.le ((q.downEnergy_le x ht).trans_lt hE)
+    have : 2 * |q.dsol x t 1| < q.ωc * (2 * π) := by
+      have : q.dU - q.dsol x t 0 < 2 * π := by linarith
+      nlinarith
+    exact ⟨⟨⟨⟨hL.le, hT.le⟩, hB'.le⟩, by show |q.dsol x t 1| ≤ π * q.ωc; nlinarith⟩,
+      q.downEnergy_le x ht⟩
+  have hT := tendsto_nhdsSet_of_antitone q.lipschitzWith_downField hBc hxB
+    q.continuous_downEnergy (Z := {q.xs})
+    (fun s t hs hst => q.downEnergy_antitone x (mem_Ici.2 hs) (mem_Ici.2 (hs.trans hst)) hst)
+    (fun p hp hconst => by
+      obtain ⟨⟨⟨⟨h0', hT⟩, hB'⟩, -⟩, hpE⟩ := hp
+      exact q.rest_wedge h0 h1 hD hT hB' h0' (hpE.trans_lt hE) hconst)
+  rw [nhdsSet_singleton] at hT
+  exact hT
+
+/-- **The filter stays within `A` of `c₀`** along a reversed orbit converging to `x_s`: beyond
+`c₀ + A` (below `c₀ − A`) the anti-stable filter only moves away. -/
+@[tmio M, powerlib_domain] private theorem filter_bound (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) {y : Fin 3 → ℝ} (hlim : Tendsto (q.dsol y) atTop (𝓝 q.xs)) :
+    ∀ t, 0 ≤ t → |q.dsol y t 2 - q.c0| ≤ q.A := by
+  have hA := q.A_pos; have hω := q.ωc_pos
+  have hP : Tendsto (fun t => q.dsol y t 2) atTop (𝓝 q.Pref) := by
+    have := ((continuous_apply 2).tendsto q.xs).comp hlim
+    simp only [xs] at this
+    exact this
+  intro t₀ ht₀
+  have hd : ∀ t, t₀ < t →
+      HasDerivAt (fun s => q.dsol y s 2) (q.downField (q.dsol y t) 2) t :=
+    fun t ht => q.dsol_coord_hasDerivAt y 2 (by linarith)
+  have hcI : ContinuousOn (fun s => q.dsol y s 2) (Ici t₀) :=
+    ((continuous_apply 2).comp_continuousOn (q.dsol_continuousOn y)).mono (Ici_subset_Ici.2 ht₀)
+  have hE : ∀ t, HasDerivAt (fun t => Real.exp (-(q.ωc * (t - t₀))))
+      (Real.exp (-(q.ωc * (t - t₀))) * -(q.ωc * 1)) t := fun t =>
+    (((hasDerivAt_id' t).sub_const t₀).const_mul q.ωc).neg.exp
+  have hEc : Continuous fun t => Real.exp (-(q.ωc * (t - t₀))) := by fun_prop
+  have hE1 : ∀ t, t₀ ≤ t → Real.exp (-(q.ωc * (t - t₀))) ≤ 1 := fun t ht =>
+    Real.exp_le_one_iff.2 (by nlinarith)
+  rw [abs_le]
+  constructor
+  · by_contra hcon
+    push Not at hcon
+    set κ := q.c0 - q.A - q.dsol y t₀ 2 with hκ
+    have hκ0 : 0 < κ := by linarith
+    have hmono : MonotoneOn (fun t => (q.c0 - q.A - q.dsol y t 2) *
+        Real.exp (-(q.ωc * (t - t₀)))) (Ici t₀) := by
+      refine monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ici t₀)
+        (f' := fun t => q.ωc * q.A * (1 + Real.sin (q.dsol y t 0 - q.α)) *
+          Real.exp (-(q.ωc * (t - t₀))))
+        ((continuousOn_const.sub hcI).mul hEc.continuousOn) (fun t ht => ?_) (fun t _ => ?_)
+      · rw [interior_Ici] at ht
+        refine (((hd t ht).const_sub _).mul (hE t)).hasDerivWithinAt.congr_deriv ?_
+        simp only [downField, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+        ring
+      · have := Real.neg_one_le_sin (q.dsol y t 0 - q.α)
+        have : 0 ≤ 1 + Real.sin (q.dsol y t 0 - q.α) := by linarith
+        positivity
+    have hlow : ∀ t, t₀ ≤ t → q.dsol y t 2 ≤ q.c0 - q.A - κ := by
+      intro t ht
+      have h := hmono (mem_Ici.2 le_rfl) (mem_Ici.2 ht) ht
+      simp only [sub_self, mul_zero, neg_zero, Real.exp_zero, mul_one] at h
+      have he0 := Real.exp_pos (-(q.ωc * (t - t₀)))
+      have he1 := hE1 t ht
+      by_contra hc; push Not at hc
+      nlinarith
+    obtain ⟨t, ht⟩ := (hP.eventually (lt_mem_nhds (show q.c0 - q.A - κ < q.Pref by
+      linarith))).and (eventually_ge_atTop t₀) |>.exists
+    linarith [hlow t ht.2, ht.1]
+  · by_contra hcon
+    push Not at hcon
+    set κ := q.dsol y t₀ 2 - q.c0 - q.A with hκ
+    have hκ0 : 0 < κ := by linarith
+    have hmono : MonotoneOn (fun t => (q.dsol y t 2 - q.c0 - q.A) *
+        Real.exp (-(q.ωc * (t - t₀)))) (Ici t₀) := by
+      refine monotoneOn_of_hasDerivWithinAt_nonneg (convex_Ici t₀)
+        (f' := fun t => q.ωc * q.A * (1 - Real.sin (q.dsol y t 0 - q.α)) *
+          Real.exp (-(q.ωc * (t - t₀))))
+        (((hcI.sub continuousOn_const).sub continuousOn_const).mul hEc.continuousOn)
+        (fun t ht => ?_) (fun t _ => ?_)
+      · rw [interior_Ici] at ht
+        refine ((((hd t ht).sub_const q.c0).sub_const q.A).mul (hE t)).hasDerivWithinAt.congr_deriv
+          ?_
+        simp only [downField, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+        ring
+      · have := Real.sin_le_one (q.dsol y t 0 - q.α)
+        have : 0 ≤ 1 - Real.sin (q.dsol y t 0 - q.α) := by linarith
+        positivity
+    have hhigh : ∀ t, t₀ ≤ t → q.c0 + q.A + κ ≤ q.dsol y t 2 := by
+      intro t ht
+      have h := hmono (mem_Ici.2 le_rfl) (mem_Ici.2 ht) ht
+      simp only [sub_self, mul_zero, neg_zero, Real.exp_zero, mul_one] at h
+      have he0 := Real.exp_pos (-(q.ωc * (t - t₀)))
+      have he1 := hE1 t ht
+      by_contra hc; push Not at hc
+      nlinarith
+    obtain ⟨t, ht⟩ := (hP.eventually (gt_mem_nhds (show q.Pref < q.c0 + q.A + κ by
+      linarith))).and (eventually_ge_atTop t₀) |>.exists
+    linarith [hhigh t ht.2, ht.1]
+
+
+/-- The speed reached by every uphill crossing of the band `[θ_a, π − θ_a]`
+(`θ_a = Params.escBandAngle`, power gap `f₀ = Params.escBandGap`, length `L = π/2 − arcsin s`,
+`Z₀ = P_ref − c₀ + A + f₀`): `w₀ = min(f₀/(4D), L f₀ ω_c/(6 Z₀), √(L f₀/(24 M)))`. -/
+def fastFilterSpeed : ℝ :=
+  min (min (q.escBandGap / (4 * q.D)) ((π / 2 - Real.arcsin ((q.Pref - q.c0) / q.A)) *
+    q.escBandGap * q.ωc / (6 * (q.Pref - q.c0 + q.A + q.escBandGap))))
+    √((π / 2 - Real.arcsin ((q.Pref - q.c0) / q.A)) * q.escBandGap / (24 * q.M))
+
+/-- The gain constant `J = 9 D w₀⁴/(128 ΔU)` (`w₀ = fastFilterSpeed`, `ΔU = Params.escBarrier`):
+every uphill path from near the stable equilibrium to near the saddle has `∫ ω̇² ≥ J`. -/
+def fastFilterGain : ℝ := 9 * q.D * q.fastFilterSpeed ^ 4 / (128 * q.escBarrier)
+
+@[tmio M, powerlib_domain] private theorem fastFilterSpeed_pos (hD : 0 < q.D)
+    (h0 : q.c0 ≤ q.Pref) (h1 : q.Pref < q.c0 + q.A) : 0 < q.fastFilterSpeed := by
+  have hA := q.A_pos; have hω := q.ωc_pos; have hM := q.M_pos
+  obtain ⟨-, hs1, -, -⟩ := q.thS_facts h0 h1
+  have hf := q.escBandGap_pos h0 h1
+  have hL : 0 < π / 2 - Real.arcsin ((q.Pref - q.c0) / q.A) := by
+    have : q.thS = Real.arcsin ((q.Pref - q.c0) / q.A) := rfl
+    linarith
+  have hZ : 0 < q.Pref - q.c0 + q.A + q.escBandGap := by linarith
+  exact lt_min (lt_min (by positivity) (by positivity)) (Real.sqrt_pos.2 (by positivity))
+
+@[tmio M, powerlib_domain] theorem fastFilterGain_pos (hD : 0 < q.D) (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) : 0 < q.fastFilterGain := by
+  have := q.fastFilterSpeed_pos hD h0 h1
+  have := q.escBarrier_pos h0 h1
+  unfold fastFilterGain; positivity
+
+/-- **The filter rises on the band** (`c₀ ≤ P_ref < c₀ + A`): along an uphill path on `[t₁, t₂]`
+whose shifted angle stays in `[θ_a, π − θ_a]` and whose filter starts at `≥ c₀ − A`, the filter
+is `≥ P_ref + f₀/2` after `t_w = 2 Z₀/(f₀ ω_c)` (comparison with `Ṗ_f ≥ ω_c (P_ref + f₀ − P_f)`,
+`e^x ≥ 1 + x`). -/
+@[tmio M, powerlib_domain] private theorem filter_rises (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) {t₁ t₂ : ℝ} (ht12 : t₁ ≤ t₂) {φ : ℝ → Fin 3 → ℝ}
+    (hc : ContinuousOn φ (Icc t₁ t₂))
+    (h2 : ∀ t ∈ Ioo t₁ t₂, HasDerivAt (fun s => φ s 2) (q.upField (φ t) 2) t)
+    (hz1 : q.c0 - q.A ≤ φ t₁ 2)
+    (hband : ∀ t ∈ Icc t₁ t₂,
+      q.escBandAngle ≤ φ t 0 - q.α ∧ φ t 0 - q.α ≤ π - q.escBandAngle) :
+    ∀ t ∈ Icc t₁ t₂,
+      t₁ + 2 * (q.Pref - q.c0 + q.A + q.escBandGap) / (q.escBandGap * q.ωc) ≤ t →
+        q.escBandGap / 2 ≤ φ t 2 - q.Pref := by
+  have hA := q.A_pos; have hω := q.ωc_pos
+  obtain ⟨hs0, hs1, -, -⟩ := q.thS_facts h0 h1
+  set θa := q.escBandAngle with hθa
+  have hθa' : θa = (q.thS + π / 2) / 2 := rfl
+  set f₀ := q.escBandGap with hf₀
+  have hf0 : 0 < f₀ := q.escBandGap_pos h0 h1
+  have hf₀def : f₀ = q.A * Real.sin θa - (q.Pref - q.c0) := rfl
+  set Z₀ := q.Pref - q.c0 + q.A + f₀ with hZ₀
+  have hsinb : ∀ θ ∈ Icc θa (π - θa), Real.sin θa ≤ Real.sin θ := by
+    intro θ hθ
+    have h1' : -(π / 2) ≤ θa := by rw [hθa']; linarith [Real.pi_pos]
+    rcases le_or_gt θ (π / 2) with h | h
+    · exact Real.sin_le_sin_of_le_of_le_pi_div_two h1' h hθ.1
+    · rw [← Real.sin_pi_sub θ]
+      exact Real.sin_le_sin_of_le_of_le_pi_div_two h1' (by linarith) (by linarith [hθ.2])
+  have hanti : AntitoneOn (fun t => (q.Pref + f₀ - φ t 2) *
+      Real.exp (q.ωc * (t - t₁))) (Icc t₁ t₂) := by
+    refine antitoneOn_of_hasDerivWithinAt_nonpos (convex_Icc _ _)
+      (f' := fun t => q.ωc * (q.Pref + f₀ - (q.c0 + q.A * Real.sin (φ t 0 - q.α))) *
+        Real.exp (q.ωc * (t - t₁)))
+      ((continuousOn_const.sub ((continuous_apply 2).comp_continuousOn hc)).mul
+        (by fun_prop : Continuous fun t => Real.exp (q.ωc * (t - t₁))).continuousOn)
+      (fun t ht => ?_) (fun t ht => ?_)
+    · rw [interior_Icc] at ht
+      have hE : HasDerivAt (fun t => Real.exp (q.ωc * (t - t₁)))
+          (Real.exp (q.ωc * (t - t₁)) * (q.ωc * 1)) t :=
+        (((hasDerivAt_id' t).sub_const t₁).const_mul q.ωc).exp
+      refine (((h2 t ht).const_sub (q.Pref + f₀)).mul hE).hasDerivWithinAt.congr_deriv ?_
+      simp only [upField, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+      ring
+    · rw [interior_Icc] at ht
+      have hb := hband t ⟨ht.1.le, ht.2.le⟩
+      have hs := hsinb (φ t 0 - q.α) ⟨hb.1, hb.2⟩
+      have h3 : q.Pref + f₀ - (q.c0 + q.A * Real.sin (φ t 0 - q.α)) ≤ 0 := by
+        have : q.A * Real.sin θa ≤ q.A * Real.sin (φ t 0 - q.α) :=
+          mul_le_mul_of_nonneg_left hs hA.le
+        rw [hf₀def]; linarith
+      have := mul_nonpos_of_nonneg_of_nonpos hω.le h3
+      exact mul_nonpos_of_nonpos_of_nonneg this (Real.exp_pos _).le
+  intro t ht htt
+  have h1' := hanti ⟨le_rfl, ht12⟩ ⟨ht.1, ht.2⟩ ht.1
+  simp only [sub_self, mul_zero, Real.exp_zero, mul_one] at h1'
+  have he : 1 + 2 * Z₀ / f₀ ≤ Real.exp (q.ωc * (t - t₁)) := by
+    have h5 : 2 * Z₀ / f₀ ≤ q.ωc * (t - t₁) := by
+      have h6 : 2 * Z₀ / (f₀ * q.ωc) ≤ t - t₁ := by linarith
+      rw [div_le_iff₀ (by positivity)] at h6
+      rw [div_le_iff₀ hf0]; nlinarith
+    have := Real.add_one_le_exp (q.ωc * (t - t₁))
+    linarith
+  by_contra hlt; push Not at hlt
+  have hpos : f₀ / 2 < q.Pref + f₀ - φ t 2 := by linarith
+  have hk : 0 < 1 + 2 * Z₀ / f₀ := by
+    have : 0 < Z₀ := by rw [hZ₀]; linarith
+    positivity
+  have h7 : f₀ / 2 * (1 + 2 * Z₀ / f₀) <
+      (q.Pref + f₀ - φ t 2) * Real.exp (q.ωc * (t - t₁)) :=
+    (mul_lt_mul_of_pos_right hpos hk).trans_le (mul_le_mul_of_nonneg_left he (by linarith))
+  have e : f₀ / 2 * (1 + 2 * Z₀ / f₀) = f₀ / 2 + Z₀ := by field_simp
+  have : q.Pref + f₀ - φ t₁ 2 ≤ Z₀ := by rw [hZ₀]; linarith
+  linarith
+
+/-- **A short deceleration**: an uphill path on `[t₃, t₂]` with `P_f − P_ref ≥ f/2`,
+`|ω| ≤ w` and `D w ≤ f/4` decelerates at the rate `f/(4M)`, so `t₂ − t₃ ≤ 8 M w/f`. -/
+@[tmio M, powerlib_domain] private theorem decel_short {t₃ t₂ f w : ℝ} (ht : t₃ ≤ t₂)
+    (hf : 0 < f) {φ : ℝ → Fin 3 → ℝ} (hc : ContinuousOn φ (Icc t₃ t₂))
+    (h1 : ∀ t ∈ Ioo t₃ t₂, HasDerivAt (fun s => φ s 1) (q.upField (φ t) 1) t)
+    (hzf : ∀ t ∈ Icc t₃ t₂, f / 2 ≤ φ t 2 - q.Pref) (hw : ∀ t ∈ Icc t₃ t₂, |φ t 1| ≤ w)
+    (hDw : q.D * w ≤ f / 4) : t₂ - t₃ ≤ 8 * q.M * w / f := by
+  have hM := q.M_pos
+  have hw0 : 0 ≤ w := (abs_nonneg _).trans (hw t₃ ⟨le_rfl, ht⟩)
+  rcases ht.lt_or_eq with ht' | ht'
+  · obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope (fun t => φ t 1)
+      (fun t => q.upField (φ t) 1) ht' ((continuous_apply 1).comp_continuousOn hc) h1
+    have hzξ := hzf ξ ⟨hξ.1.le, hξ.2.le⟩
+    have hwξ := (abs_le.1 (hw ξ ⟨hξ.1.le, hξ.2.le⟩)).2
+    have hacc : q.upField (φ ξ) 1 ≤ -(f / (4 * q.M)) := by
+      simp only [upField, Matrix.cons_val_one, Matrix.cons_val_zero]
+      rw [div_le_iff₀ hM]
+      have : q.D * φ ξ 1 ≤ q.D * w := mul_le_mul_of_nonneg_left hwξ q.D_nonneg
+      have : -(f / (4 * q.M)) * q.M = -(f / 4) := by field_simp
+      linarith
+    rw [hslope, div_le_iff₀ (by linarith)] at hacc
+    have hb2 := (abs_le.1 (hw t₂ ⟨ht, le_rfl⟩)).1
+    have hb3 := (abs_le.1 (hw t₃ ⟨le_rfl, ht⟩)).2
+    have h8 : f / (4 * q.M) * (t₂ - t₃) ≤ 2 * w := by linarith
+    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)] at h8
+    rw [le_div_iff₀ hf]; linarith
+  · rw [ht', sub_self]; positivity
+
+/-- **Speed on the band** (`D > 0`, `c₀ ≤ P_ref < c₀ + A`): an uphill path on `[0, T]` from an
+angle `≤ α + θ_a` to an angle `≥ α + π − θ_a`, with the filter within `A` of `c₀`, reaches
+`|ω| > w₀ = fastFilterSpeed`. Otherwise the crossing of the band takes at least `L/w₀`, while
+after `t_w = 2Z₀/(f₀ ω_c)` the filter is `≥ P_ref + f₀/2` there and decelerates the frequency at
+the rate `f₀/(4M)`, which bounds the crossing time by `t_w + 8 M w₀/f₀`. -/
+@[tmio M, powerlib_domain] private theorem exists_speed_band (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hD : 0 < q.D) {T : ℝ} (hT0 : 0 ≤ T)
+    {φ : ℝ → Fin 3 → ℝ} (hc : ContinuousOn φ (Icc 0 T))
+    (hφ : ∀ t ∈ Ico 0 T, HasDerivAt φ (q.upField (φ t)) t)
+    (hz : ∀ t ∈ Icc 0 T, |φ t 2 - q.c0| ≤ q.A)
+    (h0' : φ 0 0 - q.α ≤ q.escBandAngle) (hT : π - q.escBandAngle ≤ φ T 0 - q.α) :
+    ∃ t ∈ Icc 0 T, q.fastFilterSpeed < |φ t 1| := by
+  have hM := q.M_pos; have hA := q.A_pos; have hω := q.ωc_pos; have hpi := Real.pi_pos
+  obtain ⟨hs0, hs1, hsin, -⟩ := q.thS_facts h0 h1
+  set θa := q.escBandAngle with hθa
+  have hθa' : θa = (q.thS + π / 2) / 2 := rfl
+  set θb := π - θa with hθb
+  have hab : θa < θb := by rw [hθb, hθa']; linarith
+  set f₀ := q.escBandGap with hf₀
+  have hf0 : 0 < f₀ := q.escBandGap_pos h0 h1
+  have hf₀def : f₀ = q.A * Real.sin θa - (q.Pref - q.c0) := rfl
+  set L := π / 2 - q.thS with hL
+  have hL0 : 0 < L := by linarith
+  have hLab : θb - θa = L := by rw [hθb, hθa', hL]; ring
+  set Z₀ := q.Pref - q.c0 + q.A + f₀ with hZ₀
+  have hZ0 : 0 < Z₀ := by linarith
+  set w₀ := q.fastFilterSpeed with hw₀
+  have hw0 : 0 < w₀ := q.fastFilterSpeed_pos hD h0 h1
+  have hw1 : w₀ ≤ f₀ / (4 * q.D) := (min_le_left _ _).trans (min_le_left _ _)
+  have hw2 : w₀ ≤ L * f₀ * q.ωc / (6 * Z₀) := (min_le_left _ _).trans (min_le_right _ _)
+  have hw3 : w₀ ^ 2 ≤ L * f₀ / (24 * q.M) := by
+    have : w₀ ≤ √(L * f₀ / (24 * q.M)) := min_le_right _ _
+    calc w₀ ^ 2 ≤ √(L * f₀ / (24 * q.M)) ^ 2 := pow_le_pow_left₀ hw0.le this 2
+      _ = L * f₀ / (24 * q.M) := Real.sq_sqrt (by positivity)
+  have hsinb : ∀ θ ∈ Icc θa θb, Real.sin θa ≤ Real.sin θ := by
+    intro θ hθ
+    have h1' : -(π / 2) ≤ θa := by rw [hθa']; linarith
+    rcases le_or_gt θ (π / 2) with h | h
+    · exact Real.sin_le_sin_of_le_of_le_pi_div_two h1' h hθ.1
+    · rw [← Real.sin_pi_sub θ]
+      exact Real.sin_le_sin_of_le_of_le_pi_div_two h1' (by linarith) (by linarith [hθ.2])
+  by_contra hcon
+  push Not at hcon
+  set θ := fun t => φ t 0 - q.α with hθ
+  have hθc : ContinuousOn θ (Icc 0 T) :=
+    ((continuous_apply 0).comp_continuousOn hc).sub continuousOn_const
+  have hcoord : ∀ i : Fin 3, ∀ t ∈ Ico 0 T,
+      HasDerivAt (fun s => φ s i) (q.upField (φ t) i) t := fun i t ht =>
+    hasDerivAt_pi.1 (hφ t ht) i
+  obtain ⟨t₁, t₂, ht₁0, ht₁t₂, ht₂T, hθt₁, hθt₂, hband⟩ := band_times hT0 hθc hab h0' hT
+  -- (i) the crossing takes at least `L/w₀`
+  have hcross : L ≤ w₀ * (t₂ - t₁) := by
+    obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope θ (fun t => φ t 1) ht₁t₂
+      (hθc.mono (Icc_subset_Icc ht₁0 ht₂T))
+      (fun t ht => (hcoord 0 t ⟨by linarith [ht.1], by linarith [ht.2]⟩).sub_const q.α)
+    have hξw := (abs_le.1 (hcon ξ ⟨by linarith [hξ.1], by linarith [hξ.2]⟩)).2
+    rw [hslope, div_le_iff₀ (by linarith)] at hξw
+    linarith [hθt₁, hband t₂ ⟨ht₁t₂.le, le_rfl⟩, (hband t₁ ⟨le_rfl, ht₁t₂.le⟩).1]
+  -- (ii) after `t_w` the filter is above `P_ref + f₀/2` on the band
+  set tw := 2 * Z₀ / (f₀ * q.ωc) with htw
+  have htw0 : 0 ≤ tw := by positivity
+  have hzA := q.filter_rises h0 h1 ht₁t₂.le (hc.mono (Icc_subset_Icc ht₁0 ht₂T))
+    (fun t ht => hcoord 2 t ⟨by linarith [ht.1], by linarith [ht.2]⟩)
+    (by linarith [(abs_le.1 (hz t₁ ⟨ht₁0, by linarith⟩)).1]) hband
+  -- (iii) the frequency decreases at the rate `f₀/(4M)` there: the crossing is short
+  have hshort : t₂ - t₁ ≤ tw + 8 * q.M * w₀ / f₀ := by
+    by_contra hlong; push Not at hlong
+    have ht₃ : t₁ + tw < t₂ := by
+      have : 0 ≤ 8 * q.M * w₀ / f₀ := by positivity
+      linarith
+    have h9 := q.decel_short ht₃.le hf0
+      (hc.mono (Icc_subset_Icc (by linarith) ht₂T))
+      (fun t ht => hcoord 1 t ⟨by linarith [ht.1], by linarith [ht.2]⟩)
+      (fun t ht => hzA t ⟨by linarith [ht.1], ht.2⟩ ht.1)
+      (fun t ht => hcon t ⟨by linarith [ht.1], by linarith [ht.2]⟩)
+      (by rw [le_div_iff₀ (by positivity)] at hw1; linarith)
+    linarith
+  -- (iv) the two bounds contradict each other
+  have h4 : w₀ * tw ≤ L / 3 := by
+    have : w₀ * tw = w₀ * (2 * Z₀) / (f₀ * q.ωc) := by rw [htw]; ring
+    rw [this, div_le_iff₀ (by positivity)]
+    rw [le_div_iff₀ (by positivity)] at hw2
+    linarith
+  have h5 : w₀ * (8 * q.M * w₀ / f₀) ≤ L / 3 := by
+    rw [show w₀ * (8 * q.M * w₀ / f₀) = 8 * q.M * w₀ ^ 2 / f₀ by ring, div_le_iff₀ hf0]
+    rw [le_div_iff₀ (by positivity)] at hw3
+    linarith
+  have := mul_le_mul_of_nonneg_left hshort hw0.le
+  rw [mul_add] at this
+  linarith
+
+
+/-- Below the saddle on the descending side: `U(θ_u − ε) < U(θ_u)` for
+`0 < ε ≤ (π/2 − θ_s)/2` (`U' = A (sin θ − s) > 0` on `(π/2, θ_u)`). -/
+@[tmio M, powerlib_domain] private theorem potential_lt_saddle (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ (π / 2 - q.thS) / 2) :
+    q.potential (π - q.thS - ε) < q.potential (π - q.thS) := by
+  obtain ⟨hs0, hs1, hsin, -⟩ := q.thS_facts h0 h1
+  have hA := q.A_pos
+  have hd : ∀ t, HasDerivAt q.potential (q.A * Real.sin t - (q.Pref - q.c0)) t := fun t =>
+    (q.hasDerivAt_potential t).congr_deriv (by simp [Params.potentialDeriv, Params.toSM])
+  refine strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc (π - q.thS - ε) (π - q.thS))
+    (fun t _ => (hd t).continuousAt.continuousWithinAt)
+    (fun t _ => (hd t).hasDerivWithinAt) (fun t ht => ?_)
+    ⟨le_rfl, by linarith⟩ ⟨by linarith, le_rfl⟩ (by linarith)
+  rw [interior_Icc] at ht
+  have h2 : Real.sin q.thS < Real.sin (π - t) :=
+    Real.sin_lt_sin_of_lt_of_le_pi_div_two (by linarith) (by linarith [ht.1]) (by linarith [ht.2])
+  rw [Real.sin_pi_sub] at h2
+  nlinarith
+
+
+/-- **A reversed orbit from the saddle's neighbourhood to the stable equilibrium** (`D > 0`,
+`(M ω_c + D) ω_c ≥ 12 A`, `0 < ε ≤ (π/2 − θ_s)/2`): some state `y = (δ_u − ε, 0, P_f)` with
+`|P_f − P_ref| ≤ 2Aε` and `F_R(y) < U(θ_u)` has its reversed orbit converge to `x_s` with the
+filter within `A` of `c₀` throughout (`exists_seg_stay`, `stays_in_wedge`, `tendsto_xs`,
+`filter_bound`). -/
+@[tmio M, powerlib_domain] private theorem exists_orbit_fast (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) (hD : 0 < q.D) (hΛ : 12 * q.A ≤ (q.M * q.ωc + q.D) * q.ωc)
+    {ε : ℝ} (hε0 : 0 < ε) (hεb : ε ≤ (π / 2 - q.thS) / 2) :
+    ∃ y : Fin 3 → ℝ, y 0 = q.dU - ε ∧ y 1 = 0 ∧ |y 2 - q.Pref| ≤ 2 * q.A * ε ∧
+      q.downEnergy y < q.potential (π - q.thS) ∧
+      (∀ t, 0 ≤ t → |q.dsol y t 2 - q.c0| ≤ q.A) ∧ Tendsto (q.dsol y) atTop (𝓝 q.xs) := by
+  have hA := q.A_pos; have hpi := Real.pi_pos
+  obtain ⟨hs0, hs1, -, -⟩ := q.thS_facts h0 h1
+  have hε2π : ε < 2 * π := by linarith
+  obtain ⟨τ, hτ, hτA, hτB⟩ := q.exists_seg_stay hε0 hε2π
+  obtain ⟨hyT, hyB, hy0, hy1⟩ := q.seg_walls ε τ
+  set y := q.seg ε τ with hydef
+  have hAε : 0 < q.A * ε := by positivity
+  have hyin : q.wTop y < 0 ∧ q.wBot y < 0 ∧ q.dU - 2 * π < y 0 := by
+    refine ⟨?_, ?_, ?_⟩
+    · rw [hyT]; exact mul_neg_of_neg_of_pos (by linarith [hτ.2]) hAε
+    · rw [hyB]; exact mul_neg_of_neg_of_pos (by linarith [hτ.1]) hAε
+    · rw [hy0]; linarith
+  have hyE' : q.downEnergy y = q.potential (π - q.thS - ε) := by
+    have e : y 0 - q.α = π - q.thS - ε := by rw [hy0]; simp only [dU]; ring
+    simp only [downEnergy, hy1, e]; ring
+  have hyE : q.downEnergy y < q.potential (π - q.thS) := by
+    rw [hyE']; exact q.potential_lt_saddle h0 h1 hε0 hεb
+  have hstay := q.stays_in_wedge h0 h1 hΛ hyin hyE hτA hτB
+  have hylim := q.tendsto_xs h0 h1 hD hΛ hyE hstay
+  have hpwε : |q.pw (q.dU - ε) - q.Pref| ≤ q.A * ε := by
+    rw [← q.pw_dU h0 h1]
+    have e : q.pw (q.dU - ε) - q.pw q.dU =
+        q.A * (Real.sin (q.dU - ε - q.α) - Real.sin (q.dU - q.α)) := by simp only [pw]; ring
+    rw [e, abs_mul, abs_of_pos hA]
+    refine mul_le_mul_of_nonneg_left ((Real.abs_sin_sub_sin_le _ _).trans ?_) hA.le
+    rw [show q.dU - ε - q.α - (q.dU - q.α) = -ε by ring, abs_neg, abs_of_pos hε0]
+  have hy2 : |y 2 - q.Pref| ≤ 2 * q.A * ε := by
+    have e : y 2 = q.pw (q.dU - ε) + τ * (q.A * ε) := rfl
+    rw [e, show q.pw (q.dU - ε) + τ * (q.A * ε) - q.Pref =
+      (q.pw (q.dU - ε) - q.Pref) + τ * (q.A * ε) by ring]
+    refine (abs_add_le _ _).trans ?_
+    rw [abs_mul, abs_of_pos hAε]
+    have : |τ| ≤ 1 := abs_le.2 ⟨hτ.1.le, hτ.2.le⟩
+    have : |τ| * (q.A * ε) ≤ q.A * ε := by nlinarith
+    linarith
+  exact ⟨y, hy0, hy1, hy2, hyE, q.filter_bound h0 h1 hylim, hylim⟩
+
+/-- **The uphill piece** (`σ_P ≠ 0`, `D > 0`): for a state `y` as in `exists_orbit_fast` and a
+time `T` at which its reversed orbit is `ρ₁`-close to `x_s` with `F_R > U(θ_s) − η`
+(`ρ₁ ≤ (π/2 − θ_s)/2`, `ρ₁ ≤ w₀/2`, `η ≤ ΔU`), the reversed orbit read backwards is an uphill
+pair from `flip(r(T))` to `flip(y)` of action `m ∈ [0, (2D/σ_P²)(ΔU + η) − G]`,
+`G = 2DMJ/(σ_P² ω_c)` (`Params3.setPointQP_le_uphill`, `exists_speed_band`, `gain_of_speed`). -/
+@[tmio M, powerlib_domain] private theorem uphill_piece (h0 : q.c0 ≤ q.Pref)
+    (h1 : q.Pref < q.c0 + q.A) {σP : ℝ} (hσ : σP ≠ 0) (hD : 0 < q.D) {ε : ℝ}
+    (hεb : ε ≤ (π / 2 - q.thS) / 2) {y : Fin 3 → ℝ} (hy0 : y 0 = q.dU - ε)
+    (hyE : q.downEnergy y < q.potential (π - q.thS))
+    (hyz : ∀ t, 0 ≤ t → |q.dsol y t 2 - q.c0| ≤ q.A) {T ρ₁ η : ℝ} (hT0 : 0 ≤ T)
+    (hTc : ∀ i, |q.dsol y T i - q.xs i| < ρ₁) (hρ₁b : ρ₁ ≤ (π / 2 - q.thS) / 2)
+    (hρ₁w : ρ₁ ≤ q.fastFilterSpeed / 2) (hηΔ : η ≤ q.escBarrier)
+    (hTE : q.potential q.thS - η < q.downEnergy (q.dsol y T)) :
+    ∃ m, 0 ≤ m ∧ m ≤ 2 * q.D / σP ^ 2 * (q.escBarrier + η) -
+        2 * q.D * q.M * q.fastFilterGain / (σP ^ 2 * q.ωc) ∧
+      q.setPointQP σP (flip3 (q.dsol y T)) (flip3 y) ≤ ENNReal.ofReal m := by
+  have hM := q.M_pos; have hω := q.ωc_pos
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  have hΔe : q.escBarrier = q.potential (π - q.thS) - q.potential q.thS := rfl
+  set J := q.fastFilterGain with hJ
+  set w₀ := q.fastFilterSpeed with hw₀
+  have hw0 : 0 < w₀ := q.fastFilterSpeed_pos hD h0 h1
+  have hΔ : 0 < q.escBarrier := q.escBarrier_pos h0 h1
+  -- the uphill pair: the reversed orbit read backwards
+  set ψ := fun t => flip3 (q.dsol y (T - t)) with hψ
+  have hψd : ∀ t ∈ Ico 0 T, HasDerivAt ψ (q.upField (ψ t)) t := fun t ht =>
+    q.hasDerivAt_reverse y ht.2
+  have hflipc : Continuous flip3 := by
+    unfold flip3; exact continuous_pi fun i => by fin_cases i <;> simp <;> fun_prop
+  have hψc : ContinuousOn ψ (Icc 0 T) := by
+    refine hflipc.comp_continuousOn ((q.dsol_continuousOn y).comp
+      (continuous_const.sub continuous_id).continuousOn fun t ht => ?_)
+    simp only [mem_Ici]; linarith [ht.2]
+  have hψpair : ∀ t ∈ Ico 0 T, HasDerivWithinAt ψ (controlField q.sdeDrift
+      (fun _ (_ : Fin 1) => q.setPointColumn σP) (ψ t) ![2 * q.D * ψ t 1 / σP]) (Ici t) t := by
+    intro t ht
+    rw [q.uphill_field hσ]
+    exact (hψd t ht).hasDerivWithinAt
+  have hψ0 : ψ 0 = flip3 (q.dsol y T) := by simp [hψ]
+  have hψT : ψ T = flip3 y := by simp [hψ, q.dsol_zero]
+  have hFT : q.uphillEnergy (ψ T) = q.downEnergy y := by
+    rw [hψT, ← q.uphillEnergy_flip]; rfl
+  have hF0 : q.uphillEnergy (ψ 0) = q.downEnergy (q.dsol y T) := by
+    rw [hψ0, ← q.uphillEnergy_flip]; rfl
+  have hbal := q.uphillEnergy_sub_eq hσ hD hT0 hψc hψpair
+  set I := ∫ t in (0 : ℝ)..T, q.uphillAcc (ψ t) ^ 2 with hI
+  set N₁ := ∫ t in (0 : ℝ)..T, ψ t 1 ^ 2 with hN₁
+  have hI0 : 0 ≤ I := intervalIntegral.integral_nonneg hT0 fun t _ => sq_nonneg _
+  have hN₁0 : 0 ≤ N₁ := intervalIntegral.integral_nonneg hT0 fun t _ => sq_nonneg _
+  have hN : N₁ ≤ 2 * q.escBarrier / q.D := by
+    rw [le_div_iff₀ hD]
+    have : 0 ≤ q.M / q.ωc * I := by positivity
+    rw [hFT, hF0] at hbal
+    nlinarith
+  -- the gain
+  have hgain : J ≤ I := by
+    have hsp := q.exists_speed_band h0 h1 hD hT0 hψc hψd
+      (fun t ht => by
+        show |(flip3 (q.dsol y (T - t))) 2 - q.c0| ≤ q.A
+        exact hyz (T - t) (by linarith [ht.2]))
+      (by
+        rw [hψ0]
+        show q.dsol y T 0 - q.α ≤ (q.thS + π / 2) / 2
+        have := (abs_lt.1 (hTc 0)).2
+        simp only [xs, Matrix.cons_val_zero] at this
+        linarith)
+      (by
+        rw [hψT]
+        show π - (q.thS + π / 2) / 2 ≤ y 0 - q.α
+        rw [hy0]; simp only [dU]; linarith)
+    have h := q.gain_of_speed hT0 hψc hψd hw0 hsp
+      (by
+        rw [hψ0]
+        show (-(q.dsol y T 1)) ^ 2 ≤ w₀ ^ 2 / 4
+        have := hTc 1
+        simp only [xs, Matrix.cons_val_one, Matrix.cons_val_zero, sub_zero] at this
+        have h1' : |q.dsol y T 1| ≤ w₀ / 2 := this.le.trans hρ₁w
+        rw [neg_sq, ← sq_abs]
+        calc |q.dsol y T 1| ^ 2 ≤ (w₀ / 2) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) h1' 2
+          _ = w₀ ^ 2 / 4 := by ring)
+      (by positivity : (0 : ℝ) < 2 * q.escBarrier / q.D) hN
+    have e : 9 * w₀ ^ 4 / (64 * (2 * q.escBarrier / q.D)) = J := by
+      rw [hJ, fastFilterGain]; field_simp; ring
+    rwa [e] at h
+  have hmid := q.setPointQP_le_uphill hσ hD hT0 hψc hψpair
+  refine ⟨2 * q.D / σP ^ 2 * (q.uphillEnergy (ψ T) - q.uphillEnergy (ψ 0) - q.M / q.ωc * I),
+    ?_, ?_, by rw [← hψ0, ← hψT]; exact hmid⟩
+  · rw [hbal]
+    have h1' : 0 ≤ q.D * N₁ := by positivity
+    have h2 : q.D * N₁ + q.M / q.ωc * I - q.M / q.ωc * I = q.D * N₁ := by ring
+    rw [h2]
+    exact mul_nonneg (by positivity) h1'
+  · have hFTU : q.uphillEnergy (ψ T) < q.potential (π - q.thS) := by rw [hFT]; exact hyE
+    have hF0U : q.potential q.thS - η < q.uphillEnergy (ψ 0) := by rw [hF0]; exact hTE
+    have hJI : 2 * q.D * q.M * J / (σP ^ 2 * q.ωc) ≤ 2 * q.D / σP ^ 2 * (q.M / q.ωc * I) := by
+      have : 2 * q.D / σP ^ 2 * (q.M / q.ωc * J) = 2 * q.D * q.M * J / (σP ^ 2 * q.ωc) := by
+        field_simp
+      rw [← this]
+      gcongr
+    have h1' : 2 * q.D / σP ^ 2 * (q.uphillEnergy (ψ T) - q.uphillEnergy (ψ 0) -
+        q.M / q.ωc * I) = 2 * q.D / σP ^ 2 * (q.uphillEnergy (ψ T) - q.uphillEnergy (ψ 0)) -
+        2 * q.D / σP ^ 2 * (q.M / q.ωc * I) := by ring
+    have h2 : 2 * q.D / σP ^ 2 * (q.uphillEnergy (ψ T) - q.uphillEnergy (ψ 0)) ≤
+        2 * q.D / σP ^ 2 * (q.escBarrier + η) :=
+      mul_le_mul_of_nonneg_left (by rw [hΔe]; linarith) (by positivity)
+    linarith
+
+/-- **A fast filter lowers the escape exponent at every set point, quantitatively**
+(`D > 0`, `σ_P ≠ 0`, `c₀ ≤ P_ref < c₀ + A`, `(M ω_c + D) ω_c ≥ 12 A`): from the stable
+equilibrium `(θ_s + α, 0, P_ref)` to the saddle `(π − θ_s + α, 0, P_ref)`
+(`θ_s = arcsin((P_ref − c₀)/A)`), `V₃ ≤ 2D ΔU/σ_P² − D M J/(σ_P² ω_c)`, `ΔU = Params.escBarrier`,
+`J = Params3.fastFilterGain > 0`. Proof: a reversed orbit from a point `ε`-close to the saddle
+to the stable equilibrium (`exists_seg_stay`, `stays_in_wedge`, `tendsto_xs`), read backwards, is
+an uphill pair of action `(2D/σ_P²)(F(end) − F(start) − (M/ω_c)∫ω̇²)`
+(`Params3.setPointQP_le_uphill`) with `∫ω̇² ≥ J` (`exists_speed_band`, `gain_of_speed`); two
+short pairs of action `O(ρ²)` (`glue`) join its ends to the equilibria. -/
+@[tmio M, powerlib_domain] theorem setPointQP_le_fastFilter_rest {σP : ℝ} (hσ : σP ≠ 0)
+    (hD : 0 < q.D) (h0 : q.c0 ≤ q.Pref) (h1 : q.Pref < q.c0 + q.A)
+    (hΛ : 12 * q.A ≤ (q.M * q.ωc + q.D) * q.ωc) :
+    q.setPointQP σP ![Real.arcsin ((q.Pref - q.c0) / q.A) + q.α, 0, q.Pref]
+        ![π - Real.arcsin ((q.Pref - q.c0) / q.A) + q.α, 0, q.Pref] ≤
+      ENNReal.ofReal (2 * q.D * q.escBarrier / σP ^ 2 -
+        q.D * q.M * q.fastFilterGain / (σP ^ 2 * q.ωc)) := by
+  show q.setPointQP σP q.xs ![q.dU, 0, q.Pref] ≤ _
+  have hM := q.M_pos; have hA := q.A_pos; have hω := q.ωc_pos; have hpi := Real.pi_pos
+  obtain ⟨hs0, hs1, hsin, hcos⟩ := q.thS_facts h0 h1
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  have hΔ : 0 < q.escBarrier := q.escBarrier_pos h0 h1
+  have hΔe : q.escBarrier = q.potential (π - q.thS) - q.potential q.thS := rfl
+  set J := q.fastFilterGain with hJ
+  have hJ0 : 0 < J := q.fastFilterGain_pos hD h0 h1
+  set G := 2 * q.D * q.M * J / (σP ^ 2 * q.ωc) with hG
+  have hG0 : 0 < G := by positivity
+  set w₀ := q.fastFilterSpeed with hw₀
+  have hw0 : 0 < w₀ := q.fastFilterSpeed_pos hD h0 h1
+  -- local controllability at both equilibria
+  have hdUa : q.dU - q.α = π - q.thS := by simp only [dU]; ring
+  obtain ⟨ρu, hρu, Cu, hCu, hgu⟩ := q.glue hσ (δr := q.dU) (q.pw_dU h0 h1)
+    (by rw [hdUa, Real.cos_pi_sub]; exact neg_ne_zero.2 hcos.ne')
+  obtain ⟨ρs, hρs, Cs, hCs, hgs⟩ := q.glue hσ (δr := q.thS + q.α)
+    (by rw [add_sub_cancel_right]; linarith) (by rw [add_sub_cancel_right]; exact hcos.ne')
+  -- the saddle end
+  set K₁ := 1 + 2 * q.A with hK₁
+  have hK₁0 : 0 < K₁ := by positivity
+  have hK₁1 : 1 ≤ K₁ := by linarith
+  set ε := min (min (ρu / K₁) ((π / 2 - q.thS) / 2)) (√(G / (8 * Cu)) / K₁) with hεdef
+  have hε0 : 0 < ε := lt_min (lt_min (by positivity) (by linarith))
+    (div_pos (Real.sqrt_pos.2 (by positivity)) hK₁0)
+  have hερ : K₁ * ε ≤ ρu := by
+    have : ε ≤ ρu / K₁ := (min_le_left _ _).trans (min_le_left _ _)
+    rw [le_div_iff₀ hK₁0] at this; linarith
+  have hεb : ε ≤ (π / 2 - q.thS) / 2 := (min_le_left _ _).trans (min_le_right _ _)
+  have hεG : Cu * (K₁ * ε) ^ 2 ≤ G / 8 := by
+    have h1' : K₁ * ε ≤ √(G / (8 * Cu)) := by
+      have : ε ≤ √(G / (8 * Cu)) / K₁ := min_le_right _ _
+      rw [le_div_iff₀ hK₁0] at this; linarith
+    have h2 : (K₁ * ε) ^ 2 ≤ G / (8 * Cu) := by
+      calc (K₁ * ε) ^ 2 ≤ √(G / (8 * Cu)) ^ 2 := pow_le_pow_left₀ (by positivity) h1' 2
+        _ = G / (8 * Cu) := Real.sq_sqrt (by positivity)
+    rw [le_div_iff₀ (by positivity)] at h2
+    linarith
+  obtain ⟨y, hy0, hy1, hy2, hyE, hyz, hylim⟩ := q.exists_orbit_fast h0 h1 hD hΛ hε0 hεb
+  -- the stable end
+  set ρ₁ := min (min ρs ((π / 2 - q.thS) / 2)) (min (w₀ / 2) √(G / (8 * Cs))) with hρ₁def
+  have hρ₁0 : 0 < ρ₁ := lt_min (lt_min hρs (by linarith))
+    (lt_min (by positivity) (Real.sqrt_pos.2 (by positivity)))
+  have hρ₁s : ρ₁ ≤ ρs := (min_le_left _ _).trans (min_le_left _ _)
+  have hρ₁b : ρ₁ ≤ (π / 2 - q.thS) / 2 := (min_le_left _ _).trans (min_le_right _ _)
+  have hρ₁w : ρ₁ ≤ w₀ / 2 := (min_le_right _ _).trans (min_le_left _ _)
+  have hρ₁G : Cs * ρ₁ ^ 2 ≤ G / 8 := by
+    have h1' : ρ₁ ≤ √(G / (8 * Cs)) := (min_le_right _ _).trans (min_le_right _ _)
+    have h2 : ρ₁ ^ 2 ≤ G / (8 * Cs) := by
+      calc ρ₁ ^ 2 ≤ √(G / (8 * Cs)) ^ 2 := pow_le_pow_left₀ hρ₁0.le h1' 2
+        _ = G / (8 * Cs) := Real.sq_sqrt (by positivity)
+    rw [le_div_iff₀ (by positivity)] at h2
+    linarith
+  set η := min (G * σP ^ 2 / (16 * q.D)) q.escBarrier with hηdef
+  have hη0 : 0 < η := lt_min (by positivity) hΔ
+  have hηΔ : η ≤ q.escBarrier := min_le_right _ _
+  have hηG : 2 * q.D / σP ^ 2 * η ≤ G / 8 := by
+    have h1' : η ≤ G * σP ^ 2 / (16 * q.D) := min_le_left _ _
+    have : 2 * q.D / σP ^ 2 * (G * σP ^ 2 / (16 * q.D)) = G / 8 := by field_simp; ring
+    calc 2 * q.D / σP ^ 2 * η ≤ 2 * q.D / σP ^ 2 * (G * σP ^ 2 / (16 * q.D)) :=
+          mul_le_mul_of_nonneg_left h1' (by positivity)
+      _ = G / 8 := this
+  have hxs : q.downEnergy q.xs = q.potential q.thS := by
+    simp [downEnergy, xs]
+  have hEc : Tendsto (fun t => q.downEnergy (q.dsol y t)) atTop (𝓝 (q.potential q.thS)) := by
+    rw [← hxs]; exact (q.continuous_downEnergy.tendsto _).comp hylim
+  obtain ⟨T, hT⟩ := eventually_atTop.1 ((hylim.eventually (Metric.ball_mem_nhds _ hρ₁0)).and
+    ((hEc.eventually (lt_mem_nhds (show q.potential q.thS - η < q.potential q.thS by
+      linarith))).and (eventually_ge_atTop 1)))
+  obtain ⟨hTball, hTE, hT1⟩ := hT T le_rfl
+  have hT0 : 0 ≤ T := by linarith
+  have hTc : ∀ i, |q.dsol y T i - q.xs i| < ρ₁ := fun i => by
+    have := (dist_le_pi_dist (q.dsol y T) q.xs i).trans_lt hTball
+    rwa [Real.dist_eq] at this
+  obtain ⟨m, hm0, hmle, hmid⟩ := q.uphill_piece h0 h1 hσ hD hεb hy0 hyE hyz hT0 hTc hρ₁b hρ₁w
+    hηΔ hTE
+  have hs := hgs ρ₁ hρ₁0 hρ₁s q.xs (flip3 (q.dsol y T))
+    (fun i => by fin_cases i <;> simp [xs, hρ₁0.le])
+    (fun i => by
+      have := (hTc i).le
+      fin_cases i
+      · simpa [flip3, xs] using this
+      · simpa [flip3, xs, abs_neg] using this
+      · simpa [flip3, xs] using this)
+  have hu := hgu (K₁ * ε) (by positivity) hερ (flip3 y) ![q.dU, 0, q.Pref]
+    (fun i => by
+      fin_cases i
+      · show |y 0 - q.dU| ≤ K₁ * ε
+        rw [hy0, show q.dU - ε - q.dU = -ε by ring, abs_neg, abs_of_pos hε0, hK₁]
+        have := mul_pos hA hε0
+        linarith
+      · show |-(y 1) - 0| ≤ K₁ * ε
+        rw [hy1]; simp; positivity
+      · show |y 2 - q.Pref| ≤ K₁ * ε
+        exact hy2.trans (by rw [hK₁]; linarith))
+    (fun i => by fin_cases i <;> simp [(by positivity : (0 : ℝ) ≤ K₁ * ε)])
+  -- assemble with the triangle inequality
+  have htri : q.setPointQP σP q.xs ![q.dU, 0, q.Pref] ≤
+      ENNReal.ofReal (Cs * ρ₁ ^ 2) + (ENNReal.ofReal m +
+        ENNReal.ofReal (Cu * (K₁ * ε) ^ 2)) := by
+    have t1 := controlQuasiPotential_triangle q.sdeDrift (fun _ (_ : Fin 1) => q.setPointColumn σP)
+      q.xs (flip3 (q.dsol y T)) ![q.dU, 0, q.Pref]
+    have t2 := controlQuasiPotential_triangle q.sdeDrift (fun _ (_ : Fin 1) => q.setPointColumn σP)
+      (flip3 (q.dsol y T)) (flip3 y) ![q.dU, 0, q.Pref]
+    exact t1.trans (add_le_add hs (t2.trans (add_le_add hmid hu)))
+  refine htri.trans ?_
+  rw [← ENNReal.ofReal_add hm0 (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  apply ENNReal.ofReal_le_ofReal
+  have hfin : 2 * q.D * q.escBarrier / σP ^ 2 - q.D * q.M * J / (σP ^ 2 * q.ωc) =
+      2 * q.D / σP ^ 2 * q.escBarrier - G / 2 := by rw [hG]; field_simp
+  rw [hfin]
+  have : 2 * q.D / σP ^ 2 * (q.escBarrier + η) = 2 * q.D / σP ^ 2 * q.escBarrier +
+      2 * q.D / σP ^ 2 * η := by ring
+  have hmle' : m ≤ 2 * q.D / σP ^ 2 * (q.escBarrier + η) - G := hmle
+  linarith
+
+/-! ## Near the balanced set point, at every bandwidth -/
+
+/-- The three-state model with the power set point moved to `P` (all other parameters kept). -/
+def withPref (P : ℝ) : Params3 := ⟨{ q.toParams with Pref := P }, q.ωc, q.ωc_pos⟩
+
+/-- `(x − y)² ≤ (1 + l) x² + (1 + 1/l) y²` for `l > 0`. -/
+@[tmio T, powerlib_foundation] private theorem sq_sub_le_weighted {l : ℝ} (hl : 0 < l)
+    (x y : ℝ) : (x - y) ^ 2 ≤ (1 + l) * x ^ 2 + (1 + 1 / l) * y ^ 2 := by
+  have h : l * ((1 + l) * x ^ 2 + (1 + 1 / l) * y ^ 2 - (x - y) ^ 2) = (l * x + y) ^ 2 := by
+    field_simp; ring
+  have : 0 ≤ l * ((1 + l) * x ^ 2 + (1 + 1 / l) * y ^ 2 - (x - y) ^ 2) := by
+    rw [h]; positivity
+  have := (mul_nonneg_iff_of_pos_left hl).1 this
+  linarith
+
+open MeasureTheory in
+/-- **Moving the set point along a fixed path** (`σ_P ≠ 0`, `l > 0`): an admissible pair
+`(φ, u)` of `q` on `[0, T]`, with the control shifted by `c = (P − P_ref)/σ_P`, is an admissible
+pair of `q.withPref P`; its action is at most `(1 + l) S_T(u) + (1 + 1/l) c² T/2`. The shifted
+control is integrable because `u` is determined by the path through the right derivative of the
+frequency (`measurable_derivWithin_Ici`). -/
+@[tmio M, powerlib_domain] private theorem setPointQP_withPref_le {σP : ℝ} (hσ : σP ≠ 0)
+    {a b : Fin 3 → ℝ} {T : ℝ} {φ : ℝ → Fin 3 → ℝ} {u : ℝ → Fin 1 → ℝ} (hT : 0 ≤ T)
+    (h0 : φ 0 = a) (hT' : φ T = b) (hc : ContinuousOn φ (Icc 0 T))
+    (hd : ∀ t ∈ Ico 0 T, HasDerivWithinAt φ
+      (controlField q.sdeDrift (fun _ (_ : Fin 1) => q.setPointColumn σP) (φ t) (u t)) (Ici t) t)
+    (hu : IntervalIntegrable (fun t => ∑ j, u t j ^ 2) MeasureTheory.volume 0 T)
+    (P : ℝ) {l : ℝ} (hl : 0 < l) :
+    (q.withPref P).setPointQP σP a b ≤ ENNReal.ofReal ((1 + l) * controlAction u T +
+      (1 + 1 / l) * ((P - q.Pref) / σP) ^ 2 * T / 2) := by
+  have hM := q.M_pos
+  set c := (P - q.Pref) / σP with hcdef
+  set u' : ℝ → Fin 1 → ℝ := fun t => ![u t 0 - c] with hu'
+  -- the shifted pair solves the moved model
+  have hd' : ∀ t ∈ Ico 0 T, HasDerivWithinAt φ (controlField (q.withPref P).sdeDrift
+      (fun _ (_ : Fin 1) => (q.withPref P).setPointColumn σP) (φ t) (u' t)) (Ici t) t := by
+    intro t ht
+    convert hd t ht using 1
+    have hut : u t = ![u t 0] := by ext i; fin_cases i; rfl
+    rw [hut, controlField_setPoint, controlField_setPoint]
+    have e1 : (q.withPref P).Pref = P := rfl
+    have e2 : (q.withPref P).M = q.M := rfl
+    have e3 : (q.withPref P).D = q.D := rfl
+    have e4 : (q.withPref P).ωc = q.ωc := rfl
+    have e5 : (q.withPref P).c0 = q.c0 := rfl
+    have e6 : (q.withPref P).A = q.A := rfl
+    have e7 : (q.withPref P).α = q.α := rfl
+    rw [e1, e2, e3, e4, e5, e6, e7]
+    ext i; fin_cases i
+    · rfl
+    · show ((P - φ t 2 - q.D * φ t 1) / q.M + (u t 0 - c) * (σP / q.M)) =
+        (q.Pref - φ t 2 - q.D * φ t 1) / q.M + u t 0 * (σP / q.M)
+      rw [hcdef]; field_simp; ring
+    · rfl
+  -- the control is the right derivative of the frequency, hence measurable
+  have hu0 : ∀ t ∈ Ico 0 T, u t 0 = (q.M * derivWithin (fun s => φ s 1) (Ici t) t -
+      (q.Pref - φ t 2 - q.D * φ t 1)) / σP := by
+    intro t ht
+    have h1 := hasDerivWithinAt_pi.1 (hd t ht) 1
+    have hut : u t = ![u t 0] := by ext i; fin_cases i; rfl
+    rw [hut, controlField_setPoint] at h1
+    have h2 := h1.derivWithin (uniqueDiffWithinAt_Ici t)
+    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at h2
+    rw [h2]; field_simp; ring
+  set g : ℝ → ℝ := fun t => (q.M * derivWithin (fun s => φ s 1) (Ici t) t -
+      (q.Pref - φ t 2 - q.D * φ t 1)) / σP with hg
+  have hIoo : IntegrableOn (fun t => u t 0 ^ 2) (Ioo 0 T) := by
+    have := (intervalIntegrable_iff_integrableOn_Ioc_of_le hT).1 hu
+    simp only [Fin.sum_univ_one] at this
+    exact (integrableOn_Ioc_iff_integrableOn_Ioo).1 this
+  have hgm : MeasureTheory.AEStronglyMeasurable g (MeasureTheory.volume.restrict (Ioo 0 T)) := by
+    have hdm : Measurable fun t => derivWithin (fun s => φ s 1) (Ici t) t :=
+      measurable_derivWithin_Ici (fun s => φ s 1)
+    have hc1 : ContinuousOn (fun t => φ t 1) (Ioo 0 T) :=
+      ((continuous_apply 1).comp_continuousOn hc).mono Ioo_subset_Icc_self
+    have hc2 : ContinuousOn (fun t => φ t 2) (Ioo 0 T) :=
+      ((continuous_apply 2).comp_continuousOn hc).mono Ioo_subset_Icc_self
+    have m1 := hc1.aestronglyMeasurable (μ := volume) measurableSet_Ioo
+    have m2 := hc2.aestronglyMeasurable (μ := volume) measurableSet_Ioo
+    have h3 : AEStronglyMeasurable (fun t => q.M * derivWithin (fun s => φ s 1) (Ici t) t -
+        (q.Pref - φ t 2 - q.D * φ t 1)) (volume.restrict (Ioo 0 T)) :=
+      (hdm.aestronglyMeasurable.const_mul q.M).sub
+        ((aestronglyMeasurable_const (b := q.Pref)).sub m2 |>.sub (m1.const_mul q.D))
+    refine (h3.mul_const σP⁻¹).congr (Filter.Eventually.of_forall fun t => ?_)
+    simp only [hg, div_eq_mul_inv]
+  have heq : EqOn (fun t => u t 0) g (Ioo 0 T) := fun t ht => hu0 t ⟨ht.1.le, ht.2⟩
+  have hg2 : IntegrableOn (fun t => g t ^ 2) (Ioo 0 T) :=
+    hIoo.congr_fun (fun t ht => by simp only [heq ht]) measurableSet_Ioo
+  have hg1 : IntegrableOn g (Ioo 0 T) := by
+    have h1c : IntegrableOn (fun _ : ℝ => (1 : ℝ)) (Ioo 0 T) := integrableOn_const (by simp)
+    refine MeasureTheory.Integrable.mono' ((hg2.add h1c).div_const 2)
+      hgm (Filter.Eventually.of_forall fun t => ?_)
+    rw [Real.norm_eq_abs]
+    simp only [Pi.add_apply]
+    have := sq_nonneg (|g t| - 1)
+    have e : |g t| ^ 2 = g t ^ 2 := sq_abs _
+    show |g t| ≤ (g t ^ 2 + 1) / 2
+    nlinarith
+  have hu1 : IntegrableOn (fun t => u t 0) (Ioo 0 T) :=
+    hg1.congr_fun (fun t ht => (heq ht).symm) measurableSet_Ioo
+  have hint₀ : IntervalIntegrable (fun t => (u t 0 - c) ^ 2) MeasureTheory.volume 0 T := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le hT, integrableOn_Ioc_iff_integrableOn_Ioo]
+    have : (fun t => (u t 0 - c) ^ 2) = fun t => u t 0 ^ 2 - 2 * c * u t 0 + c ^ 2 := by
+      funext t; ring
+    rw [this]
+    have hcc : IntegrableOn (fun _ : ℝ => c ^ 2) (Ioo 0 T) := integrableOn_const (by simp)
+    exact (hIoo.sub (hu1.const_mul (2 * c))).add hcc
+  have hint' : IntervalIntegrable (fun t => ∑ j, u' t j ^ 2) MeasureTheory.volume 0 T := by
+    simpa only [hu', Fin.sum_univ_one, Matrix.cons_val_zero] using hint₀
+  have hle := controlQuasiPotential_le (b := (q.withPref P).sdeDrift)
+    (σ := fun _ (_ : Fin 1) => (q.withPref P).setPointColumn σP) (u := u') hT h0 hT' hc hd' hint'
+  refine hle.trans (ENNReal.ofReal_le_ofReal ?_)
+  -- the action bound
+  simp only [controlAction, hu', Fin.sum_univ_one, Matrix.cons_val_zero]
+  have hu2 : IntervalIntegrable (fun t => u t 0 ^ 2) MeasureTheory.volume 0 T := by
+    simpa only [Fin.sum_univ_one] using hu
+  have hmono := intervalIntegral.integral_mono_on hT hint₀
+    ((hu2.const_mul (1 + l)).add intervalIntegrable_const)
+    (fun t _ => sq_sub_le_weighted hl (u t 0) c)
+  rw [intervalIntegral.integral_add (hu2.const_mul (1 + l)) intervalIntegrable_const,
+    intervalIntegral.integral_const_mul, intervalIntegral.integral_const] at hmono
+  simp only [smul_eq_mul, sub_zero] at hmono
+  have : 1 / 2 * ∫ t in (0 : ℝ)..T, (u t 0 - c) ^ 2 ≤
+      1 / 2 * ((1 + l) * ∫ t in (0 : ℝ)..T, u t 0 ^ 2) + 1 / 2 * (T * ((1 + 1 / l) * c ^ 2)) := by
+    linarith
+  calc 1 / 2 * ∫ t in (0 : ℝ)..T, (u t 0 - c) ^ 2 ≤ _ := this
+    _ = (1 + l) * (1 / 2 * ∫ t in (0 : ℝ)..T, u t 0 ^ 2) + (1 + 1 / l) * c ^ 2 * T / 2 := by ring
+
+/-- The barrier of the moved model is continuous in the set point at `c₀`, with the value `2A`
+there (`ΔU(P) = −(P − c₀)(π − 2 arcsin s) − 2A cos(π − arcsin s) + …`, `s = (P − c₀)/A`). -/
+@[tmio M, powerlib_domain] private theorem tendsto_escBarrier_withPref :
+    Tendsto (fun P => (q.withPref P).escBarrier) (𝓝 q.c0) (𝓝 (2 * q.A)) := by
+  have e : (fun P => (q.withPref P).escBarrier) = fun P =>
+      (-(P - q.c0) * (π - Real.arcsin ((P - q.c0) / q.A)) -
+        q.A * Real.cos (π - Real.arcsin ((P - q.c0) / q.A))) -
+      (-(P - q.c0) * Real.arcsin ((P - q.c0) / q.A) -
+        q.A * Real.cos (Real.arcsin ((P - q.c0) / q.A))) := by
+    funext P; rfl
+  have hc : Continuous fun P : ℝ =>
+      (-(P - q.c0) * (π - Real.arcsin ((P - q.c0) / q.A)) -
+        q.A * Real.cos (π - Real.arcsin ((P - q.c0) / q.A))) -
+      (-(P - q.c0) * Real.arcsin ((P - q.c0) / q.A) -
+        q.A * Real.cos (Real.arcsin ((P - q.c0) / q.A))) := by
+    have ha : Continuous fun P : ℝ => Real.arcsin ((P - q.c0) / q.A) :=
+      Real.continuous_arcsin.comp ((continuous_id.sub continuous_const).div_const _)
+    fun_prop
+  rw [e]
+  have h := hc.tendsto q.c0
+  simp only [sub_self, zero_div, Real.arcsin_zero, sub_zero, neg_zero, zero_mul,
+    Real.cos_pi, Real.cos_zero] at h
+  convert h using 2
+  ring
+
+/-- **The two glue pairs of the moved model** (`σ_P ≠ 0`, `c₀ ≤ P ≤ c₀ + A/2`): with
+`θ = arcsin((P − c₀)/A) ≤ ρ`, `P − c₀ ≤ ρ` and `ρ ≤ 1/(A(5 + K)²)` (`K = glueK (1/2)`), the moved
+equilibria are joined to the balanced ones by pairs of `q.withPref P` of action
+`≤ (C_u²/(2σ_P²)) ρ²` (`glue_unif` with `|cos θ| ≥ 1/2`). -/
+@[tmio M, powerlib_domain] private theorem glue_withPref {σP : ℝ} (hσ : σP ≠ 0) {P ρ : ℝ}
+    (hP0 : q.c0 ≤ P) (hP1 : P - q.c0 ≤ q.A / 2) (hρ0 : 0 < ρ)
+    (hρρ₀ : ρ ≤ 1 / (q.A * (5 + q.glueK (1 / 2)) ^ 2))
+    (hθρ : Real.arcsin ((P - q.c0) / q.A) ≤ ρ) (hP₃ : P - q.c0 ≤ ρ) :
+    (q.withPref P).setPointQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P]
+        ![q.α, 0, q.c0] ≤ ENNReal.ofReal (q.glueCu (1 / 2) ^ 2 / (2 * σP ^ 2) * ρ ^ 2) ∧
+      (q.withPref P).setPointQP σP ![π + q.α, 0, q.c0]
+        ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P] ≤
+        ENNReal.ofReal (q.glueCu (1 / 2) ^ 2 / (2 * σP ^ 2) * ρ ^ 2) := by
+  have hA := q.A_pos
+  set q' := q.withPref P with hq'
+  set s := (P - q.c0) / q.A with hsdef
+  have hs0 : 0 ≤ s := div_nonneg (by linarith) hA.le
+  have hs1 : s ≤ 1 / 2 := by rw [hsdef, div_le_iff₀ hA]; linarith
+  set θ := Real.arcsin s with hθ
+  have hθ0 : 0 ≤ θ := Real.arcsin_nonneg.2 hs0
+  have hsinθ : q.c0 + q.A * Real.sin θ = P := by
+    rw [hθ, Real.sin_arcsin (by linarith) (by linarith), hsdef]; field_simp; ring
+  have hcosθ : 1 / 2 ≤ Real.cos θ := by
+    rw [hθ, Real.cos_arcsin]
+    rw [show (1 : ℝ) / 2 = √(1 / 4) by
+      rw [show (1 : ℝ) / 4 = (1 / 2) ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
+    exact Real.sqrt_le_sqrt (by nlinarith)
+  have e1 : q'.Pref = P := rfl
+  have e2 : q'.c0 = q.c0 := rfl
+  have e3 : q'.A = q.A := rfl
+  have e4 : q'.α = q.α := rfl
+  have e5 : q'.glueK (1 / 2) = q.glueK (1 / 2) := rfl
+  have e6 : q'.glueCu (1 / 2) = q.glueCu (1 / 2) := rfl
+  have hPd : |q.c0 - P| ≤ ρ := by rw [abs_sub_comm, abs_of_nonneg (by linarith)]; exact hP₃
+  have hg1 := q'.glue_unif hσ (δr := θ + q.α) (κ₀ := 1 / 2)
+    (by rw [e2, e3, e4, add_sub_cancel_right, e1]; exact hsinθ) (by norm_num)
+    (by rw [e4, add_sub_cancel_right, abs_of_pos (by linarith)]; exact hcosθ)
+    ρ hρ0 (by rw [e3, e5]; exact hρρ₀) ![θ + q.α, 0, P] ![q.α, 0, q.c0]
+    (fun i => by
+      rw [e1]
+      fin_cases i
+      · show |θ + q.α - (θ + q.α)| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le
+      · show |(0 : ℝ) - 0| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le
+      · show |P - P| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le)
+    (fun i => by
+      rw [e1]
+      fin_cases i
+      · show |q.α - (θ + q.α)| ≤ ρ
+        rw [show q.α - (θ + q.α) = -θ by ring, abs_neg, abs_of_nonneg hθ0]; exact hθρ
+      · show |(0 : ℝ) - 0| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le
+      · show |q.c0 - P| ≤ ρ
+        exact hPd)
+  have hg2 := q'.glue_unif hσ (δr := π - θ + q.α) (κ₀ := 1 / 2)
+    (by rw [e2, e3, e4, add_sub_cancel_right, Real.sin_pi_sub, e1]; exact hsinθ) (by norm_num)
+    (by rw [e4, add_sub_cancel_right, Real.cos_pi_sub, abs_neg, abs_of_pos (by linarith)]
+        exact hcosθ)
+    ρ hρ0 (by rw [e3, e5]; exact hρρ₀) ![π + q.α, 0, q.c0] ![π - θ + q.α, 0, P]
+    (fun i => by
+      rw [e1]
+      fin_cases i
+      · show |π + q.α - (π - θ + q.α)| ≤ ρ
+        rw [show π + q.α - (π - θ + q.α) = θ by ring, abs_of_nonneg hθ0]; exact hθρ
+      · show |(0 : ℝ) - 0| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le
+      · show |q.c0 - P| ≤ ρ
+        exact hPd)
+    (fun i => by
+      rw [e1]
+      fin_cases i
+      · show |π - θ + q.α - (π - θ + q.α)| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le
+      · show |(0 : ℝ) - 0| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le
+      · show |P - P| ≤ ρ
+        rw [sub_self, abs_zero]; exact hρ0.le)
+  rw [e6] at hg1 hg2
+  exact ⟨hg1, hg2⟩
+
+/-- **The comparison at one moved set point**: the glue pairs (`glue_withPref`), the shifted
+balanced pair of action `≤ (1 + l) S₀ + R` and the barrier of the moved model give `V₃ < V₂`
+once `2Cρ², l S₀, R ≤ G'/8`, `S₀ < V − G'` and `2D ΔU(P)/σ_P² > V − G'/4`. -/
+@[tmio M, powerlib_domain] private theorem lt_at_withPref {σP : ℝ} (hσ : σP ≠ 0)
+    (hD : 0 < q.D) {P ρ l S₀ R V G' : ℝ} (hP0 : q.c0 ≤ P) (hP4 : P - q.c0 ≤ q.A / 2)
+    (hρ0 : 0 < ρ) (hρρ₀ : ρ ≤ 1 / (q.A * (5 + q.glueK (1 / 2)) ^ 2))
+    (hθρ : Real.arcsin ((P - q.c0) / q.A) ≤ ρ) (hP₃ : P - q.c0 ≤ ρ)
+    (hCρ : 2 * (q.glueCu (1 / 2) ^ 2 / (2 * σP ^ 2) * ρ ^ 2) ≤ G' / 8) (hl0 : 0 < l)
+    (hlS : l * S₀ ≤ G' / 8) (hS₀0 : 0 ≤ S₀) (hS₀V : S₀ < V - G') (hR0 : 0 ≤ R)
+    (hRle : R ≤ G' / 8)
+    (hpair : (q.withPref P).setPointQP σP ![q.α, 0, q.c0] ![π + q.α, 0, q.c0] ≤
+      ENNReal.ofReal ((1 + l) * S₀ + R))
+    (hbar : V - G' / 4 < 2 * q.D * (q.withPref P).escBarrier / σP ^ 2) (hG'0 : 0 < G') :
+    (q.withPref P).setPointQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P]
+        ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P] <
+      (q.withPref P).swingQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0]
+        ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0] := by
+  have hA := q.A_pos
+  set q' := q.withPref P with hq'
+  obtain ⟨hg1, hg2⟩ := q.glue_withPref hσ hP0 hP4 hρ0 hρρ₀ hθρ hP₃
+  set C := q.glueCu (1 / 2) ^ 2 / (2 * σP ^ 2) with hC
+  have hC0 : 0 ≤ C := by positivity
+  have e1 : q'.Pref = P := rfl
+  have e2 : q'.c0 = q.c0 := rfl
+  have e3 : q'.A = q.A := rfl
+  have e4 : q'.α = q.α := rfl
+  have hV2 : q'.swingQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0]
+      ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0] =
+      ENNReal.ofReal (2 * q.D * q'.escBarrier / σP ^ 2) := by
+    have := q'.swingQP_saddle_eq hσ hD (by rw [e1, e2]; exact hP0)
+      (by rw [e1, e2, e3]; linarith)
+    rw [e1, e2, e3, e4] at this
+    rw [this]; rfl
+  rw [hV2]
+  have htri : q'.setPointQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P]
+      ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P] ≤
+      ENNReal.ofReal (C * ρ ^ 2) + (ENNReal.ofReal ((1 + l) * S₀ + R) +
+        ENNReal.ofReal (C * ρ ^ 2)) := by
+    have t1 := controlQuasiPotential_triangle q'.sdeDrift
+      (fun _ (_ : Fin 1) => q'.setPointColumn σP)
+      ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P] ![q.α, 0, q.c0]
+      ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P]
+    have t2 := controlQuasiPotential_triangle q'.sdeDrift
+      (fun _ (_ : Fin 1) => q'.setPointColumn σP) ![q.α, 0, q.c0] ![π + q.α, 0, q.c0]
+      ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P]
+    exact t1.trans (add_le_add hg1 (t2.trans (add_le_add hpair hg2)))
+  refine htri.trans_lt ?_
+  have hm : 0 ≤ (1 + l) * S₀ + R := by positivity
+  rw [← ENNReal.ofReal_add hm (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  refine ENNReal.ofReal_lt_ofReal_iff'.2 ⟨?_, by linarith⟩
+  have : (1 + l) * S₀ = S₀ + l * S₀ := by ring
+  linarith
+
+/-- `(1 + 1/l)(x/σ)² T/2 ≤ G/8` once `x² ≤ G σ²/(4(1 + 1/l)(T + 1))`. -/
+@[tmio T, powerlib_foundation] private theorem shift_cost_le {l T x σP G : ℝ} (hl : 0 < l)
+    (hT : 0 ≤ T) (hσ : σP ≠ 0)
+    (hx : x ^ 2 ≤ G * σP ^ 2 / (4 * (1 + 1 / l) * (T + 1))) :
+    (1 + 1 / l) * (x / σP) ^ 2 * T / 2 ≤ G / 8 := by
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  have hk : 0 < 1 + 1 / l := by positivity
+  have h2 : x ^ 2 * (4 * (1 + 1 / l) * (T + 1)) ≤ G * σP ^ 2 := by
+    rwa [le_div_iff₀ (by positivity)] at hx
+  have e : (1 + 1 / l) * (x / σP) ^ 2 * T / 2 = (1 + 1 / l) * x ^ 2 * T / (2 * σP ^ 2) := by
+    rw [div_pow]; field_simp
+  rw [e, div_le_iff₀ (by positivity)]
+  have h3 : (1 + 1 / l) * x ^ 2 * T ≤ (1 + 1 / l) * x ^ 2 * (T + 1) :=
+    mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+  nlinarith
+
+/-- **Near the balanced set point, at every bandwidth** (`D > 0`, `σ_P ≠ 0`, `P_ref = c₀`, every
+`ω_c > 0`): there is `ε > 0` such that for every set point `P ∈ [c₀, c₀ + ε)` the three-state
+escape exponent of `q.withPref P` (stable equilibrium to saddle) is strictly below its two-state
+value `Params.swingQP`. Proof: a pair of the balanced model of action below
+`V₂ − min(G/2, V₂/2)` (`setPointQP_le_balanced_rest`, `G = D M J/(σ_P² ω_c)`) stays admissible
+for `q.withPref P` with the control shifted by `(P − c₀)/σ_P` (`setPointQP_withPref_le`); two
+glue pairs with constants uniform in `P` (`glue_withPref`) join its ends to the moved
+equilibria, and the barrier is continuous in `P` (`tendsto_escBarrier_withPref`). `ε` is not
+explicit: it depends on the duration of that pair. -/
+@[tmio M, powerlib_domain] theorem exists_setPointQP_lt_swingQP_withPref {σP : ℝ}
+    (hσ : σP ≠ 0) (hD : 0 < q.D) (hP : q.Pref = q.c0) :
+    ∃ ε > 0, ∀ P, q.c0 ≤ P → P < q.c0 + ε →
+      (q.withPref P).setPointQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P]
+          ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0, P] <
+        (q.withPref P).swingQP σP ![Real.arcsin ((P - q.c0) / q.A) + q.α, 0]
+          ![π - Real.arcsin ((P - q.c0) / q.A) + q.α, 0] := by
+  have hM := q.M_pos; have hA := q.A_pos; have hω := q.ωc_pos
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  -- the balanced bound and a pair below it
+  have hJ0 := q.balancedGain_pos hD
+  set G := q.D * q.M * q.balancedGain / (σP ^ 2 * q.ωc) with hG
+  have hG0 : 0 < G := by positivity
+  set V := 2 * q.D * (2 * q.A) / σP ^ 2 with hV
+  have hV0 : 0 < V := by positivity
+  set G' := min (G / 2) (V / 2) with hG'
+  have hG'0 : 0 < G' := lt_min (by positivity) (by positivity)
+  have hG'1 : G' ≤ G / 2 := min_le_left _ _
+  have hG'2 : G' ≤ V / 2 := min_le_right _ _
+  have hlt : q.setPointQP σP ![q.α, 0, q.c0] ![π + q.α, 0, q.c0] < ENNReal.ofReal (V - G') :=
+    (q.setPointQP_le_balanced_rest hσ hD hP).trans_lt
+      (ENNReal.ofReal_lt_ofReal_iff'.2 ⟨by linarith, by linarith⟩)
+  simp only [setPointQP, controlQuasiPotential, iInf_lt_iff] at hlt
+  obtain ⟨T, φ, u, ⟨hT0, hφ0, hφT, hφc, hφd, hu⟩, hS⟩ := hlt
+  set S₀ := controlAction u T with hS₀
+  have hS₀0 : 0 ≤ S₀ := controlAction_nonneg u hT0
+  have hS₀V : S₀ < V - G' := (ENNReal.ofReal_lt_ofReal_iff'.1 hS).1
+  -- the constants
+  set l := G' / (8 * (S₀ + 1)) with hl
+  have hl0 : 0 < l := by positivity
+  have hlS : l * S₀ ≤ G' / 8 := by
+    rw [hl, div_mul_eq_mul_div, div_le_div_iff₀ (by positivity) (by norm_num)]
+    nlinarith
+  set C := q.glueCu (1 / 2) ^ 2 / (2 * σP ^ 2) with hC
+  have hC0 : 0 ≤ C := by positivity
+  have hK0 : 0 < q.glueK (1 / 2) := by unfold glueK; positivity
+  set ρ₀ := 1 / (q.A * (5 + q.glueK (1 / 2)) ^ 2) with hρ₀
+  have hρ₀0 : 0 < ρ₀ := by positivity
+  set ρ := min ρ₀ √(G' / (16 * (C + 1))) with hρdef
+  have hρ0 : 0 < ρ := lt_min hρ₀0 (Real.sqrt_pos.2 (by positivity))
+  have hρρ₀ : ρ ≤ ρ₀ := min_le_left _ _
+  have hCρ : 2 * (C * ρ ^ 2) ≤ G' / 8 := by
+    have h1 : ρ ≤ √(G' / (16 * (C + 1))) := min_le_right _ _
+    have h2 : ρ ^ 2 ≤ G' / (16 * (C + 1)) := by
+      calc ρ ^ 2 ≤ √(G' / (16 * (C + 1))) ^ 2 := pow_le_pow_left₀ hρ0.le h1 2
+        _ = G' / (16 * (C + 1)) := Real.sq_sqrt (by positivity)
+    rw [le_div_iff₀ (by positivity)] at h2
+    nlinarith
+  -- the set point window
+  obtain ⟨δ₂, hδ₂, harc⟩ := Metric.continuousAt_iff.1
+    (Real.continuous_arcsin.continuousAt (x := 0)) ρ hρ0
+  obtain ⟨δ₄, hδ₄, hbar⟩ := Metric.tendsto_nhds_nhds.1 q.tendsto_escBarrier_withPref
+    (G' * σP ^ 2 / (8 * q.D)) (by positivity)
+  set ε₁ := √(G' * σP ^ 2 / (4 * (1 + 1 / l) * (T + 1))) with hε₁
+  have hε₁0 : 0 < ε₁ := Real.sqrt_pos.2 (by positivity)
+  set ε := min (min (min ε₁ (q.A * δ₂)) (min ρ (q.A / 2))) δ₄ with hεdef
+  have hε0 : 0 < ε := lt_min (lt_min (lt_min hε₁0 (by positivity)) (lt_min hρ0 (by positivity)))
+    hδ₄
+  refine ⟨ε, hε0, fun P hP0 hP1 => ?_⟩
+  have hPε : P - q.c0 < ε := by linarith
+  have hP₁ : P - q.c0 < ε₁ := hPε.trans_le ((min_le_left _ _).trans
+    ((min_le_left _ _).trans (min_le_left _ _)))
+  have hP₂ : P - q.c0 < q.A * δ₂ := hPε.trans_le ((min_le_left _ _).trans
+    ((min_le_left _ _).trans (min_le_right _ _)))
+  have hP₃ : P - q.c0 < ρ := hPε.trans_le ((min_le_left _ _).trans
+    ((min_le_right _ _).trans (min_le_left _ _)))
+  have hP₄ : P - q.c0 < q.A / 2 := hPε.trans_le ((min_le_left _ _).trans
+    ((min_le_right _ _).trans (min_le_right _ _)))
+  have hP₅ : P - q.c0 < δ₄ := hPε.trans_le (min_le_right _ _)
+  have hs0 : 0 ≤ (P - q.c0) / q.A := div_nonneg (by linarith) hA.le
+  have hθρ : Real.arcsin ((P - q.c0) / q.A) ≤ ρ := by
+    have h := harc (x := (P - q.c0) / q.A) (by
+      rw [Real.dist_eq, sub_zero, abs_of_nonneg hs0, div_lt_iff₀ hA]; linarith)
+    rw [Real.dist_eq, Real.arcsin_zero, sub_zero] at h
+    exact (le_abs_self _).trans h.le
+  have hmid := q.setPointQP_withPref_le hσ hT0 hφ0 hφT hφc hφd hu P hl0
+  rw [hP] at hmid
+  have hRle := shift_cost_le (x := P - q.c0) hl0 hT0 hσ (by
+    have h1 : (P - q.c0) ^ 2 ≤ ε₁ ^ 2 := pow_le_pow_left₀ (by linarith) hP₁.le 2
+    rwa [hε₁, Real.sq_sqrt (by positivity)] at h1)
+  have hbarP : V - G' / 4 < 2 * q.D * (q.withPref P).escBarrier / σP ^ 2 := by
+    have h := hbar (x := P) (by rw [Real.dist_eq, abs_of_nonneg (by linarith)]; exact hP₅)
+    rw [Real.dist_eq] at h
+    have h' := (abs_lt.1 h).1
+    have e : 2 * q.D * (q.withPref P).escBarrier / σP ^ 2 =
+        2 * q.D / σP ^ 2 * (q.withPref P).escBarrier := by ring
+    have e2 : 2 * q.D / σP ^ 2 * (2 * q.A - G' * σP ^ 2 / (8 * q.D)) = V - G' / 4 := by
+      rw [hV]; field_simp; ring
+    rw [e, ← e2]
+    exact mul_lt_mul_of_pos_left (by linarith) (by positivity)
+  exact q.lt_at_withPref hσ hD hP0 hP₄.le hρ0 hρρ₀ hθρ hP₃.le hCρ hl0 hlS hS₀0 hS₀V
+    (by positivity) hRle hmid hbarP hG'0
+
 end Params3
 
 namespace Params
@@ -2108,6 +4102,64 @@ is strictly below the two-state one `V₂ = Params.swingQP` (`setPointQP_le_bala
   have hσ2 : 0 < σP ^ 2 := by positivity
   refine h.trans_lt (ENNReal.ofReal_lt_ofReal_iff'.mpr ⟨?_, ?_⟩)
   · have : 0 < p.D * p.M * (⟨p, ωc, hω⟩ : Params3).balancedGain / (σP ^ 2 * ωc) := by
+      positivity
+    linarith
+  · rw [hpot]; positivity
+
+/-- **A fast filter lowers the escape exponent at every set point, quantitatively**
+(`D > 0`, `σ_P ≠ 0`, `c₀ ≤ P_ref < c₀ + A`, `(M ω_c + D) ω_c ≥ 12 A`): from the stable
+equilibrium `(δ_s, 0, P(δ_s))` to the saddle `(δ_u, 0, P(δ_u))`,
+`V₃ ≤ 2D (U(δ_u) − U(δ_s))/σ_P² − D M J/(σ_P² ω_c)` with the explicit
+`J = Params3.fastFilterGain > 0` (`Params3.setPointQP_le_fastFilter_rest`). -/
+@[tmio M, powerlib_domain] theorem setPointQP_le_fastFilter {σP : ℝ} (hσ : σP ≠ 0)
+    (hD : 0 < p.D) (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {δs δu : ℝ}
+    (hδs : δs = Real.arcsin ((p.Pref - p.c0) / p.A) + p.α)
+    (hδu : δu = π - Real.arcsin ((p.Pref - p.c0) / p.A) + p.α) (ωc : ℝ) (hω : 0 < ωc)
+    (hΛ : 12 * p.A ≤ (p.M * ωc + p.D) * ωc) :
+    (⟨p, ωc, hω⟩ : Params3).setPointQP σP ![δs, 0, p.c0 + p.A * Real.sin (δs - p.α)]
+        ![δu, 0, p.c0 + p.A * Real.sin (δu - p.α)] ≤
+      ENNReal.ofReal (2 * p.D * (p.potential (δu - p.α) - p.potential (δs - p.α)) / σP ^ 2 -
+        p.D * p.M * (⟨p, ωc, hω⟩ : Params3).fastFilterGain / (σP ^ 2 * ωc)) := by
+  have hA := p.A_pos
+  have hs1 : (p.Pref - p.c0) / p.A < 1 := by rw [div_lt_one hA]; linarith
+  have hsin : p.A * Real.sin (Real.arcsin ((p.Pref - p.c0) / p.A)) = p.Pref - p.c0 := by
+    rw [Real.sin_arcsin (by rw [le_div_iff₀ hA]; linarith) hs1.le]; field_simp
+  have e1 : p.c0 + p.A * Real.sin (δs - p.α) = p.Pref := by
+    rw [hδs, add_sub_cancel_right]; linarith
+  have e2 : p.c0 + p.A * Real.sin (δu - p.α) = p.Pref := by
+    rw [hδu, add_sub_cancel_right, Real.sin_pi_sub]; linarith
+  have hpot : p.potential (δu - p.α) - p.potential (δs - p.α) = p.escBarrier := by
+    rw [hδs, hδu]; simp only [add_sub_cancel_right, escBarrier]
+  rw [e1, e2, hpot, hδs, hδu]
+  exact (⟨p, ωc, hω⟩ : Params3).setPointQP_le_fastFilter_rest hσ hD h0 h1 hΛ
+
+/-- **`V₃ < V₂` at every set point for a fast filter** (`D > 0`, `σ_P ≠ 0`,
+`c₀ ≤ P_ref < c₀ + A`, `(M ω_c + D) ω_c ≥ 12 A`): the three-state escape exponent (stable
+equilibrium to saddle, set-point noise) is strictly below the two-state one `V₂ = Params.swingQP`
+(`setPointQP_le_fastFilter`, `swingQP_saddle_eq`). -/
+@[tmio M, powerlib_domain] theorem setPointQP_lt_swingQP_fastFilter {σP : ℝ} (hσ : σP ≠ 0)
+    (hD : 0 < p.D) (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {δs δu : ℝ}
+    (hδs : δs = Real.arcsin ((p.Pref - p.c0) / p.A) + p.α)
+    (hδu : δu = π - Real.arcsin ((p.Pref - p.c0) / p.A) + p.α) (ωc : ℝ) (hω : 0 < ωc)
+    (hΛ : 12 * p.A ≤ (p.M * ωc + p.D) * ωc) :
+    (⟨p, ωc, hω⟩ : Params3).setPointQP σP ![δs, 0, p.c0 + p.A * Real.sin (δs - p.α)]
+        ![δu, 0, p.c0 + p.A * Real.sin (δu - p.α)] < p.swingQP σP ![δs, 0] ![δu, 0] := by
+  have hM := p.M_pos
+  have h := p.setPointQP_le_fastFilter hσ hD h0 h1 hδs hδu ωc hω hΛ
+  have hV : p.swingQP σP ![δs, 0] ![δu, 0] =
+      ENNReal.ofReal (2 * p.D * (p.potential (δu - p.α) - p.potential (δs - p.α)) / σP ^ 2) := by
+    have := p.swingQP_saddle_eq hσ hD h0 h1
+    rw [hδs, hδu]
+    simpa only [add_sub_cancel_right] using this
+  rw [hV]
+  have hg : 0 < (⟨p, ωc, hω⟩ : Params3).fastFilterGain :=
+    (⟨p, ωc, hω⟩ : Params3).fastFilterGain_pos hD h0 h1
+  have hpot : p.potential (δu - p.α) - p.potential (δs - p.α) = p.escBarrier := by
+    rw [hδs, hδu]; simp only [add_sub_cancel_right, escBarrier]
+  have hΔ := p.escBarrier_pos h0 h1
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  refine h.trans_lt (ENNReal.ofReal_lt_ofReal_iff'.mpr ⟨?_, ?_⟩)
+  · have : 0 < p.D * p.M * (⟨p, ωc, hω⟩ : Params3).fastFilterGain / (σP ^ 2 * ωc) := by
       positivity
     linarith
   · rw [hpot]; positivity

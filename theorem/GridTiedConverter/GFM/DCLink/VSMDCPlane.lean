@@ -98,13 +98,16 @@ model whose DC side collapses, `OpenLoop.mem_den_lyapunovStable_iff_of_invariant
   the swing angle stays where `ΔP(θ)/C < 0` and `C V V̇ = −ΔP(θ)` drives `V²` up at a uniform
   rate (`Dynamics.Degenerate.unstable_of_barriers`). With `mem_den_unstable_of_invariant` (an
   unbalanced frozen swing, `M = 0`, a negatively damped, saddle or undamped flat swing) these
-  decide the balance except in the case below.
+  decide the balance except for a stiff swing with DC gains of opposite signs (`K_p K_i < 0`),
+  where the rate `D ω² − K_p θ ΔP(θ)/(C V) + K_i θ V` has terms of both signs and the barrier
+  argument fails.
 
-Not decided here (UNPROVED): Lyapunov stability at the balance `P_s = P_e(δ*) = P_ff + K_i ζ*`
-with `C ≠ 0` (so `I_s = 0`), a stiff frozen swing (`0 ≤ D/M`, `0 < k(δ*)/M`) and DC gains of
-opposite signs (`K_p K_i < 0`). Missing step: a barrier for that sign — the rate
-`D ω² − K_p θ ΔP(θ)/(C V) + K_i θ V` of `F θ − Π(θ) − M ω²/2` then has terms of both signs on
-either side of the plane, so the angle may leave the side `ΔP(θ)/C < 0` where `V²` grows.
+The remaining case is decided in `theorem/GridTiedConverter/GFM/DCLink/VSMDCCone.lean`:
+`VSMDC.mem_den_unstable_of_invariant_cone` (`C ≠ 0`, the balance, `M ≠ 0`, `k(δ*) ≠ 0`,
+`K_p ≠ 0`, any `D` and `K_i`: unstable, an escape along a self-similar cone `V ∝ t³`, `θ ∝ t⁵`
+found by a weighted blow-up of the plane), with it `VSMDC.mem_den_unstable_of_invariant_balance`
+(the balance of the invariant plane is never stable) and the complete decision
+`VSMDC.mem_den_lyapunovStable_iff_of_invariant_plane`.
 -/
 
 noncomputable section

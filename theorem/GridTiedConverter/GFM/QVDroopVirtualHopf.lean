@@ -72,8 +72,16 @@ No new family: connection conclusions on `QVDroopVirtual.family`.
 Corrections and limits.
 * Located, not decided: the Bautin set off the path of `QVDroopVirtualBautin`
   (`QVDroopVirtual.bautinPath_mem_den_unstable_of_bautinQuartic_eq_zero` decides the point of
-  that path), the double zero `C = G = 0` (Bogdanov–Takens) and the cusp set
-  (`QVDroopVirtualFold`).
+  that path).
+* The hypotheses on the cusp and double-zero sets of the two complete theorems are decided
+  elsewhere: the cusp points `C = 𝔉 = 0` in
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualCusp.lean` (none in the physical range with
+  `Q_tδ ≠ 0`, `QVDroopVirtual.foldQuad_ne_zero_of_physical`), the double zero `C = G = 0`
+  (Bogdanov–Takens) in `theorem/GridTiedConverter/GFM/QVDroopVirtualBT.lean`;
+  in the physical range with damping both are dropped in
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualMembership.lean`
+  (`QVDroopVirtual.mem_den_locallyAsymptoticallyStable_iff_of_physical_complete`, off the folds
+  with `Q_tδ = 0`, `n_q (∂P_t/∂E) ∂²Q_t/∂δ² = K_t ∂²P_t/∂δ²` and the Bautin set).
 -/
 
 noncomputable section

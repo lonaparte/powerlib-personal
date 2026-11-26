@@ -25,7 +25,13 @@ Results.
 * `exists_root_re_pos_droopJacobian`: a strict violation of one of the three gives a
   characteristic root with positive real part.
 * `droopJacobian_null`: at `k a = b c` (the fold), `(k, 0, c)` is a right and
-  `(D ω k/M, ω k, b/M)` a left null vector.
+  `(D ω k/M, ω k, b/M)` a left null vector; `droopJacobian_eq_smul_of_mulVec_eq_zero`: for
+  `ω, k ≠ 0` every null vector is a multiple of `(k, 0, c)`.
+* `droopJacobian_bt`: at a double zero (`k a = b c`, `a + D ω k = 0`, `M, ω, k ≠ 0`,
+  `D + M ω k ≠ 0`) the Jordan vector `(0, k, −c/(ω k))` over `(k, 0, c)` and the normalised left
+  null vector `(D ω k, M ω k, b)/(k (D + M ω k))` (the Bogdanov–Takens chains of
+  `theorem/GridTiedConverter/GFM/QVDroopBT.lean` and
+  `theorem/GridTiedConverter/GFM/QVDroopVirtualBT.lean`).
 * `droopJacobian_routh_or_violation`: away from `k a = b c` and the third quantity `0`, either all
   three hold or one is strictly violated (the identity
   `G = (D + Mωk)(a + Dωk) − Mω (k a − b c)` excludes `D + M ω k = 0`).
@@ -176,5 +182,55 @@ identity `G = (D + Mωk)(a + Dωk) − Mω C` excludes `D + M ω k = 0`). -/
     fin_cases j <;>
       simp [droopJacobian, Matrix.vecMul, dotProduct, Fin.sum_univ_three] <;>
       first | ring1 | linear_combination (-ω / M) * h
+
+/-- **The Jordan chain at a double zero.** At `k a − b c = 0`, `a + D ω k = 0` with `M, ω, k ≠ 0`
+and `A = D + M ω k ≠ 0`, `q₁ = (0, k, −c/(ω k))` is a Jordan vector over `q₀ = (k, 0, c)`
+(`J q₁ = q₀`), `p₁ = (D ω k, M ω k, b)/(k A)` is a left null vector (`p₁ᵀ J = 0`) and
+`⟨p₁, q₁⟩ = 1`. -/
+@[tmio T, powerlib_foundation] theorem droopJacobian_bt {M D ω a b c k : ℝ}
+    (hM : M ≠ 0) (hω : ω ≠ 0) (hk : k ≠ 0)
+    (hA : D + M * ω * k ≠ 0) (h0 : k * a - b * c = 0) (h1 : a + D * ω * k = 0) :
+    droopJacobian M D ω a b c k *ᵥ ![0, k, -(c / (ω * k))] = ![k, 0, c] ∧
+      ((k * (D + M * ω * k))⁻¹ • ![D * ω * k, M * ω * k, b]) ᵥ*
+        droopJacobian M D ω a b c k = 0 ∧
+      ((k * (D + M * ω * k))⁻¹ • ![D * ω * k, M * ω * k, b]) ⬝ᵥ ![0, k, -(c / (ω * k))] = 1 := by
+  obtain ⟨-, hl⟩ := droopJacobian_null (M := M) (D := D) (ω := ω) h0
+  have hbc : b * c = -(D * ω * k ^ 2) := by linear_combination -h0 + k * h1
+  refine ⟨?_, ?_, ?_⟩
+  · ext i
+    fin_cases i <;> simp [droopJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_three] <;>
+      field_simp
+    linear_combination (-1 : ℝ) * hbc
+  · have e : ![D * ω * k, M * ω * k, b] = M • ![D * ω * k / M, ω * k, b / M] := by
+      ext i; fin_cases i <;> simp <;> field_simp
+    rw [e, Matrix.smul_vecMul, Matrix.smul_vecMul, hl, smul_zero, smul_zero]
+  · simp only [dotProduct, Fin.sum_univ_three, Pi.smul_apply, smul_eq_mul, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
+    have e : M * ω * k * k + b * -(c / (ω * k)) = k * (D + M * ω * k) := by
+      field_simp
+      linear_combination (-1 : ℝ) * hbc
+    rw [show (k * (D + M * ω * k))⁻¹ * (D * ω * k) * 0 + (k * (D + M * ω * k))⁻¹ * (M * ω * k) * k +
+        (k * (D + M * ω * k))⁻¹ * b * -(c / (ω * k)) =
+        (k * (D + M * ω * k))⁻¹ * (M * ω * k * k + b * -(c / (ω * k))) by ring, e,
+      inv_mul_cancel₀ (mul_ne_zero hk hA)]
+
+/-- **The kernel at a fold is a line.** For `ω, k ≠ 0` every null vector of the droop-loop
+Jacobian is a multiple of `(k, 0, c)`. -/
+@[tmio T, powerlib_foundation] theorem droopJacobian_eq_smul_of_mulVec_eq_zero
+    {M D ω a b c k : ℝ} (hω : ω ≠ 0) (hk : k ≠ 0)
+    {v : Fin 3 → ℝ} (hv : droopJacobian M D ω a b c k *ᵥ v = 0) :
+    v = (v 0 / k) • ![k, 0, c] := by
+  have h0 : (droopJacobian M D ω a b c k *ᵥ v) 0 = 0 := by rw [hv]; rfl
+  have h2 : (droopJacobian M D ω a b c k *ᵥ v) 2 = 0 := by rw [hv]; rfl
+  simp [droopJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_three] at h0 h2
+  funext i
+  fin_cases i
+  · simp; field_simp
+  · simp [h0]
+  · simp
+    field_simp
+    have : ω * (c * v 0 - k * v 2) = 0 := by linear_combination h2
+    have h' := (mul_eq_zero.mp this).resolve_left hω
+    linear_combination -h'
 
 end powerlib.Criteria

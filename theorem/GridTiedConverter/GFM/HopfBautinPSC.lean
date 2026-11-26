@@ -80,9 +80,17 @@ No new family: connection conclusions on `Line.PSC.family`.
   and the quintic jet `J` of its chart field in any chart of the critical plane.
 * **`Line.PSC.unitLine_bautin_mem_den_unstable`**: the degenerate point `V = 6/5`, `K_p = 20` of
   the unit line is unstable (a weak focus of the second order, `l₂ > 0`; Bautin point with a
-  subcritical second-order focus). The other degenerate points of `Line.PSC.Model.Degenerate`
-  (the zeros of `𝔅_P` elsewhere on the Hopf boundary, the Bogdanov–Takens and zero–Hopf fold
-  points) are not decided here.
+  subcritical second-order focus). The second zero `t = 12` of the Bautin form on the angle path
+  through this point (`δ* = π/4`, `V = 3√2/5`) is decided unstable in
+  `theorem/GridTiedConverter/GFM/HopfBautinPSCAngle.lean`
+  (`Line.PSC.angle_bautin_mem_den_unstable`, `l₂ = 34000√6/77`), and a locally asymptotically
+  stable Bautin point (`l₂ < 0`) in `theorem/GridTiedConverter/GFM/HopfBautinPSCStable.lean`
+  (`Line.PSC.stable_bautin_mem_den_locallyAsymptoticallyStable`). Not decided: the Bautin set in
+  general (on the unit line its points are `t = a₁ (1 ± λ)`,
+  `λ² = −((κ − 1)² + 1) 𝔆_P/𝔊_P`, `Line.PSC.bautinForm_eq_cubic`, a curve of genus three, so
+  `K_p P_ref` is quadratic over `ℚ(κ)`; `ℓ₂` over `ℚ(κ)[K_p P_ref]` is not formalized), the
+  codimension-three points `ℓ₁ = ℓ₂ = 0`, and the other degenerate points of
+  `Line.PSC.Model.Degenerate` (the Bogdanov–Takens and zero–Hopf fold points).
 -/
 
 noncomputable section

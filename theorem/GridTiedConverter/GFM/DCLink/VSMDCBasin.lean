@@ -43,8 +43,10 @@ the sentence language (private implementation evidence); the remainder bound is 
 evidence; the local sentences are the connection statements of `VSMDC.family`.
 
 Not proved here: a Lyapunov function of energy type (swing energy + DC storage + integrator
-terms, not quadratic) valid for every Routh-stable parameter, and an estimate reaching the
-plane `V = 0`.
+terms with swing–DC cross terms, not quadratic) valid for every Routh-stable parameter, and an
+estimate reaching the plane `V = 0`. Without swing–DC cross terms no such function exists:
+`VSMDC.Model.not_strictMin_separableEnergy_of_lie_nonpos`
+(`theorem/GridTiedConverter/GFM/DCLink/VSMDCEnergy.lean`).
 -/
 
 noncomputable section

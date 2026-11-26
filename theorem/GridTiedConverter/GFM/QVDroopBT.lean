@@ -22,7 +22,9 @@ Model boundary.
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §8.4 and §8.7 (the chain
 and the projection formula `a = ½⟨p₁, B(q₀, q₀)⟩`); the cusp law
 `NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`
-(`theorem/Dynamics/BTInstability.lean`); the derivative form `QVDroop.bForm`, the right null
+(`theorem/Dynamics/BTInstability.lean`); the chain and kernel laws of the Jacobian pattern
+`Criteria.droopJacobian_bt`, `Criteria.droopJacobian_eq_smul_of_mulVec_eq_zero`
+(`theorem/Criteria/DroopJacobian.lean`); the derivative form `QVDroop.bForm`, the right null
 vector `QVDroop.foldQ`, the characteristic polynomial `QVDroop.Model.charpoly_fold` and the fold
 law of `theorem/GridTiedConverter/GFM/QVDroopFold.lean`, the physical-range facts of
 `theorem/GridTiedConverter/GFM/QVDroopCusp.lean`. The chain and the coefficient were derived by
@@ -72,54 +74,6 @@ against `btQ1`. -/
 def btP1 (M D ω b k : ℝ) : State 3 :=
   WithLp.toLp 2 ((k * (D + M * ω * k))⁻¹ • ![D * ω * k, M * ω * k, b])
 
-/-- The Jordan chain and the adjoint chain of `droopJacobian` at a double zero
-`k a − b c = 0`, `a + D ω k = 0` (`M, ω, k ≠ 0`, `A = D + M ω k ≠ 0`): `J q₁ = q₀`, `p₁ᵀ J = 0`,
-`⟨p₁, q₁⟩ = 1`. -/
-@[tmio T, powerlib_foundation] private theorem droopJacobian_bt {M D ω a b c k : ℝ}
-    (hM : M ≠ 0) (hω : ω ≠ 0) (hk : k ≠ 0)
-    (hA : D + M * ω * k ≠ 0) (h0 : k * a - b * c = 0) (h1 : a + D * ω * k = 0) :
-    droopJacobian M D ω a b c k *ᵥ ![0, k, -(c / (ω * k))] = ![k, 0, c] ∧
-      ((k * (D + M * ω * k))⁻¹ • ![D * ω * k, M * ω * k, b]) ᵥ*
-        droopJacobian M D ω a b c k = 0 ∧
-      ((k * (D + M * ω * k))⁻¹ • ![D * ω * k, M * ω * k, b]) ⬝ᵥ ![0, k, -(c / (ω * k))] = 1 := by
-  obtain ⟨-, hl⟩ := Criteria.droopJacobian_null (M := M) (D := D) (ω := ω) h0
-  have hbc : b * c = -(D * ω * k ^ 2) := by linear_combination -h0 + k * h1
-  refine ⟨?_, ?_, ?_⟩
-  · ext i
-    fin_cases i <;> simp [droopJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_three] <;>
-      field_simp
-    linear_combination (-1 : ℝ) * hbc
-  · have e : ![D * ω * k, M * ω * k, b] = M • ![D * ω * k / M, ω * k, b / M] := by
-      ext i; fin_cases i <;> simp <;> field_simp
-    rw [e, Matrix.smul_vecMul, Matrix.smul_vecMul, hl, smul_zero, smul_zero]
-  · simp only [dotProduct, Fin.sum_univ_three, Pi.smul_apply, smul_eq_mul, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
-    have e : M * ω * k * k + b * -(c / (ω * k)) = k * (D + M * ω * k) := by
-      field_simp
-      linear_combination (-1 : ℝ) * hbc
-    rw [show (k * (D + M * ω * k))⁻¹ * (D * ω * k) * 0 + (k * (D + M * ω * k))⁻¹ * (M * ω * k) * k +
-        (k * (D + M * ω * k))⁻¹ * b * -(c / (ω * k)) =
-        (k * (D + M * ω * k))⁻¹ * (M * ω * k * k + b * -(c / (ω * k))) by ring, e,
-      inv_mul_cancel₀ (mul_ne_zero hk hA)]
-
-/-- Every null vector of `droopJacobian` is a multiple of `(k, 0, c)` (`ω, k ≠ 0`). -/
-@[tmio T, powerlib_foundation] private theorem droopJacobian_eq_smul_of_mulVec_eq_zero
-    {M D ω a b c k : ℝ} (hω : ω ≠ 0) (hk : k ≠ 0)
-    {v : Fin 3 → ℝ} (hv : droopJacobian M D ω a b c k *ᵥ v = 0) :
-    v = (v 0 / k) • ![k, 0, c] := by
-  have h0 : (droopJacobian M D ω a b c k *ᵥ v) 0 = 0 := by rw [hv]; rfl
-  have h2 : (droopJacobian M D ω a b c k *ᵥ v) 2 = 0 := by rw [hv]; rfl
-  simp [droopJacobian, Matrix.mulVec, dotProduct, Fin.sum_univ_three] at h0 h2
-  funext i
-  fin_cases i
-  · simp; field_simp
-  · simp [h0]
-  · simp
-    field_simp
-    have : ω * (c * v 0 - k * v 2) = 0 := by linear_combination h2
-    have h' := (mul_eq_zero.mp this).resolve_left hω
-    linear_combination -h'
-
 @[tmio M, powerlib_domain] private theorem model_fderiv_eq (m : Model) :
     fderiv ℝ m.field 0 = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ)
       (droopJacobian m.q.M m.q.D m.q.ωq (m.q.Pδ m.δ (m.q.emf m.Qf))
@@ -150,7 +104,7 @@ is a multiple of `q₀`). Static evidence on the model. -/
   generalize m.q.nq * m.q.PE m.δ (m.q.emf m.Qf) = b at h0 ⊢
   generalize m.q.Qδ m.δ (m.q.emf m.Qf) = c at h0 ⊢
   generalize m.q.gain m.δ (m.q.emf m.Qf) = k at h0 hBT hk hA' ⊢
-  obtain ⟨hq1, hl, hn⟩ := droopJacobian_bt hM hω hk hA' h0 hBT
+  obtain ⟨hq1, hl, hn⟩ := Criteria.droopJacobian_bt hM hω hk hA' h0 hBT
   have hin : ∀ x y : Fin 3 → ℝ, ⟪(WithLp.toLp 2 x : State 3), WithLp.toLp 2 y⟫ = x ⬝ᵥ y :=
     fun x y => by rw [EuclideanSpace.inner_toLp_toLp, star_trivial, dotProduct_comm]
   refine NormalForm.BogdanovTakens.IsBTChain.exists_of_left ?_ ?_ (fun v hv => ?_)
@@ -160,7 +114,7 @@ is a multiple of `q₀`). Static evidence on the model. -/
   · have hv' : droopJacobian m.q.M m.q.D m.q.ωq a b c k *ᵥ (WithLp.ofLp v) = 0 := by
       have := congrArg WithLp.ofLp hv
       simpa [Matrix.ofLp_toEuclideanCLM] using this
-    have he := droopJacobian_eq_smul_of_mulVec_eq_zero hω hk hv'
+    have he := Criteria.droopJacobian_eq_smul_of_mulVec_eq_zero hω hk hv'
     refine ⟨v 0 / k, ?_⟩
     ext i
     have := congrFun he i
@@ -263,7 +217,7 @@ eigenvalue `−A/M` stable), `K ≠ 0`, `E* ≠ 0` and `𝔉 ≠ 0` is unstable:
         (m.q.gain m.δ (m.q.emf m.Qf)) *ᵥ (WithLp.ofLp v) = 0 := by
       have := congrArg WithLp.ofLp hv
       simpa [Matrix.ofLp_toEuclideanCLM] using this
-    have he := droopJacobian_eq_smul_of_mulVec_eq_zero hω.ne' hk hv'
+    have he := Criteria.droopJacobian_eq_smul_of_mulVec_eq_zero hω.ne' hk hv'
     refine ⟨v 0 / m.q.gain m.δ (m.q.emf m.Qf), ?_⟩
     ext i
     have := congrFun he i

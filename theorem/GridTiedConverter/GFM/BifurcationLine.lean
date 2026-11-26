@@ -15,11 +15,18 @@ E² X/|Z|²`, `D_line = 2 E² R X L/|Z|⁴` (`Line.Network.Dline`). Statements a
 `Line.VSM.Model.jac` (from `fderiv`, `Line.VSM.Model.fderiv_point`), not about the nonlinear flow:
 the unfolding is the linear one, in the parameter plane of the synchronizing coefficient (or
 the angle `δ*`) and the damping, with the network and the inertia fixed — the fold line, the
-Hopf curve and the regularity of the two lowest coefficients. Not stated: the homoclinic curve,
-Kuznetsov's nonlinear transversality condition of the reduced two-parameter family, the phase
-portraits; the normal form on the centre manifold at the Bogdanov–Takens point is
+Hopf curve and the regularity of the two lowest coefficients. Elsewhere: the normal form on the
+centre manifold at the Bogdanov–Takens point,
 `theorem/GridTiedConverter/GFM/BTCoefficientLine.lean`
-(`Line.VSM.Model.exists_centerManifold_btNormalForm_of_bt`).
+(`Line.VSM.Model.exists_centerManifold_btNormalForm_of_bt`); Kuznetsov's nondegeneracy condition
+(BT.3) for the unfolding in `(P_ref, D)`, the regularity of the map
+`(x, P_ref, D) ↦ (f, a₀, a₁)` with determinant `−ρ³(P(δ*) − c₀)/M³`,
+`theorem/GridTiedConverter/GFM/BTTransversality.lean` (`Line.VSM.Model.bijective_fderiv_btMap`);
+the homoclinic orbit of the rescaled normal form and the homoclinic curve to leading order
+(`β₁ = −(6/25) β₂²/a`), `theorem/Dynamics/BTUnfolding.lean`. Not proved: the persistence of the
+homoclinic orbit for this model (it needs invariant manifolds of the saddle with parameters, the
+Melnikov splitting expansion and the parameter-dependent centre-manifold reduction), the phase
+portraits.
 
 Source: GFM counterpart study, note t3-bifurcation (b) (the BT point of the dynamic line at
 `D_BT = 2 E² R X²/(ω_b |Z|⁴)`, `ω_b = X/L = ω₀`, i.e. `D_BT = D_line`; scripts s2b, s2c, derived
@@ -32,9 +39,9 @@ of Ordinary Differential Equations* (1983), §30 (versal deformations of a Jorda
 curve was solved with SymPy (exact, untrusted) and is proved here by `linear_combination`.
 
 Results.
-* `Line.VSM.Model.charpoly_jac`: the characteristic polynomial of the Jacobian at the operating
-  point is the quartic `s⁴ + a₃ s³ + a₂ s² + a₁ s + a₀` of
-  `Line.VSM.Model.det_characteristicMatrix`.
+* `Line.VSM.charpoly_jacobian`: the characteristic polynomial of the Jacobian at every state is
+  the quartic `s⁴ + a₃ s³ + a₂(Q_e) s² + a₁(Q_e) s + a₀(Q_e)` of
+  `Line.VSM.det_characteristicMatrix`; at the operating point `Line.VSM.Model.charpoly_jac`.
 * `Line.VSM.Model.two_le_rootMultiplicity_zero_iff`: the eigenvalue `0` is (at least) double
   exactly at a fold `K = 0` with the damping `D = D_line` (`a₀ = ρK/M`, `a₁ = (ρ(D − D_line) +
   2σK)/M`; the two-lowest-coefficients law `SpecialFunctions.two_le_rootMultiplicity_zero_iff`).
@@ -103,17 +110,26 @@ def Model.chain (m : Model) : Fin 4 → ℝ :=
   ![0, 1, -(m.g.L * (m.g.R * m.tangent 2 + m.g.X * m.tangent 3)) / m.g.absSq,
     m.g.L * (m.g.X * m.tangent 2 - m.g.R * m.tangent 3) / m.g.absSq]
 
-/-- The characteristic polynomial of the Jacobian at the operating point.
+/-- The characteristic polynomial of the Jacobian at every state,
+`s⁴ + a₃ s³ + a₂(Q_e) s² + a₁(Q_e) s + a₀(Q_e)` (`VSM.det_characteristicMatrix`).
 Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem Model.charpoly_jac (m : Model) :
-    m.jac.charpoly = X ^ 4 + C m.g.coeff3 * X ^ 3 + C (m.g.coeff2 m.Q) * X ^ 2 +
-      C (m.g.coeff1 m.Q) * X + C (m.g.coeff0 m.Q) := by
+@[tmio M, powerlib_domain] theorem charpoly_jacobian (g : VSM) (δ id iq : ℝ) :
+    (g.jacobian δ id iq).charpoly = X ^ 4 + C g.coeff3 * X ^ 3 +
+      C (g.coeff2 (g.reactive δ id iq)) * X ^ 2 + C (g.coeff1 (g.reactive δ id iq)) * X +
+        C (g.coeff0 (g.reactive δ id iq)) := by
   apply Polynomial.map_injective (algebraMap ℝ ℂ) (algebraMap ℝ ℂ).injective
   apply Polynomial.funext
   intro s
   rw [← Matrix.charpoly_map, ← Linear.det_characteristicMatrix_eq_eval,
-    m.det_characteristicMatrix]
+    g.det_characteristicMatrix]
   simp
+
+/-- The characteristic polynomial of the Jacobian at the operating point.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.charpoly_jac (m : Model) :
+    m.jac.charpoly = X ^ 4 + C m.g.coeff3 * X ^ 3 + C (m.g.coeff2 m.Q) * X ^ 2 +
+      C (m.g.coeff1 m.Q) * X + C (m.g.coeff0 m.Q) :=
+  m.g.charpoly_jacobian _ _ _
 
 /-- **The double zero eigenvalue of the dynamic line.** For `M, L ≠ 0` and `|Z|² > 0` the
 eigenvalue `0` of the Jacobian at the operating point has algebraic multiplicity at least two

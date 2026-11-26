@@ -36,6 +36,9 @@ No new family: connection conclusions on `QVDroop.family`.
   **`QVDroop.mem_den_lyapunovStable_iff_of_physical_complete`**: in the physical range, off the
   Bautin set, the model is locally asymptotically stable, equivalently Lyapunov stable, iff the
   point is an equilibrium with `A, C, G > 0` or a Hopf point with `hopfNum < 0`.
+* The counterpart with a virtual impedance (powers measured at the terminal), where physical
+  cusp points are excluded by a sign argument and folds with `Q_tδ = 0` occur for
+  `|Z_v| = |Z_g|`: `theorem/GridTiedConverter/GFM/QVDroopVirtualMembership.lean`.
 -/
 
 noncomputable section

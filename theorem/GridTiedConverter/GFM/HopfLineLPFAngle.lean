@@ -36,7 +36,9 @@ witnesses of `HopfLineLPF.lean`, `ℓ₁ = −14341/14450` and
 `ℓ₁ = 795686360348046533/264278927960175000`.
 
 Results.
-* The rotated reading `Line.VSMLPF.angleRead`; the critical pair at every operating angle
+* The rotated reading `Line.VSMLPF.angleRead`; the conjugation laws `Line.VSMLPF.star_angleVecQ`,
+  `Line.VSMLPF.star_angleVecP`; the coefficients in the atoms `Line.VSMLPF.Model.coeff_atoms`;
+  the critical pair at every operating angle
   `Line.VSMLPF.Model.critQ`, `Line.VSMLPF.Model.critP` (**`Line.VSMLPF.Model.isCriticalPair_crit`**,
   every balanced physical model, `R ≥ 0`).
 * **`Line.VSMLPF.Model.firstLyapunov_crit`** (closed form, `R > 0`): at a Hopf point `ω`,
@@ -69,7 +71,10 @@ open Complex Matrix Polynomial
 open powerlib.Dynamics (State coord)
 open powerlib.NormalForm.LyapunovCoefficient
 
-@[tmio M, powerlib_domain] private theorem ag_star_Q (d σ w ω : ℝ) :
+/-- **Conjugating the critical right vector of the rotated pattern** reverses the frequency:
+`star (angleVecQ d σ w ω i) = angleVecQ d σ w (−ω) i` for real atoms. Static evidence on the
+pattern. -/
+@[tmio M, powerlib_domain] theorem star_angleVecQ (d σ w ω : ℝ) :
     star (angleVecQ (d : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I) =
       angleVecQ (d : ℂ) (σ : ℂ) (w : ℂ) (-(ω : ℂ)) I := by
   ext k
@@ -79,7 +84,10 @@ open powerlib.NormalForm.LyapunovCoefficient
     map_pow, Complex.conj_ofReal, Complex.conj_I, Fin.zero_eta, Fin.mk_one,
     Fin.reduceFinMk] <;> ring
 
-@[tmio M, powerlib_domain] private theorem ag_star_P (c d g σ w ω : ℝ) :
+/-- **Conjugating the critical left vector of the rotated pattern** reverses the frequency:
+`star (angleVecP c d g σ w ω i) = angleVecP c d g σ w (−ω) i` for real atoms. Static evidence
+on the pattern. -/
+@[tmio M, powerlib_domain] theorem star_angleVecP (c d g σ w ω : ℝ) :
     star (angleVecP (c : ℂ) (d : ℂ) (g : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I) =
       angleVecP (c : ℂ) (d : ℂ) (g : ℂ) (σ : ℂ) (w : ℂ) (-(ω : ℂ)) I := by
   ext k
@@ -207,7 +215,7 @@ open powerlib.NormalForm.LyapunovCoefficient
           star (angleVecP (c : ℂ) (d : ℂ) (g : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I) := by
       ext k
       simp [Pi.star_apply]
-    rw [hstar, smul_dotProduct, ag_star_P, smul_eq_mul, inv_mul_cancel₀ hc0]
+    rw [hstar, smul_dotProduct, star_angleVecP, smul_eq_mul, inv_mul_cancel₀ hc0]
 
 /-- The pairing `⟨p̃, q⟩` of the pattern does not vanish at a Hopf point (`σ > 0`). -/
 @[tmio M, powerlib_domain] private theorem ag_pairing_ne {c d g σ w ω a4 a3 a2 : ℝ}
@@ -419,7 +427,7 @@ projection formula of the critical pair of the pattern equals the real part of
       exact_mod_cast this
     exact mul_ne_zero this hB2 eX.symm
   have hq : star (angleVecQ (d : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I) =
-      angleVecQ (d : ℂ) (σ : ℂ) (w : ℂ) (-(ω : ℂ)) I := ag_star_Q d σ w ω
+      angleVecQ (d : ℂ) (σ : ℂ) (w : ℂ) (-(ω : ℂ)) I := star_angleVecQ d σ w ω
   have hr : jacobianC f 0 *ᵥ (((c : ℂ) * (g * w - K * ((σ : ℂ) ^ 2 + (w : ℂ) ^ 2)))⁻¹ •
       AnglePattern.solveJ (c : ℂ) (K : ℂ) (g : ℂ) (σ : ℂ) (w : ℂ) (AnglePattern.bilin (c : ℂ) (g :
           ℂ) (N : ℂ)
@@ -443,7 +451,7 @@ projection formula of the critical pair of the pattern equals the real part of
       pairing ((starRingEnd ℂ z)⁻¹ • angleVecP (c : ℂ) (d : ℂ) (g : ℂ) (σ : ℂ) (w : ℂ) (ω : ℂ) I)
         v = z⁻¹ * (angleVecP (c : ℂ) (d : ℂ) (g : ℂ) (σ : ℂ) (w : ℂ) (-(ω : ℂ)) I ⬝ᵥ v) := by
     intro z v
-    rw [← ag_star_P, ← pairing_eq_dotProduct]
+    rw [← star_angleVecP, ← pairing_eq_dotProduct]
     simp [pairing_apply, Finset.mul_sum, mul_assoc]
   rw [firstLyapunov_eq_of_solve hA h2' hr hs, (bilinC f 0 _).map_smul, (bilinC f 0 _).map_smul,
     hC, hB, hB, hq, (pairing _).map_smul, (pairing _).map_smul, hpair, hpair, hpair, smul_eq_mul,
@@ -556,12 +564,12 @@ quantities. -/
 
 @[tmio M, powerlib_domain] private theorem ag0_star_Q (d w ω : ℝ) :
     star (angleVecQ (d : ℂ) 0 (w : ℂ) (ω : ℂ) I) = angleVecQ (d : ℂ) 0 (w : ℂ) (-(ω : ℂ)) I := by
-  simpa using ag_star_Q d 0 w ω
+  simpa using star_angleVecQ d 0 w ω
 
 @[tmio M, powerlib_domain] private theorem ag0_star_P (c d g w ω : ℝ) :
     star (angleVecP (c : ℂ) (d : ℂ) (g : ℂ) 0 (w : ℂ) (ω : ℂ) I) =
       angleVecP (c : ℂ) (d : ℂ) (g : ℂ) 0 (w : ℂ) (-(ω : ℂ)) I := by
-  simpa using ag_star_P c d g 0 w ω
+  simpa using star_angleVecP c d g 0 w ω
 
 /-- The lossless Hopf relations in the form of the general pattern (`σ = 0`). -/
 @[tmio M, powerlib_domain] private theorem ag0_rel {c d K g w O : ℂ} (hc : c ≠ 0)
@@ -1047,9 +1055,10 @@ second and the third derivative of a physical balanced model are the patterns wi
   · linear_combination (v 3) * hcsC
   · linear_combination (v 4) * hcsC
 
-/-- The quintic coefficients in the atoms of the rotated pattern (`c = ω_c`, `d = D/M`,
-`K = Q/M`, `g = E²/(M L)`, `σ = R/L`, `w = ω₀`). -/
-@[tmio M, powerlib_domain] private theorem ag_coeffs {m : Model} (hp : Meets m .physical) :
+/-- **The quintic coefficients in the atoms of the rotated pattern** (`c = ω_c`, `d = D/M`,
+`K = Q/M`, `g = E²/(M L)`, `σ = R/L`, `w = ω₀`), physical models. Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem Model.coeff_atoms {m : Model} (hp : Meets m .physical) :
     m.g.coeff4 = m.g.ωc + m.g.D / m.g.M + 2 * (m.g.R / m.g.L) ∧
     m.g.coeff3 = (m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 + 2 * (m.g.R / m.g.L) *
       (m.g.D / m.g.M + m.g.ωc) + m.g.D / m.g.M * m.g.ωc ∧
@@ -1087,7 +1096,7 @@ second and the third derivative of a physical balanced model are the patterns wi
         m.g.ωc * (m.Q / m.g.M) * ((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2) +
           ω ^ 2 * ((m.g.D / m.g.M + m.g.ωc) * ((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2 - ω ^ 2) +
             2 * (m.g.R / m.g.L) * (m.g.D / m.g.M * m.g.ωc - ω ^ 2)) := by
-  obtain ⟨c4, c3, c2, c1, c0⟩ := ag_coeffs hp
+  obtain ⟨c4, c3, c2, c1, c0⟩ := Model.coeff_atoms hp
   obtain ⟨-, e1, e2, -, -, -⟩ := hH
   rw [c3, c1] at e1
   rw [c4, c2, c0] at e2
@@ -1201,7 +1210,7 @@ gain relation. -/
       2 * (m.g.R / m.g.L) * (m.g.D / m.g.M) * m.g.ωc - m.g.ωc * (m.Q / m.g.M) ∧
     m.g.coeff0 m.Q = m.g.ωc * (m.g.E ^ 2 / (m.g.M * m.g.L) * m.g.ω0 -
       m.Q / m.g.M * ((m.g.R / m.g.L) ^ 2 + m.g.ω0 ^ 2)) := by
-  obtain ⟨c4, c3, c2, -, c0⟩ := ag_coeffs hp
+  obtain ⟨c4, c3, c2, -, c0⟩ := Model.coeff_atoms hp
   exact ⟨c4, c3, c2, c0⟩
 
 /-- **The critical pair at every operating angle**: at a Hopf point `ω` of its quintic

@@ -12,7 +12,10 @@ Scope.
 * Statements about the **differential operators** on `ℝ`: `L φ = μ φ' + ½ a φ''` (generator
   expression `gen1`, `a = σ²` the diffusion coefficient), `L* p = −(μ p)' + ½ (a p)''` (`fp1`)
   and the flux `J = μ p − ½ (a p)'` (`flux1`).
-* That `L*` governs the density of an Itô diffusion (Itô's formula) is **not** formalized.
+* That `L*` governs the density of an Itô diffusion (Itô's formula) is **not** formalized. The
+  generator side is: Itô's and Dynkin's formulas for additive noise with the generator `Ito.gen`
+  (`theorem/Stochastic/ItoFormula.lean`), which in one dimension is `gen1 b n²`
+  (`Ito.gen_eq_gen1`, `theorem/Stochastic/ExitTimeDynkin.lean`).
 
 Source: work-sync theory/T-fokker-planck.md §1.1 (`L* p = −∇·(μ p) + ½ ∂ᵢ∂ⱼ[(ΣΣᵀ)ᵢⱼ p]`
 obtained by integrating by parts against test functions), §1.3 (probability flux

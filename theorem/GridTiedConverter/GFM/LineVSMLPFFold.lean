@@ -16,10 +16,12 @@ Model boundary.
   operating point `(δ*, 0, P_ref, i_s(δ*))` is the origin.
 * The fold: a balanced physical model (`Network.Physical`, `M, D, ω_c > 0`) at `K = P'(δ*) = 0`,
   where the constant coefficient `a₀ = ω_c ρ K/M` of the characteristic quintic vanishes (a zero
-  eigenvalue). The degenerate fold points (`Line.VSMLPF.Model.FoldDegenerate`) are located, not
-  decided: the zero–Hopf points `Δ₃ = 0` (the quartic cofactor has a pair `±iΩ`; at the
-  Bogdanov–Takens damping `D = D_line` this is `a₂ (a₄ a₃ − a₂) = 0`, with the triple zero
-  `a₂ = 0`). The Bogdanov–Takens points `a₁ = 0` with `Δ₃ ≠ 0` are decided.
+  eigenvalue). Decided here off the zero–Hopf points `Δ₃ = 0`, and at the Bogdanov–Takens points
+  `a₁ = 0` with `Δ₃ ≠ 0`; the zero–Hopf points with `a₁ ≠ 0` are decided in
+  `theorem/GridTiedConverter/GFM/LineVSMLPFZeroHopf.lean`. The degenerate fold points
+  (`Line.VSMLPF.Model.FoldDegenerate`) are located, not decided: the Bogdanov–Takens damping
+  `D = D_line` with `a₂ (a₄ a₃ − a₂) = 0` (a triple zero `a₂ = 0`, or a double zero with a pair
+  `±i√a₃`), codimension-two points of the fold.
 * Level: Lyapunov instability (LeanForControl's `Unstable`) of the operating point, through
   `Line.VSMLPF.family`; the null pair and the fold coefficient are static evidence.
 
@@ -43,7 +45,8 @@ coefficient were derived with exact computer algebra (SymPy, untrusted) and are 
 Results.
 * The left null vector `Line.VSMLPF.Model.foldP`, `p = (D, M, −1/ω_c,
   E L (X sin δ* − R cos δ*)/|Z|², −E L (X cos δ* + R sin δ*)/|Z|²)/(D − D_line)`; at a fold with
-  `D ≠ D_line` the tangent `q = (1, 0, 0, i_s'(δ*))` and `p` are a normalised null pair
+  `D ≠ D_line` the tangent `q = (1, 0, 0, i_s'(δ*))` (components
+  `Line.VSMLPF.Model.btTangent_eq`) and `p` are a normalised null pair
   (`Line.VSMLPF.Model.isNullPair_fold`).
 * `Line.VSMLPF.Model.foldCoeff_fold`: the fold coefficient is `a = (P(δ*) − c₀)/(2 (D − D_line))`,
   `c₀ = E² R/|Z|²`, at every angle (the power filter does not change the four-state value);
@@ -54,7 +57,9 @@ Results.
   Bogdanov–Takens damping; `Line.VSMLPF.Model.charpoly_fold_eval_zeroHopf`: at a fold with
   `Δ₃ = 0` and `a₄, a₂ > 0` the eigenvalues include `±i √(a₂/a₄)` (zero–Hopf).
 * `Line.VSMLPF.Model.FoldDegenerate`: the degenerate balanced fold points still undecided
-  (`K = 0`, `Δ₃ = 0`).
+  (`K = 0`, `D = D_line`, `a₂ (a₄ a₃ − a₂) = 0`; decided off it by
+  `Line.VSMLPF.mem_den_unstable_of_fold_of_not_foldDegenerate`,
+  `theorem/GridTiedConverter/GFM/LineVSMLPFZeroHopf.lean`).
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.VSMLPF.family`.
@@ -67,8 +72,9 @@ No new family: connection conclusions on `Line.VSMLPF.family`.
   physical model at `K = 0` with `D = D_line`, `n₅ > 0` and `a₂ < a₄ a₃` (the cubic cofactor
   `s³ + a₄ s² + a₃ s + a₂` Hurwitz) is unstable; `a = (P(δ*) − c₀)/(2 n₅)` never vanishes there.
 * **`Line.VSMLPF.mem_den_unstable_of_fold_of_det3_ne`** (the fold decided off the zero–Hopf
-  points): at `K = 0` with `Δ₃ ≠ 0` the model is unstable; hence at a fold the operating point is
-  never locally asymptotically stable off `Line.VSMLPF.Model.FoldDegenerate`.
+  points): at `K = 0` with `Δ₃ ≠ 0` the model is unstable. With the zero–Hopf points of
+  `theorem/GridTiedConverter/GFM/LineVSMLPFZeroHopf.lean`, at a fold the operating point is never
+  locally asymptotically stable off `Line.VSMLPF.Model.FoldDegenerate`.
 -/
 
 noncomputable section
@@ -105,7 +111,10 @@ def Model.foldP (m : Model) : Fin 5 → ℝ :=
     rw [fderiv_comp_add_right]
   rw [h, fderiv_comp_add_right, zero_add]
 
-@[tmio M, powerlib_domain] private theorem lf_tangent (m : Model) :
+/-- The tangent `Line.VSMLPF.Model.btTangent` in components:
+`(1, 0, 0, E (X cos δ* − R sin δ*)/|Z|², E (X sin δ* + R cos δ*)/|Z|²)`. Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem Model.btTangent_eq (m : Model) :
     m.btTangent = ![1, 0, 0, m.g.E * (m.g.X * Real.cos m.δ - m.g.R * Real.sin m.δ) / m.g.absSq,
       m.g.E * (m.g.X * Real.sin m.δ + m.g.R * Real.cos m.δ) / m.g.absSq] := by
   funext i; fin_cases i <;> rfl
@@ -149,7 +158,7 @@ normalised null pair of the Jacobian at the operating point (`J q = 0`, `pᵀ J 
       first
         | ring1
         | linear_combination (-(m.g.E ^ 2 * m.g.X * (m.g.R ^ 2 + m.g.X ^ 2))) * hk'
-  · simp only [dotProduct, Fin.sum_univ_five, Model.foldP, lf_tangent, Pi.smul_apply,
+  · simp only [dotProduct, Fin.sum_univ_five, Model.foldP, m.btTangent_eq, Pi.smul_apply,
       smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.cons_val_three, Matrix.cons_val_four, Matrix.tail_cons, Matrix.head_cons, habs]
     field_simp
@@ -171,7 +180,7 @@ model. -/
   have hcs := Real.cos_sq_add_sin_sq m.δ
   have hDD : m.g.D - m.g.Dline ≠ 0 := sub_ne_zero.mpr hD
   have hZ' := hZ.ne'
-  rw [foldCoeff, lf_fderiv2, fderiv_fderiv_field, hpt 0, hpt 3, hpt 4, lf_tangent]
+  rw [foldCoeff, lf_fderiv2, fderiv_fderiv_field, hpt 0, hpt 3, hpt 4, m.btTangent_eq]
   simp [PiLp.inner_apply, Fin.sum_univ_five, Model.foldP, Network.c0]
   field_simp
   rw [hP]
@@ -259,14 +268,15 @@ model. -/
     ((m.g.coeff4 : ℝ) : ℂ) * z ^ 2 + ((m.g.coeff3 : ℝ) : ℂ) * z) * hz2
 
 /-- The degenerate balanced fold points still undecided: `K = 0` (`a₀ = 0`, a zero eigenvalue)
-at a zero–Hopf point (`Δ₃ = 0`, `Line.VSMLPF.Model.charpoly_fold_eval_zeroHopf`; at the
-Bogdanov–Takens damping `a₁ = 0` this is `a₂ (a₄ a₃ − a₂) = 0`: a triple zero `a₂ = 0` or a
-zero–Hopf pair). The Bogdanov–Takens points with `Δ₃ ≠ 0` are decided
-(`Line.VSMLPF.mem_den_unstable_of_fold_of_det3_ne`). -/
+at the Bogdanov–Takens damping `D = D_line` (`a₁ = 0`, a double zero) with
+`a₂ (a₄ a₃ − a₂) = 0` (there `Δ₃ = a₂ (a₄ a₃ − a₂)`): a triple zero `a₂ = 0`, or a double zero
+with a pair `±i√a₃` (`a₂ = a₄ a₃`). The fold points with `Δ₃ ≠ 0` are decided
+(`Line.VSMLPF.mem_den_unstable_of_fold_of_det3_ne`), and so are the zero–Hopf points `Δ₃ = 0` with
+`a₁ ≠ 0` (`Line.VSMLPF.mem_den_unstable_of_zeroHopf`,
+`theorem/GridTiedConverter/GFM/LineVSMLPFZeroHopf.lean`). -/
 def Model.FoldDegenerate (m : Model) : Prop :=
-  Meets m .balanced ∧ m.K = 0 ∧
-    Criteria.quinticHurwitzDet3 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q) (m.g.coeff1 m.Q)
-      (m.g.coeff0 m.Q) = 0
+  Meets m .balanced ∧ m.K = 0 ∧ m.g.D = m.g.Dline ∧
+    m.g.coeff2 m.Q * (m.g.coeff4 * m.g.coeff3 - m.g.coeff2 m.Q) = 0
 
 /-- **The fold is a saddle-node**
 (`Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly`): a balanced physical model
@@ -403,8 +413,8 @@ fold `K = 0` with `D = D_line`, `n₅ = btInertia > 0` and `a₂ < a₄ a₃` (t
   exact div_ne_zero (lf_P_sub_c0_ne ⟨hN, hM, hD0, hω⟩ hK) (mul_ne_zero two_ne_zero hn.ne')
 
 /-- **The fold decided off the zero–Hopf points**: a balanced physical model at a fold `K = 0`
-with `Δ₃ ≠ 0` is unstable; hence at a fold the operating point is never locally asymptotically
-stable off `Line.VSMLPF.Model.FoldDegenerate`. Off the Bogdanov–Takens damping (`a₁ ≠ 0`) this
+with `Δ₃ ≠ 0` is unstable (the zero–Hopf points `Δ₃ = 0` with `a₁ ≠ 0` are
+`Line.VSMLPF.mem_den_unstable_of_zeroHopf`). Off the Bogdanov–Takens damping (`a₁ ≠ 0`) this
 is `Line.VSMLPF.mem_den_unstable_of_fold_of_ne`; at it (`a₁ = 0`, `D = D_line`)
 `Δ₃ = a₂ (a₄ a₃ − a₂)`: a strict quintic Routh violation (`Line.VSMLPF.mem_den_unstable`), or
 `a₂ > 0`, `a₄ a₃ > a₂` and the Bogdanov–Takens cusp (`Line.VSMLPF.mem_den_unstable_of_bt`). -/

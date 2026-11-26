@@ -13,7 +13,8 @@ virtual impedance `Z_v = R_v + jX_v`, any signs of the gains and resistances. Th
 parameters are `k_p = K_pc/L_f`, `k_i = K_ic/L_f`, `ρ = R_f/L_f` (current loop), `r = R_g/L_g`,
 `w = ω₀`, `c = 1/(C_f L_g)` (filter and line), `P = K_pv/C_f`, `e = 1 − k_dv`, `q = K_iv/C_f`
 (voltage loop), `κ = (1 − k_ff)/(C_f L_g)`, `r_v = R_v/L_g`, `x_v = X_v/L_g`. Excluded: the
-expansion of `Δ₆, Δ₈, Δ₁₀` in the parameters (below), and everything excluded by the full-order
+expansion of `Δ₆, Δ₈, Δ₁₀` for the general design (below; the ideal design and the pole–zero
+sub-family are expanded in the modules named there), and everything excluded by the full-order
 model.
 
 Source: GFM counterpart study, full-order model note (t5: "fast block Hurwitz only numerically");
@@ -39,9 +40,23 @@ Results.
   `Params.spectrallyStable_fastBlock_iff_explicit`. The remaining three are explicit
   polynomials of the ten coefficient parts (`Criteria.BilharzPoly.quintic6`, `quintic8`,
   `quintic10`: 28, 181 and 549 terms); expanded in the normalized parameters they are irreducible
-  over `ℚ` with 1256 terms (`Δ₆`, general) and, in the ideal design `k_ff = k_dv = 1`, `Z_v = 0`,
-  398, 2922 and `k_i q` times 7215 terms — too large to state or normalize by `ring` here.
-  Computer algebra (not formalized, for the same reason) shows the time-scale structure in the
+  over `ℚ` with 1256 terms (`Δ₆`, general design; not expanded here). In the ideal design
+  `k_ff = k_dv = 1`, `Z_v = 0` they are the explicit polynomials of 398, 2922 and `k_i q` times
+  7215 terms, kernel-checked by the reflective identity check of
+  `theorem/Dynamics/PolyIdentity.lean`: `Params.fastDelta_two_ideal`,
+  `Params.fastDelta_three_ideal`, `Params.spectrallyStable_fastBlock_iff_ideal`
+  (`theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerIdeal.lean`) and
+  `Params.fastDelta_four_ideal`, `Params.spectrallyStable_fastBlock_iff_ideal_explicit`
+  (`theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerIdealDelta10.lean`); none of them has a
+  sign law of its own (143, 1285 and 3277 negative coefficients). On the pole–zero sub-family
+  `K_ic/K_pc = R_f/L_f` (every design) the characteristic polynomial factors through `s + R_f/L_f`
+  and the decision is that of a quartic with determinants of 2, 17, `k_p` times 302 and `k_p² q`
+  times 2619 terms; in the ideal design `Δ₄ = (k_p + r) G` with the explicit bound `G > 0` on the
+  voltage-loop integral gain (`Params.spectrallyStable_fastBlock_iff_pz`,
+  `Params.spectrallyStable_fastBlock_iff_pz_explicit`,
+  `Params.spectrallyStable_fastBlock_iff_pz_ideal`,
+  `theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerPoleZero.lean`).
+  Computer algebra (not formalized) shows the time-scale structure in the
   ideal design: with the current loop of `currentScaled (1/t)` the leading coefficients in `t` of
   `Δ₂, Δ₄` are `k_p + ρ` and `k_i (k_p + ρ)²`, and that of `Δ_{2k+4}` is `(k_p + ρ)² k_i^{2k+1}`
   times the voltage-level determinant `Δ_{2k}` — the exact form of

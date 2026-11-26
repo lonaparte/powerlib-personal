@@ -29,7 +29,8 @@ Model boundary.
   line angle (`R(κ) Y` real) and no power set-points, or AHOs on a network seen through a real
   Laplacian current. Two units: one line of weight `w` (`twoLine`).
 * Excluded: grid connections (infinite bus), line dynamics, dVOC power set-points
-  (`K(κ) ≠ 0`) and mismatched rotations, filters, inner loops, PWM, delays.
+  (`K(κ) ≠ 0`, the network of `theorem/GridTiedConverter/GFM/DVOCNetwork.lean`) and mismatched
+  rotations, filters, inner loops, PWM, delays.
 
 Source: work-sync `theory/T-voc-dvoc.md` §1.2, §1.3, §1.5, §1.8; `theory/T-gfm-control.md` §1.5;
 D. G. Aronson, G. B. Ermentrout, N. Kopell, *Physica D* 41 (1990) 403–449 (two diffusively coupled
@@ -83,10 +84,11 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
   starting on the anti-phase set synchronizes" holds exactly in the window `2ηw < c ≤ 3ηw`
   (refuted for `c > 3ηw`); the exceptional set of the almost-global statement is the in-line
   hypersurface for every `c`.
-* Not formalized: almost-global synchronization of the network with power set-points (Colombino
-  et al. 2019), which needs set-point consistency and a notion of set stability (the
-  synchronous manifold with its unstable anti-phase equilibria) that the library does not
-  have.
+* The network with power and voltage set-points (Colombino et al. 2019, with the paper's
+  amplitude law `(v*_k − |v_k|)/v*_k`) is `theorem/GridTiedConverter/GFM/DVOCNetwork.lean`
+  (set-point consistency, the synchronous set, convergence to the origin or to the synchronous
+  set, the two-unit exceptional set) and `DVOCNetworkLocal.lean` (local exponential stability
+  of the synchronous set through a family).
 
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
@@ -143,7 +145,8 @@ Corrections.
 * The dVOC control law of §1.3 differs from Colombino et al. 2019. The multi-converter statement
   formalized here is the set-point-free network (synchronization for `ηλ > c`, exact for two
   units up to `2ηw = c`; two units almost-globally for every `c`, off the anti-phase set exactly
-  for `c ≤ 3ηw`); §1.5's almost-global certificate with set-points is not formalized.
+  for `c ≤ 3ηw`); §1.5's certificate with set-points is in `DVOCNetwork` and
+  `DVOCNetworkLocal` (Colombino et al.'s control law, not §1.3's).
 -/
 
 noncomputable section

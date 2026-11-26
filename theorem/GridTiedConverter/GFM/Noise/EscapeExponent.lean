@@ -80,18 +80,26 @@ Results.
   `3DΔU/(2σ_P²)` (`Dynamics.abs_lagFilter_sub_const_le`).
 * Generic helpers (lag filter, quadratic action and tracking estimates, comparison and drift,
   end bump) are in `theorem/Dynamics/LagFilter.lean`.
-* Every bandwidth, balanced set point: for `P_ref = c₀`,
+* Every bandwidth, balanced set point; every set point, fast filter (in
+  `theorem/GridTiedConverter/GFM/Noise/BalancedEscape.lean`): for `P_ref = c₀`,
   `GFM.Noise.Params.setPointQP_lt_swingQP_balanced` (`V₃ < V₂` for every `ω_c > 0`, with an
-  explicit deficit) in `theorem/GridTiedConverter/GFM/Noise/BalancedEscape.lean`: an exact
-  trajectory of the uphill field (`theorem/GridTiedConverter/GFM/Noise/UphillAction.lean`,
-  action `(2D/σ_P²)(ΔF − (M/ω_c)∫ω̇²)`) found by shooting on the time-reversed field, whose
-  reflection symmetry about the saddle needs `P_ref = c₀`.
-* Not formalized: `V₃ < V₂` for `c₀ < P_ref < c₀ + A` and `ω_c` between the two explicit ranges
-  above, `min(1/τ₁, √(DΔU/(8A² t_max³))) < ω_c < escThreshold`. The pairs of this module carry
-  crude error terms there; the uphill-trajectory route of `GFM.Noise.BalancedEscape` lacks the
-  reflection symmetry, and its right/left exit dichotomy is not available in general (for weak
-  damping all orbits leaving the stable equilibrium on the uphill field exit over the saddle,
-  the heteroclinic sitting at a jump of the exit time: an observation, not used).
+  explicit deficit), and for `c₀ ≤ P_ref < c₀ + A`,
+  `GFM.Noise.Params.setPointQP_lt_swingQP_fastFilter` (`V₃ < V₂` for every `ω_c` with
+  `(M ω_c + D) ω_c ≥ 12 A`, explicit deficit `D M J/(σ_P² ω_c)`,
+  `J = GFM.Noise.Params3.fastFilterGain`): exact trajectories of the uphill field
+  (`theorem/GridTiedConverter/GFM/Noise/UphillAction.lean`, action
+  `(2D/σ_P²)(ΔF − (M/ω_c)∫ω̇²)`) found by shooting on the time-reversed field, using the
+  reflection symmetry about the saddle (`P_ref = c₀`), resp. a wedge around the filter-rest set
+  `P_f = P(δ)` whose walls are strict exits for a fast filter. `Params.escBarrier_pos`,
+  `Params.escBandGap_pos` (the barrier and the band gap are positive).
+* Not formalized: `V₃ < V₂` for `c₀ < P_ref < c₀ + A` and
+  `min(1/τ₁, √(DΔU/(8A² t_max³))) < ω_c` with `(M ω_c + D) ω_c < 12 A`. The pairs of this module
+  carry crude error terms there; the strict-exit estimate of the wedge of
+  `GFM.Noise.BalancedEscape` needs `(M ω_c + D) ω_c ≥ 12 A` (below the saddle level the swing
+  speed is bounded only by `√(A/M)` times the distance to the saddle angle, the filter rate by
+  `ω_c` times it), and the reflection of the balanced case needs `P_ref = c₀`; near `c₀` a
+  window of set points, not explicit, is covered at every bandwidth
+  (`GFM.Noise.Params3.exists_setPointQP_lt_swingQP_withPref`).
 -/
 
 noncomputable section
@@ -2573,7 +2581,9 @@ def escThreshold : ℝ :=
   · show Real.arcsin ((p.Pref - p.c0) / p.A) + p.α - p.α = _; ring
   · show π - Real.arcsin ((p.Pref - p.c0) / p.A) + p.α - p.α = _; ring
 
-@[tmio M, powerlib_domain] private theorem escBarrier_pos (h0 : p.c0 ≤ p.Pref)
+/-- The barrier is positive: `ΔU = U(π − arcsin s) − U(arcsin s) > 0` for
+`c₀ ≤ P_ref < c₀ + A`. -/
+@[tmio M, powerlib_domain] theorem escBarrier_pos (h0 : p.c0 ≤ p.Pref)
     (h1 : p.Pref < p.c0 + p.A) : 0 < p.escBarrier := by
   have habs : |p.Pref - p.c0| < p.A := abs_lt.2 ⟨by linarith [p.A_pos], by linarith⟩
   obtain ⟨-, -, hgap, -⟩ := p.rest_facts habs
@@ -2581,7 +2591,9 @@ def escThreshold : ℝ :=
   rw [e1, e2] at hgap
   simp only [escBarrier]; linarith
 
-@[tmio M, powerlib_domain] private theorem escBandGap_pos (h0 : p.c0 ≤ p.Pref)
+/-- The power gap on the band is positive: `f₀ = A sin θ_a − (P_ref − c₀) > 0` for
+`c₀ ≤ P_ref < c₀ + A` (`arcsin s < θ_a ≤ π/2`). -/
+@[tmio M, powerlib_domain] theorem escBandGap_pos (h0 : p.c0 ≤ p.Pref)
     (h1 : p.Pref < p.c0 + p.A) : 0 < p.escBandGap := by
   have hA := p.A_pos
   have hs1 : (p.Pref - p.c0) / p.A < 1 := by rw [div_lt_one hA]; linarith

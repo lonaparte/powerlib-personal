@@ -69,12 +69,17 @@ No new family: connection conclusions on `QVDroopVirtual.family`.
   Lyapunov stability and local asymptotic stability hold iff the point is an equilibrium with
   `A, C, G > 0`.
 
-Degenerate points. The cusp set `C = 0`, `𝔉 = 0` (the fold coefficient vanishes) is decided in
-`theorem/GridTiedConverter/GFM/QVDroopVirtualCusp.lean` (the cubic coefficient
-`−ω_q k m c ρ/(2 (a + D ω_q k))`) except where `ρ = 0`. Located, not decided: the cusp points with
-`ρ = 0`, the fold points with `k = 0` or `c = 0`, and the double-zero set `C = 0`, `G = 0`
-(`A (a + D ω_q k) = 0`). The Hopf surface `G = 0`, `C > 0` is decided in
-`theorem/GridTiedConverter/GFM/QVDroopVirtualHopf.lean`.
+Degenerate points. The cusp set `C = 0`, `𝔉 = 0` with `c ≠ 0` (the fold coefficient vanishes) is
+decided in `theorem/GridTiedConverter/GFM/QVDroopVirtualCusp.lean` (the cubic coefficient
+`−ω_q k m c ρ/(2 (a + D ω_q k))`) except where `ρ = 0`; it does not meet the physical range
+(`QVDroopVirtual.foldQuad_ne_zero_of_physical`; there `dz 𝔉 > 0`). The folds with `c = 0` (where
+`𝔉 = 0` but the fold coefficient is `(b τ − k ρ)/(2 D)`) are decided there off `b τ = k ρ`, and
+the double-zero set `C = 0`, `G = 0` (`A (a + D ω_q k) = 0`) off `A = 0`, `k = 0`, `𝔉 = 0` in
+`theorem/GridTiedConverter/GFM/QVDroopVirtualBT.lean`. Located, not decided: the cusp points with
+`ρ = 0`, the fold points with `k = 0`, the folds with `c = 0`, `b τ = k ρ`, and the triple zero
+`A = 0` at a fold. The Hopf surface `G = 0`, `C > 0` is decided in
+`theorem/GridTiedConverter/GFM/QVDroopVirtualHopf.lean`; the complete physical-range membership
+is `theorem/GridTiedConverter/GFM/QVDroopVirtualMembership.lean`.
 -/
 
 noncomputable section

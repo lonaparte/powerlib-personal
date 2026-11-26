@@ -67,7 +67,9 @@ Results.
 
 Complement (T-gfm-control, the cascade without anti-windup): the modulation limit removes global
 exponential stability for every gain and every headroom, while every local sentence of the design
-is inherited exactly once the steady bridge voltage has headroom.
+is inherited exactly once the steady bridge voltage has headroom; global asymptotic stability
+survives the limit on the Popov region (`theorem/GridTiedConverter/GFM/LimitedCascadeLure.lean`)
+and fails for every negative filter resistance.
 
 Family and connection conclusions.
 * I: `family : Family LimitedCascade LimitRequirementGFM 4 0`. Requirements: the lifted design
@@ -92,9 +94,15 @@ Family and connection conclusions.
   the headroom and the DC link — the filter is open-loop anti-stable and the applied voltage
   bounded, so `antiEnergy` grows from every state where it is large
   (`Ẇ ≥ (ρ/4) i² + (ρ C/(4L)) ṽ² − B²/ρ − ρ C B²/(4L)`, `B = |V_max| + |v*|`) and the forward
-  solution never converges. Global asymptotic stability with `R ≥ 0` is not decided: it needs a
-  Lyapunov function with the saturation for the windup of the two integrators, or an exact
-  non-convergent solution (a periodic orbit of the saturated loop); neither is given.
+  solution never converges. With `R ≥ 0` global asymptotic stability is proved on the Popov
+  region in `theorem/GridTiedConverter/GFM/LimitedCascadeLure.lean`
+  (`mem_den_globallyAsymptoticallyStable_of_popov`: `R > 0` and
+  `(√K_pc − √(L n₀))² < R n₁`; `mem_den_globallyAsymptoticallyStable_of_lossless`: `R = 0`,
+  `K_pc = L n₀`; `unloaded_mem_den_globallyAsymptoticallyStable`), where a Lur'e–Postnikov function
+  with the saturation integral absorbs the windup of the two integrators. Outside that region it
+  is not decided: a refutation needs an exact non-convergent solution of the saturated loop (a
+  relay-type periodic orbit, or an unbounded solution of the LC resonance driven through the
+  saturation when `R = 0`, `K_pc < L n₀`); none is given.
 * M–I: `implementation : Implementation InnerCascade Spectral.Requirement LimitedCascade
   LimitRequirementGFM 4 1 4 0`, every platform realizing its design.
   `realizationExactUnder_local`: within `headroom` Lyapunov stability, local asymptotic and local

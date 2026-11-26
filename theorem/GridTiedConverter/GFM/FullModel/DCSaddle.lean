@@ -54,10 +54,16 @@ Family and connection conclusions.
   nondegeneracy conditions, `K_idc ω_f ω_q dcSlope/(M C_dc v_ref) ≤ 0` excludes local exponential
   stability (a Hurwitz Jacobian has `det J > 0` in dimension 16, `det fastBlock > 0`), so the
   sign of the reduced determinant decides all but its positive side. An exact local exponential
-  decision for the 16-state model is the Hurwitz condition of its `16 × 16` Jacobian, whose
-  Hurwitz determinants are not expanded (size obstruction, as in
-  `theorem/GridTiedConverter/GFM/FullModel/BoundaryLayerRouth.lean`); the exact cascade decision
-  is made for the five-state dynamic line feeding the DC link,
+  decision for the 16-state model is the Hurwitz condition of its `16 × 16` Jacobian. Without
+  droop it reduces exactly to `ω_q > 0` and the spectral stability of the Jacobian on the fifteen
+  coordinates other than `Q_f` (the reactive-power filter is driven by the AC states and drives
+  nothing: `dcFamily_mem_den_locallyExponentiallyStable_iff_of_nq`,
+  `theorem/GridTiedConverter/GFM/FullModel/DCReactiveSplit.lean`). The remaining degree-15
+  characteristic factor is not expanded: with all parameters and the operating point symbolic
+  (25 symbols, ideal design) its division-free expansion does not complete within 6.5 GB; with
+  the plant and the operating point of the witness fixed and the controller gains symbolic its
+  coefficients have 1 to 74 terms (computer algebra, discovery evidence); the exact cascade
+  decision is made for the five-state dynamic line feeding the DC link,
   `theorem/GridTiedConverter/GFM/DCLink/LineCascade.lean`;
   `dcFamily_mem_den_unstable_of_bridgeSlope_neg` (no droop, `K_idc, ω_f, ω_q, M, C_dc,
   v_ref > 0`): a balanced angle on the descending branch of the quasi-steady bridge power,

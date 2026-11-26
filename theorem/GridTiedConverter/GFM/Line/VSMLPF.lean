@@ -89,8 +89,12 @@ Results.
   `theorem/GridTiedConverter/GFM/HopfLinePSC.lean`).
 * The fold `K = 0` of the five-state model (`theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`):
   the null pair, the fold coefficient `(P(δ*) − c₀)/(2 (D − D_line))` (nonzero off
-  `D = D_line`), `det(sI − J) = s (s⁴ + a₄ s³ + a₃ s² + a₂ s + a₁)` and the degenerate fold
-  points (the Bogdanov–Takens damping `a₁ = 0` and the zero–Hopf points `Δ₃ = 0`).
+  `D = D_line`), `det(sI − J) = s (s⁴ + a₄ s³ + a₃ s² + a₂ s + a₁)`; its zero–Hopf points
+  `Δ₃ = 0`, `a₁ ≠ 0` are decided in `theorem/GridTiedConverter/GFM/LineVSMLPFZeroHopf.lean`
+  (`a(a − c) > 0` everywhere, unstable), so the undecided fold points
+  `Line.VSMLPF.Model.FoldDegenerate` are only the codimension-two points at the
+  Bogdanov–Takens damping `D = D_line` with a triple zero (`a₂ = 0`) or a double zero with a
+  Hopf pair (`a₂ = a₄ a₃`), none on the lossless line.
 * Hopf cycles along the damping and the inverse inertia
   (`theorem/GridTiedConverter/GFM/LineVSMLPFHopfCycle.lean`): both families, their transversality
   coefficients in closed form on the zero-current slice (`sign τ_D = −sign 𝔗`, no fixed sign;
@@ -114,7 +118,10 @@ Family and connection conclusions.
   `Δ₅ = a₀ Δ₄`). `VSMLPF.mem_den_unstable_of_K_neg`: `K < 0` makes `a₀ = ω_c ρ K/M` negative,
   so the full model is unstable whenever its reduction is a saddle. At the fold `K = 0`
   (`theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`): `VSMLPF.mem_den_unstable_of_fold` and
-  `VSMLPF.mem_den_unstable_of_fold_of_ne` (unstable for `a₁ ≠ 0`, `Δ₃ ≠ 0`: a saddle-node).
+  `VSMLPF.mem_den_unstable_of_fold_of_ne` (unstable for `a₁ ≠ 0`, `Δ₃ ≠ 0`: a saddle-node);
+  off `VSMLPF.Model.FoldDegenerate` every fold point is unstable
+  (`VSMLPF.mem_den_unstable_of_fold_of_not_foldDegenerate`,
+  `theorem/GridTiedConverter/GFM/LineVSMLPFZeroHopf.lean`).
 * The phasor model is stable but the full model unstable (connection of `Line.VSMLPF.family` and
   `GFM.VSMLPFLossy.family` through `VSMLPF.Model.toLossy`, scaffold
   `theorem/GridTiedConverter/GFM/Line/LineReduction.agda`): every balanced physical model whose

@@ -13,8 +13,13 @@ unchanged: state `(δ, ω, P_f, i_d, i_q)`, grid dq frame at `ω₀`, `δ̇ = ω
 export-positive active power, constant `E`; no voltage loop, inner loops, LC filter, limiting,
 PLL, delay or PWM. A model `Line.VSMLPF.Model` is read at `(δ*, 0, P_ref, i_s(δ*))`, its Jacobian
 `Line.VSMLPF.Model.jac` (from `fderiv`); `K = A cos(δ* − α)` (`Line.Network.syncCoeff`),
-`Q = Q(δ*)`, `D_line = 2 E² R X L/|Z|⁴`. Statements are about the Jacobian only: no normal form,
-unfolding or bifurcation diagram is asserted.
+`Q = Q(δ*)`, `D_line = 2 E² R X L/|Z|⁴`. Statements are about the Jacobian only. Elsewhere: the
+normal-form coefficients at the Bogdanov–Takens point
+(`theorem/GridTiedConverter/GFM/BTCoefficientLineLPF.lean`) and Kuznetsov's nondegeneracy
+condition (BT.3) for the unfolding in `(P_ref, D)`, determinant `ω_c³ρ³(P(δ*) − c₀)/M³`
+(`theorem/GridTiedConverter/GFM/BTTransversality.lean`,
+`Line.VSMLPF.Model.bijective_fderiv_btMap`); no bifurcation diagram, homoclinic curve or phase
+portrait is asserted for this model.
 
 Source: GFM counterpart study, note t3-bifurcation (b) (the BT point of the dynamic line, five
 states, at the same damping as without filter; scripts s2b, s2c; scratch notes outside the

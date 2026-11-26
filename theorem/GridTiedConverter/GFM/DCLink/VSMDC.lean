@@ -93,11 +93,17 @@ Family and connection conclusions.
   (`VSMDC.mem_den_locallyExponentiallyStable_iff_of_V_eq_zero`), and for Lyapunov stability
   (`VSMDC.mem_den_lyapunovStable_iff_of_invariant`; at the balance `P_s = P_e(δ*)` of an
   invariant plane with DC gains `VSMDC.mem_den_unstable_of_invariant_flat_degenerate`,
-  `VSMDC.mem_den_unstable_of_invariant_stiff_degenerate`) except for a stiff swing with DC gains of
-  opposite signs.
+  `VSMDC.mem_den_unstable_of_invariant_stiff_degenerate`); the remaining case (DC gains of
+  opposite signs) and the complete decision on the invariant plane are in
+  `theorem/GridTiedConverter/GFM/DCLink/VSMDCCone.lean`
+  (`VSMDC.mem_den_unstable_of_invariant_cone`, `VSMDC.mem_den_unstable_of_invariant_balance`,
+  `VSMDC.mem_den_lyapunovStable_iff_of_invariant_plane`).
 * An explicit region-of-attraction estimate on `V > 0` (a quadratic Lyapunov function of the
   linearization with an explicit quadratic remainder `VSMDC.Model.norm_field_sub_jacobian_le`) is
-  in `theorem/GridTiedConverter/GFM/DCLink/VSMDCBasin.lean`.
+  in `theorem/GridTiedConverter/GFM/DCLink/VSMDCBasin.lean`; a Lyapunov function of separable
+  energy type (swing energy and DC/integrator terms without coupling) does not exist
+  (`VSMDC.Model.not_strictMin_separableEnergy_of_lie_nonpos`,
+  `theorem/GridTiedConverter/GFM/DCLink/VSMDCEnergy.lean`).
 -/
 
 noncomputable section

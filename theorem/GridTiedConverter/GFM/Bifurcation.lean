@@ -47,6 +47,12 @@ Results.
   (`VSMLPF.rootMultiplicity_zero_le_one`): the fold `K = 0` of a damped model is a simple zero
   eigenvalue (a saddle-node), never a double zero. The same holds on a lossy line through
   `VSMLPFLossy.hasFDerivAt_field` (its Jacobian is `VSMLPF.jacobian` at `δ − α`).
+* The undamped corner `D = 0`, `K₀ cos δ = 0` is the Bogdanov–Takens point of the three-state
+  model; Kuznetsov's nondegeneracy condition (BT.3) for the unfolding in `(P_ref, D)` holds there
+  for `M, ω_c, A ≠ 0` (determinant `ω_c³(P(δ*) − c₀)/M³ = ± ω_c³A/M³`,
+  `VSMLPFLossy.Model.bijective_fderiv_btMap` in
+  `theorem/GridTiedConverter/GFM/BTTransversality.lean`); the normal form there is
+  `theorem/GridTiedConverter/GFM/BTCoefficient.lean`.
 * Two states: `0` is a double eigenvalue of the swing Jacobian iff `D = 0` and `K = 0`
   (`swing_two_le_rootMultiplicity_zero_iff`); with `D ≠ 0` it is at most simple
   (`swing_rootMultiplicity_zero_le_one`).

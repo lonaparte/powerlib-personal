@@ -20,28 +20,25 @@ Model boundary.
   Directions as in the source: `i_s` flows from the grid into the converter, `i_dc` into the DC
   node.
 * Analysis frame of the source: grid `dq` frame, `θ_dq = θ − θ_g`, `i_dq = R_{θ_g}ᵀ i_s`
-  (`Z_s = R_s I + ω₀ L_s J`, `‖Z_s‖² = N = R_s² + ω₀² L_s²`). The stationary-frame model is
-  non-autonomous (`θ_g = ω₀ t`) and is not formalized; the grid-frame model is the source's.
-  Obstruction (precise): the families read autonomous fields at a point
-  (`Port.System.autonomous`, `Spectral.localFamily`) and the transport laws exclude time-varying
-  coordinate changes (`theorem/Dynamics/Transport.lean`, Scope); with the grid angle adjoined as
-  a state (`θ_g' = ω₀`) the stationary-frame model is autonomous but has no equilibrium
-  (`θ_g' = ω₀ ≠ 0`), its operating state is a periodic orbit, and orbital stability is not a
-  sentence of the library. The grid frame is the frame in which the operating state is a point.
+  (`Z_s = R_s I + ω₀ L_s J`, `‖Z_s‖² = N = R_s² + ω₀² L_s²`). The stationary-frame model, with
+  the grid angle adjoined as a state, is formalized in
+  `theorem.GridTiedConverter.GFM.Matching.StationaryFrame`: the frame map is a semiconjugacy to
+  this module's field (`StationaryFrame.fderiv_frame_field`), the stationary loop has no
+  equilibrium (`StationaryFrame.stationaryField_ne_zero`), and its operating state is a periodic
+  orbit whose existence and transversal exponential stability are private evidence there
+  (orbital stability is not a sentence of the library). The grid frame is the frame in which the
+  operating state is a point.
   State, in this order: `x = (θ_dq, u_dc, i_d, i_q) ∈ ℝ⁴` (`Model.field`):
   `θ_dq' = η u_dc − ω₀`, `C_dc u_dc' = −G_dc u_dc + i_dc(x) + μ (−sin θ_dq, cos θ_dq)ᵀ i_dq`,
   `L_s i_dq' = −Z_s i_dq + v₀ e₂ − μ (−sin θ_dq, cos θ_dq) u_dc`, with `i_dc` given by (18).
   Continuous time, autonomous. The operating point is `x* = (0, u*_dc, î_dq(0))`
-  (`Model.point`, an equilibrium when `N ≠ 0`, `field_point`). Excluded: the power-tracking
-  variant `S(θ_dq − θ*_dq)` with `μ = μ*`, direct angle control (24), the weak-grid controllers
-  of §IV and the time-scale-separated pendulum (21). Obstruction (precise): their control laws
-  are not written in the readable sources of the library (the work-sync notes and
-  `theory/papers/@arghir2020matching.md` name only the shifted potential, `θ̇ = η u_dc − κ'∇S`
-  and a Bregman divergence `W` of `Q̂_f`, without the DC-current law, the set-point `μ*` or the
-  weak-grid model); the source equations (24) and §IV are needed before a model can be stated.
-  (For the reading `i_dc = (18)` with `∇S(θ_dq − θ*_dq)` the current-error dynamics do not
-  involve `θ*_dq`, so the energy balance `energy_lie` would carry over with the shifted potential;
-  this reading is not confirmed by the sources and is not formalized.)
+  (`Model.point`, an equilibrium when `N ≠ 0`, `field_point`). The variants of the source's §III
+  and §IV are separate modules: PQ set-point tracking (28) with `μ = μ*` and
+  `∇S(θ_dq − θ*_dq)` in `theorem.GridTiedConverter.GFM.Matching.PowerTracking` (the shift leaves
+  the dissipation of this module unchanged, `PowerTracking.energy_lie`), direct angle control
+  (24) in `theorem.GridTiedConverter.GFM.Matching.DirectAngle`, the weak grid (30), (36) in
+  `theorem.GridTiedConverter.GFM.Matching.WeakGrid`. Excluded here and there: the
+  time-scale-separated pendulum (21) and the weak-grid voltage controller `μ̂_f`.
 * Parameter ranges: `C_dc, L_s, R_s > 0`; `G_dc`, `K_p`, `η`, `μ`, `u*_dc`, `v₀` real.
 
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
