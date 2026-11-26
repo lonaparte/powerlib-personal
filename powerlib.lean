@@ -137,6 +137,7 @@ import theorem.PowerSystem.Frequency.UFLS
 import theorem.PowerSystem.Frequency.UFLSLatched
 import theorem.PowerSystem.ForcedOscillation.Turbulence
 import theorem.PowerSystem.ForcedOscillation.GridCode
+import theorem.PowerSystem.ForcedOscillation.TurbulenceField
 import theorem.GridTiedConverter.GFL.DCLink.BasinGuard
 import theorem.GridTiedConverter.GFL.DCLink.Cascade
 import theorem.GridTiedConverter.GFL.DCLink.DCSource
@@ -394,6 +395,8 @@ import theorem.Stochastic.RotatingOU
 import theorem.Stochastic.LagLimit
 import theorem.Stochastic.RandomPhase
 import theorem.Stochastic.GaussianExceedance
+import theorem.Stochastic.SpectralMeasure
+import theorem.Stochastic.PeriodogramFit
 import theorem.Signal.CrossSpectrum
 import theorem.Signal.Sampling
 import theorem.Signal.MovingAverage
@@ -405,6 +408,7 @@ import theorem.Signal.ButterworthRealization
 import theorem.Signal.Prony
 import theorem.Signal.TimeFrequency
 import theorem.Signal.AntiAliasing
+import theorem.Signal.CrossSpectrumStatistics
 import theorem.PowerSystem.Synchronous.DampedEAC
 import theorem.PowerSystem.Synchronous.EqualArea
 import theorem.PowerSystem.Synchronous.FaultSequence
