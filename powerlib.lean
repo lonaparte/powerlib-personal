@@ -132,6 +132,7 @@ import theorem.PowerSystem.Frequency.SwingGovernor
 import theorem.PowerSystem.Frequency.SwingNadir
 import theorem.PowerSystem.Frequency.UFLS
 import theorem.PowerSystem.Frequency.UFLSLatched
+import theorem.PowerSystem.ForcedOscillation.Turbulence
 import theorem.GridTiedConverter.GFL.DCLink.BasinGuard
 import theorem.GridTiedConverter.GFL.DCLink.Cascade
 import theorem.GridTiedConverter.GFL.DCLink.DCSource
@@ -237,6 +238,7 @@ import theorem.NormalForm.Logistic
 import theorem.NormalForm.MultiplicativeDrive
 import theorem.NormalForm.Pitchfork
 import theorem.NormalForm.Scalar
+import theorem.NormalForm.HopfRadialRate
 import theorem.Numerics.BDF
 import theorem.Numerics.DAESolvers
 import theorem.Numerics.DiscreteGradient
@@ -331,6 +333,11 @@ import theorem.Stochastic.QuadVariation
 import theorem.Stochastic.Reachability
 import theorem.Stochastic.SPH
 import theorem.Stochastic.StochStability
+import theorem.Stochastic.SpectralDensity
+import theorem.Stochastic.RotatingOU
+import theorem.Stochastic.LagLimit
+import theorem.Stochastic.RandomPhase
+import theorem.Stochastic.GaussianExceedance
 import theorem.PowerSystem.Synchronous.DampedEAC
 import theorem.PowerSystem.Synchronous.EqualArea
 import theorem.PowerSystem.Synchronous.FaultSequence
