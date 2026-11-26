@@ -40,8 +40,9 @@ Results.
   solution is the damped response `LTI.dampedResp` (uniqueness of solutions of the 2×2 companion
   system, `LTI.hasDerivAt_osc2`), i.e. `A e^{σt} sin(ω_d t + φ)` (3-2), and satisfies the exact
   period law `x(t + T) = e^{σT} x(t)`, `T = 2π/ω_d` (`LTI.dampedResp_add_half_period` twice).
-* `natural_peakToPeak`, `natural_peakToPeak_pos`, `natural_increment`, `natural_increment_pos`,
-  `natural_log_increment` — `X_i = e^{iσT} X₀`, `X₀ > 0` for a nonzero solution,
+* `natural_peakToPeak_succ`, `natural_peakToPeak`, `natural_peakToPeak_pos`, `natural_increment`,
+  `natural_increment_pos`, `natural_log_increment` — Step 1: `X_{i+1} = e^{σT} X_i` exactly, so
+  `X_i = e^{iσT} X₀`; `X₀ > 0` for a nonzero solution;
   `Y_i = X₀(e^{σT} − 1)e^{(i−1)σT}`, and for `σ > 0`: `Y_i > 0`,
   `ln Y_i = ln(X₀(e^{σT} − 1)) + (i − 1)σT`.
 * `exists_steadyState`, `forced_startUp`, `forced_startUp_of_sin`, `forced_startUp_error` — a
@@ -208,6 +209,21 @@ solution. -/
       Real.exp (i * (σ * (2 * Real.pi / ωd))) * peakToPeak x 0 (2 * Real.pi / ωd) := by
   rw [peakToPeak_period (Real.exp_pos _).le (natural_shift hm hσ hωd hωd0 hx hv heq) i,
     ← Real.exp_nat_mul]
+
+/-- Successive periods of a natural start-up: `X_{i+1} = e^{σT} X_i` exactly, `T = 2π/ω_d`. -/
+@[tmio T, powerlib_foundation] theorem natural_peakToPeak_succ (hm : m ≠ 0)
+    (hσ : σ = -(c / (2 * m))) (hωd : ωd ^ 2 = k / m - σ ^ 2) (hωd0 : ωd ≠ 0)
+    {x v a : ℝ → ℝ} (hx : ∀ t, HasDerivAt x (v t) t) (hv : ∀ t, HasDerivAt v (a t) t)
+    (heq : ∀ t, m * a t + c * v t + k * x t = 0) (i : ℕ) :
+    peakToPeak x ((i + 1) * (2 * Real.pi / ωd)) ((i + 2) * (2 * Real.pi / ωd)) =
+      Real.exp (σ * (2 * Real.pi / ωd)) *
+        peakToPeak x (i * (2 * Real.pi / ωd)) ((i + 1) * (2 * Real.pi / ωd)) := by
+  have h := peakToPeak_shift (Real.exp_pos _).le (natural_shift hm hσ hωd hωd0 hx hv heq)
+    (i * (2 * Real.pi / ωd)) ((i + 1) * (2 * Real.pi / ωd))
+  rw [show (i : ℝ) * (2 * Real.pi / ωd) + 2 * Real.pi / ωd = (i + 1) * (2 * Real.pi / ωd) by ring,
+    show ((i : ℝ) + 1) * (2 * Real.pi / ωd) + 2 * Real.pi / ωd = (i + 2) * (2 * Real.pi / ωd) by
+      ring] at h
+  exact h
 
 /-- The first-period peak-to-peak value of a nonzero natural solution is positive. -/
 @[tmio T, powerlib_foundation] theorem natural_peakToPeak_pos (hm : m ≠ 0)
