@@ -42,7 +42,8 @@ Results.
   (`envelopes_eq_empty`, `envelopes_peakExceeds_eq_empty`: a record within its limit at every
   sample has no envelope).
 * Peaks of a record: `IsLocalMaxAbs`, `numPeaks`, `peakIndex`, `peakExceeds`,
-  `finite_isLocalMaxAbs`, `peakIndex_spec`, `peakIndex_lt`, `timesMono_peaks`.
+  `finite_isLocalMaxAbs`, `peakIndex_spec`, `peakIndex_lt`, `timesMono_peaks` (per-unit
+  normalization of a record is in `theorem/Signal/Interpolation.lean`).
 * Events: `duration`, `events`, `eventCount`, `eventTime`, `mem_events`; `duration_eq_sum` and
   `eventTime_eq_sum_links` (total time is a sum over links of consecutive peaks);
   `exists_event_superset`, `eventTime_mono` (total exceedance time is monotone in the pattern),
@@ -226,18 +227,6 @@ def peakExceeds (y L : ℕ → ℝ) (N i : ℕ) : Prop := L (peakIndex y N i) < 
 @[tmio T, powerlib_foundation] theorem envelopes_peakExceeds_eq_empty (h : ∀ k, |y k| ≤ L k) :
     envelopes (numPeaks y N) (peakExceeds y L N) = ∅ :=
   envelopes_eq_empty fun _ _ hi => (h _).not_gt hi
-
-/-- Per-unit normalization does not change the exceedance pattern: dividing the record and its
-limit by a base `P > 0` leaves every peak's verdict unchanged. -/
-@[tmio T, powerlib_foundation] theorem peakExceeds_div {P : ℝ} (hP : 0 < P) (i : ℕ) :
-    peakExceeds (fun k => y k / P) (fun k => L k / P) N i ↔ peakExceeds y L N i := by
-  have hpk : peakIndex (fun k => y k / P) N i = peakIndex y N i := by
-    have : IsLocalMaxAbs (fun k => y k / P) N = IsLocalMaxAbs y N := by
-      funext k
-      simp only [IsLocalMaxAbs, abs_div, abs_of_pos hP, div_lt_div_iff_of_pos_right hP,
-        div_le_div_iff_of_pos_right hP]
-    simp only [peakIndex, this]
-  simp only [peakExceeds, hpk, abs_div, abs_of_pos hP, div_lt_div_iff_of_pos_right hP]
 
 end Peaks
 

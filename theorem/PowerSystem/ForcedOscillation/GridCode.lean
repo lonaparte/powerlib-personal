@@ -51,6 +51,9 @@ Results.
   `Compliant`; `offshoreDefault`, `offshoreLeastStrict`, `onshoreDefault` (Appendix A columns).
 * §3.5: `compliant_of_clauseA` (clause a implies all the other clauses), `clauseA_ofSamples` (a
   sampled record within its limit at every assessed sample respects clause a).
+* Per unit (§3.1, §5.2): `Record.perUnit`, `Clauses.perUnit`, `ContinuousLimit.value_perUnit`,
+  `compliant_perUnit` (the verdict does not depend on the base when the absolute floor is
+  expressed in it).
 * Monotonicity (Tables 3–9, §4.2): `aExceeds_relax`, `bExceeds_relax`, `clauseB1_relax`,
   `clauseB2_relax`, `clauseB3_relax`, `clauseC1_relax` (relaxing any limit or excluding further
   periods never fails a passing record), `clauseC2_relax`, `compliant_relax` (all limits but the
@@ -61,9 +64,11 @@ Results.
   `864 s = 00:14:24`).
 * Decay rates: `clauseB2_decay_iff` (b(ii) as the minimum damping ratio
   `ζ ≥ log (A₀/a)/(ω_n b₂)`), `clauseB3_decay_iff` (`ζ ≥ log (A₀/(b₃ P_max))/(ω_n t₃)`),
-  `clauseB3_of_clauseB2_decay` and `offshore_b_product` (with `b₂ = 2 t₃`, b(ii) implies b(iii)
-  for exponential decay when `A₀ a ≤ (b₃ P_max)²`; tight for the default offshore column,
-  violated by the least strict one), `clauseB2_of_decay`, `clauseB3_of_decay` (record forms).
+  `clauseB3_of_clauseB2_decay` (with `b₂ = 2 t₃`, b(ii) implies b(iii) for exponential decay
+  when `A₀ a ≤ (b₃ P_max)²`), `offshore_b_product` (default offshore column: `b₂ = 2 t₃` and
+  `b₁ · a(i) = b₃²`, so the bound holds for every oscillation within b(i) at a production
+  `≤ P_max`; least strict column: `b₁ · a(i) > b₃²`), `clauseB2_of_decay`, `clauseB3_of_decay`
+  (record forms).
 * Set-point steps (§5.1, §5.6): `clauseB1_of_step` (a step through a stable band-pass filter gives
   b(i) exceedances shorter than `log (M/(b₁ P_max))/r`; a minimum duration of that length removes
   them).
@@ -571,6 +576,61 @@ exceedances. -/
     rw [Nat.floor_eq_iff (by norm_num)]
     norm_num
   rw [this]
+
+/-! ## Per-unit records (§3.1) -/
+
+/-- The record in per unit of the base `P > 0` (e.g. the maximum capacity or the exchange
+agreement of §5.2): every power divided by `P`. -/
+def Record.perUnit (R : Record) {P : ℝ} (hP : 0 < P) : Record where
+  Pmax := R.Pmax / P
+  days := R.days
+  m := R.m
+  t := R.t
+  amp := fun k => R.amp k / P
+  pAct := fun k => R.pAct k / P
+  assessed := R.assessed
+  Pmax_nonneg := div_nonneg R.Pmax_nonneg hP.le
+  pAct_nonneg := fun k => div_nonneg (R.pAct_nonneg k) hP.le
+  times_mono := R.times_mono
+
+/-- The clauses with the absolute floor expressed in the same base (the shares are unchanged). -/
+def Clauses.perUnit (C : Clauses) (P : ℝ) : Clauses :=
+  { C with a := { C.a with absolute := C.a.absolute / P } }
+
+@[tmio M, powerlib_domain] theorem ContinuousLimit.value_perUnit (c : ContinuousLimit) {P : ℝ}
+    (hP : 0 < P) (Pmax Pact : ℝ) :
+    ({ c with absolute := c.absolute / P } : ContinuousLimit).value (Pmax / P) (Pact / P) =
+      c.value Pmax Pact / P := by
+  simp only [ContinuousLimit.value, mul_div_assoc', max_div_div_right hP.le]
+
+/-- Compliance does not depend on the base: the per-unit record under the per-unit clauses has
+the same exceedance patterns, hence the same verdict on every clause. -/
+@[tmio IO, powerlib_domain] theorem compliant_perUnit {P : ℝ} (hP : 0 < P) :
+    Compliant (C.perUnit P) (R.perUnit hP) ↔ Compliant C R := by
+  have hA : aExceeds (C.perUnit P) (R.perUnit hP) = aExceeds C R := by
+    funext k
+    show (R.assessed k ∧ ({ C.a with absolute := C.a.absolute / P } : ContinuousLimit).value
+      (R.Pmax / P) (R.pAct k / P) < R.amp k / P) = _
+    rw [ContinuousLimit.value_perUnit C.a hP, div_lt_div_iff_of_pos_right hP]
+    rfl
+  have hB : bExceeds (C.perUnit P) (R.perUnit hP) = bExceeds C R := by
+    funext k
+    show (aExceeds (C.perUnit P) (R.perUnit hP) k ∧ C.b₁ * (R.Pmax / P) < R.amp k / P) = _
+    rw [hA, ← mul_div_assoc, div_lt_div_iff_of_pos_right hP]
+    rfl
+  have hB3 : ∀ k, (R.amp k / P ≤ C.b₃ * (R.Pmax / P)) ↔ R.amp k ≤ C.b₃ * R.Pmax := fun k => by
+    rw [← mul_div_assoc, div_le_div_iff_of_pos_right hP]
+  show (events R.m (bExceeds (C.perUnit P) (R.perUnit hP)) R.t (Set.Ici C.dB) = ∅ ∧
+      (∀ e ∈ envelopes R.m (aExceeds (C.perUnit P) (R.perUnit hP)), duration R.t e ≤ C.b₂) ∧
+      (∀ e ∈ envelopes R.m (aExceeds (C.perUnit P) (R.perUnit hP)), ∀ k, e.1 ≤ k → k ≤ e.2 →
+        R.t e.1 + C.t₃ ≤ R.t k → R.amp k / P ≤ C.b₃ * (R.Pmax / P)) ∧
+      (∀ d < R.days, eventTime R.m (fun k => aExceeds (C.perUnit P) (R.perUnit hP) k ∧
+        InWindow R 86400 d k) R.t (Set.Ioi C.dC) ≤ C.c₁ * 86400) ∧
+      nearestRank C.q (fun h : Fin (24 * R.days) => eventCount R.m (fun k =>
+        aExceeds (C.perUnit P) (R.perUnit hP) k ∧ InWindow R 3600 h k) R.t (Set.Ioi C.dC)) ≤
+        C.c₂) ↔ _
+  simp only [hA, hB, hB3]
+  rfl
 
 /-! ## Records built from samples -/
 
