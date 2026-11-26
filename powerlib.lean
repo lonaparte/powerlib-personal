@@ -51,6 +51,8 @@ import theorem.Map.Basic
 import theorem.Map.Linearization
 import theorem.Map.LinearReading
 import theorem.LTI.Oscillator2
+import theorem.LTI.SecondOrderResonance
+import theorem.LTI.BoundedForcing
 import theorem.SpecialFunctions.AmplitudePhase
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
@@ -216,6 +218,9 @@ import theorem.Modal.Participation
 import theorem.Modal.Perturbation
 import theorem.Modal.Sensitivity
 import theorem.Modal.Spectral
+import theorem.Modal.EigenFrequency
+import theorem.Modal.RealForm
+import theorem.Modal.ForcedPhasor
 import theorem.PowerSystem.Network.FrequencyDivider
 import theorem.PowerSystem.Network.LinearSync
 import theorem.Grid.PowerFlow
