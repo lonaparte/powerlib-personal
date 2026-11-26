@@ -141,6 +141,7 @@ import theorem.PowerSystem.Frequency.UFLSLatched
 import theorem.PowerSystem.ForcedOscillation.Turbulence
 import theorem.PowerSystem.ForcedOscillation.GridCode
 import theorem.PowerSystem.ForcedOscillation.TurbulenceField
+import theorem.PowerSystem.ForcedOscillation.Classification
 import theorem.GridTiedConverter.GFL.DCLink.BasinGuard
 import theorem.GridTiedConverter.GFL.DCLink.Cascade
 import theorem.GridTiedConverter.GFL.DCLink.DCSource
