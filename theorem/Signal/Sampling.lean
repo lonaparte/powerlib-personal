@@ -32,7 +32,7 @@ Results.
   `sampledCos_ne_zero`, `sampledCos_eq_iff` (below `f_s/2`: same samples iff same frequency and
   quadrature components), `sampledCos_nyquist` (at `f_s/2` the samples are `A cos φ (−1)ⁿ`),
   `sampledCos_nyquist_eq` (amplitude and phase not separately identifiable there).
-* Sampling-rate requirement: `Identifiable`, `identifiable_iff` (every sinusoid of frequency in
+* Sampling-rate requirement: `identifiable_iff` (every sinusoid of frequency in
   `(0, f_max]` is identified iff `f_s > 2 f_max`), `identifiable_twenty_hertz` (`20 Hz` needs
   `f_s > 40 Hz`; `50 Hz` suffices), `identifiable_ten_twenty_hertz` (`10 Hz` covers `0.1–2 Hz`;
   `20 Hz` covers exactly the frequencies below `10 Hz`).
@@ -224,9 +224,13 @@ identically zero. -/
   funext n
   rw [sampledCos_nyquist hfs, sampledCos_nyquist hfs, cos_zero, mul_one]
 
-/-- Full identifiability (frequency and quadrature components) of the sinusoids with
-frequencies in `F` from their samples at the rate `f_s`. -/
-def Identifiable (fs : ℝ) (F : Set ℝ) : Prop :=
+/- `Identifiable fs F`: full identifiability (frequency and quadrature components) of the
+sinusoids with frequencies in `F` from their samples at the rate `f_s`. This is local notation,
+not a predicate declaration: outside the semantic layer a predicate declaration may not quantify
+over `ℝ`, the type of the semantic time axis (single-semantics rule T), so each statement below
+spells the property out. -/
+set_option quotPrecheck false in
+local notation "Identifiable " fs:max F:max =>
   ∀ f₁ ∈ F, ∀ f₂ ∈ F, ∀ A₁ A₂ φ₁ φ₂ : ℝ,
     (∀ n, sampledCos A₁ f₁ φ₁ fs n = sampledCos A₂ f₂ φ₂ fs n) →
       (∃ n, sampledCos A₁ f₁ φ₁ fs n ≠ 0) →
