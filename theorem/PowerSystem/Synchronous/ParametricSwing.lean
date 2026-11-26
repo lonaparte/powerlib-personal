@@ -38,8 +38,8 @@ Model boundary.
   `(frozen …).stateMatrix` of (3-10) in the state `(Δδ, Δδ̇)`.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-6)–(3-13)
-(swing model, damping ratio (3-11), phase-angle method (3-12)–(3-13)) and §3.1 (sources of
-sustained oscillations); the parametric mechanism and its first instability tongue
+(swing model, damping ratio (3-11), phase-angle method (3-12)–(3-13)) and §3.1 (intrinsic
+damping of natural and forced oscillations); the parametric mechanism and its first instability tongue
 (Landau–Lifshitz, Mechanics §27: `ẍ + 2λẋ + ω₀²(1 + h cos(2ω₀ + ε')t) x = 0` is unstable for
 `(hω₀/4)² > (ε'/2)² + λ²`).
 

@@ -28,10 +28,9 @@ Scope.
   (`m ≠ 0`); that reduction is not stated as a theorem.
 
 Source: the energy mechanism of sustained oscillations behind IEEE PES TR-110 "Forced Oscillations
-in Power Systems" (2023) §3.1 (a natural oscillation is sustained only at zero or negative
-intrinsic damping, a forced one by the energy of the forcing source) and §3.3 (the swing
-equation (3-8)–(3-10) with its damping coefficients); the parametric mechanism (pump work of a
-periodically varying parameter, Landau–Lifshitz, Mechanics §27).
+in Power Systems" (2023) §3.1 (intrinsic damping of natural and forced oscillations) and §3.3
+(the swing equation (3-8)–(3-10) with its damping coefficients); the parametric mechanism (pump
+work of a periodically varying parameter, Landau–Lifshitz, Mechanics §27).
 
 Results.
 * `energy`, `hasDerivAt_energy` — the power balance `Ė = u δ̇ − D δ̇² + ½ K̇ δ²` along a solution.
