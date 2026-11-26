@@ -68,9 +68,12 @@ Corrections.
   universal region, and small modulation depth with a hyperbolic `A₀`.
 * The exact square-wave tongue centre (`ParametricResonance.Meissner.centre_threshold_iff`) and its
   comparison with the first-order value `4ξ` of the fundamental `4ε/π` are stated where they are
-  exact (`Meissner.centre_threshold_lower`, `UniversalThreshold.meissner_centre_above_universal`);
-  no closed-form first-order model of the square wave is formalized, so no theorem here compares
-  the two square-wave thresholds directly.
+  exact (`Meissner.centre_threshold_lower`, `UniversalThreshold.meissner_centre_above_universal`).
+  The first-order (L2) model of the square wave and its direct comparison with the exact centre
+  are in `theorem/ParametricResonance/SquareWaveAveraging.lean` (`averaged_centre_threshold`:
+  L2 threshold `πξ`; `centre_threshold_ratio`, `centre_levels_agree`: exact and averaged verdicts
+  agree outside the cone `|ε − πξ| ≤ ηξ` for small `ξ, ε`; `meissner_averaging_stable`,
+  `meissner_averaging_unstable`: the L2 verdict holds for the exact monodromy at small depth).
 
 Results.
 * `floquet_iff_smallSignal_of_const` — `A(t) ≡ A₀`: Schur-stable monodromy iff `A₀` Hurwitz;

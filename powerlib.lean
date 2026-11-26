@@ -354,6 +354,8 @@ import theorem.ParametricResonance.SlowFlowBranches
 import theorem.ParametricResonance.SaturatedAmplitude
 import theorem.ParametricResonance.DuffingMathieu
 import theorem.ParametricResonance.BoundaryUndecided
+import theorem.ParametricResonance.SquareWaveAveraging
+import theorem.ParametricResonance.SubharmonicContent
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
