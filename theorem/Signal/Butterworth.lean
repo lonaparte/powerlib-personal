@@ -30,7 +30,7 @@ band-pass Butterworth filter … band of 0.10–2 Hz … A filter order of 6, wi
 Results.
 * Prototype: `bwSq`, `bwDB`, `bwSq_cutoff` (`G_n(ω_c)² = 1/2`, `−3 dB`), `bwSq_strictAntiOn`
   (strictly decreasing on `ω ≥ 0`), `bwSq_flat` (`G_n² = 1 − (ω/ω_c)^{2n} + r`,
-  `0 ≤ r ≤ (ω/ω_c)^{4n}`: maximal flatness).
+  `0 ≤ r ≤ (ω/ω_c)^{4n}`: maximal flatness in bound form; the derivative form is not stated).
 * Slopes: `bwDB_drop_eq`, `bwDB_drop_lt` (the drop over any decade is less than `20 n` dB),
   `tendsto_drop`, `tendsto_bwDB_drop` (it tends to `20 n` dB), `exists_bwDB_drop_gt_iff` (a drop
   of more than `s ≥ 0` dB per decade occurs iff `s < 20 n`), `slope_over_hundred_iff` (more than
@@ -85,8 +85,9 @@ def bwDB (n : ℕ) (ωc ω : ℝ) : ℝ := 10 * logb 10 (bwSq n ωc ω)
   have h0 := (even_two_mul n).pow_nonneg (ω / ωc)
   exact one_div_lt_one_div_of_lt (by linarith) (by linarith)
 
-/-- Maximal flatness: `G_n² = 1 − (ω/ω_c)^{2n} + r` with `0 ≤ r ≤ (ω/ω_c)^{4n}`, i.e.
-`G_n² = 1 − (ω/ω_c)^{2n} + O(ω^{4n})`: the first `2n − 1` derivatives of `G_n²` vanish at `0`. -/
+/-- Maximal flatness in bound form: `G_n² = 1 − (ω/ω_c)^{2n} + r` with `0 ≤ r ≤ (ω/ω_c)^{4n}`,
+i.e. `G_n² = 1 − (ω/ω_c)^{2n} + O(ω^{4n})` (equivalent to the vanishing of the first `2n − 1`
+derivatives of `G_n²` at `0`, which is not stated here). -/
 @[tmio T, powerlib_foundation] theorem bwSq_flat (n : ℕ) (ωc ω : ℝ) :
     0 ≤ bwSq n ωc ω - (1 - (ω / ωc) ^ (2 * n)) ∧
       bwSq n ωc ω - (1 - (ω / ωc) ^ (2 * n)) ≤ (ω / ωc) ^ (4 * n) := by

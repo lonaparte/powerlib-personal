@@ -38,7 +38,9 @@ Results.
   `20 Hz` covers exactly the frequencies below `10 Hz`).
 * Sampled peaks: `exists_sample_near_crest`, `exists_abs_sampledCos_ge` (for `0 < f ≤ f_s/2`
   some sample near every crest has `|x[n]| ≥ |A| cos(π f/f_s)`), `abs_sampledCos_le_of_midway`
-  (the bound is attained when the crest lies midway between two samples),
+  (the bound is attained when the crest lies midway between two samples), `abs_sampledCos_le`
+  (`|x[n]| ≤ |A|`), `sampledCos_fifth_other_crest` (the attainment is per crest: at
+  `f = f_s/5` another crest of the same record is sampled exactly),
   `peak_factor_instances` (`cos(π/5) = (1 + √5)/4 ≈ 0.81` for `2 Hz` at `10 Hz`,
   `cos(π/4) = √2/2` for `5 Hz` at `20 Hz`).
 
@@ -359,6 +361,20 @@ sample within the crest's half-period window has `|x[n]| ≤ |A| cos(π f / f_s)
     have hpos : 0 ≤ π * f / fs := by have := hf.1; positivity
     rw [← cos_abs u, abs_of_nonneg (cos_nonneg_of_mem_Icc ⟨by linarith [abs_nonneg u], hu⟩)]
     exact cos_le_cos_of_nonneg_of_le_pi hpos (by linarith [pi_pos]) hu2
+
+/-- No sample exceeds the amplitude: `|x[n]| ≤ |A|`. -/
+@[tmio T, powerlib_foundation] theorem abs_sampledCos_le (A f φ fs : ℝ) (n : ℕ) :
+    |sampledCos A f φ fs n| ≤ |A| := by
+  rw [sampledCos, abs_mul]
+  exact mul_le_of_le_one_right (abs_nonneg A) (abs_cos_le_one _)
+
+/-- The attainment is per crest, not over the record: at `f = f_s/5` with the crest at phase `0`
+midway between the samples `0` and `1` (`φ = −π/5`), the sample `n = 3` falls exactly on the
+crest at phase `π`, so the record's largest sample is the full amplitude. -/
+@[tmio T, powerlib_foundation] theorem sampledCos_fifth_other_crest {fs : ℝ} (hfs : fs ≠ 0)
+    (A : ℝ) : sampledCos A (fs / 5) (-(π / 5)) fs 3 = -A := by
+  rw [sampledCos, show 2 * π * (fs / 5) * ((3 : ℕ) : ℝ) / fs + -(π / 5) = π by
+    push_cast; field_simp; ring, cos_pi, mul_neg_one]
 
 /-- Instances of the peak-accuracy factor `cos(π f / f_s)`: `2 Hz` at `10 Hz` gives
 `cos(π/5) = (1 + √5)/4`, `5 Hz` at `20 Hz` gives `cos(π/4) = √2/2`. -/
