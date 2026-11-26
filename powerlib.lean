@@ -55,6 +55,9 @@ import theorem.LTI.SecondOrderResonance
 import theorem.LTI.BoundedForcing
 import theorem.LTI.StartUp
 import theorem.LTI.HarmonicTransfer
+import theorem.LTI.ResonancePeakEdge
+import theorem.LTI.FourierRealForm
+import theorem.LTI.StartUpForced
 import theorem.SpecialFunctions.AmplitudePhase
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
@@ -463,6 +466,7 @@ import theorem.Estimation.KalmanLTVTransition
 import theorem.Passive.Line.CableBessel
 import theorem.Modal.Poles
 import theorem.Modal.Splitting
+import theorem.Modal.ModeShapeFamily
 import theorem.Numerics.BDFInstability
 import theorem.SingularPerturbation.BoundaryLayer
 import theorem.SingularPerturbation.SupNorm
