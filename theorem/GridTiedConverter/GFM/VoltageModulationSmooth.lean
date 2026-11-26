@@ -16,9 +16,11 @@ Model boundary.
 * `c.Pδ`, `c.PV`, `c.Pδδ`, `c.PδV` are `∂_δP`, `∂_VP`, `∂²_δP`, `∂_V∂_δP` at `(δ₀, V₀)`; Hopf
   point `a ω_c = Ω²`, `d₀ = d₂Ω²`, `d₂ > 0`, `P_δ ≠ 0`; drive `V₀ + ε V̂ cos 2Ωt`; state
   perturbation `ε A₀'` with any real `A₀'`.
-* Dynamic Q–V loops and network dynamics are not part of the model. The exponential stability of
-  the nonlinear solutions near the orbit is in `GFMOrbitStability`; the damping change and a
-  saturated power map inactive at the operating point are in `GFMParameterShift`.
+* Network dynamics are not part of the model; the dynamic Q–V loop (the EMF as a state) is
+  `VoltageModulationQVDynamic`, `VoltageModulationQVOrbit` and `VoltageModulationQVLink`. The
+  exponential stability of the nonlinear solutions near the orbit is in `GFMOrbitStability`; the
+  damping change and a saturated power map inactive at the operating point are in
+  `GFMParameterShift`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2, §3 (VSG core); the voltage excitation is new.

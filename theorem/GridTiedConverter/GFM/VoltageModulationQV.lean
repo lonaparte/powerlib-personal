@@ -18,7 +18,8 @@ Model boundary.
   `VoltageModulation.Model` (constant EMF) or `qv_partials` (Q–V droop).
 * Quasi-static network; network sidebands are in `VoltageModulationNetwork`.
 * Q–V droop: `E = E₀ − k_q(Q − Q*)` with the port reactive power `Q = (E² − E V cos δ)/X`, solved
-  implicitly for `E(V)`, at no load `δ₀ = 0`.
+  implicitly for `E(V)`, at no load `δ₀ = 0`. The dynamic Q–V loop, with the EMF as a state, is
+  `VoltageModulationQVDynamic` (its `τ = 0` limit is this quasi-static droop).
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2 (framework: `A₁ = Σ (∂A/∂x_l) z_l + G û`, `g_m = l_mᴴ A₁ r_m*`,

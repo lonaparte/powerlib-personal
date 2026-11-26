@@ -206,6 +206,9 @@ import theorem.GridTiedConverter.GFM.DroopVoltageOrbit
 import theorem.GridTiedConverter.GFM.MatchingVoltageOrbit
 import theorem.GridTiedConverter.GFM.GFMOrbitStability
 import theorem.GridTiedConverter.GFM.GFMParameterShift
+import theorem.GridTiedConverter.GFM.VoltageModulationQVDynamic
+import theorem.GridTiedConverter.GFM.VoltageModulationQVOrbit
+import theorem.GridTiedConverter.GFM.VoltageModulationQVLink
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber

@@ -23,7 +23,8 @@ Model boundary.
   not give a constant `A₀'`), droop gain `m_p`, matching DC gain `k_dc`.
 * Saturation `max(−M, min(M, ·))` of the power map (VSG, droop) or the DC current (matching) with
   `|·| < M` at the operating point; the switching boundary is not covered. A current limiter acting
-  on internal current references, network dynamics and dynamic Q–V loops are not modelled.
+  on internal current references and network dynamics are not modelled; the dynamic Q–V loop is
+  `VoltageModulationQVOrbit`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1 (`A₀(ε) = A₀c + εA₀'`, `λ₁ = l_mᴴ A₀' r_m`), §3 (the five
