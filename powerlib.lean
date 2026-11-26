@@ -364,6 +364,7 @@ import theorem.Periodic.Liouville
 import theorem.Periodic.TwoStateBoundary
 import theorem.Periodic.MeanTrace
 import theorem.Periodic.Persistence
+import theorem.Periodic.AnalysisLevels
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
