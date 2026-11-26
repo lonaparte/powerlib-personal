@@ -57,8 +57,8 @@ Results.
 * Monotonicity (Tables 3–9, §4.2): `aExceeds_relax`, `bExceeds_relax`, `clauseB1_relax`,
   `clauseB2_relax`, `clauseB3_relax`, `clauseC1_relax` (relaxing any limit or excluding further
   periods never fails a passing record), `clauseC2_relax`, `compliant_relax` (all limits but the
-  continuous one); `splitRecord`, `clauseC2_not_monotone` (c(ii) can fail when the continuous
-  limit is relaxed).
+  continuous one); `splitRecord`, `clauseC2_not_monotone`, `clauseC2_not_monotone_exclude`
+  (c(ii) can fail when the continuous limit is relaxed or when a period is excluded).
 * Clause c: `clauseC2_iff` (at most `⌊(1 − q) 24 days⌋` hours above `c₂`), `clauseC2_week_iff`
   (one week at 95 %: at most `8` hours), `offshoreDefault_c1` (`1 %` of a day is
   `864 s = 00:14:24`).
@@ -88,9 +88,9 @@ temporary-exceedance allowance of b(ii) is void (`clauseB1_iff_clauseA`).
 Correction (Tables 3–9, §4.2). The trend "relaxing a limit never fails a passing week" holds for
 b(i), b(ii), b(iii), c(i) under every limit and every exclusion and for c(ii) under `c₂`, `q`,
 `dC` (`compliant_relax`), but not for c(ii) under the continuous limit: relaxing a(i)/a(ii) can
-split one long exceedance into several, each longer than `dC` (`clauseC2_not_monotone`). An
-exclusion acts on the exceedance pattern as such a relaxation does, so the same split can occur
-when a period inside an exceedance is excluded; that instance is not stated separately.
+split one long exceedance into several, each longer than `dC` (`clauseC2_not_monotone`), and so
+can excluding periods inside an exceedance (`clauseC2_not_monotone_exclude`): "exclusion can
+only remove violations" holds for b(i), b(ii), b(iii), c(i) but not for c(ii).
 
 Correction (§4.1). "Aggregation shows no compliance issues" is not a property of the clauses:
 aggregation preserves only purely capacity-relative limits (`aggregate_capacity`); for the
@@ -544,6 +544,132 @@ relaxed limit. -/
   · rw [ClauseC2, nearestRank_le_iff hq, not_le]
     have : (univ.filter fun w : Fin (24 * R.days) =>
         ({ C with a := a' } : Clauses).c₂ < hourCount { C with a := a' } R w) =
+        univ.filter fun w : Fin H => (w : ℕ) < B :=
+      filter_congr fun w _ => by
+        rw [hcount' w]
+        split_ifs with hw
+        · exact ⟨fun _ => hw, fun _ => by show c < c + 1; omega⟩
+        · exact ⟨fun h => absurd h (by show ¬ c < 0; omega), fun h => absurd h hw⟩
+    rw [this, Fintype.card_fin]
+    show H - quantileRank C.q H < (univ.filter fun w : Fin H => (w : ℕ) < B).card
+    rw [Fin.card_filter_val_lt]
+    omega
+
+open Classical in
+/-- c(ii) is not monotone in the exclusions either: for every clause set with `0 < q ≤ 1`,
+`c₂ ≥ 1` and `dC (3 c₂ + 2) < 3600 s` and every assessment period of `days ≥ 1` days, there are
+a record that passes c(ii) and an exclusion mask after which it fails: excluding every third
+peak of a long exceedance (e.g. short system-support requests during it, Table 2) splits it into
+`c₂ + 1` exceedances longer than `dC`. -/
+@[tmio IO, powerlib_domain] theorem clauseC2_not_monotone_exclude (hq0 : 0 < C.q) (hq : C.q ≤ 1)
+    (hc : 1 ≤ C.c₂) (hdC : C.dC * (3 * C.c₂ + 2) < 3600) {days : ℕ} (hdays : 1 ≤ days) {P : ℝ}
+    (hP : 0 ≤ P) :
+    ∃ (R : Record) (M : ℕ → Prop), R.days = days ∧ ClauseC2 C R ∧ ¬ ClauseC2 C (R.exclude M) := by
+  set c := C.c₂
+  set ℓ := 3 * c + 2 with hℓ
+  set H := 24 * days
+  set B := H - quantileRank C.q H + 1
+  have hr1 : 1 ≤ quantileRank C.q H :=
+    Nat.one_le_iff_ne_zero.mpr (Nat.ceil_pos.mpr (mul_pos hq0 (by positivity))).ne'
+  have hrH := quantileRank_le hq H
+  set R := splitRecord P (C.a.value P 0 + 1) hP days c B
+  set M : ℕ → Prop := fun k => (k % ℓ) % 3 ≠ 2
+  have hℓpos : (0 : ℝ) < ℓ := by positivity
+  have hcast : ((ℓ : ℕ) : ℝ) = 3 * c + 2 := by push_cast [hℓ]; ring
+  -- the hour windows are the index blocks `[w ℓ, w ℓ + ℓ)`
+  have hwin : ∀ w k : ℕ, InWindow R 3600 w k ↔ w * ℓ ≤ k ∧ k < w * ℓ + ℓ := by
+    intro w k
+    show 3600 * (w : ℝ) ≤ 3600 * k / (3 * c + 2) ∧ 3600 * (k : ℝ) / (3 * c + 2) < 3600 * (w + 1) ↔ _
+    rw [← hcast, le_div_iff₀ hℓpos, div_lt_iff₀ hℓpos]
+    constructor
+    · rintro ⟨h1, h2⟩
+      exact ⟨by exact_mod_cast (show ((w * ℓ : ℕ) : ℝ) ≤ k by push_cast; nlinarith),
+        by exact_mod_cast (show (k : ℝ) < ((w * ℓ + ℓ : ℕ) : ℝ) by push_cast; nlinarith)⟩
+    · rintro ⟨h1, h2⟩
+      have h1' : ((w * ℓ : ℕ) : ℝ) ≤ k := by exact_mod_cast h1
+      have h2' : (k : ℝ) < ((w * ℓ + ℓ : ℕ) : ℝ) := by exact_mod_cast h2
+      push_cast at h1' h2'
+      constructor <;> nlinarith
+  have hmod : ∀ w k : ℕ, w * ℓ ≤ k → k < w * ℓ + ℓ → k % ℓ = k - w * ℓ := fun w k h1 h2 => by
+    have hk : k = (k - w * ℓ) + w * ℓ := by omega
+    rw [hk, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt (by omega)]
+    omega
+  -- under the strict limit every peak exceeds, under the relaxed one every third peak does not
+  have hA : ∀ k, aExceeds C R k := fun k => by
+    refine ⟨trivial, ?_⟩
+    show C.a.value P 0 < if (k % ℓ) % 3 = 2 then C.a.value P 0 + 1 else C.a.value P 0 + 1 + 1
+    split_ifs <;> linarith
+  have hA' : ∀ k, aExceeds C (R.exclude M) k ↔ (k % ℓ) % 3 ≠ 2 := fun k => by
+    show ((True ∧ M k) ∧ C.a.value P 0 <
+      if (k % ℓ) % 3 = 2 then C.a.value P 0 + 1 else C.a.value P 0 + 1 + 1) ↔ _
+    simp only [M, true_and]
+    split_ifs with h
+    · simp [h]
+    · exact ⟨fun h' => h'.1, fun h' => ⟨h', by linarith⟩⟩
+  have hdur : C.dC < 3600 / (ℓ : ℝ) := by rw [lt_div_iff₀ hℓpos, hcast]; linarith
+  -- hourly counts
+  have hcount : ∀ w : Fin H, hourCount C R w = if (w : ℕ) < B then 1 else 0 := by
+    intro w
+    split_ifs with hw
+    · have hBw : w * ℓ + ℓ ≤ B * ℓ := by
+        simpa [add_mul] using Nat.mul_le_mul_right ℓ (show (w : ℕ) + 1 ≤ B by omega)
+      refine eventCount_block (s := w * ℓ) (L := ℓ) (by omega) hBw (fun k _ => ?_) ?_
+      · exact (and_iff_right (hA k)).trans (hwin w k)
+      · show C.dC < 3600 * ((w * ℓ + ℓ - 1 : ℕ) : ℝ) / (3 * c + 2) -
+          3600 * ((w * ℓ : ℕ) : ℝ) / (3 * c + 2)
+        rw [Nat.cast_sub (by omega), ← hcast, ← sub_div]
+        push_cast
+        calc C.dC < 3600 / (ℓ : ℝ) := hdur
+          _ ≤ (3600 * ((w : ℝ) * ℓ + ℓ - 1) - 3600 * ((w : ℝ) * ℓ)) / ℓ := by
+            apply div_le_div_of_nonneg_right _ hℓpos.le
+            have h0 : (0 : ℝ) ≤ c := by positivity
+            have : (1 : ℝ) ≤ ℓ - 1 := by rw [hcast]; linarith
+            nlinarith
+    · show eventCount R.m _ R.t _ = 0
+      rw [eventCount, events, envelopes_eq_empty, filter_empty, card_empty]
+      intro k hk hx
+      have := ((hwin w k).mp hx.2).1
+      have : B * ℓ ≤ w * ℓ := Nat.mul_le_mul_right ℓ (by omega)
+      have hk' : k < B * ℓ := hk
+      omega
+  have hcount' : ∀ w : Fin H, hourCount C (R.exclude M) w =
+      if (w : ℕ) < B then c + 1 else 0 := by
+    intro w
+    split_ifs with hw
+    · have hBw : w * ℓ + ℓ ≤ B * ℓ := by
+        simpa [add_mul] using Nat.mul_le_mul_right ℓ (show (w : ℕ) + 1 ≤ B by omega)
+      refine eventCount_comb (s := w * ℓ) (c := c) (by show w * ℓ + 3 * c + 2 ≤ B * ℓ; omega)
+        (fun k _ => ?_) (fun i _ => ?_)
+      · rw [show aExceeds C (R.exclude M) k ∧ InWindow (R.exclude M) 3600 w k ↔
+          (k % ℓ) % 3 ≠ 2 ∧ (w * ℓ ≤ k ∧ k < w * ℓ + ℓ) from and_congr (hA' k) (hwin w k)]
+        constructor
+        · rintro ⟨h1, h2, h3⟩
+          rw [hmod w k h2 h3] at h1
+          exact ⟨h2, by omega, h1⟩
+        · rintro ⟨h1, h2, h3⟩
+          exact ⟨by rw [hmod w k h1 (by omega)]; exact h3, h1, by omega⟩
+      · show C.dC < 3600 * ((w * ℓ + 3 * i + 1 : ℕ) : ℝ) / (3 * c + 2) -
+          3600 * ((w * ℓ + 3 * i : ℕ) : ℝ) / (3 * c + 2)
+        rw [← hcast, ← sub_div]
+        push_cast
+        convert hdur using 2
+        ring
+    · show eventCount R.m _ R.t _ = 0
+      rw [eventCount, events, envelopes_eq_empty, filter_empty, card_empty]
+      intro k hk hx
+      have := ((hwin w k).mp hx.2).1
+      have : B * ℓ ≤ w * ℓ := Nat.mul_le_mul_right ℓ (by omega)
+      have hk' : k < B * ℓ := hk
+      omega
+  refine ⟨R, M, rfl, ?_, ?_⟩
+  · rw [ClauseC2, nearestRank_le_iff hq]
+    have : (univ.filter fun w : Fin (24 * R.days) => C.c₂ < hourCount C R w) = ∅ :=
+      filter_eq_empty_iff.mpr fun w _ => by rw [hcount w]; split_ifs <;> omega
+    rw [this, card_empty]
+    exact Nat.zero_le _
+  · rw [ClauseC2, nearestRank_le_iff hq, not_le]
+    have : (univ.filter fun w : Fin (24 * (R.exclude M).days) =>
+        C.c₂ < hourCount C (R.exclude M) w) =
         univ.filter fun w : Fin H => (w : ℕ) < B :=
       filter_congr fun w _ => by
         rw [hcount' w]
