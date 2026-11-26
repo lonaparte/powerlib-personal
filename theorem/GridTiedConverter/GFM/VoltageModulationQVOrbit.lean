@@ -18,7 +18,10 @@ Model boundary.
 * Hypotheses: the sixteen partial derivatives of `P`, `Q` at `(δ₀, E₀, V₀)` (the mixed ones are
   symmetric, `dδ_dE`); `F(jΩ) = 0`, `F'(jΩ) ≠ 0`, `F(2jΩ) ≠ 0`; the stable part through the
   spectral radius of `e^{TA₀}(I − Π)` below one (`T = π/Ω`, `Π` the real projector onto the critical
-  plane). `VoltageModulationQVLink` removes the last hypothesis when the EMF is decoupled.
+  plane). `VoltageModulationQVLink` removes the last hypothesis when the EMF is decoupled, and
+  `VoltageModulationQVHopf` replaces all of them by explicit real conditions at any operating
+  point; the filtered loop is `VoltageModulationQVFilter`, the dynamic line
+  `VoltageModulationQVNetwork`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07, "五类构网型变流器参数振荡的
 统一元素级比较：A₀、A₁ 与 Γ") §2.1–§2.2 (first-order averaging along the forced trajectory), §3 (VSG core); the

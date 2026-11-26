@@ -209,6 +209,9 @@ import theorem.GridTiedConverter.GFM.GFMParameterShift
 import theorem.GridTiedConverter.GFM.VoltageModulationQVDynamic
 import theorem.GridTiedConverter.GFM.VoltageModulationQVOrbit
 import theorem.GridTiedConverter.GFM.VoltageModulationQVLink
+import theorem.GridTiedConverter.GFM.VoltageModulationQVHopf
+import theorem.GridTiedConverter.GFM.VoltageModulationQVFilter
+import theorem.GridTiedConverter.GFM.VoltageModulationQVNetwork
 import theorem.GridTiedConverter.GFM.Matching.MatchingPump
 import theorem.Information.Finite
 import theorem.Information.MaxCaliber
@@ -328,6 +331,7 @@ import theorem.ParametricResonance.ForcedOrbitFloquet
 import theorem.ParametricResonance.SmoothForcedOrbit
 import theorem.ParametricResonance.StableBlockNorm
 import theorem.ParametricResonance.StableBasis
+import theorem.ParametricResonance.StableHurwitz
 import theorem.ParametricResonance.SmoothOrbitStability
 import theorem.ParametricResonance.FieldTransfer
 import theorem.ParametricResonance.TongueQuadratic
