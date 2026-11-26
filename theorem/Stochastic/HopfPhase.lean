@@ -42,6 +42,9 @@ Results.
   of second moments).
 * `covariance_frame` — `Cov(p(t), p(s)) = e^{−2γ(t−s)} (1 − e^{−4γs})/(4γ)` (`OU.ouVar (2γ) 1 s`),
   `Cov(q(t), q(s)) = min(t, s)`, `Cov(p(t), q(s)) = 0` for `0 ≤ s ≤ t ≤ T`.
+* `tr110_amplitude_phase` — **(3-28) to first order, path by path**: for the noisy normal form
+  started on its cycle, `⟪u, x_σ⟫ = √γ + σ p + O(σ²)` and `⟪u⊥, x_σ⟫ = σ q + O(σ²)` uniformly on
+  `[0, T]` (from `SmallNoise.norm_sub_sub_smul_le` with `x₀ = cycle`).
 -/
 
 noncomputable section
@@ -364,6 +367,78 @@ radial component is the Ornstein–Uhlenbeck response of rate `2γ` to the rotat
   have h1 := hDeq t ht
   rw [hz t ht, mul_zero] at h1
   linarith
+
+/-! ## The amplitude–phase form (3-28) of the noisy cycle to first order -/
+
+@[tmio T, powerlib_foundation] private theorem abs_rot_comb_le (a b : ℝ) (v : State 2) :
+    |a * v 0 + b * v 1| ≤ √(a ^ 2 + b ^ 2) * ‖v‖ := by
+  rw [← Real.sqrt_sq (abs_nonneg _), ← Real.sqrt_sq (norm_nonneg v), ← Real.sqrt_mul (by positivity)]
+  refine Real.sqrt_le_sqrt ?_
+  rw [sq_abs, norm_sq_eq]
+  nlinarith [sq_nonneg (a * v 1 - b * v 0)]
+
+@[tmio T, powerlib_foundation] private theorem abs_radProj_le (ω : ℝ) (ζ : ℝ → State 2) (t : ℝ) :
+    |radProj ω ζ t| ≤ ‖ζ t‖ := by
+  have h := abs_rot_comb_le (Real.cos (ω * t)) (Real.sin (ω * t)) (ζ t)
+  rwa [Real.cos_sq_add_sin_sq, Real.sqrt_one, one_mul] at h
+
+@[tmio T, powerlib_foundation] private theorem abs_tanProj_le (ω : ℝ) (ζ : ℝ → State 2) (t : ℝ) :
+    |tanProj ω ζ t| ≤ ‖ζ t‖ := by
+  have h := abs_rot_comb_le (-Real.sin (ω * t)) (Real.cos (ω * t)) (ζ t)
+  rwa [neg_sq, Real.sin_sq_add_cos_sq, Real.sqrt_one, one_mul] at h
+
+/-- **TR-110 (3-28) to first order, path by path.** For the noisy normal form (3-26) started on
+its cycle, `x_σ(0) = (√γ, 0)`, and every continuous noise path there are the variational solution
+`ζ` along the cycle, `σ₀ > 0` and `C` such that for `|σ| ≤ σ₀` every solution satisfies, uniformly
+on `[0, T]`,
+`⟪u(t), x_σ(t)⟫ = √γ + σ p(t) + O(σ²)` and `⟪u⊥(t), x_σ(t)⟫ = σ q(t) + O(σ²)` with
+`u = (cos ω_h t, sin ω_h t)`, `p = radProj ζ` (an OU process of rate `2γ`) and `q = tanProj ζ` (a
+Brownian motion), by `variational_frame` and `covariance_frame`: the amplitude is `√γ + σp` and
+the phase lag `σq/√γ` to first order. -/
+@[tmio M, powerlib_foundation] theorem tr110_amplitude_phase {γ : ℝ} (hγ : 0 < γ) (ωh : ℝ)
+    {w : ℝ → State 2} (hw : Continuous w) {T : ℝ} (hT : 0 ≤ T) :
+    ∃ ζ : ℝ → State 2, Continuous ζ ∧
+      (∀ t ∈ Icc 0 T, ζ t = (∫ s in (0 : ℝ)..t,
+        fderiv ℝ (field (tr110Params γ ωh)) (cycle (tr110Params γ ωh) s) (ζ s)) + (w t - w 0)) ∧
+      ∃ σ₀ > 0, ∃ C, ∀ σ : ℝ, |σ| ≤ σ₀ → ∀ x : ℝ → State 2, Continuous x →
+        (∀ t ∈ Icc 0 T, x t = cycle (tr110Params γ ωh) 0 +
+          (∫ s in (0 : ℝ)..t, field (tr110Params γ ωh) (x s)) + σ • (w t - w 0)) →
+        ∀ t ∈ Icc 0 T, |radProj ωh x t - √γ - σ * radProj ωh ζ t| ≤ C * σ ^ 2 ∧
+          |tanProj ωh x t - σ * tanProj ωh ζ t| ≤ C * σ ^ 2 := by
+  set p := tr110Params γ ωh
+  obtain ⟨hrad, hfreq, -⟩ := tr110_limitCycle hγ ωh
+  have hrad' : radius p = √γ := hrad
+  have hfreq' : frequency p = ωh := hfreq
+  have hl : p.l₁ ≠ 0 := by simp [p, tr110Params]
+  have hR : 0 ≤ -p.μ / p.l₁ := by simp [p, tr110Params]; exact hγ.le
+  have hcd := cycle_hasDerivAt p hl hR
+  have hcyc : Continuous (cycle p) := continuous_iff_continuousAt.2 fun t => (hcd t).continuousAt
+  have h₀ : ∀ t ∈ Icc 0 T, cycle p t = cycle p 0 + ∫ s in (0 : ℝ)..t, field p (cycle p s) := by
+    intro t _
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s _ => hcd s)
+      (((field_contDiff p (k := 1)).continuous.comp hcyc).intervalIntegrable 0 t)]
+    abel
+  obtain ⟨ζ, hζ, hζeq⟩ := SmallNoise.exists_variational (field_contDiff p) hcyc hw hT
+  obtain ⟨σ₀, hσ₀, C, hC⟩ :=
+    SmallNoise.norm_sub_sub_smul_le (field_contDiff p) hw hcyc h₀ hζ hζeq
+  refine ⟨ζ, hζ, hζeq, σ₀, hσ₀, C, fun σ hσ x hx hxeq t ht => ?_⟩
+  have hb := hC σ hσ x hx hxeq t ht
+  have hc0 : radProj ωh (cycle p) t = √γ := by
+    simp only [radProj, cycle, mk_apply_zero, mk_apply_one, hrad', hfreq']
+    have := Real.cos_sq_add_sin_sq (ωh * t)
+    linear_combination √γ * this
+  have hc1 : tanProj ωh (cycle p) t = 0 := by
+    simp only [tanProj, cycle, mk_apply_zero, mk_apply_one, hrad', hfreq']
+    ring
+  set v : ℝ → State 2 := fun τ => x τ - cycle p τ - σ • ζ τ
+  have hrv : radProj ωh x t - √γ - σ * radProj ωh ζ t = radProj ωh v t := by
+    rw [← hc0]; simp only [radProj, v, PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul]; ring
+  have htv : tanProj ωh x t - σ * tanProj ωh ζ t = tanProj ωh v t := by
+    rw [show tanProj ωh x t - σ * tanProj ωh ζ t =
+      tanProj ωh x t - tanProj ωh (cycle p) t - σ * tanProj ωh ζ t by rw [hc1, sub_zero]]
+    simp only [tanProj, v, PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul]; ring
+  rw [hrv, htv]
+  exact ⟨(abs_radProj_le ωh v t).trans hb, (abs_tanProj_le ωh v t).trans hb⟩
 
 /-! ## Second moments: the rotated noise is again standard, OU amplitude and Brownian phase -/
 
