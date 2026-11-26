@@ -367,6 +367,9 @@ import theorem.Periodic.Persistence
 import theorem.Periodic.AnalysisLevels
 import theorem.Periodic.OrbitalInstability
 import theorem.Periodic.LevelsNonlinear
+import theorem.Periodic.RobustThreshold
+import theorem.Periodic.CombinationResonance
+import theorem.Periodic.UniformEscape
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
