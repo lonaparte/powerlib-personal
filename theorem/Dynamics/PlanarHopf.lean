@@ -1,5 +1,6 @@
 import theorem.Dynamics.CenterReductionHopf
 import theorem.Dynamics.PlanarReturn
+import theorem.Dynamics.Degenerate.PlanarFocus2
 
 /-! # Hopf cycles of a planar family
 
@@ -17,9 +18,11 @@ Scope.
   `o(‖u‖³)` along `nhdsW K` (`(μ, u) → 0`, `|μ| ≤ K‖u‖²`) for every `K`: the parameter
   has weight two, so `μ²`, `μ‖u‖²` and `μ²‖u‖` terms are part of the remainder. Each `g μ` is
   Lipschitz on a fixed disc for `|μ|` small (as a reduced field of a centre manifold is).
-* Periodic orbits are written out as in `theorem/Dynamics/PlanarReturn.lean`. Only existence and
-  the amplitude bounds are proved: uniqueness, stability of the cycle and the absence of cycles
-  for the other sign of `μ` are not.
+* Periodic orbits are written out as in `theorem/Dynamics/PlanarReturn.lean`. Existence with
+  amplitude bounds is proved from the expansion along `nhdsW K`; when the remainder is
+  `o(|μ| ‖u‖ + ‖u‖³)` on a full neighbourhood of `0`, also the absence of small cycles for
+  `μ tr M l₁ ≥ 0` and the amplitude `(1 + o(1)) ν` of every small cycle. Uniqueness and stability
+  of the cycle are not proved (they need derivative bounds on the remainder).
 * Generic foundation, independent of any model; no model family is defined.
 
 Source: Guckenheimer–Holmes, *Nonlinear Oscillations, Dynamical Systems, and Bifurcations of
@@ -45,6 +48,12 @@ Results.
 * `exists_periodicOrbit`: for every small `μ` with `μ tr M l₁ < 0` a nonconstant periodic orbit
   of `g μ`, period at most `4π/ω`, with `ν/8 ≤ ‖γ‖² ≤ 8ν`, `ν = −μ tr M/(ω l₁)` (the annulus
   `ν/8 ≤ ‖u‖² ≤ 8ν`, `PlanarReturn.exists_periodicOrbit_of_annulus`, with `σ = −l₁`).
+* `lie_sub_eq` (the identity behind `isLittleO_lie`), `isBigO_poly3_mixed`, `isLittleO_lie_full`
+  (`V̇ − μ tr M ‖u‖² − ω l₁ ‖u‖⁴ = o(|μ| ‖u‖² + ‖u‖⁴)` on a full neighbourhood),
+  `isLittleO_hopfV_sub` (`V + μW = ‖u‖²(1 + o(1))`).
+* `periodic_amplitude`: for every `η > 0` and small `μ`, every periodic orbit in a small disc
+  avoiding `0` has `μ tr M l₁ < 0` and `(1 − η) ν ≤ ‖γ(t)‖² ≤ (1 + η) ν` (at the maximum and the
+  minimum of `V` along the orbit `V̇ = 0`, which outside the annulus `(1 ± a) ν` is excluded).
 -/
 
 noncomputable section
@@ -351,6 +360,45 @@ variable {M : State 2 →L[ℝ] State 2} {Q : State 2 →L[ℝ] State 2 →L[ℝ
     (isLittleO_nhdsW_mul' (m := 2) hy (isLittleO_unfoldRem_coord h 1) (by norm_num))
   exact (hP.add hR).congr_left fun p => (key p).symm
 
+/-- **The Lie derivative of `V + μW` in coordinates**: `V̇ − μ tr M ‖u‖² − ω l₁ ‖u‖⁴` is the sum
+of the products of weight at least five of `lie_identity_unfold` and the remainder `D` against the
+gradient. -/
+@[tmio T, powerlib_foundation] theorem lie_sub_eq (hω : ω ≠ 0) (μ : ℝ) (u : State 2) :
+    fderiv ℝ (hopfV M Q C ω μ) u (g μ u) - μ * paramTrace M * ‖u‖ ^ 2 -
+        ω * l1 (rotL ω) Q C ω * ‖u‖ ^ 4 =
+      (poly3 ((jet (rotL ω) Q C ω).V3x ω) (u 0) (u 1) μ *
+          poly3 (jet (rotL ω) Q C ω).F3 (u 0) (u 1) μ +
+        poly3 ((jet (rotL ω) Q C ω).V3y ω) (u 0) (u 1) μ *
+          poly3 (jet (rotL ω) Q C ω).G3 (u 0) (u 1) μ +
+        poly3 ((jet (rotL ω) Q C ω).V4x ω) (u 0) (u 1) μ *
+          poly3 ((jet (rotL ω) Q C ω).F2 ++ (jet (rotL ω) Q C ω).F3) (u 0) (u 1) μ +
+        poly3 ((jet (rotL ω) Q C ω).V4y ω) (u 0) (u 1) μ *
+          poly3 ((jet (rotL ω) Q C ω).G2 ++ (jet (rotL ω) Q C ω).G3) (u 0) (u 1) μ) +
+      (poly3 ((jet (rotL ω) Q C ω).V3x ω ++ (jet (rotL ω) Q C ω).V4x ω) (u 0) (u 1) μ *
+          poly3 (mx (m00 M) (m01 M)) (u 0) (u 1) μ +
+        poly3 ((jet (rotL ω) Q C ω).V3y ω ++ (jet (rotL ω) Q C ω).V4y ω) (u 0) (u 1) μ *
+          poly3 (my (m10 M) (m11 M)) (u 0) (u 1) μ +
+        poly3 (wx ω (m00 M) (m11 M)) (u 0) (u 1) μ *
+          poly3 (mx (m00 M) (m01 M) ++ (jet (rotL ω) Q C ω).F2 ++ (jet (rotL ω) Q C ω).F3)
+            (u 0) (u 1) μ +
+        poly3 (wy ω (m00 M) (m01 M) (m10 M) (m11 M)) (u 0) (u 1) μ *
+          poly3 (my (m10 M) (m11 M) ++ (jet (rotL ω) Q C ω).G2 ++ (jet (rotL ω) Q C ω).G3)
+            (u 0) (u 1) μ) +
+      ((poly3 ((jet (rotL ω) Q C ω).Vx ω) (u 0) (u 1) 0 +
+          poly3 (wx ω (m00 M) (m11 M)) (u 0) (u 1) μ) * unfoldRem M Q C ω g μ u 0 +
+        (poly3 ((jet (rotL ω) Q C ω).Vy ω) (u 0) (u 1) 0 +
+          poly3 (wy ω (m00 M) (m01 M) (m10 M) (m11 M)) (u 0) (u 1) μ) *
+            unfoldRem M Q C ω g μ u 1) := by
+  have hid := lie_identity_unfold ω (m00 M) (m01 M) (m10 M) (m11 M) (jet (rotL ω) Q C ω) hω
+    (u 0) (u 1) μ (unfoldRem M Q C ω g μ u 0) (unfoldRem M Q C ω g μ u 1)
+  rw [fderiv_hopfV hω, ← field_apply_zero hω, ← field_apply_one hω] at *
+  have hn : ‖u‖ ^ 4 = (u 0 ^ 2 + u 1 ^ 2) ^ 2 := by
+    rw [← PhasePlane.norm_sq_eq]; ring
+  rw [hn, PhasePlane.norm_sq_eq]
+  have hl : l1 (rotL ω) Q C ω = (jet (rotL ω) Q C ω).l1 ω := rfl
+  simp only [paramTrace, hl]
+  linear_combination hid
+
 /-- **The Lie derivative of `V + μW`**: `V̇ − μ tr M ‖u‖² − ω l₁ ‖u‖⁴ = o(‖u‖⁴)` on `nhdsW K`. -/
 @[tmio T, powerlib_foundation] theorem isLittleO_lie (hω : ω ≠ 0)
     (h : (fun p : ℝ × State 2 => unfoldRem M Q C ω g p.1 p.2) =o[nhdsW K] fun p => ‖p.2‖ ^ 3) :
@@ -377,17 +425,7 @@ variable {M : State 2 →L[ℝ] State 2} {Q : State 2 →L[ℝ] State 2 →L[ℝ
       ((poly3 (J.Vx ω) (p.2 0) (p.2 1) 0 + poly3 (wx ω a d) (p.2 0) (p.2 1) p.1) *
           unfoldRem M Q C ω g p.1 p.2 0 +
         (poly3 (J.Vy ω) (p.2 0) (p.2 1) 0 + poly3 (wy ω a b c d) (p.2 0) (p.2 1) p.1) *
-          unfoldRem M Q C ω g p.1 p.2 1) := by
-    intro p
-    have hid := lie_identity_unfold ω a b c d J hω (p.2 0) (p.2 1) p.1
-      (unfoldRem M Q C ω g p.1 p.2 0) (unfoldRem M Q C ω g p.1 p.2 1)
-    rw [fderiv_hopfV hω, ← field_apply_zero hω, ← field_apply_one hω] at *
-    have hn : ‖p.2‖ ^ 4 = (p.2 0 ^ 2 + p.2 1 ^ 2) ^ 2 := by
-      rw [← PhasePlane.norm_sq_eq]; ring
-    rw [hn, PhasePlane.norm_sq_eq]
-    have hl : l1 (rotL ω) Q C ω = J.l1 ω := rfl
-    simp only [paramTrace, hl]
-    linear_combination hid
+          unfoldRem M Q C ω g p.1 p.2 1) := fun p => lie_sub_eq hω p.1 p.2
   have p5 : ∀ {l₁ l₂ : List (ℝ × ℕ × ℕ × ℕ)} {i j : ℕ},
       (∀ t ∈ l₁, i ≤ t.2.1 + t.2.2.1 + 2 * t.2.2.2) →
       (∀ t ∈ l₂, j ≤ t.2.1 + t.2.2.1 + 2 * t.2.2.2) → 4 < i + j →
@@ -424,6 +462,200 @@ variable {M : State 2 →L[ℝ] State 2} {Q : State 2 →L[ℝ] State 2 →L[ℝ
   exact ((hA.add hB).add hC).congr_left fun p => (key p).symm
 
 end Asymptotics
+
+/-! ## Asymptotics on a full neighbourhood -/
+
+section Full
+
+open powerlib.Dynamics.CenterManifold (rotL frameY_rotL)
+
+/-- A polynomial whose monomials have degree at least `m` in `(x, y)` and at least `k` in `μ` is
+`O(s^m c^k)` along any filter with `x, y = O(s)` and `s, c → 0`. -/
+@[tmio T, powerlib_foundation] theorem isBigO_poly3_mixed {α : Type*} {l : Filter α}
+    {s a b c : α → ℝ} (hs : Tendsto s l (𝓝 0)) (hc : Tendsto c l (𝓝 0)) (ha : a =O[l] s)
+    (hb : b =O[l] s) (L : List (ℝ × ℕ × ℕ × ℕ)) {m k : ℕ}
+    (hL : ∀ t ∈ L, m ≤ t.2.1 + t.2.2.1 ∧ k ≤ t.2.2.2) :
+    (fun x => poly3 L (a x) (b x) (c x)) =O[l] fun x => s x ^ m * c x ^ k := by
+  induction L with
+  | nil => simpa using isBigO_zero (fun x => s x ^ m * c x ^ k) l
+  | cons t L ih =>
+    have ht := hL t List.mem_cons_self
+    have hrest := ih fun t' ht' => hL t' (List.mem_cons_of_mem _ ht')
+    simp only [poly3_cons]
+    refine IsBigO.add ?_ hrest
+    have h1 : (fun x => a x ^ t.2.1 * b x ^ t.2.2.1) =O[l]
+        fun x => s x ^ t.2.1 * s x ^ t.2.2.1 := (ha.pow _).mul (hb.pow _)
+    have h2 : (fun x => s x ^ t.2.1 * s x ^ t.2.2.1) =O[l] fun x => s x ^ m :=
+      (Dynamics.isBigO_pow_of_tendsto hs ht.1).congr_left fun x => pow_add _ _ _
+    have h3 : (fun x => c x ^ t.2.2.2) =O[l] fun x => c x ^ k :=
+      Dynamics.isBigO_pow_of_tendsto hc ht.2
+    refine (((h1.trans h2).mul h3).const_mul_left t.1).congr_left fun x => by ring
+
+variable {M : State 2 →L[ℝ] State 2} {Q : State 2 →L[ℝ] State 2 →L[ℝ] State 2}
+  {C : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => State 2) (State 2)} {ω : ℝ}
+  {g : ℝ → State 2 → State 2}
+
+/-- **The Lie derivative of `V + μW` on a full neighbourhood.** If the remainder is
+`o(|μ| ‖u‖ + ‖u‖³)` as `(μ, u) → 0` (no restriction on `μ`), then
+`V̇ − μ tr M ‖u‖² − ω l₁ ‖u‖⁴ = o(|μ| ‖u‖² + ‖u‖⁴)`: every product of `lie_identity_unfold` has
+degree at least two in `u` and weight at least five. -/
+@[tmio T, powerlib_foundation] theorem isLittleO_lie_full (hω : ω ≠ 0)
+    (h : (fun p : ℝ × State 2 => unfoldRem M Q C ω g p.1 p.2) =o[𝓝 0]
+      fun p => |p.1| * ‖p.2‖ + ‖p.2‖ ^ 3) :
+    (fun p : ℝ × State 2 => fderiv ℝ (hopfV M Q C ω p.1) p.2 (g p.1 p.2) -
+        p.1 * paramTrace M * ‖p.2‖ ^ 2 - ω * l1 (rotL ω) Q C ω * ‖p.2‖ ^ 4) =o[𝓝 0]
+      fun p => |p.1| * ‖p.2‖ ^ 2 + ‖p.2‖ ^ 4 := by
+  set J := jet (rotL ω) Q C ω
+  set a := m00 M
+  set b := m01 M
+  set c := m10 M
+  set d := m11 M
+  set Φ : ℝ × State 2 → ℝ := fun p => |p.1| * ‖p.2‖ ^ 2 + ‖p.2‖ ^ 4 with hΦ
+  have hs : Tendsto (fun p : ℝ × State 2 => ‖p.2‖) (𝓝 0) (𝓝 0) := by
+    have := (continuous_norm.comp continuous_snd).tendsto (0 : ℝ × State 2)
+    simpa [Function.comp_def] using this
+  have hμ : Tendsto (fun p : ℝ × State 2 => p.1) (𝓝 0) (𝓝 0) := by
+    simpa using (continuous_fst.tendsto (0 : ℝ × State 2))
+  have hx : (fun p : ℝ × State 2 => p.2 0) =O[𝓝 0] fun p => ‖p.2‖ :=
+    ((EuclideanSpace.proj (0 : Fin 2) : State 2 →L[ℝ] ℝ).isBigO_comp
+      (fun p : ℝ × State 2 => p.2) _).norm_right
+  have hy : (fun p : ℝ × State 2 => p.2 1) =O[𝓝 0] fun p => ‖p.2‖ :=
+    ((EuclideanSpace.proj (1 : Fin 2) : State 2 →L[ℝ] ℝ).isBigO_comp
+      (fun p : ℝ × State 2 => p.2) _).norm_right
+  have hP := fun (L : List (ℝ × ℕ × ℕ × ℕ)) {m k : ℕ}
+      (hL : ∀ t ∈ L, m ≤ t.2.1 + t.2.2.1 ∧ k ≤ t.2.2.2) =>
+    isBigO_poly3_mixed hs hμ hx hy L hL
+  -- small factors against `Φ`
+  have hsmall : ∀ {f : ℝ × State 2 → ℝ}, Tendsto f (𝓝 0) (𝓝 0) →
+      (fun p => f p * Φ p) =o[𝓝 0] Φ := fun hf =>
+    (((isLittleO_one_iff ℝ).mpr hf).mul_isBigO (isBigO_refl Φ _)).congr_right
+      fun p => one_mul _
+  have hΦ0 : ∀ p : ℝ × State 2, 0 ≤ Φ p := fun p => by positivity
+  have o5 : (fun p : ℝ × State 2 => ‖p.2‖ ^ 5 * p.1 ^ 0) =o[𝓝 0] Φ := by
+    refine IsBigO.trans_isLittleO (IsBigO.of_bound 1 (Eventually.of_forall fun p => ?_))
+      (hsmall hs)
+    rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), hΦ]
+    simp only
+    nlinarith [abs_nonneg p.1, pow_nonneg (norm_nonneg p.2) 3]
+  have o31 : (fun p : ℝ × State 2 => ‖p.2‖ ^ 3 * p.1 ^ 1) =o[𝓝 0] Φ := by
+    refine IsBigO.trans_isLittleO (IsBigO.of_bound 1 (Eventually.of_forall fun p => ?_))
+      (hsmall hs)
+    rw [one_mul, norm_mul, norm_pow, norm_norm, pow_one, Real.norm_eq_abs,
+      Real.norm_of_nonneg (by positivity), hΦ]
+    simp only
+    nlinarith [abs_nonneg p.1, pow_nonneg (norm_nonneg p.2) 5]
+  have o22 : (fun p : ℝ × State 2 => ‖p.2‖ ^ 2 * p.1 ^ 2) =o[𝓝 0] Φ := by
+    have hμa : Tendsto (fun p : ℝ × State 2 => |p.1|) (𝓝 0) (𝓝 0) := by
+      have := (continuous_abs.comp continuous_fst).tendsto (0 : ℝ × State 2)
+      simpa [Function.comp_def] using this
+    refine IsBigO.trans_isLittleO (IsBigO.of_bound 1 (Eventually.of_forall fun p => ?_))
+      (hsmall hμa)
+    rw [one_mul, norm_mul, norm_pow, norm_norm, norm_pow, Real.norm_eq_abs,
+      Real.norm_of_nonneg (by positivity), hΦ]
+    simp only
+    nlinarith [abs_nonneg p.1, pow_nonneg (norm_nonneg p.2) 4, sq_abs p.1]
+  have prod : ∀ {l₁ l₂ : List (ℝ × ℕ × ℕ × ℕ)} {m₁ k₁ m₂ k₂ : ℕ},
+      (∀ t ∈ l₁, m₁ ≤ t.2.1 + t.2.2.1 ∧ k₁ ≤ t.2.2.2) →
+      (∀ t ∈ l₂, m₂ ≤ t.2.1 + t.2.2.1 ∧ k₂ ≤ t.2.2.2) →
+      (fun p : ℝ × State 2 => ‖p.2‖ ^ (m₁ + m₂) * p.1 ^ (k₁ + k₂)) =o[𝓝 0] Φ →
+      (fun p : ℝ × State 2 => poly3 l₁ (p.2 0) (p.2 1) p.1 * poly3 l₂ (p.2 0) (p.2 1) p.1)
+        =o[𝓝 0] Φ := fun h₁ h₂ ho =>
+    ((hP _ h₁).mul (hP _ h₂)).trans_isLittleO (ho.congr_left fun p => by ring)
+  have hA := ((prod (l₁ := J.V3x ω) (l₂ := J.F3) (m₁ := 2) (k₁ := 0) (m₂ := 3) (k₂ := 0)
+    (by simp [Jet.V3x]) (by simp [Jet.F3]) o5).add
+    (prod (l₁ := J.V3y ω) (l₂ := J.G3) (m₁ := 2) (k₁ := 0) (m₂ := 3) (k₂ := 0)
+      (by simp [Jet.V3y]) (by simp [Jet.G3]) o5)).add
+    (prod (l₁ := J.V4x ω) (l₂ := J.F2 ++ J.F3) (m₁ := 3) (k₁ := 0) (m₂ := 2) (k₂ := 0)
+      (by simp [Jet.V4x]) (by simp [Jet.F2, Jet.F3]) o5) |>.add
+    (prod (l₁ := J.V4y ω) (l₂ := J.G2 ++ J.G3) (m₁ := 3) (k₁ := 0) (m₂ := 2) (k₂ := 0)
+      (by simp [Jet.V4y]) (by simp [Jet.G2, Jet.G3]) o5)
+  have hsplit : ∀ (w l₀ l₂ l₃ : List (ℝ × ℕ × ℕ × ℕ)) (p : ℝ × State 2),
+      poly3 w (p.2 0) (p.2 1) p.1 * poly3 (l₀ ++ l₂ ++ l₃) (p.2 0) (p.2 1) p.1 =
+        poly3 w (p.2 0) (p.2 1) p.1 * poly3 l₀ (p.2 0) (p.2 1) p.1 +
+          poly3 w (p.2 0) (p.2 1) p.1 * poly3 (l₂ ++ l₃) (p.2 0) (p.2 1) p.1 := by
+    intro w l₀ l₂ l₃ p
+    rw [List.append_assoc, Jet5.poly3_append]; ring
+  have hB := ((prod (l₁ := J.V3x ω ++ J.V4x ω) (l₂ := mx a b) (m₁ := 2) (k₁ := 0) (m₂ := 1)
+    (k₂ := 1) (by simp [Jet.V3x, Jet.V4x]) (by simp [mx]) o31).add
+    (prod (l₁ := J.V3y ω ++ J.V4y ω) (l₂ := my c d) (m₁ := 2) (k₁ := 0) (m₂ := 1) (k₂ := 1)
+      (by simp [Jet.V3y, Jet.V4y]) (by simp [my]) o31)).add
+    (((prod (l₁ := wx ω a d) (l₂ := mx a b) (m₁ := 1) (k₁ := 1) (m₂ := 1) (k₂ := 1)
+      (by simp [wx]) (by simp [mx]) o22).add
+      (prod (l₁ := wx ω a d) (l₂ := J.F2 ++ J.F3) (m₁ := 1) (k₁ := 1) (m₂ := 2) (k₂ := 0)
+        (by simp [wx]) (by simp [Jet.F2, Jet.F3]) o31)).congr_left
+      fun p => (hsplit _ _ _ _ p).symm) |>.add
+    (((prod (l₁ := wy ω a b c d) (l₂ := my c d) (m₁ := 1) (k₁ := 1) (m₂ := 1) (k₂ := 1)
+      (by simp [wy]) (by simp [my]) o22).add
+      (prod (l₁ := wy ω a b c d) (l₂ := J.G2 ++ J.G3) (m₁ := 1) (k₁ := 1) (m₂ := 2) (k₂ := 0)
+        (by simp [wy]) (by simp [Jet.G2, Jet.G3]) o31)).congr_left
+      fun p => (hsplit _ _ _ _ p).symm)
+  have hgrad : ∀ (l w : List (ℝ × ℕ × ℕ × ℕ)), (∀ t ∈ l, 1 ≤ t.2.1 + t.2.2.1 ∧ 0 ≤ t.2.2.2) →
+      (∀ t ∈ w, 1 ≤ t.2.1 + t.2.2.1 ∧ 1 ≤ t.2.2.2) →
+      (fun p : ℝ × State 2 => poly3 l (p.2 0) (p.2 1) 0 + poly3 w (p.2 0) (p.2 1) p.1)
+        =O[𝓝 0] fun p => ‖p.2‖ := by
+    intro l w hl hw
+    have h1 := (isBigO_poly3_mixed (c := fun _ => (0 : ℝ)) hs tendsto_const_nhds hx hy l hl)
+    have h2 := hP w hw
+    have hb : (fun p : ℝ × State 2 => ‖p.2‖ ^ 1 * p.1 ^ 1) =O[𝓝 0] fun p => ‖p.2‖ := by
+      have := (isBigO_refl (fun p : ℝ × State 2 => ‖p.2‖) (𝓝 0)).mul
+        (hμ.isBigO_one ℝ)
+      exact (this.congr_left fun p => by ring).congr_right fun p => mul_one _
+    exact ((h1.congr_right fun p => by ring).add (h2.trans hb))
+  have hrem : ∀ i : Fin 2, (fun p : ℝ × State 2 => unfoldRem M Q C ω g p.1 p.2 i) =o[𝓝 0]
+      fun p => |p.1| * ‖p.2‖ + ‖p.2‖ ^ 3 := fun i =>
+    ((EuclideanSpace.proj i : State 2 →L[ℝ] ℝ).isBigO_comp _ _).trans_isLittleO h
+  have hC : (fun p : ℝ × State 2 =>
+      (poly3 (J.Vx ω) (p.2 0) (p.2 1) 0 + poly3 (wx ω a d) (p.2 0) (p.2 1) p.1) *
+        unfoldRem M Q C ω g p.1 p.2 0 +
+      (poly3 (J.Vy ω) (p.2 0) (p.2 1) 0 + poly3 (wy ω a b c d) (p.2 0) (p.2 1) p.1) *
+        unfoldRem M Q C ω g p.1 p.2 1) =o[𝓝 0] Φ := by
+    have e : ∀ p : ℝ × State 2, ‖p.2‖ * (|p.1| * ‖p.2‖ + ‖p.2‖ ^ 3) = Φ p := fun p => by
+      rw [hΦ]; ring
+    refine ((((hgrad _ _ (by simp [Jet.Vx, Jet.V3x, Jet.V4x]) (by simp [wx])).mul_isLittleO
+      (hrem 0)).add ((hgrad _ _ (by simp [Jet.Vy, Jet.V3y, Jet.V4y]) (by simp [wy])).mul_isLittleO
+        (hrem 1))).congr_right fun p => ?_)
+    · exact e p
+  have hsum := (hA.add hB).add hC
+  refine hsum.congr_left fun p => (lie_sub_eq hω p.1 p.2).symm
+
+/-- `V + μW = ‖u‖² + o(‖u‖²)` as `(μ, u) → 0`. -/
+@[tmio T, powerlib_foundation] theorem isLittleO_hopfV_sub (hω : ω ≠ 0) :
+    (fun p : ℝ × State 2 => hopfV M Q C ω p.1 p.2 - ‖p.2‖ ^ 2) =o[𝓝 0]
+      fun p => ‖p.2‖ ^ 2 := by
+  set J := jet (rotL ω) Q C ω
+  have hs : Tendsto (fun p : ℝ × State 2 => ‖p.2‖) (𝓝 0) (𝓝 0) := by
+    have := (continuous_norm.comp continuous_snd).tendsto (0 : ℝ × State 2)
+    simpa [Function.comp_def] using this
+  have hμ : Tendsto (fun p : ℝ × State 2 => p.1) (𝓝 0) (𝓝 0) := by
+    simpa using (continuous_fst.tendsto (0 : ℝ × State 2))
+  have hx : (fun p : ℝ × State 2 => p.2 0) =O[𝓝 0] fun p => ‖p.2‖ :=
+    ((EuclideanSpace.proj (0 : Fin 2) : State 2 →L[ℝ] ℝ).isBigO_comp
+      (fun p : ℝ × State 2 => p.2) _).norm_right
+  have hy : (fun p : ℝ × State 2 => p.2 1) =O[𝓝 0] fun p => ‖p.2‖ :=
+    ((EuclideanSpace.proj (1 : Fin 2) : State 2 →L[ℝ] ℝ).isBigO_comp
+      (fun p : ℝ × State 2 => p.2) _).norm_right
+  have e : ∀ p : ℝ × State 2, hopfV M Q C ω p.1 p.2 - ‖p.2‖ ^ 2 =
+      poly3 (J.V3 ω ++ J.V4 ω) (p.2 0) (p.2 1) 0 +
+        p.1 * poly3 (wl ω (m00 M) (m01 M) (m10 M) (m11 M)) (p.2 0) (p.2 1) 0 := by
+    intro p
+    simp only [hopfV, lyap, frameY_rotL hω, frameX_apply, zero_apply, Jet.V,
+      List.append_assoc, Jet5.poly3_append, poly3_cons, poly3_nil]
+    rw [PhasePlane.norm_sq_eq]
+    ring
+  have h1 := isBigO_poly3_mixed (c := fun _ => (0 : ℝ)) hs tendsto_const_nhds hx hy
+    (J.V3 ω ++ J.V4 ω) (m := 3) (k := 0) (by simp [Jet.V3, Jet.V4])
+  have h2 := isBigO_poly3_mixed (c := fun _ => (0 : ℝ)) hs tendsto_const_nhds hx hy
+    (wl ω (m00 M) (m01 M) (m10 M) (m11 M)) (m := 2) (k := 0) (by simp [wl])
+  have o1 : (fun p : ℝ × State 2 => ‖p.2‖ ^ 3 * (0 : ℝ) ^ 0) =o[𝓝 0] fun p => ‖p.2‖ ^ 2 :=
+    (Dynamics.isLittleO_pow_of_tendsto hs (by norm_num : 2 < 3)).congr_left fun p => by ring
+  have o2 : (fun p : ℝ × State 2 => p.1 * poly3 (wl ω (m00 M) (m01 M) (m10 M) (m11 M))
+      (p.2 0) (p.2 1) 0) =o[𝓝 0] fun p => ‖p.2‖ ^ 2 := by
+    have := ((isLittleO_one_iff ℝ).mpr hμ).mul_isBigO (h2.congr_right fun p => by ring :
+      _ =O[𝓝 0] fun p : ℝ × State 2 => ‖p.2‖ ^ 2)
+    exact this.congr_right fun p => one_mul _
+  exact ((h1.trans_isLittleO o1).add o2).congr_left fun p => (e p).symm
+
+end Full
 
 /-! ## Elementary inequalities -/
 
@@ -703,5 +935,279 @@ with `ν/8 ≤ ‖γ‖² ≤ 8ν`, `ν = −μ tr M/(ω l₁) > 0`: the amplitu
     constructor <;> linarith
 
 end Main
+
+
+/-! ## Every small cycle has the Hopf amplitude -/
+
+section Amplitude
+
+open powerlib.Dynamics.CenterManifold (rotL)
+
+/-- On the side `μ τ l₁ ≥ 0` the Lie derivative has the sign of `l₁` away from `0`. -/
+@[tmio T, powerlib_foundation] private theorem lie_pos_of_nonneg {ω τ ℓ μ ε r L : ℝ}
+    (hℓ : ℓ ≠ 0) (hs : 0 ≤ μ * τ * ℓ) (hr : 0 < r) (hετ : ε ≤ |τ|) (hεℓ : ε < ω * |ℓ|)
+    (hE : |L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4| ≤ ε * (|μ| * r ^ 2 + r ^ 4)) : 0 < ℓ * L := by
+  have hℓa : 0 < |ℓ| := abs_pos.mpr hℓ
+  have h1 : ℓ * μ * τ * r ^ 2 = |μ| * |τ| * |ℓ| * r ^ 2 := by
+    have : μ * τ * ℓ = |μ| * |τ| * |ℓ| := by
+      rw [← abs_mul, ← abs_mul, abs_of_nonneg hs]
+    rw [show ℓ * μ * τ = μ * τ * ℓ by ring, this]
+  have h2 : ω * ℓ ^ 2 * r ^ 4 = ω * |ℓ| ^ 2 * r ^ 4 := by rw [sq_abs]
+  have h3 : -(|ℓ| * (ε * (|μ| * r ^ 2 + r ^ 4))) ≤
+      ℓ * (L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4) := by
+    have := mul_le_mul_of_nonneg_left hE hℓa.le
+    rw [← abs_mul] at this
+    exact neg_le_of_abs_le this
+  have k1 : 0 < |ℓ| * ((ω * |ℓ| - ε) * r ^ 4) := by
+    have : 0 < ω * |ℓ| - ε := by linarith
+    positivity
+  have k2 : 0 ≤ |ℓ| * ((|τ| - ε) * (|μ| * r ^ 2)) := by
+    have : 0 ≤ |τ| - ε := by linarith
+    positivity
+  have e : ℓ * L = ℓ * μ * τ * r ^ 2 + ω * ℓ ^ 2 * r ^ 4 +
+      ℓ * (L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4) := by ring
+  rw [e, h1, h2]
+  nlinarith [h3, k1, k2]
+
+/-- On the side `μ τ l₁ < 0`, outside the annulus (`r² ≥ (1 + a) ν`), the Lie derivative has the
+sign of `l₁`. -/
+@[tmio T, powerlib_foundation] private theorem lie_pos_of_outer {ω τ ℓ μ ε r L ν a : ℝ}
+    (hω : 0 < ω) (hℓ : ℓ ≠ 0) (hτ : τ ≠ 0) (hν : 0 < ν) (hμτ : μ * τ = -(ω * ℓ * ν))
+    (ha : 0 < a) (ha1 : a ≤ 1) (hr : (1 + a) * ν ≤ r ^ 2) (hε0 : 0 ≤ ε)
+    (hε : ε * (ω * |ℓ| / |τ| + 1) ≤ ω * |ℓ| * a / 4)
+    (hE : |L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4| ≤ ε * (|μ| * r ^ 2 + r ^ 4)) : 0 < ℓ * L := by
+  have hℓa : 0 < |ℓ| := abs_pos.mpr hℓ
+  have hτa : 0 < |τ| := abs_pos.mpr hτ
+  have hμ : |μ| = ω * |ℓ| * ν / |τ| := by
+    rw [eq_div_iff hτa.ne', ← abs_mul, hμτ, abs_neg, abs_mul, abs_mul, abs_of_pos hω,
+      abs_of_pos hν]
+  have hr2 : 0 < r ^ 2 := lt_of_lt_of_le (by positivity) hr
+  have hνr : ν ≤ r ^ 2 := le_trans (by nlinarith) hr
+  have hgap : a / 2 * r ^ 2 ≤ r ^ 2 - ν := by nlinarith
+  have hμr : |μ| * r ^ 2 ≤ ω * |ℓ| / |τ| * r ^ 4 := by
+    rw [hμ, show r ^ 4 = r ^ 2 * r ^ 2 by ring]
+    have : 0 ≤ ω * |ℓ| / |τ| := by positivity
+    calc ω * |ℓ| * ν / |τ| * r ^ 2 = ω * |ℓ| / |τ| * ν * r ^ 2 := by ring
+      _ ≤ ω * |ℓ| / |τ| * r ^ 2 * r ^ 2 := by gcongr
+      _ = _ := by ring
+  have hEb : ε * (|μ| * r ^ 2 + r ^ 4) ≤ ω * |ℓ| * a / 4 * r ^ 4 := by
+    calc ε * (|μ| * r ^ 2 + r ^ 4) ≤ ε * (ω * |ℓ| / |τ| * r ^ 4 + r ^ 4) := by gcongr
+      _ = ε * (ω * |ℓ| / |τ| + 1) * r ^ 4 := by ring
+      _ ≤ _ := by gcongr
+  have h3 : -(|ℓ| * (ω * |ℓ| * a / 4 * r ^ 4)) ≤
+      ℓ * (L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4) := by
+    have := mul_le_mul_of_nonneg_left (hE.trans hEb) hℓa.le
+    rw [← abs_mul] at this
+    exact neg_le_of_abs_le this
+  have e : ℓ * L = ω * |ℓ| ^ 2 * r ^ 2 * (r ^ 2 - ν) +
+      ℓ * (L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4) := by
+    have : ℓ * (μ * τ) = -(ω * ℓ ^ 2 * ν) := by rw [hμτ]; ring
+    rw [sq_abs]; linear_combination r ^ 2 * this
+  have k : ω * |ℓ| ^ 2 * r ^ 2 * (a / 2 * r ^ 2) ≤ ω * |ℓ| ^ 2 * r ^ 2 * (r ^ 2 - ν) := by
+    gcongr
+  have hr4 : 0 < r ^ 4 := by rw [show r ^ 4 = r ^ 2 * r ^ 2 by ring]; exact mul_pos hr2 hr2
+  have k2 : 0 < ω * |ℓ| ^ 2 * a / 4 * r ^ 4 := by apply mul_pos _ hr4; positivity
+  rw [e]
+  nlinarith [h3, k, k2]
+
+/-- On the side `μ τ l₁ < 0`, inside the annulus (`r² ≤ (1 − a) ν`, `r > 0`), the Lie derivative
+has the sign of `−l₁`. -/
+@[tmio T, powerlib_foundation] private theorem lie_neg_of_inner {ω τ ℓ μ ε r L ν a : ℝ}
+    (hω : 0 < ω) (hℓ : ℓ ≠ 0) (hτ : τ ≠ 0) (hν : 0 < ν) (hμτ : μ * τ = -(ω * ℓ * ν))
+    (ha : 0 < a) (hr0 : 0 < r) (hr : r ^ 2 ≤ (1 - a) * ν) (hε0 : 0 ≤ ε)
+    (hε : ε * (ω * |ℓ| / |τ| + 1) ≤ ω * |ℓ| * a / 4)
+    (hE : |L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4| ≤ ε * (|μ| * r ^ 2 + r ^ 4)) : ℓ * L < 0 := by
+  have hℓa : 0 < |ℓ| := abs_pos.mpr hℓ
+  have hτa : 0 < |τ| := abs_pos.mpr hτ
+  have hμ : |μ| = ω * |ℓ| * ν / |τ| := by
+    rw [eq_div_iff hτa.ne', ← abs_mul, hμτ, abs_neg, abs_mul, abs_mul, abs_of_pos hω,
+      abs_of_pos hν]
+  have hr2 : 0 < r ^ 2 := by positivity
+  have hrν : r ^ 2 ≤ ν := le_trans hr (by nlinarith)
+  have hgap : a * ν ≤ ν - r ^ 2 := by linarith
+  have hμr : |μ| * r ^ 2 ≤ ω * |ℓ| / |τ| * (ν * r ^ 2) := by
+    rw [hμ]; apply le_of_eq; ring
+  have hEb : ε * (|μ| * r ^ 2 + r ^ 4) ≤ ω * |ℓ| * a / 4 * (ν * r ^ 2) := by
+    have hr4 : r ^ 4 ≤ ν * r ^ 2 := by
+      rw [show r ^ 4 = r ^ 2 * r ^ 2 by ring]; gcongr
+    calc ε * (|μ| * r ^ 2 + r ^ 4) ≤ ε * (ω * |ℓ| / |τ| * (ν * r ^ 2) + ν * r ^ 2) := by
+          gcongr
+      _ = ε * (ω * |ℓ| / |τ| + 1) * (ν * r ^ 2) := by ring
+      _ ≤ _ := by gcongr
+  have h3 : ℓ * (L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4) ≤
+      |ℓ| * (ω * |ℓ| * a / 4 * (ν * r ^ 2)) := by
+    have := mul_le_mul_of_nonneg_left (hE.trans hEb) hℓa.le
+    rw [← abs_mul] at this
+    exact (le_abs_self _).trans this
+  have e : ℓ * L = -(ω * |ℓ| ^ 2 * r ^ 2 * (ν - r ^ 2)) +
+      ℓ * (L - μ * τ * r ^ 2 - ω * ℓ * r ^ 4) := by
+    have : ℓ * (μ * τ) = -(ω * ℓ ^ 2 * ν) := by rw [hμτ]; ring
+    rw [sq_abs]; linear_combination r ^ 2 * this
+  have k : ω * |ℓ| ^ 2 * r ^ 2 * (a * ν) ≤ ω * |ℓ| ^ 2 * r ^ 2 * (ν - r ^ 2) := by gcongr
+  have k2 : 0 < ω * |ℓ| ^ 2 * a * (ν * r ^ 2) := by positivity
+  rw [e]
+  nlinarith [h3, k, k2]
+
+/-- The amplitude bounds from the extremal values of `V` along a cycle. -/
+@[tmio T, powerlib_foundation] private theorem amplitude_bounds {a η ν R R₁ R₀ v V₁ V₀ : ℝ}
+    (ha : 0 < a) (ha8 : a ≤ 1 / 8) (haη : 8 * a ≤ η) (hν : 0 < ν) (hv1 : (1 - a) * R ≤ v)
+    (hv2 : v ≤ (1 + a) * R) (hV₁ : v ≤ V₁) (hV₁R : V₁ ≤ (1 + a) * R₁)
+    (hR₁ : R₁ < (1 + a) * ν) (hV₀ : V₀ ≤ v) (hV₀R : (1 - a) * R₀ ≤ V₀)
+    (hR₀ : (1 - a) * ν < R₀) : (1 - η) * ν ≤ R ∧ R ≤ (1 + η) * ν := by
+  have h1a : 0 < 1 - a := by linarith
+  have h1a' : 0 < 1 + a := by linarith
+  constructor
+  · have k1 : (1 - a) ^ 2 * ν < (1 + a) * R := by
+      have := mul_lt_mul_of_pos_left hR₀ h1a
+      nlinarith
+    have k2 : (1 - η) * (1 + a) * ν ≤ (1 - a) ^ 2 * ν := by
+      have : (1 - η) * (1 + a) ≤ (1 - a) ^ 2 := by nlinarith
+      exact mul_le_mul_of_nonneg_right this hν.le
+    by_contra hc
+    have := mul_lt_mul_of_pos_left (not_le.mp hc) h1a'
+    nlinarith
+  · have k1 : (1 - a) * R < (1 + a) ^ 2 * ν := by
+      have := mul_lt_mul_of_pos_left hR₁ h1a'
+      nlinarith
+    have k2 : (1 + a) ^ 2 * ν ≤ (1 + η) * (1 - a) * ν := by
+      have : (1 + a) ^ 2 ≤ (1 + η) * (1 - a) := by nlinarith
+      exact mul_le_mul_of_nonneg_right this hν.le
+    by_contra hc
+    have := mul_lt_mul_of_pos_left (not_le.mp hc) h1a
+    nlinarith
+
+variable {M : State 2 →L[ℝ] State 2} {Q : State 2 →L[ℝ] State 2 →L[ℝ] State 2}
+  {C : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => State 2) (State 2)} {ω : ℝ}
+  {g : ℝ → State 2 → State 2}
+
+/-- **Every small cycle of the planar family has the Hopf amplitude.** Let the remainder of
+`g(μ, u) = R u + μ M u + Q(u, u) + C(u, u, u) + D(μ, u)` be `o(|μ| ‖u‖ + ‖u‖³)` as
+`(μ, u) → 0` (no restriction on `μ`), `tr M ≠ 0`, `l₁ ≠ 0`. For every `η > 0` there is `δ > 0`
+such that every periodic solution of `g μ`, `|μ| < δ`, staying in the disc of radius `δ` and
+avoiding `0`, has `μ tr M l₁ < 0` (there is none for `μ tr M l₁ ≥ 0`, in particular at
+`μ = 0`) and `(1 − η) ν ≤ ‖γ(t)‖² ≤ (1 + η) ν`, `ν = −μ tr M/(ω l₁)`. Proof: `V + μW` has, by
+`isLittleO_lie_full`, `V̇ ≠ 0` with the sign of `l₁` outside the annulus and of `−l₁` inside; at
+the maximum and the minimum of `V` along the cycle `V̇ = 0`, and `V = ‖u‖²(1 + o(1))`. -/
+@[tmio T, powerlib_foundation] theorem periodic_amplitude (hω : 0 < ω)
+    (h : (fun p : ℝ × State 2 => unfoldRem M Q C ω g p.1 p.2) =o[𝓝 0]
+      fun p => |p.1| * ‖p.2‖ + ‖p.2‖ ^ 3)
+    (hτ : paramTrace M ≠ 0) (hl : l1 (rotL ω) Q C ω ≠ 0) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∀ μ, |μ| < δ → ∀ (γ : ℝ → State 2) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt γ (g μ (γ t)) t) → (∀ t, γ (t + T) = γ t) → (∀ t, γ t ≠ 0) →
+      (∀ t, ‖γ t‖ < δ) →
+      μ * paramTrace M * l1 (rotL ω) Q C ω < 0 ∧ ∀ t,
+        (1 - η) * (-(μ * paramTrace M) / (ω * l1 (rotL ω) Q C ω)) ≤ ‖γ t‖ ^ 2 ∧
+        ‖γ t‖ ^ 2 ≤ (1 + η) * (-(μ * paramTrace M) / (ω * l1 (rotL ω) Q C ω)) := by
+  obtain ⟨τ, hτd⟩ : ∃ τ, τ = paramTrace M := ⟨_, rfl⟩
+  obtain ⟨ℓ, hℓd⟩ : ∃ ℓ, ℓ = l1 (rotL ω) Q C ω := ⟨_, rfl⟩
+  rw [← hτd] at hτ ⊢
+  rw [← hℓd] at hl ⊢
+  have hℓa : 0 < |ℓ| := abs_pos.mpr hl
+  have hτa : 0 < |τ| := abs_pos.mpr hτ
+  obtain ⟨a, ha⟩ : ∃ a, a = min η 1 / 8 := ⟨_, rfl⟩
+  have ha0 : 0 < a := ha ▸ by positivity
+  have ha8 : a ≤ 1 / 8 := ha ▸ by have := min_le_right η 1; linarith
+  have haη : 8 * a ≤ η := ha ▸ by have := min_le_left η 1; linarith
+  obtain ⟨K, hK⟩ : ∃ K, K = ω * |ℓ| / |τ| + 1 := ⟨_, rfl⟩
+  have hK0 : 0 < K := hK ▸ by positivity
+  obtain ⟨ε, hε⟩ : ∃ e, e = min (min |τ| (ω * |ℓ|) / 2) (ω * |ℓ| * a / (4 * K)) := ⟨_, rfl⟩
+  have hε0 : 0 < ε := hε ▸ lt_min (by positivity) (by positivity)
+  have hε1 : ε ≤ min |τ| (ω * |ℓ|) / 2 := hε ▸ min_le_left _ _
+  have hετ : ε ≤ |τ| := by
+    have := min_le_left |τ| (ω * |ℓ|); linarith
+  have hεℓ : ε < ω * |ℓ| := by
+    have h1 := min_le_right |τ| (ω * |ℓ|)
+    have h2 : 0 < ω * |ℓ| := by positivity
+    linarith
+  have hεK : ε * (ω * |ℓ| / |τ| + 1) ≤ ω * |ℓ| * a / 4 := by
+    have h1 : ε ≤ ω * |ℓ| * a / (4 * K) := hε ▸ min_le_right _ _
+    rw [← hK]
+    calc ε * K ≤ ω * |ℓ| * a / (4 * K) * K := mul_le_mul_of_nonneg_right h1 hK0.le
+      _ = ω * |ℓ| * a / 4 := by field_simp
+  -- the two estimates near `0`
+  have hlie := isLittleO_lie_full (M := M) (Q := Q) (C := C) (g := g) hω.ne' h
+  rw [← hτd, ← hℓd] at hlie
+  obtain ⟨δ₁, hδ₁, h₁⟩ := Metric.eventually_nhds_iff.mp (hlie.def hε0)
+  obtain ⟨δ₂, hδ₂, h₂⟩ := Metric.eventually_nhds_iff.mp
+    ((isLittleO_hopfV_sub (M := M) (Q := Q) (C := C) hω.ne').def ha0)
+  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun μ hμ γ T hT hγ hγT hγ0 hγδ => ?_⟩
+  have hpt : ∀ t, dist (μ, γ t) (0 : ℝ × State 2) < δ₁ ∧
+      dist (μ, γ t) (0 : ℝ × State 2) < δ₂ := by
+    intro t
+    rw [dist_zero_right, Prod.norm_def, Real.norm_eq_abs]
+    have h1 := lt_min_iff.mp hμ
+    have h2 := lt_min_iff.mp (hγδ t)
+    exact ⟨max_lt h1.1 h2.1, max_lt h1.2 h2.2⟩
+  have hL : ∀ t, |fderiv ℝ (hopfV M Q C ω μ) (γ t) (g μ (γ t)) - μ * τ * ‖γ t‖ ^ 2 -
+      ω * ℓ * ‖γ t‖ ^ 4| ≤ ε * (|μ| * ‖γ t‖ ^ 2 + ‖γ t‖ ^ 4) := by
+    intro t
+    have := h₁ (hpt t).1
+    beta_reduce at this
+    rwa [Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)] at this
+  have hV : ∀ t, |hopfV M Q C ω μ (γ t) - ‖γ t‖ ^ 2| ≤ a * ‖γ t‖ ^ 2 := by
+    intro t
+    have := h₂ (hpt t).2
+    beta_reduce at this
+    rwa [Real.norm_eq_abs, norm_pow, norm_norm] at this
+  -- `V` along the cycle and its extremal values
+  obtain ⟨v, hv⟩ : ∃ v : ℝ → ℝ, v = fun t => hopfV M Q C ω μ (γ t) := ⟨_, rfl⟩
+  have hvd : ∀ t, HasDerivAt v (fderiv ℝ (hopfV M Q C ω μ) (γ t) (g μ (γ t))) t := fun t =>
+    hv ▸ ((differentiable_hopfV μ (γ t)).hasFDerivAt.comp_hasDerivAt t (hγ t))
+  have hvc : Continuous v := continuous_iff_continuousAt.2 fun t => (hvd t).continuousAt
+  have hper : Function.Periodic v T := fun t => by rw [hv]; simp only [hγT]
+  obtain ⟨t₁, -, hmax⟩ := isCompact_Icc.exists_isMaxOn (nonempty_Icc.mpr hT.le)
+    hvc.continuousOn
+  obtain ⟨t₀, -, hmin⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.mpr hT.le)
+    hvc.continuousOn
+  have hmax' : ∀ s, v s ≤ v t₁ := fun s => by
+    obtain ⟨y, hy, hys⟩ := hper.exists_mem_Ico₀ hT s
+    rw [hys]; exact hmax (Ico_subset_Icc_self hy)
+  have hmin' : ∀ s, v t₀ ≤ v s := fun s => by
+    obtain ⟨y, hy, hys⟩ := hper.exists_mem_Ico₀ hT s
+    rw [hys]; exact hmin (Ico_subset_Icc_self hy)
+  have hd₁ : fderiv ℝ (hopfV M Q C ω μ) (γ t₁) (g μ (γ t₁)) = 0 :=
+    IsLocalMax.hasDerivAt_eq_zero ((isMaxOn_iff.mpr fun s _ => hmax' s).isLocalMax univ_mem)
+      (hvd t₁)
+  have hd₀ : fderiv ℝ (hopfV M Q C ω μ) (γ t₀) (g μ (γ t₀)) = 0 :=
+    IsLocalMin.hasDerivAt_eq_zero ((isMinOn_iff.mpr fun s _ => hmin' s).isLocalMin univ_mem)
+      (hvd t₀)
+  have hr₁ : 0 < ‖γ t₁‖ := norm_pos_iff.mpr (hγ0 t₁)
+  have hr₀ : 0 < ‖γ t₀‖ := norm_pos_iff.mpr (hγ0 t₀)
+  -- the side of the bifurcation
+  have hside : μ * τ * ℓ < 0 := by
+    by_contra hs
+    have := lie_pos_of_nonneg hl (not_lt.mp hs) hr₁ hετ hεℓ (hL t₁)
+    rw [hd₁, mul_zero] at this
+    exact lt_irrefl 0 this
+  refine ⟨hside, fun t => ?_⟩
+  obtain ⟨ν, hνd⟩ : ∃ ν, ν = -(μ * τ) / (ω * ℓ) := ⟨_, rfl⟩
+  rw [← hνd]
+  have hν : 0 < ν := by
+    have e : ν = -(μ * τ * ℓ) / (ω * ℓ ^ 2) := by rw [hνd]; field_simp
+    rw [e]
+    exact div_pos (neg_pos.mpr hside) (by positivity)
+  have hμτ : μ * τ = -(ω * ℓ * ν) := by rw [hνd]; field_simp
+  -- at the maximum and at the minimum of `V`
+  have hup : ‖γ t₁‖ ^ 2 < (1 + a) * ν := by
+    by_contra hc
+    have := lie_pos_of_outer hω hl hτ hν hμτ ha0 (by linarith) (not_lt.mp hc) hε0.le hεK
+      (hL t₁)
+    rw [hd₁, mul_zero] at this
+    exact lt_irrefl 0 this
+  have hlo : (1 - a) * ν < ‖γ t₀‖ ^ 2 := by
+    by_contra hc
+    have := lie_neg_of_inner hω hl hτ hν hμτ ha0 hr₀ (not_lt.mp hc) hε0.le hεK (hL t₀)
+    rw [hd₀, mul_zero] at this
+    exact lt_irrefl 0 this
+  have hVt := abs_le.mp (hV t)
+  have hV1 := abs_le.mp (hV t₁)
+  have hV0 := abs_le.mp (hV t₀)
+  have hm1 := hmax' t
+  have hm0 := hmin' t
+  rw [hv] at hm1 hm0
+  exact amplitude_bounds ha0 ha8 haη hν (by linarith) (by linarith) hm1 (by linarith) hup hm0
+    (by linarith) hlo
+
+end Amplitude
 
 end powerlib.Dynamics.PlanarHopf

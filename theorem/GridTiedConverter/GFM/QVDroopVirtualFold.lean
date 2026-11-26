@@ -45,7 +45,9 @@ Results.
   `σ = u₀w₀z₂ + u₀w₂z₀ + u₂w₀z₀` (`cForm`). For `Z_v = 0`, `ρ = −c`, `τ = a`
   (`curvatures_of_zero_virtual`), the forms of `theorem/GridTiedConverter/GFM/QVDroopFold.lean`.
 * `jacobianC_field`, `Model.jacobianC_field`, `Model.contDiff_field`, `Model.analyticAt_field`,
-  `Model.fderiv_field`, `Model.bilinC_field`, `Model.trilinC_field`.
+  `Model.fderiv_field`, `Model.bilinC_field`, `Model.trilinC_field`;
+  `Model.fderiv_fderiv_apply_eq_bForm`, `Model.iteratedFDeriv_three_apply_eq_cForm` (the second
+  and third derivatives of the model field at the origin, at any real arguments).
 * The fold: at `C = k a − b c = 0` the pair `q = (k, 0, c)`,
   `p = (D ω_q k, M ω_q k, b)/(D ω_q k² + b c)` is a normalised null pair (`Model.isNullPair_fold`),
   `det(sI − J) = s (s² + (A/M) s + (a + D ω_q k)/M)` (`Model.charpoly_fold`), and the fold
@@ -67,8 +69,10 @@ No new family: connection conclusions on `QVDroopVirtual.family`.
   Lyapunov stability and local asymptotic stability hold iff the point is an equilibrium with
   `A, C, G > 0`.
 
-Degenerate points (located, not decided): the cusp set `C = 0`, `𝔉 = 0` (the fold coefficient
-vanishes; it contains `C = 0`, `c = 0`) and the double-zero set `C = 0`, `G = 0`
+Degenerate points. The cusp set `C = 0`, `𝔉 = 0` (the fold coefficient vanishes) is decided in
+`theorem/GridTiedConverter/GFM/QVDroopVirtualCusp.lean` (the cubic coefficient
+`−ω_q k m c ρ/(2 (a + D ω_q k))`) except where `ρ = 0`. Located, not decided: the cusp points with
+`ρ = 0`, the fold points with `k = 0` or `c = 0`, and the double-zero set `C = 0`, `G = 0`
 (`A (a + D ω_q k) = 0`). The Hopf surface `G = 0`, `C > 0` is decided in
 `theorem/GridTiedConverter/GFM/QVDroopVirtualHopf.lean`.
 -/
@@ -386,18 +390,31 @@ Static evidence on the model. -/
   field_simp
   ring
 
-/-- The second derivative along the fold null vector `q = (k, 0, c)`. -/
-@[tmio M, powerlib_domain] private theorem fderiv2_fold (m : Model) (hE : m.q.emf m.Qf ≠ 0)
-    (k c : ℝ) (r : Fin 3) :
-    (fderiv ℝ (fderiv ℝ m.field) 0 (QVDroop.foldQ k c) (QVDroop.foldQ k c) r : ℂ) =
+/-- **The second derivative of the model field at the origin**, read through the form `bForm` at
+any real arguments. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.fderiv_fderiv_apply_eq_bForm (m : Model)
+    (hE : m.q.emf m.Qf ≠ 0) (u v : State 3) (r : Fin 3) :
+    (fderiv ℝ (fderiv ℝ m.field) 0 u v r : ℂ) =
       bForm m.q.M m.q.ωq (m.q.Ptδ m.δ (m.q.emf m.Qf)) (m.q.nq * m.q.PtE m.δ (m.q.emf m.Qf))
         (m.q.Qtδ m.δ (m.q.emf m.Qf)) (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.nq / m.q.emf m.Qf)
-        (m.q.Ptδδ m.δ (m.q.emf m.Qf)) (m.q.Qtδδ m.δ (m.q.emf m.Qf))
-        (toC (QVDroop.foldQ k c)) (toC (QVDroop.foldQ k c)) r := by
-  have h := congrFun (bilinC_toC m.field 0 (QVDroop.foldQ k c) (QVDroop.foldQ k c)) r
+        (m.q.Ptδδ m.δ (m.q.emf m.Qf)) (m.q.Qtδδ m.δ (m.q.emf m.Qf)) (toC u) (toC v) r := by
+  have h := congrFun (bilinC_toC m.field 0 u v) r
   rw [m.bilinC_field hE, iteratedFDeriv_two_apply] at h
   rw [h]
   simp
+
+/-- **The third derivative of the model field at the origin**, read through the form `cForm` at
+any real arguments. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.iteratedFDeriv_three_apply_eq_cForm (m : Model)
+    (hE : m.q.emf m.Qf ≠ 0) (u v z : State 3) (r : Fin 3) :
+    (iteratedFDeriv ℝ 3 m.field 0 ![u, v, z] r : ℂ) =
+      cForm m.q.M m.q.ωq (m.q.Ptδ m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf))
+        (m.q.nq / m.q.emf m.Qf) (m.q.Ptδδ m.δ (m.q.emf m.Qf)) (m.q.Qtδδ m.δ (m.q.emf m.Qf))
+        (toC u) (toC v) (toC z) r := by
+  have h := congrFun (trilinC_toC m.field 0 u v z) r
+  rw [m.trilinC_field hE] at h
+  rw [h]
+  simp [toC]
 
 /-- **The fold coefficient.** At a fold (`C = k a − b c = 0`, `M ≠ 0`, `E* ≠ 0`,
 `N = D ω_q k² + b c ≠ 0`): `2 c N foldCoeff = k ω_q 𝔉(a, c, k, n_q/E*, ρ, τ)`, `𝔉 = foldQuad`.
@@ -418,9 +435,15 @@ Static evidence on the model. -/
           (m.q.Qtδδ m.δ (m.q.emf m.Qf)) := by
   have h0 : m.q.gain m.δ (m.q.emf m.Qf) * m.q.Ptδ m.δ (m.q.emf m.Qf) -
       m.q.nq * m.q.PtE m.δ (m.q.emf m.Qf) * m.q.Qtδ m.δ (m.q.emf m.Qf) = 0 := hC
-  have v1 := fderiv2_fold m hE (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)) 1
-  have v2 := fderiv2_fold m hE (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)) 2
-  have v0 := fderiv2_fold m hE (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)) 0
+  have v1 := m.fderiv_fderiv_apply_eq_bForm hE
+    (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)))
+    (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf))) 1
+  have v2 := m.fderiv_fderiv_apply_eq_bForm hE
+    (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)))
+    (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf))) 2
+  have v0 := m.fderiv_fderiv_apply_eq_bForm hE
+    (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)))
+    (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf))) 0
   rw [NormalForm.BogdanovTakens.foldCoeff]
   generalize fderiv ℝ (fderiv ℝ m.field) 0
     (QVDroop.foldQ (m.q.gain m.δ (m.q.emf m.Qf)) (m.q.Qtδ m.δ (m.q.emf m.Qf)))

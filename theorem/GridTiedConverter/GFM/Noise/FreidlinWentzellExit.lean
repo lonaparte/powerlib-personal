@@ -42,10 +42,15 @@ Model boundary.
   property is `theorem/Stochastic/StrongMarkov.lean`). The sup–inf is evaluated there to
   `2D(ΔU − η)/σ_P²` in `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`, which
   also bounds the exit before a fixed time, `limsup ε log P(τ_ε ≤ T) ≤ −2D(ΔU − η)/σ_P²`.
-* Not formalized: (ii) the exit place — on the boundary level of the well the Hamilton–Jacobi
-  value is constant, so no concentration near the saddle follows (`FreidlinWentzellLower.lean`,
-  model boundary); the law of `τ_ε/E τ_ε` (exponential limit); for the three-state model the
-  sup–inf and the lower bound.
+* (ii) The exit place: for the well cut at an angle `d` (`Params.cutWell`) the exit concentrates
+  at the rest point `(d, 0)` of the cut
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellPlace.lean`); on the boundary level of the
+  uncut well the Hamilton–Jacobi value is constant, so no concentration near the saddle follows.
+  (iii) Three states: the lower bound from the sublevel wells of the filter-lag function,
+  `2(D − A/ω_c)(ΔU − η)/σ_P²` (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellFilter.lean`).
+* Not formalized: the law of `τ_ε/E τ_ε` (exponential limit; only the uniform exponential tail
+  `Stochastic.LDP.measure_exitTime_gt_le`); the exit from the basin of attraction (a
+  characteristic boundary through the saddle); for the three-state model the sup–inf.
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 3 §3 (uniformity in the initial point), Ch. 4 §2 (exit from a domain, the quasi-potential on
@@ -56,6 +61,8 @@ geometric trials).
 Results.
 * `Params.limsup_iSup_setPoint_le`, `Params.le_liminf_iInf_setPoint` (**uniform
   Freidlin–Wentzell bounds over compact sets of initial points**).
+* `Params.potential_lt_potential`, `Params.potential_barrier_pos` (the potential rises from
+  `δ_s` up to the saddle angle).
 * `Params.escapeLevel_ge`, `Params.escapeLevel_le`, `Params.tendsto_escapeLevel` (**the exit
   exponent through the energy level `H(x_u) − η` tends to `2DΔU/σ_P²`**).
 * `Params.limsup_log_exitTime_le`, `Params3.limsup_log_exitTime_le` (**upper bound for the mean
@@ -127,20 +134,20 @@ variable (p : Params)
     ((hG.preimage (continuous_solMap hK _ x₀)).measurableSet)]
   rfl
 
-/-- **The barrier is positive**: `U(π − arcsin s) − U(arcsin s) > 0` for `c₀ ≤ P_ref < c₀ + A`
-(`U' = A sin θ − (P_ref − c₀) > 0` between the two rest angles). -/
-@[tmio M, powerlib_domain] theorem potential_barrier_pos (h0 : p.c0 ≤ p.Pref)
-    (h1 : p.Pref < p.c0 + p.A) :
-    0 < p.potential (π - Real.arcsin ((p.Pref - p.c0) / p.A)) -
-      p.potential (Real.arcsin ((p.Pref - p.c0) / p.A)) := by
+/-- **The potential increases from the stable rest angle**: `U(arcsin s) < U(θ)` for
+`arcsin s < θ ≤ π − arcsin s`, `c₀ ≤ P_ref < c₀ + A` (`U' = A sin θ − (P_ref − c₀) > 0` between
+the two rest angles). -/
+@[tmio M, powerlib_domain] theorem potential_lt_potential (h0 : p.c0 ≤ p.Pref)
+    (h1 : p.Pref < p.c0 + p.A) {θ : ℝ} (hθ0 : Real.arcsin ((p.Pref - p.c0) / p.A) < θ)
+    (hθ1 : θ ≤ π - Real.arcsin ((p.Pref - p.c0) / p.A)) :
+    p.potential (Real.arcsin ((p.Pref - p.c0) / p.A)) < p.potential θ := by
   have hA := p.A_pos
   set s := (p.Pref - p.c0) / p.A with hs
   have hs0 : 0 ≤ s := div_nonneg (by linarith) hA.le
   have hs1 : s < 1 := by rw [hs, div_lt_one hA]; linarith
   have ha0 : 0 ≤ Real.arcsin s := Real.arcsin_nonneg.mpr hs0
   have ha1 : Real.arcsin s < π / 2 := Real.arcsin_lt_pi_div_two.mpr hs1
-  have hlt : Real.arcsin s < π - Real.arcsin s := by linarith
-  obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope p.potential p.potentialDeriv hlt
+  obtain ⟨ξ, hξ, hslope⟩ := exists_hasDerivAt_eq_slope p.potential p.potentialDeriv hθ0
     (fun z _ => (p.hasDerivAt_potential z).continuousAt.continuousWithinAt)
     (fun z _ => p.hasDerivAt_potential z)
   have hsin : s < Real.sin ξ := by
@@ -161,7 +168,19 @@ variable (p : Params)
     rw [this]
     nlinarith
   rw [hslope] at hd
-  exact (div_pos_iff_of_pos_right (by linarith)).mp hd
+  have := (div_pos_iff_of_pos_right (by linarith)).mp hd
+  linarith
+
+/-- **The barrier is positive**: `U(π − arcsin s) − U(arcsin s) > 0` for `c₀ ≤ P_ref < c₀ + A`
+(`potential_lt_potential` at the saddle angle). -/
+@[tmio M, powerlib_domain] theorem potential_barrier_pos (h0 : p.c0 ≤ p.Pref)
+    (h1 : p.Pref < p.c0 + p.A) :
+    0 < p.potential (π - Real.arcsin ((p.Pref - p.c0) / p.A)) -
+      p.potential (Real.arcsin ((p.Pref - p.c0) / p.A)) := by
+  have hA := p.A_pos
+  have hs1 : (p.Pref - p.c0) / p.A < 1 := by rw [div_lt_one hA]; linarith
+  have ha1 : Real.arcsin ((p.Pref - p.c0) / p.A) < π / 2 := Real.arcsin_lt_pi_div_two.mpr hs1
+  exact sub_pos.mpr (p.potential_lt_potential h0 h1 (by linarith) le_rfl)
 
 /-- The swing energy is continuous. -/
 @[tmio M, powerlib_domain] theorem continuous_swingEnergy : Continuous p.swingEnergy := by

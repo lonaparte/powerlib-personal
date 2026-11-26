@@ -37,8 +37,11 @@ Model boundary.
   times (`theorem/Stochastic/AdditiveMarkov.lean`); for the two-state potential well below the
   level `H(x_u) − η` the bound is the boundary-level value `2D(ΔU − η)/σ_P²`, which also bounds
   the exit before a fixed time
-  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`); missing: the lower bound
-  for the mean exit time (strong Markov property at hitting times) and the exit place.
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`); the matching lower bound
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellLower.lean`), the three-state lower bound
+  (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellFilter.lean`) and the exit place of a cut
+  well (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellPlace.lean`); missing: the exit
+  from the basin of attraction and the law of `τ_ε/E τ_ε`.
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 3 §1–2 (additive noise; the action functional `½∫|u|²` of the controlled skeleton) and Ch. 4

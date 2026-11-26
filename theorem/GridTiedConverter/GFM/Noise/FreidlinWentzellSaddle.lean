@@ -20,8 +20,9 @@ Model boundary.
   proved: by the sup–inf of the rate over a compact set
   (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellExit.lean`) and, from the two-state
   potential well below the level `H(x_u) − η`, by `2D(ΔU − η)/σ_P²`, which tends to this saddle
-  value as `η → 0` (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`); the law
-  `ε log E τ → V` is not formalized.
+  value as `η → 0` (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellWell.lean`), with the
+  matching lower bound (`theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellLower.lean`); the
+  law `ε log E τ → V` for the exit through the saddle itself (the basin) is not formalized.
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 4 (the quasi-potential of the action functional is the escape exponent); the upper bounds

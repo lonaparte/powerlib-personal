@@ -8,6 +8,8 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import theorem.Dynamics.Calculus
 import theorem.Spectral.Global
 import theorem.Dynamics.DiffusiveSync
+import theorem.Dynamics.VariableRate
+import theorem.Dynamics.CascadeNode
 
 /-! # Andronov–Hopf virtual oscillator (AHO-VOC): no load, admittance load, oscillator networks
 
@@ -29,7 +31,9 @@ Model boundary.
 * Excluded: grid connections (infinite bus), line dynamics, dVOC power set-points
   (`K(κ) ≠ 0`) and mismatched rotations, filters, inner loops, PWM, delays.
 
-Source: work-sync `theory/T-voc-dvoc.md` §1.2, §1.3, §1.8; `theory/T-gfm-control.md` §1.5.
+Source: work-sync `theory/T-voc-dvoc.md` §1.2, §1.3, §1.5, §1.8; `theory/T-gfm-control.md` §1.5;
+D. G. Aronson, G. B. Ermentrout, N. Kopell, *Physica D* 41 (1990) 403–449 (two diffusively coupled
+Stuart–Landau oscillators: in-phase, anti-phase and unequal-amplitude states).
 
 Results.
 Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
@@ -57,9 +61,32 @@ Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
   (`network_disagreement_le`; exponential synchronization for `ηλ > c`); two units synchronize
   for `2ηw > c` (`two_disagreement_le`) and, with `κ_v > 0`, have the anti-phase periodic solution
   `±r e^{jω_s t}`, `r² = (c − 2ηw)/κ_v`, for `2ηw < c` (`two_antiPhase`): the threshold
-  `2ηw = c` is exact except at equality. Not formalized: almost-global synchronization with
-  power set-points (Colombino et al. 2019), which needs the set-point consistency and a Lyapunov
-  argument on the synchronous manifold with its unstable anti-phase equilibria.
+  `2ηw = c` is exact except at equality.
+* Two units below the threshold, the explicit reduction. Static: `networkField_twoLine`, the
+  derivatives of `R = Im(v₀ v̄₁) = ⟪j v₁, v₀⟫`, `D = ‖v₀ − v₁‖²`, `U = ‖v₀ + v₁‖²`,
+  `S = ‖v₀‖² + ‖v₁‖²` along the field (`two_inner_rot`: `Ṙ = λR`, `λ = 2c − κ_v S − 2ηw`;
+  `two_inner_sub`, `two_inner_add`, `two_inner_self`), and the in-line relative equilibria with
+  unequal amplitudes `((σ + δ) z, (σ − δ) z)`, `κ_v σ² = (c − 3ηw)/4`, `κ_v δ² = (c + ηw)/4`
+  (`two_networkField_mixed`, with `field_ofReal_mul_exp`). Trajectory level (private
+  implementation evidence, through `Dynamics.VariableRate`): for `κ_v ≥ 0` the in-line set
+  `Im(v₀ v̄₁) = 0` is invariant and off it `D(t) |R(0)| e^{2ηwt} ≤ D(0) |R(t)|`
+  (`two_sync_rate`); the amplitudes stay bounded (`two_normSq_le`). Almost-global
+  synchronization (`two_tendsto_of_inner_ne_zero`): with `κ_v > 0`, `ηw > 0` and every `c`,
+  every solution not starting on the in-line hypersurface `Im(v₀ v̄₁) = 0` (a closed
+  real-algebraic set of measure zero containing the anti-phase set) synchronizes exponentially.
+  Off the anti-phase set `v₀ = −v₁` itself: a solution starting off it never reaches it and
+  `D³/U` decays at the rate `4(3ηw − c)` (`two_offAntiPhase_rate`); for `κ_v > 0` and
+  `c ≤ 3ηw` every such solution synchronizes (`two_tendsto_of_add_ne_zero`, the Barbalat law
+  `Dynamics.VariableRate.tendsto_zero_of_hasDerivAt_le` on `Ψ = D³/U`, `Ψ' ≤ −κ_v D³`); for
+  `ηw ≥ 0` and `3ηw < c` the in-line oscillation `((σ + δ), (σ − δ)) e^{jω_s t}` is off the
+  anti-phase set and never synchronizes (`two_mixed`). So "for `2ηw < c` every solution not
+  starting on the anti-phase set synchronizes" holds exactly in the window `2ηw < c ≤ 3ηw`
+  (refuted for `c > 3ηw`); the exceptional set of the almost-global statement is the in-line
+  hypersurface for every `c`.
+* Not formalized: almost-global synchronization of the network with power set-points (Colombino
+  et al. 2019), which needs set-point consistency and a notion of set stability (the
+  synchronous manifold with its unstable anti-phase equilibria) that the library does not
+  have.
 
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
@@ -115,7 +142,8 @@ Corrections.
   the correct expression is `v̇/v = jω_s + η e_θ / v + η α (v*² − |v|²)` (`dvoc_complexFrequency`).
 * The dVOC control law of §1.3 differs from Colombino et al. 2019. The multi-converter statement
   formalized here is the set-point-free network (synchronization for `ηλ > c`, exact for two
-  units up to `2ηw = c`); §1.5's almost-global certificate with set-points is not formalized.
+  units up to `2ηw = c`; two units almost-globally for every `c`, off the anti-phase set exactly
+  for `c ≤ 3ηw`); §1.5's almost-global certificate with set-points is not formalized.
 -/
 
 noncomputable section
@@ -1094,6 +1122,542 @@ of `two_disagreement_le` is exact up to the boundary `2 η w = c`. -/
     have h2' : ∀ z : ℂ, -z - z = -(2 * z) := fun z => by ring
     rw [h2, h2', Complex.normSq_neg, Complex.normSq_mul, hnorm]
     norm_num
+    ring
+
+/-! ## Two units: the explicit reduction -/
+
+/-- The two-unit network: `v̇₀ = f(v₀) − ηw (v₀ − v₁)`, `v̇₁ = f(v₁) − ηw (v₁ − v₀)`. Static
+evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem networkField_twoLine (η w : ℝ) (V : Fin 2 → ℂ) :
+    a.networkField η (twoLine w) V 0 = a.field (V 0) - ((η * w : ℝ) : ℂ) * (V 0 - V 1) ∧
+      a.networkField η (twoLine w) V 1 = a.field (V 1) - ((η * w : ℝ) : ℂ) * (V 1 - V 0) := by
+  simp only [networkField, Dynamics.DiffusiveSync.netField, Fin.sum_univ_two, twoLine,
+    Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.empty_val', Matrix.cons_val_fin_one, Complex.real_smul]
+  push_cast
+  constructor <;> ring
+
+@[tmio T, powerlib_foundation] private theorem sq_norm' (z : ℂ) :
+    ‖z‖ ^ 2 = z.re ^ 2 + z.im ^ 2 := by
+  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]; ring
+
+/-- The derivative of `R = ⟪j v₁, v₀⟫ = Im(v₀ v̄₁)` along the two-unit field:
+`Ṙ = (2c − κ_v (‖v₀‖² + ‖v₁‖²) − 2ηw) R`. Static evidence on the model, not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem two_inner_rot (η w : ℝ) (V : Fin 2 → ℂ) :
+    inner ℝ (I * V 1) (a.networkField η (twoLine w) V 0) +
+        inner ℝ (I * a.networkField η (twoLine w) V 1) (V 0) =
+      (2 * a.c - a.κv * (‖V 0‖ ^ 2 + ‖V 1‖ ^ 2) - 2 * (η * w)) * inner ℝ (I * V 1) (V 0) := by
+  obtain ⟨h0, h1⟩ := a.networkField_twoLine η w V
+  rw [h0, h1]
+  simp only [Complex.inner, field, gain, sq_norm', Complex.normSq_apply,
+    Complex.mul_re, Complex.mul_im, Complex.sub_re, Complex.sub_im,
+    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+/-- The derivative of `D = ‖v₀ − v₁‖²` along the two-unit field:
+`Ḋ = (2c − κ_v (‖v₀‖² + ‖v₁‖²) − 4ηw) D − κ_v (‖v₀‖² − ‖v₁‖²)²`. Static evidence on the model, not
+a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem two_inner_sub (η w : ℝ) (V : Fin 2 → ℂ) :
+    2 * inner ℝ (V 0 - V 1) (a.networkField η (twoLine w) V 0 - a.networkField η (twoLine w) V 1) =
+      (2 * a.c - a.κv * (‖V 0‖ ^ 2 + ‖V 1‖ ^ 2) - 4 * (η * w)) * ‖V 0 - V 1‖ ^ 2 -
+        a.κv * (‖V 0‖ ^ 2 - ‖V 1‖ ^ 2) ^ 2 := by
+  obtain ⟨h0, h1⟩ := a.networkField_twoLine η w V
+  rw [h0, h1]
+  simp only [Complex.inner, field, gain, sq_norm', Complex.normSq_apply,
+    Complex.mul_re, Complex.mul_im, Complex.sub_re, Complex.sub_im,
+    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+/-- The derivative of `U = ‖v₀ + v₁‖²` along the two-unit field:
+`U̇ = (2c − κ_v (‖v₀‖² + ‖v₁‖²)) U − κ_v (‖v₀‖² − ‖v₁‖²)²`. Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem two_inner_add (η w : ℝ) (V : Fin 2 → ℂ) :
+    2 * inner ℝ (V 0 + V 1) (a.networkField η (twoLine w) V 0 + a.networkField η (twoLine w) V 1) =
+      (2 * a.c - a.κv * (‖V 0‖ ^ 2 + ‖V 1‖ ^ 2)) * ‖V 0 + V 1‖ ^ 2 -
+        a.κv * (‖V 0‖ ^ 2 - ‖V 1‖ ^ 2) ^ 2 := by
+  obtain ⟨h0, h1⟩ := a.networkField_twoLine η w V
+  rw [h0, h1]
+  simp only [Complex.inner, field, gain, sq_norm', Complex.normSq_apply,
+    Complex.mul_re, Complex.mul_im, Complex.sub_re, Complex.sub_im,
+    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+/-- The derivative of `S = ‖v₀‖² + ‖v₁‖²` along the two-unit field:
+`Ṡ = 2cS − 2κ_v (‖v₀‖⁴ + ‖v₁‖⁴) − 2ηw ‖v₀ − v₁‖²`. Static evidence on the model, not a connection
+conclusion. -/
+@[tmio M, powerlib_domain] theorem two_inner_self (η w : ℝ) (V : Fin 2 → ℂ) :
+    2 * inner ℝ (V 0) (a.networkField η (twoLine w) V 0) +
+        2 * inner ℝ (V 1) (a.networkField η (twoLine w) V 1) =
+      2 * a.c * (‖V 0‖ ^ 2 + ‖V 1‖ ^ 2) - 2 * a.κv * ((‖V 0‖ ^ 2) ^ 2 + (‖V 1‖ ^ 2) ^ 2) -
+        2 * (η * w) * ‖V 0 - V 1‖ ^ 2 := by
+  obtain ⟨h0, h1⟩ := a.networkField_twoLine η w V
+  rw [h0, h1]
+  simp only [Complex.inner, field, gain, sq_norm', Complex.normSq_apply,
+    Complex.mul_re, Complex.mul_im, Complex.sub_re, Complex.sub_im,
+    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+
+variable {a}
+
+/-- Along a solution of the two-unit network, the derivatives of the reduction quantities. -/
+@[tmio TM, powerlib_domain] private theorem two_derivs {η w : ℝ} {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) (t : ℝ) :
+    let F := a.networkField η (twoLine w) (X t)
+    HasDerivAt (fun s => ‖X s 0 - X s 1‖ ^ 2) (2 * inner ℝ (X t 0 - X t 1) (F 0 - F 1)) t ∧
+    HasDerivAt (fun s => ‖X s 0 + X s 1‖ ^ 2) (2 * inner ℝ (X t 0 + X t 1) (F 0 + F 1)) t ∧
+    HasDerivAt (fun s => ‖X s 0‖ ^ 2 + ‖X s 1‖ ^ 2)
+      (2 * inner ℝ (X t 0) (F 0) + 2 * inner ℝ (X t 1) (F 1)) t ∧
+    HasDerivAt (fun s => inner ℝ (I * X s 1) (X s 0))
+      (inner ℝ (I * X t 1) (F 0) + inner ℝ (I * F 1) (X t 0)) t := by
+  intro F
+  have h0 : HasDerivAt (fun s => X s 0) (F 0) t := hasDerivAt_pi.mp (hX t) 0
+  have h1 : HasDerivAt (fun s => X s 1) (F 1) t := hasDerivAt_pi.mp (hX t) 1
+  refine ⟨(h0.sub h1).norm_sq, (h0.add h1).norm_sq, h0.norm_sq.add h1.norm_sq, ?_⟩
+  exact (h1.const_mul I).inner ℝ h0
+
+@[tmio TM, powerlib_domain] private theorem two_continuous {η w : ℝ} {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) :
+    Continuous fun t => ‖X t 0‖ ^ 2 + ‖X t 1‖ ^ 2 := by
+  have hc : Continuous X := continuous_iff_continuousAt.mpr fun t => (hX t).continuousAt
+  have h0 : Continuous fun t => X t 0 := (continuous_apply 0).comp hc
+  have h1 : Continuous fun t => X t 1 := (continuous_apply 1).comp hc
+  fun_prop
+
+/-- `‖v₀ − v₁‖² ≤ 2 (‖v₀‖² + ‖v₁‖²)`, `‖v₀ + v₁‖² ≤ 2 (‖v₀‖² + ‖v₁‖²)`,
+`(‖v₀‖² − ‖v₁‖²)² ≤ ‖v₀ + v₁‖² ‖v₀ − v₁‖²`. -/
+@[tmio T, powerlib_foundation] private theorem two_norm_facts (x y : ℂ) :
+    ‖x - y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) ∧ ‖x + y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) ∧
+      (‖x‖ ^ 2 - ‖y‖ ^ 2) ^ 2 ≤ ‖x + y‖ ^ 2 * ‖x - y‖ ^ 2 ∧
+      ‖x + y‖ ^ 2 + ‖x - y‖ ^ 2 = 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) := by
+  have hpar : ‖x + y‖ ^ 2 + ‖x - y‖ ^ 2 = 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) := by
+    simp only [sq_norm']; simp only [Complex.add_re, Complex.add_im, Complex.sub_re,
+      Complex.sub_im]; ring
+  have hin : inner ℝ (x + y) (x - y) = ‖x‖ ^ 2 - ‖y‖ ^ 2 := by
+    rw [Complex.inner]; simp only [sq_norm', Complex.mul_re, Complex.conj_re, Complex.conj_im,
+      Complex.add_re, Complex.add_im, Complex.sub_re, Complex.sub_im]; ring
+  have hcs := abs_real_inner_le_norm (x + y) (x - y)
+  rw [hin] at hcs
+  refine ⟨by nlinarith [sq_nonneg ‖x + y‖], by nlinarith [sq_nonneg ‖x - y‖], ?_, hpar⟩
+  have := mul_self_le_mul_self (abs_nonneg _) hcs
+  rw [← sq, sq_abs] at this
+  nlinarith [this]
+
+/-- **Two units, the amplitudes stay bounded** (implementation evidence: trajectory level). With
+`κ_v > 0`, `‖v₀‖² + ‖v₁‖² ≤ max (‖v₀(0)‖² + ‖v₁(0)‖²) ((2c + 4|ηw| + 1)²/(4κ_v))` on `[0, ∞)`. -/
+@[tmio TM, powerlib_domain] private theorem two_normSq_le (hκ : 0 < a.κv) {η w : ℝ}
+    {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) {t : ℝ} (ht : 0 ≤ t) :
+    ‖X t 0‖ ^ 2 + ‖X t 1‖ ^ 2 ≤ max (‖X 0 0‖ ^ 2 + ‖X 0 1‖ ^ 2)
+      ((2 * a.c + 4 * |η * w| + 1) ^ 2 / (4 * a.κv)) := by
+  have hb := Dynamics.le_max_of_hasDerivWithinAt_le (a := 1)
+    (b := (2 * a.c + 4 * |η * w| + 1) ^ 2 / (4 * a.κv)) (t₀ := 0) (t₁ := t) one_pos
+    (two_continuous hX).continuousOn (fun s _ => ((two_derivs hX s).2.2.1).hasDerivWithinAt)
+    (fun s _ => ?_) t ⟨ht, le_rfl⟩
+  · simpa using hb
+  · rw [a.two_inner_self η w (X s)]
+    obtain ⟨hD, -, -, -⟩ := two_norm_facts (X s 0) (X s 1)
+    set S := ‖X s 0‖ ^ 2 + ‖X s 1‖ ^ 2
+    have hS2 : S ^ 2 ≤ 2 * ((‖X s 0‖ ^ 2) ^ 2 + (‖X s 1‖ ^ 2) ^ 2) := by
+      nlinarith [sq_nonneg (‖X s 0‖ ^ 2 - ‖X s 1‖ ^ 2)]
+    have hg : -(2 * (η * w) * ‖X s 0 - X s 1‖ ^ 2) ≤ 4 * |η * w| * S := by
+      have h1 : -(η * w) ≤ |η * w| := neg_le_abs _
+      have h2 : 0 ≤ ‖X s 0 - X s 1‖ ^ 2 := sq_nonneg _
+      nlinarith [abs_nonneg (η * w)]
+    have hsq : 0 ≤ a.κv * (S - (2 * a.c + 4 * |η * w| + 1) / (2 * a.κv)) ^ 2 :=
+      mul_nonneg hκ.le (sq_nonneg _)
+    have hexp : a.κv * (S - (2 * a.c + 4 * |η * w| + 1) / (2 * a.κv)) ^ 2 =
+        a.κv * S ^ 2 - (2 * a.c + 4 * |η * w| + 1) * S +
+          (2 * a.c + 4 * |η * w| + 1) ^ 2 / (4 * a.κv) := by
+      field_simp; ring
+    nlinarith [mul_le_mul_of_nonneg_left hS2 hκ.le]
+
+
+/-- **Two units, relative synchronization off the in-line set** (implementation evidence:
+trajectory level). With `κ_v ≥ 0`, along every global solution the quantity
+`R = Im(v₀ v̄₁) = ⟪j v₁, v₀⟫` obeys `Ṙ = λ R` and the squared difference `D = ‖v₀ − v₁‖²` obeys
+`Ḋ ≤ (λ − 2ηw) D` with the same rate `λ = 2c − κ_v (‖v₀‖² + ‖v₁‖²) − 2ηw`: so
+`D(t) |R(0)| e^{2ηwt} ≤ D(0) |R(t)|`, and `R(t) ≠ 0` when `R(0) ≠ 0` (the set `Im(v₀ v̄₁) = 0`,
+where the two phasors are in line, is invariant, and so is its complement). -/
+@[tmio TM, powerlib_domain] private theorem two_sync_rate (hκ : 0 ≤ a.κv) {η w : ℝ}
+    {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) {t : ℝ} (ht : 0 ≤ t) :
+    ‖X t 0 - X t 1‖ ^ 2 * |inner ℝ (I * X 0 1) (X 0 0)| * Real.exp (2 * (η * w) * t) ≤
+        ‖X 0 0 - X 0 1‖ ^ 2 * |inner ℝ (I * X t 1) (X t 0)| ∧
+      (inner ℝ (I * X 0 1) (X 0 0) ≠ 0 → inner ℝ (I * X t 1) (X t 0) ≠ 0) := by
+  set lam : ℝ → ℝ := fun s => 2 * a.c - a.κv * (‖X s 0‖ ^ 2 + ‖X s 1‖ ^ 2) - 2 * (η * w)
+  have hlam : Continuous lam := by
+    have := two_continuous hX; fun_prop
+  have hR := Dynamics.VariableRate.eq_mul_exp_integral
+    (g := fun s => inner ℝ (I * X s 1) (X s 0)) hlam
+    (fun s _ => (two_derivs hX s).2.2.2) (fun s _ => a.two_inner_rot η w (X s)) ht
+  have hD := Dynamics.VariableRate.le_mul_exp_integral
+    (g := fun s => ‖X s 0 - X s 1‖ ^ 2 * Real.exp (2 * (η * w) * s)) hlam
+    (fun s _ => (two_derivs hX s).1.mul
+      (((hasDerivAt_id s).const_mul (2 * (η * w))).exp)) (fun s _ => ?_) ht
+  · simp only [mul_zero, Real.exp_zero, mul_one] at hD
+    refine ⟨?_, fun h0 => by rw [hR]; exact mul_ne_zero h0 (Real.exp_pos _).ne'⟩
+    rw [hR, abs_mul, abs_of_pos (Real.exp_pos _)]
+    have := mul_le_mul_of_nonneg_right hD (abs_nonneg (inner ℝ (I * X 0 1) (X 0 0)))
+    nlinarith [this]
+  · simp only [id, mul_one]
+    have h := a.two_inner_sub η w (X s)
+    have hpos := Real.exp_pos (2 * (η * w) * s)
+    have hQ : 0 ≤ a.κv * (‖X s 0‖ ^ 2 - ‖X s 1‖ ^ 2) ^ 2 := mul_nonneg hκ (sq_nonneg _)
+    simp only [lam]
+    nlinarith [mul_le_mul_of_nonneg_right
+      (show 2 * inner ℝ (X s 0 - X s 1) (a.networkField η (twoLine w) (X s) 0 -
+        a.networkField η (twoLine w) (X s) 1) + 2 * (η * w) * ‖X s 0 - X s 1‖ ^ 2 ≤
+        (2 * a.c - a.κv * (‖X s 0‖ ^ 2 + ‖X s 1‖ ^ 2) - 2 * (η * w)) * ‖X s 0 - X s 1‖ ^ 2
+        by linarith) hpos.le]
+
+/-- `W(X) = 2 ‖X₀ − X₁‖²` for two units. -/
+@[tmio T, powerlib_foundation] private theorem two_disagreement_eq (V : Fin 2 → ℂ) :
+    Dynamics.DiffusiveSync.disagreement V = 2 * ‖V 0 - V 1‖ ^ 2 := by
+  simp only [Dynamics.DiffusiveSync.disagreement, Fin.sum_univ_two, sub_self, norm_zero]
+  rw [← neg_sub (V 0) (V 1), norm_neg]
+  ring
+
+/-- **Two units, almost-global synchronization** (implementation evidence: trajectory level).
+With `κ_v > 0` and `ηw > 0`, for every `c` (also where the anti-phase oscillation of
+`two_antiPhase` exists), every global solution that does not start on the invariant in-line set
+`Im(v₀ v̄₁) = 0` synchronizes exponentially: `W(t) ≤ W(0) S_max e^{−2ηwt}/|Im(v₀ v̄₁)(0)| → 0`,
+`S_max` the amplitude bound of `two_normSq_le`. The exceptional set is a proper real-algebraic
+hypersurface of `ℂ²`, of measure zero. -/
+@[tmio TM, powerlib_domain] private theorem two_tendsto_of_inner_ne_zero (hκ : 0 < a.κv) {η w : ℝ}
+    (hηw : 0 < η * w)
+    {X : ℝ → Fin 2 → ℂ} (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t)
+    (hR : inner ℝ (I * X 0 1) (X 0 0) ≠ 0) :
+    Tendsto (fun t => Dynamics.DiffusiveSync.disagreement (X t)) atTop (𝓝 0) := by
+  set Smax := max (‖X 0 0‖ ^ 2 + ‖X 0 1‖ ^ 2) ((2 * a.c + 4 * |η * w| + 1) ^ 2 / (4 * a.κv))
+  set C := 2 * (‖X 0 0 - X 0 1‖ ^ 2 * Smax / |inner ℝ (I * X 0 1) (X 0 0)|)
+  have hR0 : 0 < |inner ℝ (I * X 0 1) (X 0 0)| := abs_pos.mpr hR
+  have hbound : ∀ t, 0 ≤ t → Dynamics.DiffusiveSync.disagreement (X t) ≤
+      C * Real.exp (-(2 * (η * w)) * t) := by
+    intro t ht
+    rw [two_disagreement_eq]
+    have h1 := (two_sync_rate hκ.le hX ht).1
+    have h2 : |inner ℝ (I * X t 1) (X t 0)| ≤ Smax := by
+      have hcs := abs_real_inner_le_norm (I * X t 1) (X t 0)
+      rw [norm_mul, Complex.norm_I, one_mul] at hcs
+      have := two_normSq_le hκ hX ht
+      nlinarith [sq_nonneg (‖X t 1‖ - ‖X t 0‖), norm_nonneg (X t 0), norm_nonneg (X t 1)]
+    have hE : Real.exp (-(2 * (η * w)) * t) * Real.exp (2 * (η * w) * t) = 1 := by
+      rw [← Real.exp_add]; simp
+    have hEpos := Real.exp_pos (2 * (η * w) * t)
+    have hEpos' := Real.exp_pos (-(2 * (η * w)) * t)
+    have h3 : ‖X t 0 - X t 1‖ ^ 2 * |inner ℝ (I * X 0 1) (X 0 0)| ≤
+        ‖X 0 0 - X 0 1‖ ^ 2 * Smax * Real.exp (-(2 * (η * w)) * t) := by
+      have h4 := mul_le_mul_of_nonneg_right h1 hEpos'.le
+      rw [mul_assoc (‖X t 0 - X t 1‖ ^ 2 * _), mul_comm (Real.exp _) (Real.exp _), hE,
+        mul_one] at h4
+      refine h4.trans ?_
+      gcongr
+    have h5 : ‖X t 0 - X t 1‖ ^ 2 ≤ ‖X 0 0 - X 0 1‖ ^ 2 * Smax *
+        Real.exp (-(2 * (η * w)) * t) / |inner ℝ (I * X 0 1) (X 0 0)| := by
+      rw [le_div_iff₀ hR0]; exact h3
+    calc 2 * ‖X t 0 - X t 1‖ ^ 2 ≤ 2 * (‖X 0 0 - X 0 1‖ ^ 2 * Smax *
+          Real.exp (-(2 * (η * w)) * t) / |inner ℝ (I * X 0 1) (X 0 0)|) := by linarith
+      _ = C * Real.exp (-(2 * (η * w)) * t) := by simp only [C]; ring
+  have hexp : Tendsto (fun t => C * Real.exp (-(2 * (η * w)) * t)) atTop (𝓝 0) := by
+    have : Tendsto (fun t => Real.exp (-(2 * (η * w)) * t)) atTop (𝓝 0) :=
+      Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atTop_of_neg (by linarith))
+    simpa using this.const_mul C
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hexp ?_ ?_
+  · exact Eventually.of_forall fun t => by
+      rw [two_disagreement_eq]; positivity
+  · exact eventually_atTop.mpr ⟨0, hbound⟩
+
+
+/-- Along a global solution with `v₀(0) + v₁(0) ≠ 0` (off the anti-phase set) and `κ_v ≥ 0`, the
+sum `U = ‖v₀ + v₁‖²` stays positive, and `Ψ = D³/U` (`D = ‖v₀ − v₁‖²`) obeys
+`Ψ' ≤ −4(3ηw − c) Ψ − κ_v D³` on `[0, ∞)`. -/
+@[tmio TM, powerlib_domain] private theorem two_psi (hκ : 0 ≤ a.κv) {η w : ℝ} {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t)
+    (hs : X 0 0 + X 0 1 ≠ 0) :
+    (∀ t, 0 ≤ t → 0 < ‖X t 0 + X t 1‖ ^ 2) ∧
+      ∀ t, 0 ≤ t → ∃ Ψ', HasDerivAt (fun s => (‖X s 0 - X s 1‖ ^ 2) ^ 3 / ‖X s 0 + X s 1‖ ^ 2)
+        Ψ' t ∧ Ψ' ≤ -(4 * (3 * (η * w) - a.c)) *
+          ((‖X t 0 - X t 1‖ ^ 2) ^ 3 / ‖X t 0 + X t 1‖ ^ 2) - a.κv * (‖X t 0 - X t 1‖ ^ 2) ^ 3 := by
+  have hcont := two_continuous hX
+  have hc : Continuous X := continuous_iff_continuousAt.mpr fun t => (hX t).continuousAt
+  have h0c : Continuous fun t => X t 0 := (continuous_apply 0).comp hc
+  have h1c : Continuous fun t => X t 1 := (continuous_apply 1).comp hc
+  set mu : ℝ → ℝ := fun s => 2 * a.c - a.κv * (‖X s 0‖ ^ 2 + ‖X s 1‖ ^ 2) -
+    a.κv * ‖X s 0 - X s 1‖ ^ 2
+  have hmu : Continuous mu := by fun_prop
+  have hU : ∀ t, 0 ≤ t → 0 < ‖X t 0 + X t 1‖ ^ 2 := by
+    intro t ht
+    have h := Dynamics.VariableRate.mul_exp_integral_le (g := fun s => ‖X s 0 + X s 1‖ ^ 2) hmu
+      (fun s _ => (two_derivs hX s).2.1) (fun s _ => ?_) ht
+    · have h0 : 0 < ‖X 0 0 + X 0 1‖ ^ 2 := by positivity
+      exact lt_of_lt_of_le (mul_pos h0 (Real.exp_pos _)) h
+    · rw [a.two_inner_add η w (X s)]
+      obtain ⟨-, -, hQ, -⟩ := two_norm_facts (X s 0) (X s 1)
+      simp only [mu]
+      nlinarith [mul_le_mul_of_nonneg_left hQ hκ]
+  refine ⟨hU, fun t ht => ?_⟩
+  obtain ⟨hD, hUd, -, -⟩ := two_derivs hX t
+  have hUt := hU t ht
+  refine ⟨_, (hD.pow 3).div hUd hUt.ne', ?_⟩
+  rw [a.two_inner_sub η w (X t), a.two_inner_add η w (X t)]
+  obtain ⟨-, -, hQ, hpar⟩ := two_norm_facts (X t 0) (X t 1)
+  set D := ‖X t 0 - X t 1‖ ^ 2
+  set U := ‖X t 0 + X t 1‖ ^ 2
+  set Q := (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2) ^ 2
+  set S := ‖X t 0‖ ^ 2 + ‖X t 1‖ ^ 2
+  have hD0 : 0 ≤ D := sq_nonneg _
+  have hQ0 : 0 ≤ Q := sq_nonneg _
+  have key : 3 * ((2 * a.c - a.κv * S - 4 * (η * w)) * D - a.κv * Q) * U -
+      D * ((2 * a.c - a.κv * S) * U - a.κv * Q) ≤
+        -(4 * (3 * (η * w) - a.c)) * U * D - a.κv * U ^ 2 * D := by
+    have e : 2 * S = U + D := by linarith
+    have h1 : a.κv * D * Q ≤ a.κv * D * (U * D) := mul_le_mul_of_nonneg_left hQ (mul_nonneg hκ hD0)
+    have h2 : 0 ≤ a.κv * U * Q := mul_nonneg (mul_nonneg hκ hUt.le) hQ0
+    have expand : 3 * ((2 * a.c - a.κv * S - 4 * (η * w)) * D - a.κv * Q) * U -
+        D * ((2 * a.c - a.κv * S) * U - a.κv * Q) -
+          (-(4 * (3 * (η * w) - a.c)) * U * D - a.κv * U ^ 2 * D) =
+        -a.κv * U * D ^ 2 - 3 * (a.κv * U * Q) + a.κv * D * Q -
+          a.κv * U * D * (2 * S - U - D) := by ring
+    have hz : 2 * S - U - D = 0 := by linarith
+    rw [hz, mul_zero, sub_zero] at expand
+    nlinarith [expand, h1, h2]
+  rw [div_le_iff₀ (by positivity)]
+  have hD2 : 0 ≤ D ^ 2 := sq_nonneg _
+  have e2 : (-(4 * (3 * (η * w) - a.c)) * (D ^ 3 / U) - a.κv * D ^ 3) * U ^ 2 =
+      D ^ 2 * (-(4 * (3 * (η * w) - a.c)) * U * D - a.κv * U ^ 2 * D) := by
+    field_simp
+  rw [e2]
+  have := mul_le_mul_of_nonneg_left key hD2
+  norm_num
+  have hD3 : (‖X t 0 - X t 1‖ ^ 2) ^ 3 = D ^ 3 := rfl
+  rw [hD3]
+  nlinarith [this]
+
+/-- **Two units, the anti-phase complement** (implementation evidence: trajectory level). With
+`κ_v ≥ 0`, every global solution with `v₀(0) + v₁(0) ≠ 0` never reaches the anti-phase set
+(`v₀ + v₁ ≠ 0` for `t ≥ 0`) and satisfies
+`‖v₀ − v₁‖⁶ ‖v₀(0) + v₁(0)‖² e^{4(3ηw − c)t} ≤ ‖v₀(0) − v₁(0)‖⁶ ‖v₀ + v₁‖²`: for `c < 3ηw` the
+difference decays exponentially relative to the sum. -/
+@[tmio TM, powerlib_domain] private theorem two_offAntiPhase_rate (hκ : 0 ≤ a.κv) {η w : ℝ}
+    {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t)
+    (hs : X 0 0 + X 0 1 ≠ 0) {t : ℝ} (ht : 0 ≤ t) :
+    X t 0 + X t 1 ≠ 0 ∧
+      (‖X t 0 - X t 1‖ ^ 2) ^ 3 * ‖X 0 0 + X 0 1‖ ^ 2 *
+          Real.exp (4 * (3 * (η * w) - a.c) * t) ≤
+        (‖X 0 0 - X 0 1‖ ^ 2) ^ 3 * ‖X t 0 + X t 1‖ ^ 2 := by
+  obtain ⟨hU, hΨ⟩ := two_psi hκ hX hs
+  have hUt := hU t ht
+  refine ⟨fun h => by rw [h, norm_zero] at hUt; simp at hUt, ?_⟩
+  set r := 4 * (3 * (η * w) - a.c)
+  choose! Ψ' hΨd hΨle using hΨ
+  have hg := Dynamics.VariableRate.le_mul_exp_integral
+    (g := fun s => (‖X s 0 - X s 1‖ ^ 2) ^ 3 / ‖X s 0 + X s 1‖ ^ 2 * Real.exp (r * s))
+    (g' := fun s => Ψ' s * Real.exp (r * s) + (‖X s 0 - X s 1‖ ^ 2) ^ 3 / ‖X s 0 + X s 1‖ ^ 2 *
+      (Real.exp (r * s) * r))
+    (lam := fun _ => 0) continuous_const
+    (fun s hs => by
+      have := (hΨd s hs).fun_mul ((hasDerivAt_id s).const_mul r).exp
+      simpa using this) (fun s hs => ?_) ht
+  · simp only [intervalIntegral.integral_zero, Real.exp_zero, mul_one, mul_zero] at hg
+    have hU0 := hU 0 le_rfl
+    rw [div_mul_eq_mul_div, div_le_div_iff₀ hUt hU0] at hg
+    nlinarith [hg]
+  · have h1 := hΨle s hs
+    have hE := Real.exp_pos (r * s)
+    have hD3 : 0 ≤ a.κv * (‖X s 0 - X s 1‖ ^ 2) ^ 3 := mul_nonneg hκ (by positivity)
+    simp only [zero_mul]
+    nlinarith [mul_le_mul_of_nonneg_right h1 hE.le]
+
+/-- **Two units, synchronization off the anti-phase set** (implementation evidence: trajectory
+level). With `κ_v > 0` and `c ≤ 3ηw`, every global solution that does not start on the anti-phase
+set `v₀ = −v₁` synchronizes, `W(t) → 0`: `Ψ = D³/U` is nonincreasing with `Ψ' ≤ −κ_v D³`, so `D³`
+is integrable on `[0, ∞)`, and `D³` has a derivative bounded below on the bounded solution
+(`Dynamics.VariableRate.tendsto_zero_of_hasDerivAt_le`). -/
+@[tmio TM, powerlib_domain] private theorem two_tendsto_of_add_ne_zero (hκ : 0 < a.κv) {η w : ℝ}
+    (hc : a.c ≤ 3 * (η * w)) {X : ℝ → Fin 2 → ℂ}
+    (hX : ∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t)
+    (hs : X 0 0 + X 0 1 ≠ 0) :
+    Tendsto (fun t => Dynamics.DiffusiveSync.disagreement (X t)) atTop (𝓝 0) := by
+  obtain ⟨hU, hΨ⟩ := two_psi hκ.le hX hs
+  choose! Ψ' hΨd hΨle using hΨ
+  set Smax := max (‖X 0 0‖ ^ 2 + ‖X 0 1‖ ^ 2) ((2 * a.c + 4 * |η * w| + 1) ^ 2 / (4 * a.κv))
+  have hS0 : 0 ≤ Smax := le_max_of_le_left (by positivity)
+  set K := (2 * |a.c| + a.κv * Smax + 4 * |η * w|) * (2 * Smax) + a.κv * Smax ^ 2
+  have hK : 0 ≤ K := by positivity
+  have hD3 : Tendsto (fun t => (‖X t 0 - X t 1‖ ^ 2) ^ 3) atTop (𝓝 0) := by
+    refine Dynamics.VariableRate.tendsto_zero_of_hasDerivAt_le (k := a.κv)
+      (L := 3 * (2 * Smax) ^ 2 * K) hκ hΨd (fun t ht => ?_) (fun t ht => ?_)
+      (fun t _ => ((two_derivs hX t).1.pow 3)) (fun t _ => by positivity) (fun t ht => ?_)
+    · have h1 := hΨle t ht
+      have h2 : 0 ≤ 4 * (3 * (η * w) - a.c) *
+          ((‖X t 0 - X t 1‖ ^ 2) ^ 3 / ‖X t 0 + X t 1‖ ^ 2) :=
+        mul_nonneg (by linarith) (div_nonneg (by positivity) (hU t ht).le)
+      linarith
+    · exact div_nonneg (by positivity) (hU t ht).le
+    · rw [a.two_inner_sub η w (X t)]
+      obtain ⟨hDle, -, -, -⟩ := two_norm_facts (X t 0) (X t 1)
+      have hSt : ‖X t 0‖ ^ 2 + ‖X t 1‖ ^ 2 ≤ Smax := two_normSq_le hκ hX ht
+      set D := ‖X t 0 - X t 1‖ ^ 2
+      set S := ‖X t 0‖ ^ 2 + ‖X t 1‖ ^ 2
+      have hD0 : 0 ≤ D := sq_nonneg _
+      have hS : 0 ≤ S := by positivity
+      have hDS : D ≤ 2 * Smax := by linarith
+      have hQ : (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2) ^ 2 ≤ Smax ^ 2 := by
+        have h1 : |‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2| ≤ Smax := by
+          rw [abs_le]; constructor <;> nlinarith [sq_nonneg ‖X t 0‖, sq_nonneg ‖X t 1‖]
+        nlinarith [sq_abs (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2), abs_nonneg (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2)]
+      have hA : |2 * a.c - a.κv * S - 4 * (η * w)| ≤ 2 * |a.c| + a.κv * Smax + 4 * |η * w| := by
+        have h1 : |2 * a.c - a.κv * S - 4 * (η * w)| ≤
+            |2 * a.c| + |a.κv * S| + |4 * (η * w)| := by
+          have := abs_sub (2 * a.c - a.κv * S) (4 * (η * w))
+          have := abs_sub (2 * a.c) (a.κv * S)
+          linarith
+        have h2 : |(2 : ℝ) * a.c| = 2 * |a.c| := by rw [abs_mul, abs_two]
+        have h3 : |a.κv * S| = a.κv * S := abs_of_nonneg (mul_nonneg hκ.le hS)
+        have h4 : |(4 : ℝ) * (η * w)| = 4 * |η * w| := by
+          rw [abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 4)]
+        rw [h2, h3, h4] at h1
+        nlinarith [mul_le_mul_of_nonneg_left hSt hκ.le]
+      have hDd : -K ≤ (2 * a.c - a.κv * S - 4 * (η * w)) * D -
+          a.κv * (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2) ^ 2 := by
+        have h1 : -(2 * |a.c| + a.κv * Smax + 4 * |η * w|) * (2 * Smax) ≤
+            (2 * a.c - a.κv * S - 4 * (η * w)) * D := by
+          have := neg_abs_le (2 * a.c - a.κv * S - 4 * (η * w))
+          have h2 : -(2 * |a.c| + a.κv * Smax + 4 * |η * w|) ≤ 2 * a.c - a.κv * S - 4 * (η * w) :=
+            by linarith
+          have h3 : 0 ≤ 2 * |a.c| + a.κv * Smax + 4 * |η * w| := by positivity
+          nlinarith
+        have h4 : a.κv * (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2) ^ 2 ≤ a.κv * Smax ^ 2 :=
+          mul_le_mul_of_nonneg_left hQ hκ.le
+        simp only [K]
+        linarith
+      have hD2 : D ^ 2 ≤ (2 * Smax) ^ 2 := pow_le_pow_left₀ hD0 hDS 2
+      push_cast
+      nlinarith [mul_le_mul_of_nonneg_right hD2 hK, mul_nonneg (sq_nonneg D) (by linarith : 0 ≤
+        (2 * a.c - a.κv * S - 4 * (η * w)) * D - a.κv * (‖X t 0‖ ^ 2 - ‖X t 1‖ ^ 2) ^ 2 + K)]
+  have hD : Tendsto (fun t => ‖X t 0 - X t 1‖ ^ 2) atTop (𝓝 0) := by
+    rw [Metric.tendsto_atTop] at hD3 ⊢
+    intro ε hε
+    obtain ⟨T, hT⟩ := hD3 (ε ^ 3) (by positivity)
+    refine ⟨T, fun t ht => ?_⟩
+    have h1 := hT t ht
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)] at h1 ⊢
+    by_contra h
+    push Not at h
+    have := pow_le_pow_left₀ hε.le h 3
+    linarith
+  simpa [two_disagreement_eq] using hD.const_mul 2
+
+
+/-- On a phasor `ρ e^{jθ}` of real amplitude `ρ` the node field is the multiplication by
+`j ω_s + c − κ_v ρ²`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem field_ofReal_mul_exp (a : AHO) (ρ θ : ℝ) :
+    a.field ((ρ : ℂ) * exp (θ * I)) =
+      (I * a.ωs + ((a.c - a.κv * ρ ^ 2 : ℝ) : ℂ)) * ((ρ : ℂ) * exp (θ * I)) := by
+  rw [field, gain, Complex.normSq_mul, Complex.normSq_ofReal, Complex.normSq_eq_norm_sq,
+    Complex.norm_exp_ofReal_mul_I]
+  congr 3
+  ring
+
+/-- **Two units, the in-line relative equilibria with unequal amplitudes.** With
+`κ_v σ² = (c − 3ηw)/4` and `κ_v δ² = (c + ηw)/4` the pair `((σ + δ) z, (σ − δ) z)`, `|z| = 1`, is
+rotated by the network field at the rate `ω_s`: `F = j ω_s (v₀, v₁)`. Static evidence on the model,
+not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem two_networkField_mixed (a : AHO) {η w σ δ : ℝ}
+    (hσ : a.κv * σ ^ 2 = (a.c - 3 * (η * w)) / 4) (hδ : a.κv * δ ^ 2 = (a.c + η * w) / 4)
+    (θ : ℝ) :
+    a.networkField η (twoLine w)
+        ![((σ + δ : ℝ) : ℂ) * exp (θ * I), ((σ - δ : ℝ) : ℂ) * exp (θ * I)] =
+      ![I * a.ωs * (((σ + δ : ℝ) : ℂ) * exp (θ * I)),
+        I * a.ωs * (((σ - δ : ℝ) : ℂ) * exp (θ * I))] := by
+  obtain ⟨h0, h1⟩ := a.networkField_twoLine η w
+    ![((σ + δ : ℝ) : ℂ) * exp (θ * I), ((σ - δ : ℝ) : ℂ) * exp (θ * I)]
+  have e0 : (a.c - a.κv * (σ + δ) ^ 2) * (σ + δ) - 2 * (η * w) * δ = 0 := by
+    linear_combination (-(σ + 3 * δ)) * hσ + (-(3 * σ + δ)) * hδ
+  have e1 : (a.c - a.κv * (σ - δ) ^ 2) * (σ - δ) + 2 * (η * w) * δ = 0 := by
+    linear_combination (-(σ - 3 * δ)) * hσ + (-(3 * σ - δ)) * hδ
+  ext k
+  fin_cases k
+  · simp only [Fin.zero_eta, Matrix.cons_val_zero, Matrix.cons_val_one] at h0 ⊢
+    rw [h0, field_ofReal_mul_exp]
+    have : ((a.c - a.κv * (σ + δ) ^ 2 : ℝ) : ℂ) * ((σ + δ : ℝ) : ℂ) -
+        ((η * w : ℝ) : ℂ) * (((σ + δ : ℝ) : ℂ) - ((σ - δ : ℝ) : ℂ)) = 0 := by
+      have := congrArg (fun r : ℝ => (r : ℂ)) e0
+      push_cast at this ⊢
+      linear_combination this
+    linear_combination exp (θ * I) * this
+  · simp only [Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_zero] at h1 ⊢
+    rw [h1, field_ofReal_mul_exp]
+    have : ((a.c - a.κv * (σ - δ) ^ 2 : ℝ) : ℂ) * ((σ - δ : ℝ) : ℂ) -
+        ((η * w : ℝ) : ℂ) * (((σ - δ : ℝ) : ℂ) - ((σ + δ : ℝ) : ℂ)) = 0 := by
+      have := congrArg (fun r : ℝ => (r : ℂ)) e1
+      push_cast at this ⊢
+      linear_combination this
+    linear_combination exp (θ * I) * this
+
+/-- **Two units, an unequal-amplitude oscillation off the anti-phase set** (implementation
+evidence: trajectory level). With `κ_v > 0`, `ηw ≥ 0` and `3ηw < c`, the pair
+`v₀ = (σ + δ) e^{jω_s t}`, `v₁ = (σ − δ) e^{jω_s t}`, `σ = √((c − 3ηw)/(4κ_v)) > 0`,
+`δ = √((c + ηw)/(4κ_v)) > 0`, is a global solution with `v₀ + v₁ = 2σ e^{jω_s t} ≠ 0` and constant
+disagreement `W = 2(c + ηw)/κ_v > 0`: it is not on the anti-phase set and never synchronizes, so
+the threshold `c ≤ 3ηw` of `two_tendsto_of_add_ne_zero` is exact. -/
+@[tmio TM, powerlib_domain] private theorem two_mixed (hκ : 0 < a.κv) {η w : ℝ} (hηw : 0 ≤ η * w)
+    (hc : 3 * (η * w) < a.c) :
+    let σ := Real.sqrt ((a.c - 3 * (η * w)) / (4 * a.κv))
+    let δ := Real.sqrt ((a.c + η * w) / (4 * a.κv))
+    let X : ℝ → Fin 2 → ℂ := fun t =>
+      ![((σ + δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I), ((σ - δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I)]
+    (∀ t, HasDerivAt X (a.networkField η (twoLine w) (X t)) t) ∧
+      ∀ t, X t 0 + X t 1 ≠ 0 ∧
+        Dynamics.DiffusiveSync.disagreement (X t) = 2 * (a.c + η * w) / a.κv := by
+  intro σ δ X
+  have hσ2 : σ ^ 2 = (a.c - 3 * (η * w)) / (4 * a.κv) :=
+    Real.sq_sqrt (div_nonneg (by linarith) (by linarith))
+  have hδ2 : δ ^ 2 = (a.c + η * w) / (4 * a.κv) :=
+    Real.sq_sqrt (div_nonneg (by linarith) (by linarith))
+  have hσpos : 0 < σ := Real.sqrt_pos.mpr (div_pos (by linarith) (by linarith))
+  have hσ : a.κv * σ ^ 2 = (a.c - 3 * (η * w)) / 4 := by rw [hσ2]; field_simp
+  have hδ : a.κv * δ ^ 2 = (a.c + η * w) / 4 := by rw [hδ2]; field_simp
+  refine ⟨fun t => ?_, fun t => ⟨?_, ?_⟩⟩
+  · have hz : ∀ ρ : ℝ, HasDerivAt (fun t : ℝ => (ρ : ℂ) * exp ((a.ωs * t : ℝ) * I))
+        (I * a.ωs * ((ρ : ℂ) * exp ((a.ωs * t : ℝ) * I))) t := by
+      intro ρ
+      have h1 : HasDerivAt (fun t : ℝ => ((a.ωs * t : ℝ) : ℂ) * I) (a.ωs * I) t := by
+        have := ((hasDerivAt_id (t : ℝ)).ofReal_comp.const_mul (a.ωs : ℂ)).mul_const I
+        convert this using 1
+        · funext s; simp only [id]; push_cast; ring
+        · simp
+      convert (h1.cexp.const_mul (ρ : ℂ)) using 1
+      ring
+    rw [show X t = ![((σ + δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I),
+      ((σ - δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I)] from rfl,
+      a.two_networkField_mixed hσ hδ]
+    refine hasDerivAt_pi.mpr fun k => ?_
+    fin_cases k
+    · exact hz (σ + δ)
+    · exact hz (σ - δ)
+  · change ((σ + δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I) +
+      ((σ - δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I) ≠ 0
+    rw [← add_mul]
+    refine mul_ne_zero ?_ (Complex.exp_ne_zero _)
+    push_cast
+    rw [show (σ : ℂ) + δ + (σ - δ) = ((2 * σ : ℝ) : ℂ) by push_cast; ring]
+    exact_mod_cast (by positivity : (2 * σ : ℝ) ≠ 0)
+  · rw [two_disagreement_eq]
+    change 2 * ‖((σ + δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I) -
+      ((σ - δ : ℝ) : ℂ) * exp ((a.ωs * t : ℝ) * I)‖ ^ 2 = _
+    rw [← sub_mul, norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one,
+      show ((σ + δ : ℝ) : ℂ) - ((σ - δ : ℝ) : ℂ) = ((2 * δ : ℝ) : ℂ) by push_cast; ring,
+      Complex.norm_real, Real.norm_eq_abs, sq_abs]
+    rw [mul_pow, hδ2]
+    field_simp
     ring
 
 end AHO

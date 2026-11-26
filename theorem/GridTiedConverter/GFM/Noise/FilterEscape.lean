@@ -56,7 +56,8 @@ Results.
   `GFM.Noise.Params3.not_genDetailedBalance_momentumFlip`), and its saddle eigenvalue lies
   strictly below the two-state one (`GFM.Noise.Params3.saddle_eigenvalue`). The law of the exit
   time is not formalized (only the upper bound for its mean,
-  `GFM.Noise.Params3.limsup_log_exitTime_le`); its Freidlin–Wentzell exponent (the
+  `GFM.Noise.Params3.limsup_log_exitTime_le`, and the lower bound from the filter well,
+  `GFM.Noise.Params3.le_liminf_log_exitTime_filterWell`); its Freidlin–Wentzell exponent (the
   quasi-potential at the saddle) is bounded below in
   `theorem/GridTiedConverter/GFM/Noise/FilterQuasiPotential.lean`
   (`GFM.Noise.Params3.setPointQP_rest_ge`: the two-state value with `D` replaced by

@@ -1,6 +1,7 @@
 import theorem.GridTiedConverter.GFM.HopfLineLPF
 import theorem.GridTiedConverter.GFM.BTCoefficientLineLPF
 import theorem.Dynamics.SaddleNodeReduction
+import theorem.Dynamics.BTInstability
 
 /-! # The VSM with a power filter on a dynamic R–L line: the fold
 
@@ -16,8 +17,9 @@ Model boundary.
 * The fold: a balanced physical model (`Network.Physical`, `M, D, ω_c > 0`) at `K = P'(δ*) = 0`,
   where the constant coefficient `a₀ = ω_c ρ K/M` of the characteristic quintic vanishes (a zero
   eigenvalue). The degenerate fold points (`Line.VSMLPF.Model.FoldDegenerate`) are located, not
-  decided: the Bogdanov–Takens damping `a₁ = 0` (`D = D_line`, a double zero eigenvalue) and the
-  zero–Hopf points `Δ₃ = 0` (the quartic cofactor has a pair `±iΩ`).
+  decided: the zero–Hopf points `Δ₃ = 0` (the quartic cofactor has a pair `±iΩ`; at the
+  Bogdanov–Takens damping `D = D_line` this is `a₂ (a₄ a₃ − a₂) = 0`, with the triple zero
+  `a₂ = 0`). The Bogdanov–Takens points `a₁ = 0` with `Δ₃ ≠ 0` are decided.
 * Level: Lyapunov instability (LeanForControl's `Unstable`) of the operating point, through
   `Line.VSMLPF.family`; the null pair and the fold coefficient are static evidence.
 
@@ -30,7 +32,11 @@ null-vector law `Line.VSMLPF.Model.jac_mulVec_btTangent`
 `Line.VSMLPF.fderiv_fderiv_field` (`theorem/GridTiedConverter/GFM/BTCoefficientLineLPF.lean`); the
 four-state counterpart `Line.VSM.mem_den_unstable_of_fold_of_ne`
 (`theorem/GridTiedConverter/GFM/HopfLineMembership.lean`) and the Q–V droop fold
-(`theorem/GridTiedConverter/GFM/QVDroopFold.lean`). The left null vector and the fold
+(`theorem/GridTiedConverter/GFM/QVDroopFold.lean`); the Bogdanov–Takens law
+`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`
+(`theorem/Dynamics/BTInstability.lean`) with the chain `Line.VSMLPF.Model.exists_isBTChain_of_bt`
+and the coefficients `Line.VSMLPF.Model.coeff_of_bt`, `Line.VSMLPF.Model.coeff2_of_bt`
+(`theorem/GridTiedConverter/GFM/BTCoefficientLineLPF.lean`). The left null vector and the fold
 coefficient were derived with exact computer algebra (SymPy, untrusted) and are proved here by
 `field_simp` and `linear_combination`.
 
@@ -47,7 +53,8 @@ Results.
   `Line.VSMLPF.Model.coeff1_fold`: there `a₁ = ω_c ρ (D − D_line)/M`, so `a₁ = 0` exactly at the
   Bogdanov–Takens damping; `Line.VSMLPF.Model.charpoly_fold_eval_zeroHopf`: at a fold with
   `Δ₃ = 0` and `a₄, a₂ > 0` the eigenvalues include `±i √(a₂/a₄)` (zero–Hopf).
-* `Line.VSMLPF.Model.FoldDegenerate`: the degenerate balanced fold points.
+* `Line.VSMLPF.Model.FoldDegenerate`: the degenerate balanced fold points still undecided
+  (`K = 0`, `Δ₃ = 0`).
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.VSMLPF.family`.
@@ -55,7 +62,12 @@ No new family: connection conclusions on `Line.VSMLPF.family`.
   model at `K = 0` with `a₁ > 0` and `Δ₃ > 0` (the quartic cofactor is Hurwitz) is unstable.
 * **`Line.VSMLPF.mem_den_unstable_of_fold_of_ne`** (the fold decided): a balanced physical model
   at `K = 0` with `a₁ ≠ 0` and `Δ₃ ≠ 0` is unstable (a strict quintic Routh violation,
-  `Line.VSMLPF.mem_den_unstable`, or the saddle-node law); hence at a fold the operating point is
+  `Line.VSMLPF.mem_den_unstable`, or the saddle-node law).
+* **`Line.VSMLPF.mem_den_unstable_of_bt`** (the Bogdanov–Takens point is a cusp): a balanced
+  physical model at `K = 0` with `D = D_line`, `n₅ > 0` and `a₂ < a₄ a₃` (the cubic cofactor
+  `s³ + a₄ s² + a₃ s + a₂` Hurwitz) is unstable; `a = (P(δ*) − c₀)/(2 n₅)` never vanishes there.
+* **`Line.VSMLPF.mem_den_unstable_of_fold_of_det3_ne`** (the fold decided off the zero–Hopf
+  points): at `K = 0` with `Δ₃ ≠ 0` the model is unstable; hence at a fold the operating point is
   never locally asymptotically stable off `Line.VSMLPF.Model.FoldDegenerate`.
 -/
 
@@ -67,7 +79,8 @@ open Polynomial Matrix Complex
 open scoped RealInnerProductSpace
 open powerlib.Dynamics (State)
 open powerlib.NormalForm.LyapunovCoefficient (jacobianC)
-open powerlib.NormalForm.BogdanovTakens (IsNullPair foldCoeff isNullPair_toEuclideanCLM_iff)
+open powerlib.NormalForm.BogdanovTakens (IsNullPair foldCoeff isNullPair_toEuclideanCLM_iff
+  IsBTChain coeffA)
 
 /-- The left null vector of the Jacobian at a fold, normalised against the tangent
 `Line.VSMLPF.Model.btTangent` by `D − D_line`:
@@ -245,13 +258,15 @@ model. -/
   linear_combination z * e4c - z ^ 2 * e2c + (z * (z ^ 2 - (Ω : ℂ) ^ 2) +
     ((m.g.coeff4 : ℝ) : ℂ) * z ^ 2 + ((m.g.coeff3 : ℝ) : ℂ) * z) * hz2
 
-/-- The degenerate balanced fold points: `K = 0` (`a₀ = 0`, a zero eigenvalue) at the
-Bogdanov–Takens damping (`a₁ = 0`, `D = D_line`, `Line.VSMLPF.Model.coeff1_fold`) or at a zero–Hopf
-point (`Δ₃ = 0`, `Line.VSMLPF.Model.charpoly_fold_eval_zeroHopf`). -/
+/-- The degenerate balanced fold points still undecided: `K = 0` (`a₀ = 0`, a zero eigenvalue)
+at a zero–Hopf point (`Δ₃ = 0`, `Line.VSMLPF.Model.charpoly_fold_eval_zeroHopf`; at the
+Bogdanov–Takens damping `a₁ = 0` this is `a₂ (a₄ a₃ − a₂) = 0`: a triple zero `a₂ = 0` or a
+zero–Hopf pair). The Bogdanov–Takens points with `Δ₃ ≠ 0` are decided
+(`Line.VSMLPF.mem_den_unstable_of_fold_of_det3_ne`). -/
 def Model.FoldDegenerate (m : Model) : Prop :=
-  Meets m .balanced ∧ m.K = 0 ∧ (m.g.coeff1 m.Q = 0 ∨
+  Meets m .balanced ∧ m.K = 0 ∧
     Criteria.quinticHurwitzDet3 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q) (m.g.coeff1 m.Q)
-      (m.g.coeff0 m.Q) = 0)
+      (m.g.coeff0 m.Q) = 0
 
 /-- **The fold is a saddle-node**
 (`Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly`): a balanced physical model
@@ -318,6 +333,123 @@ saddle-node law (`Line.VSMLPF.mem_den_unstable_of_fold`). -/
   obtain ⟨-, -, -, v1, -, -, v3, -⟩ := hv
   exact mem_den_unstable_of_fold m hp hb hK (lt_of_le_of_ne v1 (Ne.symm h1))
     (lt_of_le_of_ne v3 (Ne.symm h3))
+
+/-! ## The Bogdanov–Takens point -/
+
+/-- **The Bogdanov–Takens point with a power filter is unstable** (the cusp,
+`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`): a balanced physical model at a
+fold `K = 0` with `D = D_line`, `n₅ = btInertia > 0` and `a₂ < a₄ a₃` (the cofactor
+`s³ + a₄ s² + a₃ s + a₂` of `det(sI − J) = s² (s³ + a₄ s² + a₃ s + a₂)` is Hurwitz:
+`a₂ = ω_c ρ n₅/M > 0`, `Line.VSMLPF.Model.coeff2_of_bt`) is unstable. Its coefficient
+`a = (P(δ*) − c₀)/(2 n₅)` (`Line.VSMLPF.Model.coeff_of_bt`) never vanishes there
+(`P(δ*) − c₀ = ± A`): no codimension-three point `a = 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_bt (m : Model) (hp : Meets m .physical)
+    (hb : Meets m .balanced) (hK : m.K = 0) (hD : m.g.D = m.g.Dline)
+    (hn : 0 < m.g.btInertia) (h42 : m.g.coeff2 m.Q < m.g.coeff4 * m.g.coeff3) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
+  obtain ⟨hN, hM, hD0, hω⟩ := hp
+  have hL := hN.L.ne'
+  have hZ := hN.absSq_pos
+  have hV : m.g.E * m.g.V ≠ 0 := (mul_pos hN.E hN.V).ne'
+  obtain ⟨p₀, p₁, hch'⟩ := m.exists_isBTChain_of_bt hM.ne' hω.ne' hL hZ hV hK hD hn.ne'
+  have hch : IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.btTangent)
+      (WithLp.toLp 2 m.btChain) p₀ p₁ := by rw [lf_fderiv, ← m.fderiv_point]; exact hch'
+  have hF : ContDiff ℝ 2 m.field := (m.g.contDiff_field (k := 2)).comp
+    (contDiff_id.add contDiff_const)
+  have hF0 : m.field 0 = 0 := by
+    show m.g.field (0 + m.point) = 0
+    rw [zero_add]
+    exact (m.field_point_eq_zero_iff hM.ne' hω.ne' hL hZ.ne').mpr hb
+  have hker : ∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • WithLp.toLp 2 m.btTangent := by
+    intro v hv
+    rw [lf_fderiv] at hv
+    have hv' : m.jac *ᵥ (WithLp.ofLp v) = 0 := by
+      have := congrArg WithLp.ofLp hv
+      simpa [Matrix.ofLp_toEuclideanCLM] using this
+    have he := m.eq_smul_btTangent_of_mulVec_eq_zero hM.ne' hL hZ hv'
+    refine ⟨v 0, ?_⟩
+    ext i
+    have := congrFun he i
+    simpa using this
+  have h1 : m.g.coeff1 m.Q = 0 := by rw [m.coeff1_fold hL hZ hK, hD, sub_self]; simp
+  have hchar : (NormalForm.LyapunovCoefficient.cmat (fderiv ℝ m.field 0)).charpoly =
+      X ^ 2 * (X ^ 3 + C ((m.g.coeff4 : ℝ) : ℂ) * X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X +
+        C ((m.g.coeff2 m.Q : ℝ) : ℂ)) := by
+    have h := m.charpoly_fold hL hZ hK
+    rw [h1] at h
+    rw [show NormalForm.LyapunovCoefficient.cmat (fderiv ℝ m.field 0) = jacobianC m.field 0
+      from rfl, h]
+    simp
+    ring
+  have hσ : 0 ≤ m.g.σ := div_nonneg hN.R hN.L.le
+  have h4 : 0 < m.g.coeff4 := by unfold coeff4; positivity
+  have hρ : 0 < m.g.ρ := by
+    have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+      simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+    rw [this]; exact div_pos hZ (pow_pos hN.L 2)
+  have h2 : 0 < m.g.coeff2 m.Q := by
+    rw [m.coeff2_of_bt ⟨hN, hM, hD0, hω⟩ hK hD]; positivity
+  have hr : ∀ s : ℂ, (X ^ 3 + C ((m.g.coeff4 : ℝ) : ℂ) * X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X +
+      C ((m.g.coeff2 m.Q : ℝ) : ℂ)).eval s = 0 → s.re < 0 := by
+    intro s hs
+    simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at hs
+    exact Criteria.cubic_roots_re_neg_of h4 h2 h42 s hs
+  refine hch.unstable_of_coeffA_ne_zero hF hF0 hker hchar hr ?_
+  obtain ⟨ha, -⟩ := m.coeff_of_bt hM.ne' hω.ne' hL hZ hV hK hD hn.ne' hch'
+  rw [coeffA, lf_fderiv2, ← coeffA, ha]
+  exact div_ne_zero (lf_P_sub_c0_ne ⟨hN, hM, hD0, hω⟩ hK) (mul_ne_zero two_ne_zero hn.ne')
+
+/-- **The fold decided off the zero–Hopf points**: a balanced physical model at a fold `K = 0`
+with `Δ₃ ≠ 0` is unstable; hence at a fold the operating point is never locally asymptotically
+stable off `Line.VSMLPF.Model.FoldDegenerate`. Off the Bogdanov–Takens damping (`a₁ ≠ 0`) this
+is `Line.VSMLPF.mem_den_unstable_of_fold_of_ne`; at it (`a₁ = 0`, `D = D_line`)
+`Δ₃ = a₂ (a₄ a₃ − a₂)`: a strict quintic Routh violation (`Line.VSMLPF.mem_den_unstable`), or
+`a₂ > 0`, `a₄ a₃ > a₂` and the Bogdanov–Takens cusp (`Line.VSMLPF.mem_den_unstable_of_bt`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold_of_det3_ne (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hK : m.K = 0)
+    (h3 : Criteria.quinticHurwitzDet3 m.g.coeff4 m.g.coeff3 (m.g.coeff2 m.Q) (m.g.coeff1 m.Q)
+      (m.g.coeff0 m.Q) ≠ 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  by_cases h1 : m.g.coeff1 m.Q = 0
+  swap
+  · exact mem_den_unstable_of_fold_of_ne m hp hb hK h1 h3
+  by_cases hv : m.RouthViolation
+  · exact mem_den_unstable m hp hb hv
+  obtain ⟨hN, hM, hD0, hω⟩ := hp
+  have hL := hN.L.ne'
+  have hZ := hN.absSq_pos
+  have hρ : 0 < m.g.ρ := by
+    have : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+      simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+    rw [this]; exact div_pos hZ (pow_pos hN.L 2)
+  have hD : m.g.D = m.g.Dline := by
+    rw [m.coeff1_fold hL hZ hK] at h1
+    have h' : m.g.ρ * (m.g.D - m.g.Dline) / m.g.M = 0 :=
+      (mul_eq_zero.mp h1).resolve_left hω.ne'
+    rw [div_eq_zero_iff, or_iff_left hM.ne'] at h'
+    exact sub_eq_zero.mp ((mul_eq_zero.mp h').resolve_left hρ.ne')
+  have h0 : m.g.coeff0 m.Q = 0 := by rw [m.coeff0_eq hL hZ, hK]; simp
+  unfold Model.RouthViolation Criteria.QuinticRouthViolation at hv
+  push Not at hv
+  obtain ⟨-, -, v2, -, -, vd2, -, -⟩ := hv
+  rw [h0, h1] at h3
+  unfold Criteria.quinticHurwitzDet3 at h3
+  unfold Criteria.quinticHurwitzDet2 at vd2 h3
+  have h3' : m.g.coeff2 m.Q * (m.g.coeff4 * m.g.coeff3 - m.g.coeff2 m.Q) ≠ 0 := by
+    intro h; apply h3; rw [h]; ring
+  have h2 : 0 < m.g.coeff2 m.Q :=
+    lt_of_le_of_ne v2 (fun h => h3' (by rw [← h, zero_mul]))
+  have h42 : m.g.coeff2 m.Q < m.g.coeff4 * m.g.coeff3 :=
+    lt_of_le_of_ne (sub_nonneg.mp vd2) (fun h => h3' (by rw [h, sub_self, mul_zero]))
+  have hn : 0 < m.g.btInertia := by
+    rw [m.coeff2_of_bt ⟨hN, hM, hD0, hω⟩ hK hD] at h2
+    have hc : 0 < m.g.ωc * m.g.ρ := mul_pos hω hρ
+    have := (div_pos_iff_of_pos_right hM).mp h2
+    exact (pos_iff_pos_of_mul_pos this).mp hc
+  exact mem_den_unstable_of_bt m ⟨hN, hM, hD0, hω⟩ hb hK hD hn h42
 
 end VSMLPF
 end powerlib.GFM.Line

@@ -23,7 +23,9 @@ Scope.
   its expectation the lower Lebesgue integral.
 * Upper bound. The matching lower bound is `Stochastic.LDP.le_liminf_log_lintegral_exitTime`
   (`theorem/Stochastic/ExitTimeLower.lean`: from an exit and a moment inequality for the rate, by
-  a chain of deterministic time blocks); the strong Markov property is
+  a chain of deterministic time blocks; in Lyapunov form
+  `Stochastic.LDP.le_liminf_log_lintegral_exitTime_of_lyapunov`,
+  `theorem/Stochastic/ExitTimeLyapunov.lean`); the strong Markov property is
   `Stochastic.LDP.integral_solMap_strongMarkov` (`theorem/Stochastic/StrongMarkov.lean`).
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
@@ -42,8 +44,9 @@ Results.
 * `concatPath`, `restrictPath_concatPath`, `shiftPath_concatPath`, `schilderRate_concatPath_le`
   (concatenated driving paths: their Schilder rates add up at most);
   `eq_solMap_of_hasDerivAt` (a path with derivative `b + N u` inside `(0, T)` is the solution
-  driven by `∫ u`), `schilderRate_le_of_continuous` (the rate of `∫ u` is at most the action of
-  `u`).
+  driven by `∫ u`), `pathExt_solMap_zero`, `hasDerivAt_solMap_zero` (the noiseless solution
+  starts at `y` and has derivative `b(x(t))`), `schilderRate_le_of_continuous` (the rate of `∫ u`
+  is at most the action of `u`).
 * `schilderRate_restrictPath_le` (the Schilder rate of a restriction is at most that of the
   path), `iInf_pushRate_le_of_le` (**the rate of a path dominates the quasi-potential of each of
   its intermediate states**: the restricted driving path reaches `φ(t)` at no higher rate).
@@ -375,6 +378,29 @@ variable [CompleteSpace E]
   have h2 := sub_eq_iff_eq_add.mp hftc.symm
   rw [e, h2]
   abel
+
+/-- The noiseless solution (driving path `0`) starts at `y`. -/
+@[tmio T, powerlib_foundation] theorem pathExt_solMap_zero {m : ℕ} {K : ℝ≥0} {b : E → E}
+    (hb : LipschitzWith K b) (N : (Fin m → ℝ) →L[ℝ] E) (y : E) (T : ℝ≥0) :
+    pathExt (solMap b N y (0 : C(Icc (0 : ℝ) T, Fin m → ℝ))) 0 = y := by
+  rw [pathExt_of_mem _ ⟨le_rfl, T.coe_nonneg⟩, solMap_spec hb]
+  simp
+
+/-- **The noiseless solution has derivative `b(x(t))`** inside `(0, T)`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_solMap_zero {m : ℕ} {K : ℝ≥0} {b : E → E}
+    (hb : LipschitzWith K b) (N : (Fin m → ℝ) →L[ℝ] E) (y : E) {T : ℝ≥0} {t : ℝ}
+    (ht : t ∈ Ioo (0 : ℝ) T) :
+    HasDerivAt (pathExt (solMap b N y (0 : C(Icc (0 : ℝ) T, Fin m → ℝ))))
+      (b (pathExt (solMap b N y (0 : C(Icc (0 : ℝ) T, Fin m → ℝ))) t)) t := by
+  set φ := solMap b N y (0 : C(Icc (0 : ℝ) T, Fin m → ℝ)) with hφ
+  have hc : Continuous fun s => b (pathExt φ s) := hb.continuous.comp (continuous_pathExt _)
+  have hG : HasDerivAt (fun s => y + ∫ r in (0 : ℝ)..s, b (pathExt φ r)) (b (pathExt φ t)) t :=
+    ((hc.integral_hasStrictDerivAt 0 t).hasDerivAt).const_add y
+  refine hG.congr_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs
+  have hmem : s ∈ Icc (0 : ℝ) T := ⟨hs.1.le, hs.2.le⟩
+  rw [pathExt_of_mem _ hmem, hφ, solMap_spec hb]
+  simp
 
 /-- The Schilder rate of the primitive of a continuous control is at most its action. -/
 @[tmio T, powerlib_foundation] theorem schilderRate_le_of_continuous {m : ℕ} {T : ℝ≥0}

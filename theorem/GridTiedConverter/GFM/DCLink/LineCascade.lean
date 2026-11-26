@@ -1,4 +1,5 @@
 import theorem.GridTiedConverter.GFM.DCLink.Transfer
+import theorem.GridTiedConverter.GFM.LineVSMMembership
 import theorem.Dynamics.Instability
 import theorem.Dynamics.CascadeNode
 
@@ -21,8 +22,9 @@ Model boundary.
   delay, PWM, DC-link losses; the singular plane `V = 0`.
 * Level: local behaviour (local exponential and asymptotic stability, Lyapunov stability,
   instability) of the operating point `(δ*, 0, i_s(δ*), V*)`, from the Jacobian computed by
-  `fderiv` (`DynamicLine.hasFDerivAt_field`) and the quartic Routh–Hurwitz criterion of the line
-  VSM; not a basin estimate.
+  `fderiv` (`DynamicLine.hasFDerivAt_field`), the quartic Routh–Hurwitz criterion of the line
+  VSM and, for a constant-power source, the first integral `C V²/2 − M ω − D δ`; not a basin
+  estimate.
 
 Source: GFM counterpart study, note T7 part (b) (`t7-dcside`, the dynamic-line DC plant; notes
 outside the repository); the GFL counterpart is the current loop feeding the DC link,
@@ -30,7 +32,9 @@ outside the repository); the GFL counterpart is the current loop feeding the DC 
 `mem_den_unstable_of_inverter`, `mem_den_locallyAsymptoticallyStable_iff`). Converse
 linearization: `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`; the extra
 pole: `Linear.spectrallyStable_iff_of_extra_pole`; quartic Routh–Hurwitz:
-`Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic`. Scaffold:
+`Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic`; the first integral
+`C V²/2 − M ω − D δ` for a constant-power source is read off the swing row (`P_ref − P_e =
+M ω̇ + D ω`) and the node row (`C V V̇ = P_s − P_e`). Scaffold:
 `theorem/GridTiedConverter/GFM/DCLink/LineCascadeVSM.agda`.
 
 Results.
@@ -43,6 +47,11 @@ Results.
   `det(sI − J) = det(sI − J_VSM)(s − b)`, `b = I_s/(C V*)` (`Model.b`), `J_VSM` the line-VSM
   Jacobian; `LineCascade.Model.isHurwitz_iff`: `J` is Hurwitz iff the line VSM meets its quartic
   Routh conditions (`Line.VSM.Model.Routh`) and `b < 0`.
+* The DC-link energy balance: `DynamicLine.dcIntegral` (`C V²/2 − M ω − D δ`),
+  `DynamicLine.hasFDerivAt_dcIntegral`, `DynamicLine.lie_dcIntegral` (for `C, M, V ≠ 0` its
+  derivative along the field at the reference `r` is `I_s V + P_s − r`: the node power
+  `P_s − P_e` is the swing's `M ω̇ + D ω` up to `P_s − r`; a first integral for `I_s = 0`,
+  `P_s = r`).
 
 Family and connection conclusions.
 * `LineCascade.family := Spectral.localFamily Model.field Model.Stable Model.Unstable`: a model
@@ -81,14 +90,16 @@ Family and connection conclusions.
   `LineCascade.mem_den_locallyAsymptoticallyStable_iff_vsm` (within regular parameters: locally
   asymptotically stable iff balanced, the AC part is a locally asymptotically stable member of
   `Line.VSM.family`, and `I_s/(C V*) < 0`) and `LineCascade.mem_den_lyapunovStable_iff_vsm` (the
-  same for Lyapunov stability, for `I_s ≠ 0`). With the complete membership of the line VSM
-  (`Line.VSM.mem_den_locallyAsymptoticallyStable_iff`,
-  `theorem/GridTiedConverter/GFM/HopfLineMembership.lean`: off its degenerate set, balanced and
+  same for Lyapunov stability, for `I_s ≠ 0`; for `I_s = 0` below). With the complete membership
+  of the line VSM (`Line.VSM.mem_den_locallyAsymptoticallyStable_iff_of_not_undecided`,
+  `theorem/GridTiedConverter/GFM/LineVSMMembership.lean`: off its undecided set, balanced and
   strict Routh or on the Hopf boundary with `𝔅_δ > 0`) the cascade is decided at every physical
-  model except where the line VSM itself is not (`Line.VSM.Model.Degenerate`): the fold points
-  `K(δ*) = 0` with `a₁ = 0` (Bogdanov–Takens) or `a₃ a₂ = a₁` (zero–Hopf) — the other fold
-  points are unstable (`Line.VSM.mem_den_unstable_of_fold_of_ne`) — and the Bautin-type points
-  `𝔅_δ = 0` of the Hopf boundary.
+  model except where the line VSM itself is not (`Line.VSM.Model.Undecided`): the triple zero
+  `K(δ*) = 0`, `a₁ = a₂ = 0` — every other fold point is unstable
+  (`Line.VSM.mem_den_unstable_of_fold_of_ne_tripleZero`: the saddle-node, the Bogdanov–Takens
+  cusp `Line.VSM.mem_den_unstable_of_bt`, the zero–Hopf points
+  `Line.VSM.mem_den_unstable_of_zeroHopf`) — and the Bautin-type points `𝔅_δ = 0` of the Hopf
+  boundary.
 
 * **A constant-power source, `I_s = 0`** (the DC voltage is a line of equilibria, the node does
   not contract; it integrates the power mismatch, `C V V̇ = P(x*) − P(y)`):
@@ -98,13 +109,23 @@ Family and connection conclusions.
   and the exact decision off the line-VSM Routh boundary,
   `LineCascade.mem_den_lyapunovStable_iff_of_offBoundary_of_Is_eq_zero` (Lyapunov stable iff
   balanced and Routh).
-
-Not decided here: Lyapunov stability for `I_s = 0` on the line-VSM Routh boundary. There the AC
-part is at best asymptotically, not exponentially, stable (Hopf points with `𝔅_δ > 0`), the drive
-error need not be integrable in time, and the DC voltage moves by
-`∫ (P(x*) − P(y(t))) dt/(C V)`: deciding it needs the averaged drift of `P` along the slowly
-decaying critical oscillation (its mean quadratic part on the centre manifold), which the library
-does not state.
+* **`I_s = 0`, boundary included: the first integral.** At a balanced point `P_s = P_ref`, so
+  `C V V̇ = P_ref − P_e = M ω̇ + D ω` and `C V²/2 − M ω − D δ` is conserved
+  (`DynamicLine.lie_dcIntegral`): the DC voltage is pinned by the AC part's distance whatever the
+  AC part's decay rate (the drive–node law `Dynamics.lyapunovStable_cascade_of_firstIntegral`).
+  `LineCascade.mem_den_lyapunovStable_iff_vsm_of_Is_eq_zero` (within regular parameters: Lyapunov
+  stable iff balanced and the AC part is a Lyapunov stable member of `Line.VSM.family`);
+  `LineCascade.mem_den_lyapunovStable_of_bautinFormAngle_pos` (physical, `C, V* ≠ 0`: on the
+  line-VSM Hopf boundary with `𝔅_δ > 0` the cascade is Lyapunov stable, though its AC part is only
+  asymptotically stable); `LineCascade.mem_den_lyapunovStable_iff_of_Is_eq_zero` (physical,
+  `C, V* ≠ 0`, the AC part off `Line.VSM.Model.Undecided`: Lyapunov stable iff balanced and the
+  AC part is a locally asymptotically stable member of `Line.VSM.family`, i.e. strict Routh or the
+  Hopf boundary with `𝔅_δ > 0`; every fold point off the triple zero and the Hopf points with
+  `𝔅_δ < 0` are not Lyapunov stable). The heuristic expectation of a logarithmic drift of `V`
+  along the slowly decaying critical oscillation fails here: the mean quadratic part of the node
+  power on the centre manifold vanishes identically, `P_ref − P_e` being the Lie derivative of
+  the linear function `M ω + D δ`. At the undecided points of the line VSM the cascade is decided
+  exactly when its AC part is (`mem_den_lyapunovStable_iff_vsm_of_Is_eq_zero`).
 -/
 
 noncomputable section
@@ -142,6 +163,35 @@ variable (g : DynamicLine)
     exact GFL.DCLink.contDiffOn_nodeRate g.C contDiffOn_const
       (contDiff_const.sub hP).contDiffOn
       (Dynamics.contDiff_coord (n := 5) (k := 1) 4).contDiffOn fun y hy => hy
+
+/-- The DC-link energy less the VSM's momentum and damping integral, `C V²/2 − M ω − D δ`. -/
+def dcIntegral (y : State 5) : ℝ := g.C / 2 * y 4 ^ 2 - g.M * y 1 - g.D * y 0
+
+/-- The derivative of `C V²/2 − M ω − D δ`: `C V dV − M dω − D dδ`. Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem hasFDerivAt_dcIntegral (y : State 5) :
+    HasFDerivAt g.dcIntegral ((g.C * y 4) • Dynamics.coord 4 - g.M • Dynamics.coord 1 -
+      g.D • Dynamics.coord 0) y := by
+  have h4 := ((Dynamics.hasFDerivAt_coord 4 y).pow 2).const_mul (g.C / 2)
+  have h1 := (Dynamics.hasFDerivAt_coord 1 y).const_mul g.M
+  have h0 := (Dynamics.hasFDerivAt_coord 0 y).const_mul g.D
+  refine ((h4.sub h1).sub h0).congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+/-- **The DC-link energy balance along the field.** With `C, M ≠ 0` and `V ≠ 0`, the derivative of
+`C V²/2 − M ω − D δ` along the field at the power reference `r` is `I_s V + P_s − r`: the node
+power `P_s − P_e` is the swing's `M ω̇ + D ω` plus `P_s − r`. For a constant-power source
+matched to the reference (`I_s = 0`, `P_s = r`) the function is a first integral. Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem lie_dcIntegral (hC : g.C ≠ 0) (hM : g.M ≠ 0) (r : ℝ)
+    {y : State 5} (hy : y 4 ≠ 0) :
+    fderiv ℝ g.dcIntegral y (g.field r y) = g.Is * y 4 + g.Ps - r := by
+  rw [(g.hasFDerivAt_dcIntegral y).fderiv]
+  simp [field, GFL.DCLink.nodeRate]
+  field_simp
+  ring
 
 end DynamicLine
 
@@ -785,6 +835,183 @@ VSM meets its Routh conditions (`mem_den_lyapunovStable_of_Is_eq_zero`; necessit
     have hl := mem_den_lyapunovStable_of_Is_eq_zero m h hb hI hR
     unfold TMIO.Statement at hl
     exact hl
+
+/-! ## A constant-power source: the first integral `C V²/2 − M ω − D δ`
+
+At a balanced point with `I_s = 0` the source power is the reference, `P_s = P_ref`, so the node
+power is the swing's acceleration and damping power, `C V V̇ = P_s − P_e = M ω̇ + D ω`, and
+`C V²/2 − M ω − D δ` is conserved (`DynamicLine.lie_dcIntegral`). The DC voltage is pinned by the
+AC part's distance whatever its decay: the cascade is Lyapunov stable exactly when its AC part is,
+on the line-VSM Routh boundary as well. (The mean drift of the node power along a slowly decaying
+critical oscillation vanishes identically: `P_ref − P_e` is the Lie derivative of the linear
+function `M ω + D δ`.) -/
+
+/-- **The node is pinned by the first integral.** At regular parameters, near the operating point
+`|V − V*| ≤ K (|I(y) − I(x)| + ‖π y − π x‖)`, `I = C V²/2 − M ω − D δ`, `π` the AC coordinates:
+`C (V − V*)(V + V*)/2 = ΔI + M ω + D (δ − δ*)` and `|V + V*| ≥ |V*|` for `|V − V*| < |V*|/2`. -/
+@[tmio M, powerlib_domain] private theorem dcIntegral_node (m : Model) (h : m.Regular) :
+    ∃ ρ K : ℝ, 0 < ρ ∧ 0 ≤ K ∧ ∀ y : State 5, ‖y - m.point‖ < ρ →
+      ‖(y - m.point) - Dynamics.incl45 (Dynamics.proj54 (y - m.point))‖ ≤
+        K * (|m.g.dcIntegral y - m.g.dcIntegral m.point| +
+          ‖Dynamics.proj54 y - Dynamics.proj54 m.point‖) := by
+  obtain ⟨hV, -, -, hC, -⟩ := h
+  have hVa : 0 < |m.V| := abs_pos.mpr hV
+  have hCa : 0 < |m.g.C| := abs_pos.mpr hC
+  refine ⟨|m.V| / 2, 2 * (1 + |m.g.M| + |m.g.D|) / (|m.g.C| * |m.V|), by positivity,
+    by positivity, fun y hy => ?_⟩
+  rw [Dynamics.norm_sub_incl45_proj54]
+  set d := ‖Dynamics.proj54 y - Dynamics.proj54 m.point‖ with hd
+  have hp0 : m.point 0 = m.δ := by simp [Model.point, DynamicLine.point]
+  have hp1 : m.point 1 = 0 := by simp [Model.point, DynamicLine.point]
+  have hp4 : m.point 4 = m.V := by simp [Model.point, DynamicLine.point]
+  have h4 : (y - m.point) 4 = y 4 - m.V := by rw [PiLp.sub_apply, hp4]
+  rw [h4]
+  have hab : |y 4 - m.V| < |m.V| / 2 := by
+    have := (Dynamics.abs_coord_sub_le m.point y 4).trans_lt hy
+    rwa [hp4] at this
+  have hd0 : |y 0 - m.δ| ≤ d := by
+    have := Dynamics.abs_coord_sub_le (Dynamics.proj54 m.point) (Dynamics.proj54 y) 0
+    simpa [hp0] using this
+  have hd1 : |y 1| ≤ d := by
+    have := Dynamics.abs_coord_sub_le (Dynamics.proj54 m.point) (Dynamics.proj54 y) 1
+    simpa [hp1] using this
+  have hsum : |m.V| ≤ |y 4 + m.V| := by
+    have h2 := abs_sub_abs_le_abs_sub (2 * m.V) (-(y 4 - m.V))
+    rw [abs_neg, sub_neg_eq_add, abs_mul, abs_two] at h2
+    have e : 2 * m.V + (y 4 - m.V) = y 4 + m.V := by ring
+    rw [e] at h2
+    linarith
+  set a := y 4 - m.V with ha
+  set ΔI := m.g.dcIntegral y - m.g.dcIntegral m.point with hΔI
+  have hI : m.g.C / 2 * (a * (y 4 + m.V)) = ΔI + m.g.M * y 1 + m.g.D * (y 0 - m.δ) := by
+    simp only [hΔI, ha, DynamicLine.dcIntegral, hp0, hp1, hp4]
+    ring
+  have hkey : |m.g.C| / 2 * |a| * |y 4 + m.V| ≤ |ΔI| + (|m.g.M| + |m.g.D|) * d := by
+    have habs : |m.g.C / 2 * (a * (y 4 + m.V))| = |m.g.C| / 2 * |a| * |y 4 + m.V| := by
+      rw [abs_mul, abs_mul, abs_div, abs_two]
+      ring
+    rw [← habs, hI]
+    calc |ΔI + m.g.M * y 1 + m.g.D * (y 0 - m.δ)|
+        ≤ |ΔI| + |m.g.M * y 1| + |m.g.D * (y 0 - m.δ)| := abs_add_three _ _ _
+      _ = |ΔI| + |m.g.M| * |y 1| + |m.g.D| * |y 0 - m.δ| := by rw [abs_mul, abs_mul]
+      _ ≤ |ΔI| + (|m.g.M| + |m.g.D|) * d := by
+          nlinarith [abs_nonneg m.g.M, abs_nonneg m.g.D]
+  rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+  have hd0' : 0 ≤ d := norm_nonneg _
+  have hΔ0 : 0 ≤ |ΔI| := abs_nonneg _
+  have hm1 : |m.g.C| / 2 * |a| * |m.V| ≤ |m.g.C| / 2 * |a| * |y 4 + m.V| :=
+    mul_le_mul_of_nonneg_left hsum (by positivity)
+  nlinarith [abs_nonneg m.g.M, abs_nonneg m.g.D, abs_nonneg a]
+
+/-- **Exact Lyapunov stability for a constant-power source, boundary included.** Within regular
+parameters, with `I_s = 0` the operating point is Lyapunov stable iff it is balanced and its AC
+part is a Lyapunov stable member of `Line.VSM.family`. `⇐`: at a balanced point `P_s = P_ref`, so
+`C V²/2 − M ω − D δ` is a first integral near the operating point (`DynamicLine.lie_dcIntegral`)
+and pins the DC voltage to the AC part's distance (`dcIntegral_node`;
+`Dynamics.lyapunovStable_cascade_of_firstIntegral`): no decay rate of the AC part is needed.
+`⇒`: balance is necessary (`closedRouth_of_mem_den_lyapunovStable`) and the AC part of a
+Lyapunov stable cascade is Lyapunov stable (`Dynamics.lyapunovStable_drive_of_cascade`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff_vsm_of_Is_eq_zero (m : Model)
+    (h : m.Regular) (hI : m.g.Is = 0) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m.Balanced ∧ m.toVSM ∈ Line.VSM.family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  constructor
+  · intro hs
+    obtain ⟨hb, -, -⟩ := closedRouth_of_mem_den_lyapunovStable m h hs
+    refine ⟨hb, ?_⟩
+    rw [vsm_mem_den_flow_iff]
+    have hf := mem_den_flow_iff.mp hs
+    change LyapunovStable _ _ at hf
+    change LyapunovStable _ _
+    rw [← proj54_point]
+    exact Dynamics.lyapunovStable_drive_of_cascade Dynamics.proj54_incl45 Dynamics.norm_incl45
+      Dynamics.norm_proj54_le (proj54_field m) (isOpen_nonzeroDC 4) (point_mem m h.1)
+      (m.g.field_contDiffOn _) m.toVSM.g.contDiff_field.contDiffAt hf
+  · rintro ⟨hb, hvsm⟩
+    rw [mem_den_flow_iff]
+    rw [vsm_mem_den_flow_iff] at hvsm
+    change LyapunovStable _ _ at hvsm
+    change LyapunovStable _ _
+    obtain ⟨ρ, K, hρ, hK, hnode⟩ := dcIntegral_node m h
+    have hPs : m.g.Ps = m.g.Pref := by
+      have h2 := hb.2
+      rw [hI, zero_mul, add_zero] at h2
+      rw [h2, hb.1]
+    have hVa : 0 < |m.V| := abs_pos.mpr h.1
+    rw [← proj54_point] at hvsm
+    refine Dynamics.lyapunovStable_cascade_of_firstIntegral Dynamics.norm_incl45
+      Dynamics.norm_proj54_le (proj54_field m)
+      (fun y => (m.g.hasFDerivAt_dcIntegral y).differentiableAt) (lt_min hρ (half_pos hVa)) hK
+      (fun y hy => ?_) (fun y hy => hnode y (hy.trans_le (min_le_left _ _))) hvsm
+    have hy4 : y 4 ≠ 0 := by
+      intro h0
+      have := (Dynamics.abs_coord_sub_le m.point y 4).trans_lt (hy.trans_le (min_le_right _ _))
+      simp [Model.point, DynamicLine.point, h0] at this
+      linarith
+    rw [m.g.lie_dcIntegral h.2.2.2.1 h.2.1 _ hy4, hI, hPs]
+    ring
+
+/-- **The constant-power cascade on the line-VSM Hopf boundary is Lyapunov stable.** A physical
+network, `M, D > 0`, `C, V* ≠ 0`, a constant-power source `I_s = 0`, a balanced point whose AC
+part lies on the Hopf boundary `a₃ a₂ a₁ = a₁² + a₃² a₀`, `a₁, a₀ > 0`, with `𝔅_δ > 0` (a
+supercritical Hopf point, `Line.VSM.mem_den_locallyAsymptoticallyStable_of_bautinFormAngle_pos`):
+the operating point is Lyapunov stable (`mem_den_lyapunovStable_iff_vsm_of_Is_eq_zero`), though
+the AC part decays only like `t^{-1/2}` and is not locally asymptotically stable
+(`not_mem_den_locallyAsymptoticallyStable_of_Is_eq_zero`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_of_bautinFormAngle_pos (m : Model)
+    (hN : m.g.Physical) (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hC : m.g.C ≠ 0) (hV : m.V ≠ 0)
+    (hI : m.g.Is = 0) (hb : m.Balanced)
+    (hH : m.toVSM.g.coeff3 * m.toVSM.g.coeff2 m.toVSM.Q * m.toVSM.g.coeff1 m.toVSM.Q =
+      m.toVSM.g.coeff1 m.toVSM.Q ^ 2 + m.toVSM.g.coeff3 ^ 2 * m.toVSM.g.coeff0 m.toVSM.Q)
+    (h1 : 0 < m.toVSM.g.coeff1 m.toVSM.Q) (h0 : 0 < m.toVSM.g.coeff0 m.toVSM.Q)
+    (hB : 0 < Line.VSM.bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0
+      (m.toVSM.Q / m.g.M) m.toVSM.angleShift) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  have hr : m.Regular := ⟨hV, hM.ne', hN.L.ne', hC, hN.absSq_pos⟩
+  have hl := Line.VSM.mem_den_locallyAsymptoticallyStable_of_bautinFormAngle_pos m.toVSM
+    ⟨hN, hM, hD⟩ hb.1 hH h1 h0 hB
+  unfold TMIO.Statement at hl
+  have hiff := mem_den_lyapunovStable_iff_vsm_of_Is_eq_zero m hr hI
+  unfold TMIO.Statement at hiff ⊢
+  exact hiff.mpr ⟨hb, Spectral.den_las_subset_lyapunovStable hl⟩
+
+/-- Off its undecided set a Lyapunov stable physical line VSM is locally asymptotically stable
+(`Line.VSM.mem_den_lyapunovStable_iff_of_not_undecided`,
+`Line.VSM.mem_den_locallyAsymptoticallyStable_iff_of_not_undecided`: both are the same
+condition). -/
+@[tmio TM, powerlib_domain] private theorem vsm_las_of_lyapunovStable (m : Line.VSM.Model)
+    (hp : Line.VSM.Meets m .physical) (hd : ¬ m.Undecided)
+    (hs : m ∈ Line.VSM.family.den (.flow .lyapunovStable)) :
+    m ∈ Line.VSM.family.den (.flow .locallyAsymptoticallyStable) := by
+  have h1 := Line.VSM.mem_den_lyapunovStable_iff_of_not_undecided m hp hd
+  have h2 := Line.VSM.mem_den_locallyAsymptoticallyStable_iff_of_not_undecided m hp hd
+  unfold TMIO.Statement at h1 h2
+  exact h2.mpr (h1.mp hs)
+
+/-- **Lyapunov stability for a constant-power source, decided off the line-VSM undecided set.**
+A physical network, `M, D > 0`, `C, V* ≠ 0`, `I_s = 0`, and an AC part off the undecided set of
+the line VSM (`Line.VSM.Model.Undecided`: the triple zero `K = 0`, `a₁ = a₂ = 0` and the
+Bautin-type points `𝔅_δ = 0`; the Bogdanov–Takens and zero–Hopf points are decided): the
+operating point is Lyapunov stable iff it is balanced and its AC part is a locally
+asymptotically stable member of `Line.VSM.family` — explicitly
+(`Line.VSM.mem_den_locallyAsymptoticallyStable_iff_of_not_undecided`) iff it is balanced and the
+line VSM meets its strict quartic Routh conditions or lies on its Hopf boundary with `𝔅_δ > 0`.
+The remaining boundary points are not Lyapunov stable: every fold point off the triple zero
+(saddle-node, Bogdanov–Takens, zero–Hopf) and the subcritical Hopf points `𝔅_δ < 0` (the AC
+part is unstable there). It is never locally
+asymptotically stable (`not_mem_den_locallyAsymptoticallyStable_of_Is_eq_zero`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff_of_Is_eq_zero (m : Model)
+    (hN : m.g.Physical) (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hC : m.g.C ≠ 0) (hV : m.V ≠ 0)
+    (hI : m.g.Is = 0) (hd : ¬ m.toVSM.Undecided) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m.Balanced ∧ m.toVSM ∈ Line.VSM.family.den (.flow .locallyAsymptoticallyStable)) := by
+  have hr : m.Regular := ⟨hV, hM.ne', hN.L.ne', hC, hN.absSq_pos⟩
+  have hiff := mem_den_lyapunovStable_iff_vsm_of_Is_eq_zero m hr hI
+  unfold TMIO.Statement at hiff ⊢
+  rw [hiff]
+  exact ⟨fun ⟨hb, hs⟩ => ⟨hb, vsm_las_of_lyapunovStable m.toVSM ⟨hN, hM, hD⟩ hd hs⟩,
+    fun ⟨hb, hl⟩ => ⟨hb, Spectral.den_las_subset_lyapunovStable hl⟩⟩
 
 end LineCascade
 

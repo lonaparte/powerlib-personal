@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFM.HopfLyapunovSymbolic
 import theorem.GridTiedConverter.GFM.HopfBautinLine
-import theorem.Dynamics.HopfCycle
+import theorem.Dynamics.HopfCycleAmplitude
 
 /-! # The VSM on a dynamic line: transversality along the damping and the inertia, Hopf cycles
 
@@ -31,9 +31,10 @@ Model boundary.
   coefficient `τ = tr (critπ p ∘ ∂J/∂D ∘ critι q) = 2 Re ⟨p, (∂J/∂D) q⟩`, twice the crossing speed
   of the critical eigenvalues), and, as private evidence, the cycles of the generic Hopf theorem
   `Dynamics.HopfCycle.exists_hopfCycle` for this family. Periodic orbits are not sentences of
-  `Line.VSM.family`: no new family, no connection conclusion. Not proved: uniqueness and orbital
-  stability of the cycles, the absence of cycles on the other side, the cycles at the degenerate
-  points `𝔅_δ = 0` (Bautin).
+  `Line.VSM.family`: no new family, no connection conclusion. Every small cycle
+  (`Dynamics.HopfCycle.periodic_amplitude`): no small cycle on the other side; amplitude
+  `(1 ± η) ν`. Not proved: uniqueness and orbital stability of the cycles, the cycles at the
+  degenerate points `𝔅_δ = 0` (Bautin).
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.4–3.5 (Theorem 3.3, the
 transversality coefficient `Re λ'(0) = Re ⟨p, A'(0) q⟩`); Hassard–Kazarinoff–Wan, *Theory and
@@ -83,6 +84,10 @@ Results.
   (`𝔗 = ω₀²(d + 2σ)³ + 𝔍 (2σκ − dκ − d²σ − 5dσ² − dω₀² − 2σ³ + 2σω₀²)`, so `𝔍 = 0` forces
   `𝔗 > 0`), `Line.VSM.Model.paramTrace_inert_ne_zero_of_paramTrace_eq_zero` (`τ_D = 0 ⇒ τ_M ≠ 0`
   at every boundary point).
+* Private evidence `Line.VSM.Model.hopfData_of_family` (the shared Hopf data),
+  `Line.VSM.Model.periodic_amplitude_of_family`, `Model.periodic_amplitude_damping`,
+  `Model.periodic_amplitude_inertia` (every small cycle is on the cycle side, with amplitude
+  `(1 ± η) c|μ|`).
 * Private evidence: `Line.VSM.Model.exists_hopfCycle_of_family` (the cycles of
   `Dynamics.HopfCycle.exists_hopfCycle` for any family through a boundary point with a given
   sign of `τ`), `Line.VSM.Model.exists_hopfCycle_damping` (`𝔅_δ ≠ 0`, `𝔗 ≠ 0`: for every small
@@ -825,13 +830,10 @@ evidence on the model. -/
 
 /-! ## The Hopf cycles -/
 
-/-- **Hopf cycles of a one-parameter family through a boundary point.** For a family `F` of the
-model at a balanced physical boundary point (`a₁, a₀ > 0`) whose augmented field is smooth,
-which keeps the origin fixed, equals the model field at `μ = 0`, and whose transversality
-coefficient at (`critQ`, `critP`) has the sign of `s ≠ 0`, with `𝔅_δ ≠ 0`: for every small `μ`
-with `μ s 𝔅_δ > 0` there is a nonconstant periodic orbit with
-`c|μ|/8 ≤ ‖critπ p z(t)‖² ≤ 8c|μ|` (`HopfCycle.exists_hopfCycle`). Private evidence. -/
-@[tmio TM, powerlib_domain] private theorem Model.exists_hopfCycle_of_family (m : Model)
+/-- The Hopf data of a family through a boundary point (shared by the cycle and amplitude
+laws): the critical pair, the factorized characteristic polynomial, `τ ≠ 0`, `ℓ₁ ≠ 0` and
+`sign(μ τ ℓ₁) = −sign(μ s 𝔅_δ)`. -/
+@[tmio TM, powerlib_domain] private theorem Model.hopfData_of_family (m : Model)
     (hp : Meets m .physical) (hb : Meets m .balanced)
     (hH : m.g.coeff3 * m.g.coeff2 m.Q * m.g.coeff1 m.Q =
       m.g.coeff1 m.Q ^ 2 + m.g.coeff3 ^ 2 * m.g.coeff0 m.Q)
@@ -839,19 +841,26 @@ with `μ s 𝔅_δ > 0` there is a nonconstant periodic orbit with
     (hB : bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
       m.angleShift ≠ 0)
     {F : State 4 → ℝ → State 4} {B : State 4 →L[ℝ] State 4}
-    (hF : ∀ k : WithTop ℕ∞, ContDiff ℝ k (augField F)) (hF0 : ∀ μ, F 0 μ = 0)
-    (hFm : (fun z => F z 0) = m.field)
-    (hFB : HasDerivAt (fun μ => fderiv ℝ (fun z => F z μ) 0) B 0) {s : ℝ} (hs0 : s ≠ 0)
+    (hFm : (fun z => F z 0) = m.field) {s : ℝ} (hs0 : s ≠ 0)
     (hs : SignType.sign (Dynamics.PlanarHopf.paramTrace ((critπ (m.critP
         √(m.g.coeff1 m.Q / m.g.coeff3))).comp (B.comp (critι (m.critQ
           √(m.g.coeff1 m.Q / m.g.coeff3)))))) = SignType.sign s) :
-    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ →
-      0 < μ * s * bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
-        m.angleShift →
-      ∃ z : ℝ → State 4, ∃ T, 0 < T ∧ (∀ t, HasDerivAt z (F (z t) μ) t) ∧
-        (∀ t, z (t + T) = z t) ∧ (∃ t, z t ≠ z 0) ∧
-        ∀ t, c * |μ| / 8 ≤ ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ∧
-          ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ≤ 8 * (c * |μ|) := by
+    ∃ r : ℂ[X], IsCriticalPair (fun z => F z 0) 0 √(m.g.coeff1 m.Q / m.g.coeff3)
+        (m.critQ √(m.g.coeff1 m.Q / m.g.coeff3)) (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) ∧
+      (jacobianC (fun z => F z 0) 0).charpoly =
+        (X ^ 2 + C ((√(m.g.coeff1 m.Q / m.g.coeff3) : ℂ) ^ 2)) * r ∧
+      (∀ s : ℂ, r.eval s = 0 → s.re < 0) ∧
+      Dynamics.PlanarHopf.paramTrace ((critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3))).comp
+        (B.comp (critι (m.critQ √(m.g.coeff1 m.Q / m.g.coeff3))))) ≠ 0 ∧
+      firstLyapunov (fun z => F z 0) 0 √(m.g.coeff1 m.Q / m.g.coeff3)
+        (m.critQ √(m.g.coeff1 m.Q / m.g.coeff3)) (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) ≠ 0 ∧
+      ∀ μ : ℝ, SignType.sign (μ * Dynamics.PlanarHopf.paramTrace ((critπ (m.critP
+          √(m.g.coeff1 m.Q / m.g.coeff3))).comp (B.comp (critι (m.critQ
+            √(m.g.coeff1 m.Q / m.g.coeff3))))) *
+        firstLyapunov (fun z => F z 0) 0 √(m.g.coeff1 m.Q / m.g.coeff3)
+          (m.critQ √(m.g.coeff1 m.Q / m.g.coeff3)) (m.critP √(m.g.coeff1 m.Q / m.g.coeff3))) =
+        -SignType.sign (μ * s * bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift) := by
   have h3 := model_coeff3_pos' hp
   set ω := √(m.g.coeff1 m.Q / m.g.coeff3) with hωdef
   have hω : 0 < ω := Real.sqrt_pos.mpr (div_pos h1 h3)
@@ -879,26 +888,54 @@ with `μ s 𝔅_δ > 0` there is a nonconstant periodic orbit with
         m.angleShift) = -SignType.sign ℓ := by rw [hsℓ, neg_neg]
     rw [h, sign_zero] at e
     exact hB (sign_eq_zero_iff.mp e)
+  refine ⟨r, hcp, hchar', hr, hτ0, hℓ0, fun μ => ?_⟩
+  rw [sign_mul, sign_mul, hs, hsℓ, sign_mul, sign_mul]
+  simp only [mul_neg]
+
+/-- **Hopf cycles of a one-parameter family through a boundary point.** For a family `F` of the
+model at a balanced physical boundary point (`a₁, a₀ > 0`) whose augmented field is smooth,
+which keeps the origin fixed, equals the model field at `μ = 0`, and whose transversality
+coefficient at (`critQ`, `critP`) has the sign of `s ≠ 0`, with `𝔅_δ ≠ 0`: for every small `μ`
+with `μ s 𝔅_δ > 0` there is a nonconstant periodic orbit with
+`c|μ|/8 ≤ ‖critπ p z(t)‖² ≤ 8c|μ|` (`HopfCycle.exists_hopfCycle`). Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.exists_hopfCycle_of_family (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced)
+    (hH : m.g.coeff3 * m.g.coeff2 m.Q * m.g.coeff1 m.Q =
+      m.g.coeff1 m.Q ^ 2 + m.g.coeff3 ^ 2 * m.g.coeff0 m.Q)
+    (h1 : 0 < m.g.coeff1 m.Q) (h0 : 0 < m.g.coeff0 m.Q)
+    (hB : bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift ≠ 0)
+    {F : State 4 → ℝ → State 4} {B : State 4 →L[ℝ] State 4}
+    (hF : ∀ k : WithTop ℕ∞, ContDiff ℝ k (augField F)) (hF0 : ∀ μ, F 0 μ = 0)
+    (hFm : (fun z => F z 0) = m.field)
+    (hFB : HasDerivAt (fun μ => fderiv ℝ (fun z => F z μ) 0) B 0) {s : ℝ} (hs0 : s ≠ 0)
+    (hs : SignType.sign (Dynamics.PlanarHopf.paramTrace ((critπ (m.critP
+        √(m.g.coeff1 m.Q / m.g.coeff3))).comp (B.comp (critι (m.critQ
+          √(m.g.coeff1 m.Q / m.g.coeff3)))))) = SignType.sign s) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ →
+      0 < μ * s * bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+        m.angleShift →
+      ∃ z : ℝ → State 4, ∃ T, 0 < T ∧ (∀ t, HasDerivAt z (F (z t) μ) t) ∧
+        (∀ t, z (t + T) = z t) ∧ (∃ t, z t ≠ z 0) ∧
+        ∀ t, c * |μ| / 8 ≤ ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ∧
+          ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ≤ 8 * (c * |μ|) := by
+  obtain ⟨r, hcp, hchar', hr, hτ0, hℓ0, hsgn⟩ := m.hopfData_of_family hp hb hH h1 h0 hB hFm hs0 hs
+  have h3 := model_coeff3_pos' hp
+  set ω := √(m.g.coeff1 m.Q / m.g.coeff3) with hωdef
+  have hω : 0 < ω := Real.sqrt_pos.mpr (div_pos h1 h3)
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ (m.critP ω)).comp
+      (B.comp (critι (m.critQ ω)))) with hτdef
+  set ℓ := firstLyapunov (fun z => F z 0) 0 ω (m.critQ ω) (m.critP ω) with hℓdef
   obtain ⟨δ, hδ, hcyc⟩ := Dynamics.HopfCycle.exists_hopfCycle (hF 1) (hF ⊤).contDiffAt.analyticAt
     hF0 hcp hchar' hr hFB hτ0 hℓ0
   have hκ : 0 < |τ| / (ω * |ℓ|) := div_pos (abs_pos.mpr hτ0) (mul_pos hω (abs_pos.mpr hℓ0))
   refine ⟨δ, hδ, |τ| / (ω * |ℓ|), hκ, fun μ hμ hpos => ?_⟩
   have hs' : μ * τ * ℓ < 0 := by
-    have e : SignType.sign (μ * τ * ℓ) = -SignType.sign (μ * s *
-        bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) m.angleShift) := by
-      rw [sign_mul, sign_mul, hs, hsℓ, sign_mul, sign_mul]
-      simp only [mul_neg]
+    have e := hsgn μ
     rw [sign_pos hpos] at e
     exact sign_eq_neg_one_iff.mp e
   obtain ⟨z, T, hT0, -, hz, hzT, hznc, hamp⟩ := hcyc μ hμ hs'
-  have hν : -(μ * τ) / (ω * ℓ) = |τ| / (ω * |ℓ|) * |μ| := by
-    have habs : |μ| * |τ| * |ℓ| = -(μ * τ * ℓ) := by
-      rw [← abs_mul, ← abs_mul]; exact abs_of_neg hs'
-    have hl2 : ℓ ^ 2 = |ℓ| ^ 2 := (sq_abs ℓ).symm
-    have hla : |ℓ| ≠ 0 := abs_ne_zero.mpr hℓ0
-    rw [div_mul_eq_mul_div, div_eq_div_iff (mul_ne_zero hω.ne' hℓ0) (mul_ne_zero hω.ne' hla)]
-    apply mul_right_cancel₀ hℓ0
-    linear_combination (-(ω * |ℓ|)) * habs - (ω * |μ| * |τ|) * hl2
+  have hν := Dynamics.HopfCycle.hopfAmplitude_eq_abs hω hs'
   refine ⟨z, T, hT0, hz, hzT, hznc, fun t => ?_⟩
   have := hamp t
   rw [hν] at this
@@ -1010,6 +1047,113 @@ unfolds the cycles (`Model.exists_hopfCycle_damping`), or `𝔗 = 0`, then `𝔍
       linarith
     exact ⟨hJ, m.exists_hopfCycle_inertia hp hb hH h1 h0 hB hJ⟩
   · exact Or.inl ⟨hT, m.exists_hopfCycle_damping hp hb hH h1 h0 hB hT⟩
+
+
+/-- **Every small cycle of a family through a boundary point.** With the hypotheses of
+`Model.exists_hopfCycle_of_family`: for every `η > 0` there are `δ, c > 0` such that every
+nonconstant periodic orbit of `F(·, μ)`, `|μ| < δ`, in the ball of radius `δ` has `μ s 𝔅_δ > 0`
+(none on the other side) and `(1 − η) c|μ| ≤ ‖critπ p z(t)‖² ≤ (1 + η) c|μ|`
+(`HopfCycle.periodic_amplitude`). Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_of_family (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced)
+    (hH : m.g.coeff3 * m.g.coeff2 m.Q * m.g.coeff1 m.Q =
+      m.g.coeff1 m.Q ^ 2 + m.g.coeff3 ^ 2 * m.g.coeff0 m.Q)
+    (h1 : 0 < m.g.coeff1 m.Q) (h0 : 0 < m.g.coeff0 m.Q)
+    (hB : bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift ≠ 0)
+    {F : State 4 → ℝ → State 4} {B : State 4 →L[ℝ] State 4}
+    (hF : ∀ k : WithTop ℕ∞, ContDiff ℝ k (augField F)) (hF0 : ∀ μ, F 0 μ = 0)
+    (hFm : (fun z => F z 0) = m.field)
+    (hFB : HasDerivAt (fun μ => fderiv ℝ (fun z => F z μ) 0) B 0) {s : ℝ} (hs0 : s ≠ 0)
+    (hs : SignType.sign (Dynamics.PlanarHopf.paramTrace ((critπ (m.critP
+        √(m.g.coeff1 m.Q / m.g.coeff3))).comp (B.comp (critι (m.critQ
+          √(m.g.coeff1 m.Q / m.g.coeff3)))))) = SignType.sign s) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 4) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (F (z t) μ) t) → (∀ t, z (t + T) = z t) → (∃ t, z t ≠ z 0) →
+      (∀ t, ‖z t‖ < δ) →
+      0 < μ * s * bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift ∧
+        ∀ t, (1 - η) * (c * |μ|) ≤ ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ∧
+          ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ≤ (1 + η) * (c * |μ|) := by
+  obtain ⟨r, hcp, hchar', hr, hτ0, hℓ0, hsgn⟩ := m.hopfData_of_family hp hb hH h1 h0 hB hFm hs0 hs
+  have h3 := model_coeff3_pos' hp
+  set ω := √(m.g.coeff1 m.Q / m.g.coeff3) with hωdef
+  have hω : 0 < ω := Real.sqrt_pos.mpr (div_pos h1 h3)
+  obtain ⟨δ, hδ, hamp⟩ := Dynamics.HopfCycle.periodic_amplitude (hF 1)
+    (hF ⊤).contDiffAt.analyticAt hF0 hcp hchar' hr hFB hτ0 hℓ0 hη
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ (m.critP ω)).comp
+      (B.comp (critι (m.critQ ω)))) with hτdef
+  set ℓ := firstLyapunov (fun z => F z 0) 0 ω (m.critQ ω) (m.critP ω) with hℓdef
+  refine ⟨δ, hδ, |τ| / (ω * |ℓ|), div_pos (abs_pos.mpr hτ0) (mul_pos hω (abs_pos.mpr hℓ0)),
+    fun μ hμ z T hT hz hzT hnc hzδ => ?_⟩
+  obtain ⟨hs', hbd⟩ := hamp μ hμ z T hT hz hzT hnc hzδ
+  have e := hsgn μ
+  rw [sign_neg hs'] at e
+  refine ⟨sign_eq_one_iff.mp (neg_inj.mp e).symm, fun t => ?_⟩
+  rw [Dynamics.HopfCycle.hopfAmplitude_eq_abs hω hs'] at hbd
+  exact hbd t
+
+/-- **Every small cycle along the damping.** With the hypotheses of
+`Model.exists_hopfCycle_damping`: every small nonconstant cycle has `μ 𝔗 𝔅_δ < 0` and the
+amplitude `(1 ± η) c|μ|`. Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_damping (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced)
+    (hH : m.g.coeff3 * m.g.coeff2 m.Q * m.g.coeff1 m.Q =
+      m.g.coeff1 m.Q ^ 2 + m.g.coeff3 ^ 2 * m.g.coeff0 m.Q)
+    (h1 : 0 < m.g.coeff1 m.Q) (h0 : 0 < m.g.coeff0 m.Q)
+    (hB : bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift ≠ 0)
+    (hT : transForm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) ≠ 0) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 4) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (m.dampFamily (z t) μ) t) → (∀ t, z (t + T) = z t) →
+      (∃ t, z t ≠ z 0) → (∀ t, ‖z t‖ < δ) →
+      μ * transForm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) *
+          bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift < 0 ∧
+        ∀ t, (1 - η) * (c * |μ|) ≤ ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ∧
+          ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ≤ (1 + η) * (c * |μ|) := by
+  have h3 := model_coeff3_pos' hp
+  have hs := Model.sign_paramTrace_crit hp hH (Real.sqrt_pos.mpr (div_pos h1 h3))
+    (Real.sq_sqrt (div_pos h1 h3).le)
+  rw [← Left.sign_neg] at hs
+  obtain ⟨δ, hδ, c, hc, h⟩ := m.periodic_amplitude_of_family hp hb hH h1 h0 hB
+    (fun _ => m.contDiff_augField_dampFamily) (m.dampFamily_origin hp hb)
+    m.dampFamily_zero_param m.hasDerivAt_fderiv_dampFamily (neg_ne_zero.mpr hT) hs hη
+  refine ⟨δ, hδ, c, hc, fun μ hμ z T hT0 hz hzT hnc hzδ => ?_⟩
+  obtain ⟨hpos, hbd⟩ := h μ hμ z T hT0 hz hzT hnc hzδ
+  refine ⟨?_, hbd⟩
+  linarith [show μ * -transForm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) *
+      bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) m.angleShift =
+    -(μ * transForm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) *
+      bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) m.angleShift) by ring]
+
+/-- **Every small cycle along the inverse inertia.** With the hypotheses of
+`Model.exists_hopfCycle_inertia`: every small nonconstant cycle has `μ 𝔍 𝔅_δ > 0` and the
+amplitude `(1 ± η) c|μ|`. Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_inertia (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced)
+    (hH : m.g.coeff3 * m.g.coeff2 m.Q * m.g.coeff1 m.Q =
+      m.g.coeff1 m.Q ^ 2 + m.g.coeff3 ^ 2 * m.g.coeff0 m.Q)
+    (h1 : 0 < m.g.coeff1 m.Q) (h0 : 0 < m.g.coeff0 m.Q)
+    (hB : bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift ≠ 0)
+    (hJ : inertForm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) ≠ 0) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 4) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (m.inertFamily (z t) μ) t) → (∀ t, z (t + T) = z t) →
+      (∃ t, z t ≠ z 0) → (∀ t, ‖z t‖ < δ) →
+      0 < μ * inertForm (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M) *
+          bautinFormAngle (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 (m.Q / m.g.M)
+      m.angleShift ∧
+        ∀ t, (1 - η) * (c * |μ|) ≤ ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ∧
+          ‖critπ (m.critP √(m.g.coeff1 m.Q / m.g.coeff3)) (z t)‖ ^ 2 ≤ (1 + η) * (c * |μ|) := by
+  have h3 := model_coeff3_pos' hp
+  exact m.periodic_amplitude_of_family hp hb hH h1 h0 hB
+    (fun _ => m.contDiff_augField_inertFamily) (m.inertFamily_origin hp hb)
+    m.inertFamily_zero_param m.hasDerivAt_fderiv_inertFamily hJ
+    (Model.sign_paramTrace_inert_crit hp hH (Real.sqrt_pos.mpr (div_pos h1 h3))
+      (Real.sq_sqrt (div_pos h1 h3).le)) hη
 
 end VSM
 end powerlib.GFM.Line

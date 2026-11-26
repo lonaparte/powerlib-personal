@@ -31,8 +31,10 @@ Model boundary.
   `Stochastic.LDP.controlQuasiPotential`). The path-space large-deviation principle of the
   noisy model with this action as rate (Schilder, `theorem/Stochastic/Schilder.lean`, and the
   Freidlin–Wentzell LDP, `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzell.lean`) is proved;
-  the exit-time asymptotics `ε log E[τ_exit] → V(stable equilibrium, saddle)` are not formalized,
-  and no statement here concerns the law of the exit time.
+  the exit-time asymptotics `ε log E[τ_exit] → V(stable equilibrium, saddle)` are not formalized
+  (the Hamilton–Jacobi value of `Params3.hj_filter` bounds the mean exit time from its sublevel
+  wells from below: `GFM.Noise.Params3.le_liminf_log_exitTime_filterWell`), and no statement
+  here concerns the law of the exit time.
 * Excluded as in `GFM.Noise.FilterEmbedding`.
 
 Source: GFM counterpart study, note t2-noise item 7 (escape of the three-state model; its

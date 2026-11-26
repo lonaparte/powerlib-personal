@@ -33,8 +33,14 @@ Model boundary.
 * The matching lower bound and the exponential law `ε log E τ_ε → V̄(η)` are in
   `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellLower.lean` (a chain of deterministic
   time blocks, `theorem/Stochastic/ExitTimeLower.lean`; the strong Markov property is in
-  `theorem/Stochastic/StrongMarkov.lean`). Not formalized: the exit place (see the model boundary
-  of `FreidlinWentzellLower.lean`); the three-state model (its noiseless flow is not analysed).
+  `theorem/Stochastic/StrongMarkov.lean`); the three-state counterpart of the lower bound is
+  `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellFilter.lean`.
+* The cut well `Params.cutWell η d = {x ∈ energyWell η : δ ≤ d}` (`δ_s < d < δ_u`,
+  `U(d − α) < U(δ_u − α) − η`): its mean exit time grows at most at the rate
+  `2D(U(d − α) − U(δ_s − α))/σ_P²` of the cut point `(d, 0)`, the exit leading through the rest
+  point `(d', 0)` just beyond the cut; the exit place of the cut well is
+  `theorem/GridTiedConverter/GFM/Noise/FreidlinWentzellPlace.lean`. The exit place of the uncut
+  well is not concentrated (see the model boundary of `FreidlinWentzellLower.lean`).
 
 Source: M. I. Freidlin, A. D. Wentzell, *Random Perturbations of Dynamical Systems* (1984),
 Ch. 4 §2–3 (exit through the boundary, the uphill paths as time-reversed relaxation paths of a
@@ -57,6 +63,9 @@ Results.
   with `sup_{x ∈ well} inf {J_x^T(φ) : φ leaves the well on [0, T]} ≤ 2D(ΔU − η)/σ_P² + γ`.
 * `Params.limsup_log_exitTime_energyWell_le` (**`limsup ε log E τ_ε ≤ 2D(ΔU − η)/σ_P²`** for the
   exit from the well started at `x_s`).
+* `Params.cutWell`, `Params.isCompact_cutWell`, `Params.exists_horizon_iSup_fwRate_cutWell_le`,
+  `Params.limsup_log_exitTime_cutWell_le` (**`limsup ε log E τ_ε ≤
+  2D(U(d − α) − U(δ_s − α))/σ_P²`** for the exit from the cut well).
 * `Params.limsup_log_measure_exitTime_le` (**`limsup ε log P(τ_ε ≤ T) ≤ −2D(ΔU − η)/σ_P²`** for
   every fixed horizon `T`).
 -/
@@ -99,34 +108,20 @@ def freeSwing (σP : ℝ) (y : Fin 2 → ℝ) (T : ℝ≥0) : C(Icc (0 : ℝ) T,
 
 variable {σP : ℝ}
 
-/-- The noiseless solution has derivative `b(x(t))` inside `(0, T)`. -/
+/-- The noiseless solution has derivative `b(x(t))` inside `(0, T)`
+(`Stochastic.LDP.hasDerivAt_solMap_zero`). -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_freeSwing (y : Fin 2 → ℝ) {T : ℝ≥0}
     {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) T) :
     HasDerivAt (pathExt (p.freeSwing σP y T)) (p.swingDrift (pathExt (p.freeSwing σP y T) t))
       t := by
   obtain ⟨K, hK⟩ := p.lipschitzWith_swingDrift
-  have hc : Continuous fun s => p.swingDrift (pathExt (p.freeSwing σP y T) s) :=
-    hK.continuous.comp (continuous_pathExt _)
-  have hG : HasDerivAt
-      (fun s => y + ∫ r in (0 : ℝ)..s, p.swingDrift (pathExt (p.freeSwing σP y T) r))
-      (p.swingDrift (pathExt (p.freeSwing σP y T) t)) t :=
-    ((hc.integral_hasStrictDerivAt 0 t).hasDerivAt).const_add y
-  refine hG.congr_of_eventuallyEq ?_
-  filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs
-  have hmem : s ∈ Icc (0 : ℝ) T := ⟨hs.1.le, hs.2.le⟩
-  rw [pathExt_of_mem _ hmem]
-  simp only [freeSwing]
-  rw [solMap_spec hK]
-  simp
+  exact hasDerivAt_solMap_zero hK _ y ht
 
-/-- The noiseless solution starts at `y`. -/
+/-- The noiseless solution starts at `y` (`Stochastic.LDP.pathExt_solMap_zero`). -/
 @[tmio M, powerlib_domain] theorem pathExt_freeSwing_zero (y : Fin 2 → ℝ) (T : ℝ≥0) :
     pathExt (p.freeSwing σP y T) 0 = y := by
   obtain ⟨K, hK⟩ := p.lipschitzWith_swingDrift
-  rw [pathExt_of_mem _ ⟨le_rfl, T.coe_nonneg⟩]
-  simp only [freeSwing]
-  rw [solMap_spec hK]
-  simp
+  exact pathExt_solMap_zero hK _ y T
 
 /-- The energy derivative along the noiseless solution is `−D (p/M)²`. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_swingEnergy_freeSwing (y : Fin 2 → ℝ) {T : ℝ≥0}
@@ -480,27 +475,25 @@ integer time (`D > 0`, `c₀ ≤ P_ref < c₀ + A`, `η > 0`). -/
   rw [div_lt_iff₀ hc] at hn
   linarith
 
-/-- From a driving path that takes `x_s` out of the well at rate `≤ V`, a common horizon on which
-every state of the well leaves it at rate `≤ V`: the noiseless flow enters a neighbourhood of
-`x_s` served by the same path (`exists_free_mem_ball`, continuity of the solution map), and
-finitely many delayed copies serve the compact well. -/
+/-- From a driving path that takes `x_s` out of a compact `K` inside the well at rate `≤ V`, a
+common horizon on which every state of `K` leaves `K` at rate `≤ V`: the noiseless flow enters a
+neighbourhood of `x_s` served by the same path (`exists_free_mem_ball`, continuity of the solution
+map), and finitely many delayed copies serve the compact `K`. -/
 @[tmio M, powerlib_domain] private theorem exists_horizon_of_escape (hD : 0 < p.D)
-    (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {η : ℝ} (hη : 0 < η) {V : ℝ≥0∞}
+    (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {η : ℝ} (hη : 0 < η)
+    {W : Set (Fin 2 → ℝ)} (hWc : IsCompact W) (hWη : W ⊆ p.energyWell η) {V : ℝ≥0∞}
     {Ts : ℝ≥0} {ws : C(Icc (0 : ℝ) Ts, Fin 1 → ℝ)} (hws0 : pathExt ws 0 = 0)
     (hout : ∃ t, solMap p.swingDrift (columnsCLM fun _ : Fin 1 => swingColumn σP)
-      ![Real.arcsin ((p.Pref - p.c0) / p.A) + p.α, 0] ws t ∉ p.energyWell η)
+      ![Real.arcsin ((p.Pref - p.c0) / p.A) + p.α, 0] ws t ∉ W)
     (hrateV : schilderRate Ts ws ≤ V) :
     ∃ T : ℝ≥0, 0 < (T : ℝ) ∧
-      ⨆ x ∈ p.energyWell η, ⨅ φ ∈ {φ : C(Icc (0 : ℝ) T, Fin 2 → ℝ) |
-          ∃ t, φ t ∉ p.energyWell η},
+      ⨆ x ∈ W, ⨅ φ ∈ {φ : C(Icc (0 : ℝ) T, Fin 2 → ℝ) | ∃ t, φ t ∉ W},
         fwRate p.swingDrift (fun _ : Fin 1 => swingColumn σP) x T φ ≤ V := by
   obtain ⟨K, hK⟩ := p.lipschitzWith_swingDrift
   set N := columnsCLM fun _ : Fin 1 => swingColumn σP with hN
   set a := Real.arcsin ((p.Pref - p.c0) / p.A) with ha
-  set W := p.energyWell η with hW
-  -- a neighbourhood of `x_s` driven out of the well by `ws`
+  -- a neighbourhood of `x_s` driven out of `W` by `ws`
   set O := {φ : C(Icc (0 : ℝ) Ts, Fin 2 → ℝ) | ∃ t, φ t ∉ W} with hO
-  have hWc := p.isCompact_energyWell η
   have hOo : ∀ T : ℝ≥0, IsOpen {φ : C(Icc (0 : ℝ) T, Fin 2 → ℝ) | ∃ t, φ t ∉ W} := by
     intro T
     have : {φ : C(Icc (0 : ℝ) T, Fin 2 → ℝ) | ∃ t, φ t ∉ W} = ⋃ t, (fun φ => φ t) ⁻¹' Wᶜ := by
@@ -518,7 +511,7 @@ finitely many delayed copies serve the compact well. -/
     by_cases hx : x ∈ W
     swap
     · exact ⟨0, fun h => absurd h hx⟩
-    obtain ⟨n, hn⟩ := p.exists_free_mem_ball (σP := σP) hD h0 h1 hη hr hx
+    obtain ⟨n, hn⟩ := p.exists_free_mem_ball (σP := σP) hD h0 h1 hη hr (hWη hx)
     refine ⟨n, fun _ => ?_⟩
     by_contra hall
     simp only [not_exists, not_not] at hall
@@ -902,15 +895,102 @@ of size `O(ρ)`). -/
     simp only [h1] at hint ⊢
     linarith
 
+/-- **Driving `x_s` through a state at rest momentum, cheaply**: for `z = (δ, 0)` in a well
+`Params.energyWell η'` (`η' > 0`) and `g > 0`, a driving path starting at `0` takes the solution
+from `x_s` through `z` (it leaves every set not containing `z`) at Schilder rate at most
+`(2D/σ_P²)(H(z) − H(x_s)) + g`: a cubic glue of small rate to the momentum flip of a state of the
+noiseless flow from `z` near `x_s`, then the uphill path (`exists_glue`, `exists_uphill`,
+`Stochastic.LDP.schilderRate_concatPath_le`). -/
+@[tmio M, powerlib_domain] private theorem exists_drive_to (hσ : σP ≠ 0) (hD : 0 < p.D)
+    (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {η' : ℝ} (hη' : 0 < η')
+    {z : Fin 2 → ℝ} (hz : z ∈ p.energyWell η') (hz1 : z 1 = 0) {g : ℝ} (hg : 0 < g) :
+    ∃ Ts : ℝ≥0, ∃ ws : C(Icc (0 : ℝ) Ts, Fin 1 → ℝ), pathExt ws 0 = 0 ∧
+      (∀ S : Set (Fin 2 → ℝ), z ∉ S → ∃ t, solMap p.swingDrift
+        (columnsCLM fun _ : Fin 1 => swingColumn σP)
+        ![Real.arcsin ((p.Pref - p.c0) / p.A) + p.α, 0] ws t ∉ S) ∧
+      schilderRate Ts ws ≤ ENNReal.ofReal (2 * p.D / σP ^ 2 * (p.swingEnergy z -
+        p.swingEnergy ![Real.arcsin ((p.Pref - p.c0) / p.A) + p.α, 0]) + g) := by
+  obtain ⟨K, hK⟩ := p.lipschitzWith_swingDrift
+  set N := columnsCLM fun _ : Fin 1 => swingColumn σP with hN
+  set a := Real.arcsin ((p.Pref - p.c0) / p.A) with ha
+  set xs : Fin 2 → ℝ := ![a + p.α, 0] with hxs
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  set ac := 2 * p.D / σP ^ 2 with hac
+  have hac0 : 0 < ac := by positivity
+  have hfz : flipMomentum z = z := by
+    ext i; fin_cases i <;> simp [flipMomentum, hz1]
+  -- radii: the glue and the continuity of the energy at `x_s`
+  obtain ⟨ρ₁, hρ₁, hglue⟩ := p.exists_glue (σP := σP) hσ h0 h1 (γ := g / 2) (by positivity)
+  obtain ⟨ρ₂, hρ₂, hHc⟩ : ∃ ρ₂ > 0, ∀ y, dist y xs < ρ₂ →
+      p.swingEnergy xs - g / (2 * ac) < p.swingEnergy y := by
+    obtain ⟨ρ₂, hρ₂, h⟩ := Metric.continuousAt_iff.mp p.continuous_swingEnergy.continuousAt
+      (g / (2 * ac)) (by positivity)
+    refine ⟨ρ₂, hρ₂, fun y hy => ?_⟩
+    have := h hy
+    rw [Real.dist_eq, abs_lt] at this
+    linarith [this.1]
+  have hρ0 : 0 < min ρ₁ ρ₂ := lt_min hρ₁ hρ₂
+  -- the noiseless flow from `z` comes near `x_s`
+  obtain ⟨n, hn⟩ := p.exists_free_mem_ball (σP := σP) hD h0 h1 (η := η') hη' hρ0 hz
+  set y₁ := pathExt (p.freeSwing σP z n) ((n : ℝ≥0) : ℝ) with hy₁
+  have hflip : dist (flipMomentum y₁) xs ≤ dist y₁ xs := by
+    refine (dist_pi_le_iff dist_nonneg).mpr fun i => ?_
+    fin_cases i
+    · simpa [flipMomentum, hxs] using dist_le_pi_dist y₁ xs 0
+    · have := dist_le_pi_dist y₁ xs 1
+      simp only [flipMomentum, hxs, Real.dist_eq] at this ⊢
+      simpa [abs_neg] using this
+  obtain ⟨Wg, hWg, hWgr, hWg0⟩ :=
+    hglue _ (lt_of_lt_of_le (lt_of_le_of_lt hflip hn) (min_le_left _ _))
+  obtain ⟨Wu, hWu, hWur, hWu0⟩ := p.exists_uphill hσ hD z n
+  rw [hfz] at hWu
+  have hE1 := hHc y₁ (lt_of_lt_of_le hn (min_le_right _ _))
+  have hE2 : p.swingEnergy y₁ ≤ p.swingEnergy z :=
+    p.swingEnergy_freeSwing_le (σP := σP) z n (t := ((n : ℝ≥0) : ℝ))
+      ⟨NNReal.coe_nonneg _, le_rfl⟩
+  -- the concatenated driving path from `x_s`
+  set w := concatPath Wg Wu with hw
+  have hw0 : pathExt w 0 = 0 := by
+    rw [pathExt_of_mem _ ⟨le_rfl, NNReal.coe_nonneg _⟩]
+    show pathExt Wg 0 + pathExt Wu (0 - ((1 : ℝ≥0) : ℝ)) = 0
+    have e : pathExt Wu (0 - ((1 : ℝ≥0) : ℝ)) = pathExt Wu 0 := by
+      simp only [pathExt, IccExtend, Function.comp_apply]
+      rw [projIcc_of_le_left _ (by norm_num), projIcc_of_le_left _ le_rfl]
+    rw [e, hWg0, hWu0, add_zero]
+  refine ⟨(1 : ℝ≥0) + n, w, hw0, fun S hzS => ?_, ?_⟩
+  · by_contra hall
+    simp only [not_exists, not_not] at hall
+    have h2 := ((forall_mem_iff_restrict_restart (K := S) _).mp hall).2
+    have hend : pathExt (solMap p.swingDrift N xs w) ((1 : ℝ≥0) : ℝ) = flipMomentum y₁ := by
+      rw [← pathExt_restrictPath le_self_add _ (s := ((1 : ℝ≥0) : ℝ))
+          ⟨NNReal.coe_nonneg _, le_rfl⟩, restrictPath_solMap hK,
+        restrictPath_concatPath _ _ hWu0, pathExt_of_mem _ ⟨NNReal.coe_nonneg _, le_rfl⟩]
+      exact hWg
+    rw [restartPath_solMap hK, shiftPath_concatPath _ _ hWu0, hend] at h2
+    exact hzS (hWu ▸ h2 ⟨(n : ℝ≥0), right_mem_Icc.mpr (NNReal.coe_nonneg _)⟩)
+  · -- its rate
+    refine (schilderRate_concatPath_le Wg Wu).trans ?_
+    have hX : 0 ≤ 2 * p.D / σP ^ 2 * (p.swingEnergy z - p.swingEnergy y₁) :=
+      mul_nonneg hac0.le (by linarith)
+    calc schilderRate 1 Wg + schilderRate (n : ℝ≥0) Wu
+        ≤ ENNReal.ofReal (g / 2) +
+            ENNReal.ofReal (2 * p.D / σP ^ 2 * (p.swingEnergy z - p.swingEnergy y₁)) :=
+          add_le_add hWgr hWur
+      _ = ENNReal.ofReal (g / 2 + 2 * p.D / σP ^ 2 * (p.swingEnergy z - p.swingEnergy y₁)) :=
+          (ENNReal.ofReal_add (by positivity) hX).symm
+      _ ≤ _ := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          rw [← hac]
+          have : ac * (g / (2 * ac)) = g / 2 := by field_simp
+          nlinarith
+
 /-- **Leaving the well from every state at the cost of its boundary level** (`σ_P ≠ 0`, `D > 0`,
 `c₀ ≤ P_ref < c₀ + A`, `0 < η ≤ ΔU`): for every `γ > 0` there is a horizon `T > 0` such that from
 every state of the well some path leaving it on `[0, T]` has Freidlin–Wentzell rate at most
-`2D(ΔU − η)/σ_P² + γ`. Construction: from `x_s` a cubic glue of small rate to the momentum flip
-of a state of the noiseless flow from a point `z` slightly above the boundary level, then the
-uphill path (the momentum-flipped time reversal of that flow, rate `(2D/σ_P²)(H(z) − H)`) to `z`
-(`exists_glue`, `exists_uphill`, `Stochastic.LDP.schilderRate_concatPath_le`); the noiseless flow
-brings every state of the well near `x_s`, and finitely many delayed copies serve the compact
-well (`exists_horizon_of_escape`). -/
+`2D(ΔU − η)/σ_P² + γ`. Construction: from `x_s` through a point `z` slightly above the boundary
+level, at rest momentum (`exists_drive_to`: a glue and the momentum-flipped time reversal of the
+noiseless flow from `z`); the noiseless flow brings every state of the well near `x_s`, and
+finitely many delayed copies serve the compact well (`exists_horizon_of_escape`). -/
 @[tmio M, powerlib_domain] theorem exists_horizon_iSup_fwRate_energyWell_le (hσ : σP ≠ 0)
     (hD : 0 < p.D) (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {η : ℝ} (hη0 : 0 < η)
     (hη1 : η ≤ p.potential (π - Real.arcsin ((p.Pref - p.c0) / p.A)) -
@@ -923,8 +1003,6 @@ well (`exists_horizon_of_escape`). -/
         p.potential (Real.arcsin ((p.Pref - p.c0) / p.A)) - η) / σP ^ 2) + γ := by
   rcases eq_or_ne γ ⊤ with hγt | hγt
   · exact ⟨1, one_pos, by rw [hγt, add_top]; exact le_top⟩
-  obtain ⟨K, hK⟩ := p.lipschitzWith_swingDrift
-  set N := columnsCLM fun _ : Fin 1 => swingColumn σP with hN
   set a := Real.arcsin ((p.Pref - p.c0) / p.A) with ha
   set xs : Fin 2 → ℝ := ![a + p.α, 0] with hxs
   set Hl := p.potential (π - a) - η with hHl
@@ -967,81 +1045,21 @@ well (`exists_horizon_of_escape`). -/
     have := h.2.2
     rw [hzE] at this
     linarith
-  have hfz : flipMomentum z = z := by
-    ext i; fin_cases i <;> simp [flipMomentum, hz]
-  -- radii: the glue and the continuity of the energy at `x_s`
-  obtain ⟨ρ₁, hρ₁, hglue⟩ := p.exists_glue (σP := σP) hσ h0 h1 (γ := g / 4) (by positivity)
-  obtain ⟨ρ₂, hρ₂, hHc⟩ : ∃ ρ₂ > 0, ∀ y, dist y xs < ρ₂ →
-      p.swingEnergy xs - g / (4 * ac) < p.swingEnergy y := by
-    obtain ⟨ρ₂, hρ₂, h⟩ := Metric.continuousAt_iff.mp p.continuous_swingEnergy.continuousAt
-      (g / (4 * ac)) (by positivity)
-    refine ⟨ρ₂, hρ₂, fun y hy => ?_⟩
-    have := h hy
-    rw [Real.dist_eq, abs_lt] at this
-    linarith [this.1]
-  have hρ0 : 0 < min ρ₁ ρ₂ := lt_min hρ₁ hρ₂
-  -- the noiseless flow from `z` comes near `x_s`
-  obtain ⟨n, hn⟩ := p.exists_free_mem_ball (σP := σP) hD h0 h1 (η := η - ζ) (by linarith) hρ0
-    hzW'
-  set y₁ := pathExt (p.freeSwing σP z n) ((n : ℝ≥0) : ℝ) with hy₁
-  have hflip : dist (flipMomentum y₁) xs ≤ dist y₁ xs := by
-    refine (dist_pi_le_iff dist_nonneg).mpr fun i => ?_
-    fin_cases i
-    · simpa [flipMomentum, hxs] using dist_le_pi_dist y₁ xs 0
-    · have := dist_le_pi_dist y₁ xs 1
-      simp only [flipMomentum, hxs, Real.dist_eq] at this ⊢
-      simpa [abs_neg] using this
-  obtain ⟨Wg, hWg, hWgr, hWg0⟩ :=
-    hglue _ (lt_of_lt_of_le (lt_of_le_of_lt hflip hn) (min_le_left _ _))
-  obtain ⟨Wu, hWu, hWur, hWu0⟩ := p.exists_uphill hσ hD z n
-  rw [hfz] at hWu
-  have hE1 := hHc y₁ (lt_of_lt_of_le hn (min_le_right _ _))
-  -- the concatenated driving path from `x_s`
-  set w := concatPath Wg Wu with hw
-  have hw0 : pathExt w 0 = 0 := by
-    rw [pathExt_of_mem _ ⟨le_rfl, NNReal.coe_nonneg _⟩]
-    show pathExt Wg 0 + pathExt Wu (0 - ((1 : ℝ≥0) : ℝ)) = 0
-    have e : pathExt Wu (0 - ((1 : ℝ≥0) : ℝ)) = pathExt Wu 0 := by
-      simp only [pathExt, IccExtend, Function.comp_apply]
-      rw [projIcc_of_le_left _ (by norm_num), projIcc_of_le_left _ le_rfl]
-    rw [e, hWg0, hWu0, add_zero]
-  have hout : ∃ t, solMap p.swingDrift N xs w t ∉ p.energyWell η := by
-    by_contra hall
-    simp only [not_exists, not_not] at hall
-    have h2 := ((forall_mem_iff_restrict_restart (K := p.energyWell η) _).mp hall).2
-    have hend : pathExt (solMap p.swingDrift N xs w) ((1 : ℝ≥0) : ℝ) = flipMomentum y₁ := by
-      rw [← pathExt_restrictPath le_self_add _ (s := ((1 : ℝ≥0) : ℝ))
-          ⟨NNReal.coe_nonneg _, le_rfl⟩, restrictPath_solMap hK,
-        restrictPath_concatPath _ _ hWu0, pathExt_of_mem _ ⟨NNReal.coe_nonneg _, le_rfl⟩]
-      exact hWg
-    rw [restartPath_solMap hK, shiftPath_concatPath _ _ hWu0, hend] at h2
-    exact hzout (hWu ▸ h2 ⟨(n : ℝ≥0), right_mem_Icc.mpr (NNReal.coe_nonneg _)⟩)
-  -- its rate
+  obtain ⟨Ts, w, hw0, hthrough, hrate⟩ := p.exists_drive_to hσ hD h0 h1 (η' := η - ζ)
+    (by linarith) hzW' (by simp [hz]) (g := g / 2) (by positivity)
   have hxsE : p.swingEnergy xs = p.potential a := by simp [swingEnergy, hxs]
-  have hV0 : 0 ≤ ac * (Hl - p.potential a) := mul_nonneg hac0.le (by linarith)
-  have hrate : schilderRate ((1 : ℝ≥0) + n) w ≤
+  have hrate' : schilderRate Ts w ≤
       ENNReal.ofReal (2 * p.D * (p.potential (π - a) - p.potential a - η) / σP ^ 2) + γ := by
-    refine (schilderRate_concatPath_le Wg Wu).trans ?_
-    have hup : ENNReal.ofReal (2 * p.D / σP ^ 2 * (p.swingEnergy z - p.swingEnergy y₁)) ≤
-        ENNReal.ofReal (ac * (Hl - p.potential a)) + ENNReal.ofReal (g / 2) := by
-      rw [← ENNReal.ofReal_add hV0 (by positivity)]
-      refine ENNReal.ofReal_le_ofReal ?_
-      rw [← hac, hzE]
-      rw [hxsE] at hE1
-      have : ac * (g / (4 * ac)) = g / 4 := by field_simp
-      nlinarith
-    have hVeq : 2 * p.D * (p.potential (π - a) - p.potential a - η) / σP ^ 2 =
-        ac * (Hl - p.potential a) := by rw [hac, hHl]; ring
-    rw [hVeq, hγg]
-    calc schilderRate 1 Wg + schilderRate (n : ℝ≥0) Wu
-        ≤ ENNReal.ofReal (g / 4) + (ENNReal.ofReal (ac * (Hl - p.potential a)) +
-            ENNReal.ofReal (g / 2)) := add_le_add hWgr (hWur.trans hup)
-      _ ≤ ENNReal.ofReal (ac * (Hl - p.potential a)) + ENNReal.ofReal g := by
-          rw [add_comm, add_assoc]
-          refine add_le_add le_rfl ?_
-          rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
-          exact ENNReal.ofReal_le_ofReal (by linarith)
-  exact p.exists_horizon_of_escape hD h0 h1 hη0 hw0 hout hrate
+    refine hrate.trans ?_
+    have hV0 : 0 ≤ ac * (Hl - p.potential a) := mul_nonneg hac0.le (by linarith)
+    rw [hγg, ← ENNReal.ofReal_add (by rw [show 2 * p.D * (p.potential (π - a) - p.potential a -
+      η) / σP ^ 2 = ac * (Hl - p.potential a) by rw [hac, hHl]; ring]; exact hV0) hg0.le]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [← hac, hzE, hxsE, show 2 * p.D * (p.potential (π - a) - p.potential a - η) / σP ^ 2 =
+      ac * (Hl - p.potential a) by rw [hac, hHl]; ring]
+    nlinarith
+  exact p.exists_horizon_of_escape hD h0 h1 hη0 (p.isCompact_energyWell η) subset_rfl hw0
+    (hthrough _ hzout) hrate'
 
 /-- **Mean exit time from the potential well, upper bound at the boundary level** (two states,
 `σ_P ≠ 0`, `D > 0`, `c₀ ≤ P_ref < c₀ + A`, `0 < η ≤ ΔU`): for a Brownian motion with continuous
@@ -1254,6 +1272,143 @@ Hamilton–Jacobi value (`Params.fwQP_ge`); the large-deviation upper bound
     _ ≤ _ := by
         refine EReal.neg_le_neg_iff.mpr (le_iInf₂ fun φ hφ => ?_)
         exact EReal.coe_ennreal_le_coe_ennreal_iff.mpr (hrate.trans (iInf₂_le φ hφ))
+
+
+/-! ## The well cut at an angle -/
+
+/-- **The cut well**: the states of `Params.energyWell η` with angle at most `d`. For
+`δ_s < d < δ_u` with `U(d − α) < U(δ_u − α) − η` its boundary is the cut segment `δ = d`, on
+which `H = U(d − α) + p²/(2M)` is least at the rest point `(d, 0)`, and an arc of the level
+`H = U(δ_u − α) − η`. -/
+def cutWell (η d : ℝ) : Set (Fin 2 → ℝ) := p.energyWell η ∩ {x | x 0 ≤ d}
+
+@[tmio M, powerlib_domain] theorem isCompact_cutWell (η d : ℝ) : IsCompact (p.cutWell η d) :=
+  (p.isCompact_energyWell η).inter_right (isClosed_le (continuous_apply 0) continuous_const)
+
+/-- **Leaving the cut well from every state at the cost of the cut point** (`σ_P ≠ 0`, `D > 0`,
+`c₀ ≤ P_ref < c₀ + A`, `η > 0`, `δ_s < d < δ_u`, `U(d − α) < U(δ_u − α) − η`): for every `γ > 0`
+there is a horizon `T > 0` such that from every state of the cut well some path leaving it on
+`[0, T]` has Freidlin–Wentzell rate at most `2D(U(d − α) − U(δ_s − α))/σ_P² + γ`: through the rest
+point `(d', 0)` just beyond the cut (`exists_drive_to`, `exists_horizon_of_escape`). -/
+@[tmio M, powerlib_domain] theorem exists_horizon_iSup_fwRate_cutWell_le (hσ : σP ≠ 0)
+    (hD : 0 < p.D) (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {η : ℝ} (hη0 : 0 < η)
+    {d : ℝ} (hd0 : Real.arcsin ((p.Pref - p.c0) / p.A) + p.α < d)
+    (hd1 : d < π - Real.arcsin ((p.Pref - p.c0) / p.A) + p.α)
+    (hdU : p.potential (d - p.α) < p.potential (π - Real.arcsin ((p.Pref - p.c0) / p.A)) - η)
+    {γ : ℝ≥0∞} (hγ : 0 < γ) :
+    ∃ T : ℝ≥0, 0 < (T : ℝ) ∧
+      ⨆ x ∈ p.cutWell η d, ⨅ φ ∈ {φ : C(Icc (0 : ℝ) T, Fin 2 → ℝ) | ∃ t, φ t ∉ p.cutWell η d},
+        fwRate p.swingDrift (fun _ : Fin 1 => swingColumn σP) x T φ ≤
+      ENNReal.ofReal (2 * p.D * (p.potential (d - p.α) -
+        p.potential (Real.arcsin ((p.Pref - p.c0) / p.A))) / σP ^ 2) + γ := by
+  rcases eq_or_ne γ ⊤ with hγt | hγt
+  · exact ⟨1, one_pos, by rw [hγt, add_top]; exact le_top⟩
+  set a := Real.arcsin ((p.Pref - p.c0) / p.A) with ha
+  set xs : Fin 2 → ℝ := ![a + p.α, 0] with hxs
+  set Hl := p.potential (π - a) - η with hHl
+  have hA := p.A_pos
+  have hs0 : 0 ≤ (p.Pref - p.c0) / p.A := div_nonneg (by linarith) hA.le
+  have hs1 : (p.Pref - p.c0) / p.A < 1 := (div_lt_one hA).mpr (by linarith)
+  have ha0 : 0 ≤ a := Real.arcsin_nonneg.mpr hs0
+  have ha1 : a < π / 2 := Real.arcsin_lt_pi_div_two.mpr hs1
+  have hπ := Real.pi_pos
+  have hσ2 : 0 < σP ^ 2 := by positivity
+  set ac := 2 * p.D / σP ^ 2 with hac
+  have hac0 : 0 < ac := by positivity
+  set g := γ.toReal with hg
+  have hg0 : 0 < g := ENNReal.toReal_pos hγ.ne' hγt
+  have hγg : γ = ENNReal.ofReal g := (ENNReal.ofReal_toReal hγt).symm
+  have hUd : p.potential a < p.potential (d - p.α) :=
+    p.potential_lt_potential h0 h1 (by linarith) (by linarith)
+  -- the rest point `(d', 0)` just beyond the cut
+  set e₁ := min (g / (2 * ac)) (Hl - p.potential (d - p.α)) with he₁
+  have he₁0 : 0 < e₁ := lt_min (by positivity) (by linarith)
+  obtain ⟨δ', hδ', hUnear⟩ := Metric.continuousAt_iff.mp
+    (p.hasDerivAt_potential (d - p.α)).continuousAt e₁ he₁0
+  set d' := min (d + δ' / 2) ((d + (π - a + p.α)) / 2) with hd'
+  have hdd' : d < d' := lt_min (by linarith) (by linarith)
+  have hd'1 : d' < π - a + p.α := lt_of_le_of_lt (min_le_right _ _) (by linarith)
+  have hd'δ : d' - d < δ' := by have := min_le_left (d + δ' / 2) ((d + (π - a + p.α)) / 2)
+                                linarith
+  have hUd' : p.potential (d' - p.α) < p.potential (d - p.α) + e₁ := by
+    have := hUnear (show dist (d' - p.α) (d - p.α) < δ' by
+      rw [Real.dist_eq, abs_lt]; constructor <;> linarith)
+    rw [Real.dist_eq, abs_lt] at this
+    linarith [this.2]
+  set z : Fin 2 → ℝ := ![d', 0] with hz
+  have hzE : p.swingEnergy z = p.potential (d' - p.α) := by simp [swingEnergy, hz]
+  have he₁l : e₁ ≤ Hl - p.potential (d - p.α) := min_le_right _ _
+  have hzW : z ∈ p.energyWell η :=
+    ⟨by simp [hz]; linarith, by simp [hz]; linarith, by rw [hzE]; linarith⟩
+  have hzout : z ∉ p.cutWell η d := fun h => by
+    have := h.2
+    simp only [mem_ofPred_eq, hz, Matrix.cons_val_zero] at this
+    linarith
+  obtain ⟨Ts, w, hw0, hthrough, hrate⟩ := p.exists_drive_to hσ hD h0 h1 hη0 hzW
+    (by simp [hz]) (g := g / 2) (by positivity)
+  have hxsE : p.swingEnergy xs = p.potential a := by simp [swingEnergy, hxs]
+  have hrate' : schilderRate Ts w ≤ ENNReal.ofReal (2 * p.D * (p.potential (d - p.α) -
+      p.potential a) / σP ^ 2) + γ := by
+    refine hrate.trans ?_
+    have e : 2 * p.D * (p.potential (d - p.α) - p.potential a) / σP ^ 2 =
+        ac * (p.potential (d - p.α) - p.potential a) := by rw [hac]; ring
+    have hV0 : 0 ≤ ac * (p.potential (d - p.α) - p.potential a) :=
+      mul_nonneg hac0.le (by linarith)
+    rw [hγg, e, ← ENNReal.ofReal_add hV0 hg0.le]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [← hac, hzE, hxsE]
+    have he₁g : e₁ ≤ g / (2 * ac) := min_le_left _ _
+    have : ac * (g / (2 * ac)) = g / 2 := by field_simp
+    nlinarith
+  exact p.exists_horizon_of_escape hD h0 h1 hη0 (p.isCompact_cutWell η d) inter_subset_left hw0
+    (hthrough _ hzout) hrate'
+
+/-- **Mean exit time from the cut well, upper bound at the cut point** (two states, `σ_P ≠ 0`,
+`D > 0`, `c₀ ≤ P_ref < c₀ + A`, `η > 0`, `δ_s < d < δ_u`, `U(d − α) < U(δ_u − α) − η`): the exit
+time `τ_ε` of the noisy model started at `x_s` from `Params.cutWell η d` satisfies
+`limsup_{ε→0⁺} ε log E τ_ε ≤ 2D(U(d − α) − U(δ_s − α))/σ_P²`. -/
+@[tmio M, powerlib_domain] theorem limsup_log_exitTime_cutWell_le (hσ : σP ≠ 0)
+    (hD : 0 < p.D) (h0 : p.c0 ≤ p.Pref) (h1 : p.Pref < p.c0 + p.A) {η : ℝ} (hη0 : 0 < η)
+    {d : ℝ} (hd0 : Real.arcsin ((p.Pref - p.c0) / p.A) + p.α < d)
+    (hd1 : d < π - Real.arcsin ((p.Pref - p.c0) / p.A) + p.α)
+    (hdU : p.potential (d - p.α) < p.potential (π - Real.arcsin ((p.Pref - p.c0) / p.A)) - η)
+    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbabilityMeasure P]
+    {B : ℝ≥0 → Ω → ℝ} (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω) :
+    limsup (fun ε : ℝ => (ε : EReal) * ENNReal.log (∫⁻ ω, exitTime p.swingDrift
+        (columnsCLM fun _ : Fin 1 => swingColumn σP)
+        ![Real.arcsin ((p.Pref - p.c0) / p.A) + p.α, 0] (p.cutWell η d) (√ε) B hBc ω ∂P))
+        (𝓝[>] 0) ≤
+      ((ENNReal.ofReal (2 * p.D * (p.potential (d - p.α) -
+        p.potential (Real.arcsin ((p.Pref - p.c0) / p.A))) / σP ^ 2) : ℝ≥0∞) : EReal) := by
+  set a := Real.arcsin ((p.Pref - p.c0) / p.A) with ha
+  set v := 2 * p.D * (p.potential (d - p.α) - p.potential a) / σP ^ 2 with hv
+  have hA := p.A_pos
+  have hs0 : 0 ≤ (p.Pref - p.c0) / p.A := div_nonneg (by linarith) hA.le
+  have hs1 : (p.Pref - p.c0) / p.A < 1 := (div_lt_one hA).mpr (by linarith)
+  have ha0 : 0 ≤ a := Real.arcsin_nonneg.mpr hs0
+  have ha1 : a < π / 2 := Real.arcsin_lt_pi_div_two.mpr hs1
+  have hUd : p.potential a < p.potential (d - p.α) :=
+    p.potential_lt_potential h0 h1 (by linarith) (by linarith)
+  have hv0 : 0 ≤ v := by
+    have : 0 < σP ^ 2 := by positivity
+    have : 0 ≤ p.potential (d - p.α) - p.potential a := by linarith
+    positivity
+  have hxs : (![a + p.α, 0] : Fin 2 → ℝ) ∈ p.cutWell η d := by
+    refine ⟨⟨by simp; linarith [Real.pi_pos], by simp; linarith, ?_⟩, by simp; linarith⟩
+    simp [swingEnergy]
+    linarith
+  refine le_of_forall_gt_imp_ge_of_dense fun b hb => ?_
+  induction b using EReal.rec with
+  | bot => exact absurd hb not_lt_bot
+  | top => exact le_top
+  | coe b =>
+    rw [EReal.coe_ennreal_ofReal, max_eq_left hv0, EReal.coe_lt_coe_iff] at hb
+    obtain ⟨T, hT, hsup⟩ := p.exists_horizon_iSup_fwRate_cutWell_le hσ hD h0 h1 hη0 hd0 hd1 hdU
+      (γ := ENNReal.ofReal (b - v)) (ENNReal.ofReal_pos.mpr (by linarith))
+    refine (p.limsup_log_exitTime_le hB hBc (p.isCompact_cutWell η d) hxs hT).trans ?_
+    refine (EReal.coe_ennreal_le_coe_ennreal_iff.mpr hsup).trans ?_
+    rw [← ENNReal.ofReal_add hv0 (by linarith), add_sub_cancel, EReal.coe_ennreal_ofReal,
+      max_eq_left (by linarith)]
 
 
 end Params

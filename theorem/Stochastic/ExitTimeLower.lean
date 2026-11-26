@@ -34,14 +34,20 @@ over deterministic time blocks as in the Varadhan lemma (Dembo–Zeitouni Thm 4.
 Results.
 * `continuous_pathExt_apply`, `isClosed_stay_end`, `isOpen_leave`: path events used for the
   blocks; `sum_lintegral_le` (superadditivity of the lower integral over finite sums),
-  `eventually_exp_neg_div_le` (`e^{−c/ε} ≤ η` for small `ε`).
-* `restrictPath_solMap_brownPath`, `le_exitTime_of_forall_mem`, `mul_le_lintegral_exitTime`
-  (`H (1 − P(leave by H)) ≤ E τ`).
+  `eventually_exp_neg_div_le` (`e^{−c/ε} ≤ η` for small `ε`), `exists_bands` (closed bands of a
+  continuous function over a compact set).
+* `restrictPath_solMap_brownPath`, `le_exitTime_of_forall_mem`, `exists_notMem_of_exitTime_lt`
+  (an exit before `H` is an exit on `[0, H]`), `mul_le_lintegral_exitTime`
+  (`H (1 − P(leave by H)) ≤ E τ`), `measure_exitTime_gt_le` (**uniform exponential tail**: if
+  `E_y τ ≤ M` on `K`, then `P(τ > (n + 1) 2M) ≤ 2^{−(n+1)}`).
 * `chain_step` (**one block of the chain**), `measure_leave_le_chain` (**survival over many
-  blocks**: `P(leave by (n + 1)T) ≤ (n + 1) r M`), `exp_le_lintegral_exitTime_of_bands` (the
-  chain at a fixed noise level: `E τ ≥ e^{β/ε}`).
+  blocks**: `P(leave by (n + 1)T) ≤ (n + 1) r M`), `measure_leave_le_of_bands` (the chain at a
+  fixed noise level: `P(leave by (n + 1)T) ≤ (n + 1) 2m² e^{−(v_t − v_b − Δ − 2κ)/ε}`),
+  `exp_le_lintegral_exitTime_of_bands` (`E τ ≥ e^{β/ε}`), `eventually_band_bounds` (the
+  one-block bounds for all small `ε`).
 * `le_liminf_log_lintegral_exitTime` (**Freidlin–Wentzell lower bound for the mean exit time**:
-  `liminf ε log E τ_ε ≥ v_t − v_b`).
+  `liminf ε log E τ_ε ≥ v_t − v_b`), `eventually_measure_exitTime_le` (**in probability**:
+  `P(τ_ε ≤ e^{β/ε}) ≤ e^{−γ/ε}` for every `β < v_t − v_b`).
 -/
 
 noncomputable section
@@ -98,6 +104,69 @@ omit [NormedSpace ℝ E] in
   rw [div_eq_mul_inv]
   exact hε.le
 
+omit [NormedSpace ℝ E] in
+/-- **Bands of a continuous function over a compact set**: for `κ > 0`, closed bands
+`Pc i = K ∩ V⁻¹[h_i, h_{i+1}]` (`i < m`, `h_{k+1} = h_k + Δ`, `0 ≤ Δ ≤ κ`) cover `K`. -/
+@[tmio T, powerlib_foundation] theorem exists_bands {K : Set E} (hK : IsCompact K) {x₀ : E}
+    (hx₀ : x₀ ∈ K) {V : E → ℝ} (hV : Continuous V) {κ : ℝ} (hκ : 0 < κ) :
+    ∃ m : ℕ, 0 < m ∧ ∃ h : ℕ → ℝ, ∃ Δ : ℝ, Δ ≤ κ ∧ (∀ k, h (k + 1) = h k + Δ) ∧
+      ∃ Pc : Fin m → Set E, (∀ i, IsCompact (Pc i)) ∧ (∀ i, Pc i ⊆ K) ∧ K ⊆ ⋃ i, Pc i ∧
+        ∀ i : Fin m, ∀ y ∈ Pc i, h i ≤ V y ∧ V y ≤ h ((i : ℕ) + 1) := by
+  obtain ⟨y₁, -, hmin⟩ := hK.exists_isMinOn ⟨x₀, hx₀⟩ hV.continuousOn
+  obtain ⟨y₂, -, hmax⟩ := hK.exists_isMaxOn ⟨x₀, hx₀⟩ hV.continuousOn
+  set hlo := V y₁ with hlo_def
+  set hhi := V y₂ with hhi_def
+  set m := ⌈(hhi - hlo) / κ⌉₊ + 1 with hm_def
+  have hm : 0 < m := Nat.succ_pos _
+  have hm0 : (0 : ℝ) < m := by exact_mod_cast hm
+  set Δ := (hhi - hlo) / m with hΔ_def
+  have hmΔ : (m : ℝ) * Δ = hhi - hlo := by rw [hΔ_def]; field_simp
+  have hlohi : hlo ≤ hhi := (hmin hx₀).trans (hmax hx₀)
+  have hΔ0 : 0 ≤ Δ := div_nonneg (by linarith) hm0.le
+  have hΔ : Δ ≤ κ := by
+    have h1 := Nat.le_ceil ((hhi - hlo) / κ)
+    rw [div_le_iff₀ hκ] at h1
+    have h2 : (⌈(hhi - hlo) / κ⌉₊ : ℝ) ≤ m := by rw [hm_def]; push_cast; linarith
+    by_contra hc
+    rw [not_le] at hc
+    nlinarith
+  set h : ℕ → ℝ := fun k => hlo + k * Δ with hh_def
+  have hh : ∀ k, h (k + 1) = h k + Δ := fun k => by simp only [hh_def]; push_cast; ring
+  refine ⟨m, hm, h, Δ, hΔ, hh, fun i => K ∩ V ⁻¹' Icc (h i) (h ((i : ℕ) + 1)),
+    fun i => hK.inter_right (isClosed_Icc.preimage hV), fun i => inter_subset_left, ?_,
+    fun i y hy => hy.2⟩
+  intro y hy
+  have hy1 : hlo ≤ V y := hmin hy
+  have hy2 : V y ≤ hhi := hmax hy
+  set k := min ⌊(V y - hlo) / Δ⌋₊ (m - 1) with hk
+  have hkm : k < m := lt_of_le_of_lt (min_le_right _ _) (Nat.sub_lt hm one_pos)
+  refine mem_iUnion.mpr ⟨⟨k, hkm⟩, hy, ?_, ?_⟩
+  · show hlo + ((k : ℕ) : ℝ) * Δ ≤ V y
+    rcases hΔ0.eq_or_lt with hΔe | hΔp
+    · rw [← hΔe, mul_zero, add_zero]; exact hy1
+    · have h1 : (k : ℝ) ≤ (V y - hlo) / Δ :=
+        (Nat.cast_le.mpr (min_le_left _ _)).trans
+          (Nat.floor_le (div_nonneg (by linarith) hΔp.le))
+      rw [le_div_iff₀ hΔp] at h1
+      linarith
+  · show V y ≤ hlo + (((k + 1 : ℕ)) : ℝ) * Δ
+    push_cast
+    by_cases hcase : ⌊(V y - hlo) / Δ⌋₊ ≤ m - 1
+    · rw [hk, min_eq_left hcase]
+      rcases hΔ0.eq_or_lt with hΔe | hΔp
+      · rw [← hΔe] at hmΔ ⊢
+        rw [mul_zero] at hmΔ
+        linarith
+      · have h1 := Nat.lt_floor_add_one ((V y - hlo) / Δ)
+        rw [div_lt_iff₀ hΔp] at h1
+        linarith
+    · rw [not_le] at hcase
+      rw [hk, min_eq_right hcase.le]
+      have : ((m - 1 : ℕ) : ℝ) + 1 = m := by
+        rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hm.ne')]; push_cast; ring
+      rw [this, hmΔ]
+      linarith
+
 variable [CompleteSpace E]
 
 /-- The restriction of the solution on `[0, T₁ + T₂]` to `[0, T₁]` is the solution on `[0, T₁]`
@@ -125,6 +194,16 @@ variable [CompleteSpace E]
   have v2 := congrArg (fun φ => φ ⟨t, t.2.1, htH⟩) e2
   rw [← v1] at ht
   exact ht (v2 ▸ h _)
+
+/-- An exit before the horizon `H` is an exit of the solution on `[0, H]`. -/
+@[tmio T, powerlib_foundation] theorem exists_notMem_of_exitTime_lt
+    (hBc : ∀ ω, Continuous fun t => B t ω) {L : ℝ≥0} {b : E → E} (hb : LipschitzWith L b)
+    (N : (Fin 1 → ℝ) →L[ℝ] E) (x₀ : E) {K : Set E} (c : ℝ) {H : ℝ≥0} {ω : Ω}
+    (h : exitTime b N x₀ K c B hBc ω < H) :
+    ∃ t, solMap b N x₀ (c • brownPath B hBc H ω) t ∉ K := by
+  by_contra hall
+  simp only [not_exists, not_not] at hall
+  exact absurd (le_exitTime_of_forall_mem hBc hb N x₀ c hall) (not_le.mpr h)
 
 /-- **One block of the chain** (time `T` after `T₁`), for closed bands `Pc i` covering a closed
 `K`, weights `e i`, and the one-block bounds `Σⱼ e_j P_y(stay, end ∈ Pc j) ≤ ρ e_i + C₀`,
@@ -334,19 +413,18 @@ variable [CompleteSpace E]
           le_exitTime_of_forall_mem hBc hb N x₀ c hω)
     _ ≤ _ := setLIntegral_le_lintegral _ _
 
-/-- **The chain at a fixed noise level `√ε`**: for closed bands `Pc i ⊆ K` of `V`-values
-`[h_i, h_{i+1}]` (`h_{i+1} = h_i + Δ`) covering `K`, the one-block exit bound
+/-- **Survival over many blocks at a fixed noise level `√ε`**: for closed bands `Pc i ⊆ K` of
+`V`-values `[h_i, h_{i+1}]` (`h_{i+1} = h_i + Δ`) covering `K`, the one-block exit bound
 `P_y(leave) ≤ e^{−(vt − h_{i+1} − κ)/ε}` and the one-block band bounds
 `P_y(stay, end ∈ Pc j) ≤ e^{−(h_j − max(h_{i+1} − δ, v_b) − κ)/ε}` (`y ∈ Pc i`), and the
-smallness `e^{−δ/(2ε)} ≤ 1/(2m)`, `e^{−5κ/ε} ≤ min(1/(8m²), T/(16m²))`, the mean exit time is at
-least `e^{β/ε}` (`κ ≤ δ/4`, `κ ≤ (vt − v_b − β)/8`, `Δ ≤ κ`). -/
-@[tmio T, powerlib_foundation] theorem exp_le_lintegral_exitTime_of_bands
+smallness `e^{−δ/(2ε)} ≤ 1/(2m)` (`κ ≤ δ/4`, `Δ ≤ κ`): for every `n`,
+`P(leave by (n + 1)T) ≤ (n + 1) · 2m² e^{−(vt − v_b − Δ − 2κ)/ε}`. -/
+@[tmio T, powerlib_foundation] theorem measure_leave_le_of_bands
     [IsProbabilityMeasure P] (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω)
     {K : Set E} (hK : IsClosed K) {x₀ : E} {T : ℝ≥0} (hT : 0 < (T : ℝ)) {L : ℝ≥0} {b : E → E}
-    (hb : LipschitzWith L b) (N : (Fin 1 → ℝ) →L[ℝ] E) {V : E → ℝ} {vt vb δ κ β Δ ε : ℝ}
-    (hε : 0 < ε) (hκ : 0 < κ) (hκδ : κ ≤ δ / 4) (hκβ : κ ≤ (vt - vb - β) / 8) (hβ : 0 < β)
-    (hΔ : Δ ≤ κ) {m : ℕ} (hm : 0 < m) {h : ℕ → ℝ}
-    (hh : ∀ k, h (k + 1) = h k + Δ) {Pc : Fin m → Set E} (hPc : ∀ i, IsClosed (Pc i))
+    (hb : LipschitzWith L b) (N : (Fin 1 → ℝ) →L[ℝ] E) {V : E → ℝ} {vt vb δ κ Δ ε : ℝ}
+    (hε : 0 < ε) (hκ : 0 < κ) (hκδ : κ ≤ δ / 4) (hΔ : Δ ≤ κ) {m : ℕ} (hm : 0 < m)
+    {h : ℕ → ℝ} (hh : ∀ k, h (k + 1) = h k + Δ) {Pc : Fin m → Set E} (hPc : ∀ i, IsClosed (Pc i))
     (hcov : K ⊆ ⋃ i, Pc i) (hPcV : ∀ i : Fin m, ∀ y ∈ Pc i, h i ≤ V y ∧ V y ≤ h ((i : ℕ) + 1))
     (hx₀ : x₀ ∈ K) (hx₀V : V x₀ ≤ vb)
     (hF1 : ∀ i : Fin m, ∀ y ∈ Pc i, P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
@@ -355,9 +433,11 @@ least `e^{β/ε}` (`κ ≤ δ/4`, `κ ≤ (vt − v_b − β)/8`, `Δ ≤ κ`). 
     (hF2 : ∀ i j : Fin m, ∀ y ∈ Pc i, P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
       {φ : C(Icc (0 : ℝ) T, E) | (∀ t, φ t ∈ K) ∧ pathExt φ T ∈ Pc j}} ≤
         ENNReal.ofReal (Real.exp (-((h j - max (h ((i : ℕ) + 1) - δ) vb) - κ) / ε)))
-    (hF3 : Real.exp (-(δ / 2) / ε) ≤ 1 / (2 * (m : ℝ)))
-    (hF4 : Real.exp (-(5 * κ) / ε) ≤ min (1 / (8 * (m : ℝ) ^ 2)) ((T : ℝ) / (16 * (m : ℝ) ^ 2))) :
-    ENNReal.ofReal (Real.exp (β / ε)) ≤ ∫⁻ ω, exitTime b N x₀ K (√ε) B hBc ω ∂P := by
+    (hF3 : Real.exp (-(δ / 2) / ε) ≤ 1 / (2 * (m : ℝ))) (n : ℕ) :
+    P {ω | solMap b N x₀ (√ε • brownPath B hBc ((n + 1) * T) ω) ∈
+      {φ : C(Icc (0 : ℝ) ((n + 1) * T : ℝ≥0), E) | ∃ t, φ t ∉ K}} ≤
+      ((n : ℝ≥0∞) + 1) *
+        ENNReal.ofReal (2 * (m : ℝ) ^ 2 * Real.exp (-(vt - vb - Δ - 2 * κ) / ε)) := by
   have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
   have hm0 : (0 : ℝ) < m := by linarith
   set ew : Fin m → ℝ := fun j => Real.exp (h ((j : ℕ) + 1) / ε) with hew
@@ -456,17 +536,104 @@ least `e^{β/ε}` (`κ ≤ δ/4`, `κ ≤ (vt − v_b − β)/8`, `Δ ≤ κ`). 
   have h1' : P {ω | solMap b N x₀ (√ε • brownPath B hBc T ω) ∈
       {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K}} ≤ ENNReal.ofReal rr * ENNReal.ofReal Mr :=
     (hleave i₀ x₀ hi₀).trans (mul_le_mul_right (ENNReal.ofReal_le_ofReal (hew₀.trans hCM)) _)
-  have hsurv := measure_leave_le_chain hB hBc hT hb N x₀ (√ε) hK hPc hcov
-    (fun j => ENNReal.ofReal (ew j)) hstep hleave hM h1 h1'
+  refine (measure_leave_le_chain hB hBc hT hb N x₀ (√ε) hK hPc hcov
+    (fun j => ENNReal.ofReal (ew j)) hstep hleave hM h1 h1' n).trans
+    (mul_le_mul_right (le_of_eq ?_) _)
+  rw [← ENNReal.ofReal_mul (Real.exp_pos _).le]
+  congr 1
+  rw [hMr, hC₀r]
+  have : Real.exp (-(vt - vb - Δ - 2 * κ) / ε) =
+      Real.exp (-(vt - κ) / ε) * Real.exp ((Δ + κ + vb) / ε) := by
+    rw [← Real.exp_add]; congr 1; ring
+  rw [this]; ring
+
+/-- **Uniform exponential tail of the exit time** (any noise level `c`): if the mean exit time
+from a closed `K` is at most `M > 0` from every state of `K`, then from every state of `K`,
+`P(τ > (n + 1) · 2M) ≤ 2^{−(n+1)}`: each block of length `2M` is left with probability at least
+`1/2` (`mul_le_lintegral_exitTime`), and the blocks chain by the Markov property
+(`Stochastic.LDP.measure_stay_le_pow`). -/
+@[tmio T, powerlib_foundation] theorem measure_exitTime_gt_le [IsProbabilityMeasure P]
+    (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω) {L : ℝ≥0} {b : E → E}
+    (hb : LipschitzWith L b) (N : (Fin 1 → ℝ) →L[ℝ] E) (c : ℝ) {K : Set E} (hK : IsClosed K)
+    {M : ℝ≥0} (hM : 0 < (M : ℝ))
+    (hmean : ∀ y ∈ K, ∫⁻ ω, exitTime b N y K c B hBc ω ∂P ≤ M) {x₀ : E} (hx₀ : x₀ ∈ K)
+    (n : ℕ) :
+    P {ω | ((((n : ℝ≥0) + 1) * (2 * M) : ℝ≥0) : ℝ≥0∞) < exitTime b N x₀ K c B hBc ω} ≤
+      2⁻¹ ^ (n + 1) := by
+  set T : ℝ≥0 := 2 * M with hT
+  have hT0 : 0 < (T : ℝ) := by rw [hT]; push_cast; linarith
+  -- every block is left with probability at least `1/2`
+  have hq : ∀ y ∈ K, 2⁻¹ ≤ P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K} := by
+    intro y hy
+    have h := (mul_le_lintegral_exitTime hB hBc hT0 hb N y hK c).trans (hmean y hy)
+    have hT' : (T : ℝ≥0∞) = 2 * M := by rw [hT]; push_cast; rfl
+    rw [hT'] at h
+    have hM0 : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (show (M : ℝ) ≠ 0 from hM.ne')
+    have hMt : (M : ℝ≥0∞) ≠ ⊤ := ENNReal.coe_ne_top
+    have h2 : 2 * (1 - P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K}) ≤ 1 := by
+      have h' : (M : ℝ≥0∞) * (2 * (1 - P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉
+          K})) ≤ M * 1 := by
+        rw [mul_one, ← mul_assoc, mul_comm (M : ℝ≥0∞) 2]; exact h
+      exact (ENNReal.mul_le_mul_iff_right hM0 hMt).mp h'
+    have h3 : 1 - P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K} ≤ 2⁻¹ := by
+      rw [ENNReal.le_inv_iff_mul_le, mul_comm]; exact h2
+    have h4 := tsub_le_iff_right.mp h3
+    have hP1 : P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K} ≤ 1 := prob_le_one
+    calc (2⁻¹ : ℝ≥0∞) = 1 - 2⁻¹ := by rw [ENNReal.one_sub_inv_two]
+      _ ≤ P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K} := by
+          rw [tsub_le_iff_right]; rwa [add_comm]
+  have hinf : 1 - ⨅ y ∈ K, P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K} ≤ 2⁻¹ := by
+    rw [tsub_le_iff_right]
+    calc (1 : ℝ≥0∞) = 2⁻¹ + 2⁻¹ := ENNReal.inv_two_add_inv_two.symm
+      _ ≤ 2⁻¹ + ⨅ y ∈ K, P {ω | ∃ t, solMap b N y (c • brownPath B hBc T ω) t ∉ K} :=
+          add_le_add le_rfl (le_iInf₂ hq)
+  -- an exit after `(n + 1) T` means staying in `K` on `[0, (n + 1) T]`
+  have hsub : {ω | ((((n : ℝ≥0) + 1) * T : ℝ≥0) : ℝ≥0∞) < exitTime b N x₀ K c B hBc ω} ⊆
+      {ω | ∀ t, solMap b N x₀ (c • brownPath B hBc ((n + 1) * T) ω) t ∈ K} := by
+    intro ω hω
+    by_contra hst
+    simp only [mem_ofPred_eq, not_forall] at hst
+    obtain ⟨t, ht⟩ := hst
+    have hle : exitTime b N x₀ K c B hBc ω ≤ ENNReal.ofReal t :=
+      (iInf_le _ ((n + 1) * T)).trans (iInf₂_le t ht)
+    have htH : ENNReal.ofReal t ≤ ((((n : ℝ≥0) + 1) * T : ℝ≥0) : ℝ≥0∞) := by
+      rw [← ENNReal.ofReal_coe_nnreal]; exact ENNReal.ofReal_le_ofReal t.2.2
+    exact absurd (hle.trans htH) (not_le.mpr hω)
+  refine (measure_mono hsub).trans ((measure_stay_le_pow hB hBc hT0 hb N c hK hx₀ n).trans ?_)
+  exact pow_le_pow_left₀ zero_le hinf _
+
+/-- **The chain at a fixed noise level `√ε`**: for closed bands `Pc i ⊆ K` of `V`-values
+`[h_i, h_{i+1}]` (`h_{i+1} = h_i + Δ`) covering `K`, the one-block exit bound
+`P_y(leave) ≤ e^{−(vt − h_{i+1} − κ)/ε}` and the one-block band bounds
+`P_y(stay, end ∈ Pc j) ≤ e^{−(h_j − max(h_{i+1} − δ, v_b) − κ)/ε}` (`y ∈ Pc i`), and the
+smallness `e^{−δ/(2ε)} ≤ 1/(2m)`, `e^{−5κ/ε} ≤ min(1/(8m²), T/(16m²))`, the mean exit time is at
+least `e^{β/ε}` (`κ ≤ δ/4`, `κ ≤ (vt − v_b − β)/8`, `Δ ≤ κ`). -/
+@[tmio T, powerlib_foundation] theorem exp_le_lintegral_exitTime_of_bands
+    [IsProbabilityMeasure P] (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω)
+    {K : Set E} (hK : IsClosed K) {x₀ : E} {T : ℝ≥0} (hT : 0 < (T : ℝ)) {L : ℝ≥0} {b : E → E}
+    (hb : LipschitzWith L b) (N : (Fin 1 → ℝ) →L[ℝ] E) {V : E → ℝ} {vt vb δ κ β Δ ε : ℝ}
+    (hε : 0 < ε) (hκ : 0 < κ) (hκδ : κ ≤ δ / 4) (hκβ : κ ≤ (vt - vb - β) / 8) (hβ : 0 < β)
+    (hΔ : Δ ≤ κ) {m : ℕ} (hm : 0 < m) {h : ℕ → ℝ}
+    (hh : ∀ k, h (k + 1) = h k + Δ) {Pc : Fin m → Set E} (hPc : ∀ i, IsClosed (Pc i))
+    (hcov : K ⊆ ⋃ i, Pc i) (hPcV : ∀ i : Fin m, ∀ y ∈ Pc i, h i ≤ V y ∧ V y ≤ h ((i : ℕ) + 1))
+    (hx₀ : x₀ ∈ K) (hx₀V : V x₀ ≤ vb)
+    (hF1 : ∀ i : Fin m, ∀ y ∈ Pc i, P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
+      {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K}} ≤
+        ENNReal.ofReal (Real.exp (-((vt - h ((i : ℕ) + 1)) - κ) / ε)))
+    (hF2 : ∀ i j : Fin m, ∀ y ∈ Pc i, P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
+      {φ : C(Icc (0 : ℝ) T, E) | (∀ t, φ t ∈ K) ∧ pathExt φ T ∈ Pc j}} ≤
+        ENNReal.ofReal (Real.exp (-((h j - max (h ((i : ℕ) + 1) - δ) vb) - κ) / ε)))
+    (hF3 : Real.exp (-(δ / 2) / ε) ≤ 1 / (2 * (m : ℝ)))
+    (hF4 : Real.exp (-(5 * κ) / ε) ≤ min (1 / (8 * (m : ℝ) ^ 2)) ((T : ℝ) / (16 * (m : ℝ) ^ 2))) :
+    ENNReal.ofReal (Real.exp (β / ε)) ≤ ∫⁻ ω, exitTime b N x₀ K (√ε) B hBc ω ∂P := by
+  have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
+  have hm0 : (0 : ℝ) < m := by linarith
+  have hsurv := measure_leave_le_of_bands hB hBc hK hT hb N hε hκ hκδ hΔ hm hh hPc hcov hPcV
+    hx₀ hx₀V hF1 hF2 hF3
   -- the number of blocks
-  set q := rr * Mr with hq_def
   set D := vt - vb - Δ - 2 * κ with hD
-  have hq : q = 2 * m ^ 2 * Real.exp (-D / ε) := by
-    rw [hq_def, hrr, hMr, hC₀r, hD]
-    have : Real.exp (-(vt - vb - Δ - 2 * κ) / ε) =
-        Real.exp (-(vt - κ) / ε) * Real.exp ((Δ + κ + vb) / ε) := by
-      rw [← Real.exp_add]; congr 1; ring
-    rw [this]; ring
+  set q := 2 * (m : ℝ) ^ 2 * Real.exp (-D / ε) with hq_def
+  have hq : q = 2 * m ^ 2 * Real.exp (-D / ε) := rfl
   have hq0 : 0 < q := by rw [hq]; positivity
   set u := Real.exp (-(5 * κ) / ε) with hu
   have hDu : Real.exp (-D / ε) ≤ u :=
@@ -497,7 +664,7 @@ least `e^{β/ε}` (`κ ≤ δ/4`, `κ ≤ (vt − v_b − β)/8`, `Δ ≤ κ`). 
     exact_mod_cast this
   have hE := mul_le_lintegral_exitTime hB hBc hH hb N x₀ hK (√ε)
   refine le_trans ?_ (le_trans (mul_le_mul_right (tsub_le_tsub_left (hsurv n) 1) _) hE)
-  rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← hq_def, show ((n : ℝ≥0∞) + 1) =
+  rw [show ((n : ℝ≥0∞) + 1) =
     ENNReal.ofReal ((n : ℝ) + 1) by rw [ENNReal.ofReal_add (by positivity) zero_le_one]; simp,
     ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_one,
     ← ENNReal.ofReal_sub _ (by positivity), ← ENNReal.ofReal_coe_nnreal,
@@ -532,6 +699,53 @@ least `e^{β/ε}` (`κ ≤ δ/4`, `κ ≤ (vt − v_b − β)/8`, `Δ ≤ κ`). 
   have h12 : (1 : ℝ) / 2 ≤ 1 - n₁ * q := by linarith
   calc x / 4 * (T : ℝ) = (x / 2) * T * (1 / 2) := by ring
     _ ≤ n₁ * T * (1 - n₁ * q) := by gcongr
+
+/-- **The eventual one-block bounds on the bands**: the exit and moment rate inequalities and the
+explicit uniform large-deviation bound give, for all small `ε`,
+`P_y(leave) ≤ e^{−(vt − h_{i+1} − κ)/ε}` and
+`P_y(stay, end ∈ Pc j) ≤ e^{−(h_j − max(h_{i+1} − δ, v_b) − κ)/ε}` for `y ∈ Pc i`. -/
+@[tmio T, powerlib_foundation] theorem eventually_band_bounds [IsProbabilityMeasure P]
+    (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω) {K : Set E}
+    (hK : IsCompact K) {T : ℝ≥0} (hT : 0 < (T : ℝ)) {L : ℝ≥0} {b : E → E}
+    (hb : LipschitzWith L b) (N : (Fin 1 → ℝ) →L[ℝ] E) {V : E → ℝ} {vt vb δ κ : ℝ}
+    (hκ : 0 < κ)
+    (hexit : ∀ y ∈ K, ∀ φ ∈ closure {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K},
+      ENNReal.ofReal (vt - V y) ≤ pushRate (solMap b N y) (schilderRate T) φ)
+    (hmom : ∀ y ∈ K, ∀ φ : C(Icc (0 : ℝ) T, E), pathExt φ T ∈ K →
+      ENNReal.ofReal (V (pathExt φ T) - max (V y - δ) vb) ≤
+        pushRate (solMap b N y) (schilderRate T) φ)
+    {m : ℕ} {h : ℕ → ℝ} {Pc : Fin m → Set E} (hPcc : ∀ i, IsCompact (Pc i))
+    (hPcK : ∀ i, Pc i ⊆ K) (hPcV : ∀ i : Fin m, ∀ y ∈ Pc i, h i ≤ V y ∧ V y ≤ h ((i : ℕ) + 1)) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), (∀ i : Fin m, ∀ y ∈ Pc i,
+      P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
+        {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K}} ≤
+        ENNReal.ofReal (Real.exp (-((vt - h ((i : ℕ) + 1)) - κ) / ε))) ∧
+      ∀ i j : Fin m, ∀ y ∈ Pc i,
+        P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
+          {φ : C(Icc (0 : ℝ) T, E) | (∀ t, φ t ∈ K) ∧ pathExt φ T ∈ Pc j}} ≤
+          ENNReal.ofReal (Real.exp (-((h j - max (h ((i : ℕ) + 1) - δ) vb) - κ) / ε)) := by
+  have hF1 : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ i : Fin m, ∀ y ∈ Pc i,
+      P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
+        {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K}} ≤
+        ENNReal.ofReal (Real.exp (-((vt - h ((i : ℕ) + 1)) - κ) / ε)) := by
+    refine Filter.eventually_all.mpr fun i => ?_
+    refine eventually_measure_brownPath_le hB hBc hT hb N (hPcc i) _ (fun y hy φ hφ => ?_) hκ
+    exact (ENNReal.ofReal_le_ofReal (by linarith [(hPcV i y hy).2])).trans
+      (hexit y (hPcK i hy) φ hφ)
+  have hF2 : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ i j : Fin m, ∀ y ∈ Pc i,
+      P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
+        {φ : C(Icc (0 : ℝ) T, E) | (∀ t, φ t ∈ K) ∧ pathExt φ T ∈ Pc j}} ≤
+        ENNReal.ofReal (Real.exp (-((h j - max (h ((i : ℕ) + 1) - δ) vb) - κ) / ε)) := by
+    refine Filter.eventually_all.mpr fun i => Filter.eventually_all.mpr fun j => ?_
+    refine eventually_measure_brownPath_le hB hBc hT hb N (hPcc i) _ (fun y hy φ hφ => ?_) hκ
+    rw [(isClosed_stay_end hK.isClosed (hPcc j).isClosed T).closure_eq] at hφ
+    obtain ⟨-, hend⟩ := hφ
+    refine le_trans (ENNReal.ofReal_le_ofReal ?_) (hmom y (hPcK i hy) φ (hPcK j hend))
+    have h1 := (hPcV j _ hend).1
+    have h2 : max (V y - δ) vb ≤ max (h ((i : ℕ) + 1) - δ) vb :=
+      max_le_max (by linarith [(hPcV i y hy).2]) le_rfl
+    linarith
+  exact hF1.and hF2
 
 /-- **Freidlin–Wentzell lower bound for the mean exit time**, by a chain of deterministic time
 blocks. `K` compact, `x₀ ∈ K`, `V` continuous with `V(x₀) ≤ v_b < v_t`, `δ > 0`, block length
@@ -570,91 +784,106 @@ Then `liminf_{ε→0⁺} ε log E τ_ε ≥ v_t − v_b`. The proof bounds the e
   have hκ : 0 < κ := lt_min (by linarith) (by linarith)
   have hκδ : κ ≤ δ / 4 := min_le_left _ _
   have hκβ : κ ≤ (vt - vb - β) / 8 := min_le_right _ _
-  obtain ⟨y₁, -, hmin⟩ := hK.exists_isMinOn ⟨x₀, hx₀⟩ hV.continuousOn
-  obtain ⟨y₂, -, hmax⟩ := hK.exists_isMaxOn ⟨x₀, hx₀⟩ hV.continuousOn
-  set hlo := V y₁ with hlo_def
-  set hhi := V y₂ with hhi_def
-  set m := ⌈(hhi - hlo) / κ⌉₊ + 1 with hm_def
-  have hm : 0 < m := Nat.succ_pos _
-  have hm0 : (0 : ℝ) < m := by exact_mod_cast hm
-  set Δ := (hhi - hlo) / m with hΔ_def
-  have hmΔ : (m : ℝ) * Δ = hhi - hlo := by rw [hΔ_def]; field_simp
-  have hlohi : hlo ≤ hhi := (hmin hx₀).trans (hmax hx₀)
-  have hΔ0 : 0 ≤ Δ := div_nonneg (by linarith) hm0.le
-  have hΔ : Δ ≤ κ := by
-    have h1 := Nat.le_ceil ((hhi - hlo) / κ)
-    rw [div_le_iff₀ hκ] at h1
-    have h2 : (⌈(hhi - hlo) / κ⌉₊ : ℝ) ≤ m := by rw [hm_def]; push_cast; linarith
-    by_contra hc
-    rw [not_le] at hc
-    nlinarith
-  set h : ℕ → ℝ := fun k => hlo + k * Δ with hh_def
-  have hh : ∀ k, h (k + 1) = h k + Δ := fun k => by simp only [hh_def]; push_cast; ring
-  set Pc : Fin m → Set E := fun i => K ∩ V ⁻¹' Icc (h i) (h ((i : ℕ) + 1)) with hPc_def
-  have hPcc : ∀ i, IsCompact (Pc i) := fun i => hK.inter_right (isClosed_Icc.preimage hV)
-  have hPcK : ∀ i, Pc i ⊆ K := fun i => inter_subset_left
-  have hPcV : ∀ i : Fin m, ∀ y ∈ Pc i, h i ≤ V y ∧ V y ≤ h ((i : ℕ) + 1) := fun i y hy => hy.2
-  have hcov : K ⊆ ⋃ i, Pc i := by
-    intro y hy
-    have hy1 : hlo ≤ V y := hmin hy
-    have hy2 : V y ≤ hhi := hmax hy
-    set k := min ⌊(V y - hlo) / Δ⌋₊ (m - 1) with hk
-    have hkm : k < m := lt_of_le_of_lt (min_le_right _ _) (Nat.sub_lt hm one_pos)
-    refine mem_iUnion.mpr ⟨⟨k, hkm⟩, hy, ?_, ?_⟩
-    · show hlo + ((k : ℕ) : ℝ) * Δ ≤ V y
-      rcases hΔ0.eq_or_lt with hΔe | hΔp
-      · rw [← hΔe, mul_zero, add_zero]; exact hy1
-      · have h1 : (k : ℝ) ≤ (V y - hlo) / Δ :=
-          (Nat.cast_le.mpr (min_le_left _ _)).trans
-            (Nat.floor_le (div_nonneg (by linarith) hΔp.le))
-        rw [le_div_iff₀ hΔp] at h1
-        linarith
-    · show V y ≤ hlo + (((k + 1 : ℕ)) : ℝ) * Δ
-      push_cast
-      by_cases hcase : ⌊(V y - hlo) / Δ⌋₊ ≤ m - 1
-      · rw [hk, min_eq_left hcase]
-        rcases hΔ0.eq_or_lt with hΔe | hΔp
-        · rw [← hΔe] at hmΔ ⊢
-          rw [mul_zero] at hmΔ
-          linarith
-        · have h1 := Nat.lt_floor_add_one ((V y - hlo) / Δ)
-          rw [div_lt_iff₀ hΔp] at h1
-          linarith
-      · rw [not_le] at hcase
-        rw [hk, min_eq_right hcase.le]
-        have : ((m - 1 : ℕ) : ℝ) + 1 = m := by
-          rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hm.ne')]; push_cast; ring
-        rw [this, hmΔ]
-        linarith
+  obtain ⟨m, hm, h, Δ, hΔ, hh, Pc, hPcc, hPcK, hcov, hPcV⟩ := exists_bands hK hx₀ hV hκ
   -- the eventual one-block bounds
-  have hF1 : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ i : Fin m, ∀ y ∈ Pc i,
-      P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
-        {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K}} ≤
-        ENNReal.ofReal (Real.exp (-((vt - h ((i : ℕ) + 1)) - κ) / ε)) := by
-    refine Filter.eventually_all.mpr fun i => ?_
-    refine eventually_measure_brownPath_le hB hBc hT hb N (hPcc i) _ (fun y hy φ hφ => ?_) hκ
-    exact (ENNReal.ofReal_le_ofReal (by linarith [(hPcV i y hy).2])).trans
-      (hexit y (hPcK i hy) φ hφ)
-  have hF2 : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ i j : Fin m, ∀ y ∈ Pc i,
-      P {ω | solMap b N y (√ε • brownPath B hBc T ω) ∈
-        {φ : C(Icc (0 : ℝ) T, E) | (∀ t, φ t ∈ K) ∧ pathExt φ T ∈ Pc j}} ≤
-        ENNReal.ofReal (Real.exp (-((h j - max (h ((i : ℕ) + 1) - δ) vb) - κ) / ε)) := by
-    refine Filter.eventually_all.mpr fun i => Filter.eventually_all.mpr fun j => ?_
-    refine eventually_measure_brownPath_le hB hBc hT hb N (hPcc i) _ (fun y hy φ hφ => ?_) hκ
-    rw [(isClosed_stay_end hK.isClosed (hPcc j).isClosed T).closure_eq] at hφ
-    obtain ⟨-, hend⟩ := hφ
-    refine le_trans (ENNReal.ofReal_le_ofReal ?_) (hmom y (hPcK i hy) φ (hPcK j hend))
-    have h1 := (hPcV j _ hend).1
-    have h2 : max (V y - δ) vb ≤ max (h ((i : ℕ) + 1) - δ) vb :=
-      max_le_max (by linarith [(hPcV i y hy).2]) le_rfl
-    linarith
+  have hF12 := eventually_band_bounds hB hBc hK hT hb N hκ hexit hmom hPcc hPcK hPcV
   have hF3 := eventually_exp_neg_div_le (c := δ / 2) (η := 1 / (2 * (m : ℝ))) (by linarith)
     (by positivity)
   have hF4 := eventually_exp_neg_div_le (c := 5 * κ)
     (η := min (1 / (8 * (m : ℝ) ^ 2)) ((T : ℝ) / (16 * (m : ℝ) ^ 2))) (by linarith)
     (lt_min (by positivity) (by positivity))
-  filter_upwards [hF1, hF2, hF3, hF4, self_mem_nhdsWithin] with ε h1 h2 h3 h4 (hε : 0 < ε)
+  filter_upwards [hF12, hF3, hF4, self_mem_nhdsWithin] with ε ⟨h1, h2⟩ h3 h4 (hε : 0 < ε)
   exact le_mul_log_of_exp_le hε (exp_le_lintegral_exitTime_of_bands hB hBc hK.isClosed hT hb N
     hε hκ hκδ hκβ hβ0 hΔ hm hh (fun i => (hPcc i).isClosed) hcov hPcV hx₀ hx₀V h1 h2 h3 h4)
+
+/-- **The exit time is exponentially large in probability**: under the two rate inequalities of
+`le_liminf_log_lintegral_exitTime` (`v_b < v_t`), for every `β < v_t − v_b` there is `γ > 0`
+with `P(τ_ε ≤ e^{β/ε}) ≤ e^{−γ/ε}` for all small `ε > 0`: the chain of
+`measure_leave_le_of_bands` over `⌈e^{β/ε}/T⌉ + 1` blocks of length `T`. -/
+@[tmio T, powerlib_foundation] theorem eventually_measure_exitTime_le [IsProbabilityMeasure P]
+    (hB : IsBrownianReal B P) (hBc : ∀ ω, Continuous fun t => B t ω) {K : Set E}
+    (hK : IsCompact K) {x₀ : E} (hx₀ : x₀ ∈ K) {T : ℝ≥0} (hT : 0 < (T : ℝ)) {L : ℝ≥0}
+    {b : E → E} (hb : LipschitzWith L b) (N : (Fin 1 → ℝ) →L[ℝ] E) {V : E → ℝ}
+    (hV : Continuous V) {vt vb δ : ℝ} (hδ : 0 < δ) (hvb : vb < vt) (hx₀V : V x₀ ≤ vb)
+    (hexit : ∀ y ∈ K, ∀ φ ∈ closure {φ : C(Icc (0 : ℝ) T, E) | ∃ t, φ t ∉ K},
+      ENNReal.ofReal (vt - V y) ≤ pushRate (solMap b N y) (schilderRate T) φ)
+    (hmom : ∀ y ∈ K, ∀ φ : C(Icc (0 : ℝ) T, E), pathExt φ T ∈ K →
+      ENNReal.ofReal (V (pathExt φ T) - max (V y - δ) vb) ≤
+        pushRate (solMap b N y) (schilderRate T) φ) {β : ℝ} (hβ : β < vt - vb) :
+    ∃ γ > 0, ∀ᶠ ε in 𝓝[>] (0 : ℝ), P {ω | exitTime b N x₀ K (√ε) B hBc ω ≤
+      ENNReal.ofReal (Real.exp (β / ε))} ≤ ENNReal.ofReal (Real.exp (-γ / ε)) := by
+  set β₁ := max β 0 with hβ₁_def
+  have hβ₁ : β₁ < vt - vb := max_lt hβ (by linarith)
+  have hβ₁0 : 0 ≤ β₁ := le_max_right _ _
+  set g := vt - vb - β₁ with hg_def
+  have hg : 0 < g := by linarith
+  set κ := min (δ / 4) (g / 16) with hκ_def
+  have hκ : 0 < κ := lt_min (by linarith) (by linarith)
+  have hκδ : κ ≤ δ / 4 := min_le_left _ _
+  have hκg : κ ≤ g / 16 := min_le_right _ _
+  obtain ⟨m, hm, h, Δ, hΔ, hh, Pc, hPcc, hPcK, hcov, hPcV⟩ := exists_bands hK hx₀ hV hκ
+  have hm0 : (0 : ℝ) < m := by exact_mod_cast hm
+  have hF12 := eventually_band_bounds hB hBc hK hT hb N hκ hexit hmom hPcc hPcK hPcV
+  have hF3 := eventually_exp_neg_div_le (c := δ / 2) (η := 1 / (2 * (m : ℝ))) (by linarith)
+    (by positivity)
+  have hF5 := eventually_exp_neg_div_le (c := 5 * g / 16)
+    (η := min ((T : ℝ) / (4 * (m : ℝ) ^ 2)) (1 / (8 * (m : ℝ) ^ 2))) (by linarith)
+    (lt_min (div_pos hT (by positivity)) (by positivity))
+  refine ⟨g / 2, by positivity, ?_⟩
+  filter_upwards [hF12, hF3, hF5, self_mem_nhdsWithin] with ε ⟨h1, h2⟩ h3 h5 (hε : 0 < ε)
+  have hsurv := measure_leave_le_of_bands hB hBc hK.isClosed hT hb N hε hκ hκδ hΔ hm hh
+    (fun i => (hPcc i).isClosed) hcov hPcV hx₀ hx₀V h1 h2 h3
+  -- the number of blocks
+  set E1 := Real.exp (β₁ / ε) with hE1
+  set n := ⌈E1 / T⌉₊ with hn
+  have hnT : E1 / T ≤ n := Nat.le_ceil _
+  have hn2 : (n : ℝ) < E1 / T + 1 := Nat.ceil_lt_add_one (by positivity)
+  have hH : Real.exp (β / ε) < ((((n : ℝ≥0) + 1) * T : ℝ≥0) : ℝ) := by
+    push_cast
+    have h1 : Real.exp (β / ε) ≤ E1 :=
+      Real.exp_le_exp.mpr (div_le_div_of_nonneg_right (le_max_left _ _) hε.le)
+    have h2 : E1 ≤ n * T := by rwa [div_le_iff₀ hT] at hnT
+    nlinarith
+  have hsub : {ω | exitTime b N x₀ K (√ε) B hBc ω ≤ ENNReal.ofReal (Real.exp (β / ε))} ⊆
+      {ω | solMap b N x₀ (√ε • brownPath B hBc ((n + 1) * T) ω) ∈
+        {φ : C(Icc (0 : ℝ) ((n + 1) * T : ℝ≥0), E) | ∃ t, φ t ∉ K}} := by
+    intro ω hω
+    refine exists_notMem_of_exitTime_lt hBc hb N x₀ (√ε) (lt_of_le_of_lt hω ?_)
+    rw [← ENNReal.ofReal_coe_nnreal]
+    exact (ENNReal.ofReal_lt_ofReal_iff ((Real.exp_pos _).trans hH)).mpr hH
+  refine (measure_mono hsub).trans ((hsurv n).trans ?_)
+  rw [show ((n : ℝ≥0∞) + 1) = ENNReal.ofReal ((n : ℝ) + 1) by
+    rw [ENNReal.ofReal_add (by positivity) zero_le_one]; simp, ← ENNReal.ofReal_mul (by positivity)]
+  refine ENNReal.ofReal_le_ofReal ?_
+  -- `(n + 1) 2m² e^{−D/ε} ≤ e^{−g/(2ε)}`
+  set u := Real.exp (-(5 * g / 16) / ε) with hu
+  set w := Real.exp (-(g / 2) / ε) with hw
+  set E1' := Real.exp (-β₁ / ε) with hE1'
+  have hEE : E1 * E1' = 1 := by rw [hE1, hE1', ← Real.exp_add]; simp [neg_div]
+  have hE1'1 : E1' ≤ 1 := Real.exp_le_one_iff.mpr (div_nonpos_of_nonpos_of_nonneg
+    (by linarith) hε.le)
+  have hu1 : u ≤ (T : ℝ) / (4 * (m : ℝ) ^ 2) := h5.trans (min_le_left _ _)
+  have hu2 : u ≤ 1 / (8 * (m : ℝ) ^ 2) := h5.trans (min_le_right _ _)
+  have hDexp : Real.exp (-(vt - vb - Δ - 2 * κ) / ε) ≤ E1' * u * w := by
+    rw [hE1', hu, hw, ← Real.exp_add, ← Real.exp_add]
+    refine Real.exp_le_exp.mpr ?_
+    have e : -β₁ / ε + -(5 * g / 16) / ε + -(g / 2) / ε = -(β₁ + 13 * g / 16) / ε := by ring
+    rw [e]
+    exact div_le_div_of_nonneg_right (by rw [hg_def]; linarith) hε.le
+  have hm2 : (0 : ℝ) < (m : ℝ) ^ 2 := by positivity
+  have hu0 : 0 ≤ u := (Real.exp_pos _).le
+  have hw0 : 0 ≤ w := (Real.exp_pos _).le
+  have hE1'0 : 0 ≤ E1' := (Real.exp_pos _).le
+  calc ((n : ℝ) + 1) * (2 * (m : ℝ) ^ 2 * Real.exp (-(vt - vb - Δ - 2 * κ) / ε))
+      ≤ (E1 / T + 2) * (2 * (m : ℝ) ^ 2 * (E1' * u * w)) :=
+        mul_le_mul (by linarith) (mul_le_mul_of_nonneg_left hDexp (by positivity))
+          (by positivity) (by positivity)
+    _ = 2 * (m : ℝ) ^ 2 / T * u * w * (E1 * E1') + 4 * (m : ℝ) ^ 2 * E1' * u * w := by
+        field_simp; ring
+    _ ≤ 2 * (m : ℝ) ^ 2 / T * ((T : ℝ) / (4 * (m : ℝ) ^ 2)) * w * 1 +
+          4 * (m : ℝ) ^ 2 * 1 * (1 / (8 * (m : ℝ) ^ 2)) * w := by
+        rw [hEE]
+        gcongr
+    _ = w := by field_simp; ring
 
 end powerlib.Stochastic.LDP

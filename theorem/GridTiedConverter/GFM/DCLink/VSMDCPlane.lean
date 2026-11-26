@@ -30,9 +30,11 @@ Results.
 * The flow on the plane (static, every `V*`): `Params.field_two_of_V_eq_zero` (`V̇ = I_s/C`: the
   plane is crossed iff `I_s/C ≠ 0`), `Params.field_three_of_V_eq_zero` (`ζ̇ = −V*`),
   `Params.field_ne_zero_of_V_eq_zero` (no equilibrium on the plane when `V* ≠ 0`).
-* Static support: `Params.exists_contDiff_eq_field_of_sign` (`C¹` fields equal to the model on a
-  half space `σ V ≥ s`), `Params.planeQ` (`q = (I_s V + P_s − P_e(δ))/C`, `V V̇ = q` off the plane,
-  `Params.field_two_eq_planeQ_div`), `Params.planeG` (`G = −k(δ) ω/C`, `q̇ = G + (I_s/C) q/V`,
+* Static support: `Plant.abs_Pe_add_sub_le` (`|P_e(δ + θ) − P_e(δ) − k(δ) θ| ≤ |A| θ²`, the second
+  order remainder of the power curve), `Params.exists_contDiff_eq_field_of_sign` (`C¹` fields
+  equal to the model on a half space `σ V ≥ s`), `Params.planeQ`
+  (`q = (I_s V + P_s − P_e(δ))/C`, `V V̇ = q` off the plane, `Params.field_two_eq_planeQ_div`),
+  `Params.planeG` (`G = −k(δ) ω/C`, `q̇ = G + (I_s/C) q/V`,
   `Params.planeQ_lie`), `Params.planeField` (the field read on the plane with `V` relaxed at unit
   rate, `Params.planeField_eq` for `I_s/C = 0`; its `ζ` row is `−V*`).
 
@@ -84,18 +86,70 @@ model whose DC side collapses, `OpenLoop.mem_den_lyapunovStable_iff_of_invariant
   lost for `K_i ≠ 0`; but the open loop's first-integral law never applies, since the integrator
   reads `V` (`Params.not_forall_field_sub_single`), and with both gains zero the point is unstable.
 
+* **The balance with DC gains.** `VSMDC.mem_den_unstable_of_invariant_flat_degenerate`
+  (`(P_s − P_e(δ*))/C = 0`, a flat curve `A = 0`, `K_i = 0`, `D ≠ 0`, any `K_p`: the solutions
+  `(δ* + (K_p η/D) t, K_p η/D, η, ζ* + η t)` drift);
+  `VSMDC.mem_den_unstable_of_invariant_stiff_degenerate` (`C ≠ 0`, `P_s = P_e(δ*) = P_ff + K_i ζ*`,
+  a stiff swing `0 < k(δ*)/M`, `0 ≤ D/M`, DC gains `(K_p, K_i) ≠ (0, 0)` of one sign,
+  `K_p K_i ≥ 0`; for `M < 0` read through the converter with every power, gain, inertia, damping
+  and capacitance negated, which has the same field): on the side `σ V > 0`,
+  `σ (K_p + K_i) C < 0`, the barrier `F θ − Π(θ) − M ω²/2` (`F = K_p V + K_i (ζ − ζ*)`, `Π` the
+  potential of the power curve) never decreases, `Ẇ = D ω² − K_p θ ΔP(θ)/(C V) + K_i θ V ≥ 0`, so
+  the swing angle stays where `ΔP(θ)/C < 0` and `C V V̇ = −ΔP(θ)` drives `V²` up at a uniform
+  rate (`Dynamics.Degenerate.unstable_of_barriers`). With `mem_den_unstable_of_invariant` (an
+  unbalanced frozen swing, `M = 0`, a negatively damped, saddle or undamped flat swing) these
+  decide the balance except in the case below.
+
 Not decided here (UNPROVED): Lyapunov stability at the balance `P_s = P_e(δ*) = P_ff + K_i ζ*`
-with `C ≠ 0` (so `I_s = 0`), `(K_p, K_i) ≠ (0, 0)` and a frozen swing that is stiff
-(`0 ≤ D/M`, `0 < k(δ*)/M`) or flat and damped without integral gain (`A = 0`, `K_i = 0`,
-`K_p ≠ 0`, `0 < D/M`). Quasi-statically `C V V̇ ≈ −(K_p V + K_i (ζ − ζ*))` with `ζ̇ = V`, which
-escapes on one side of the plane; no proof is given (the field is singular on the plane and the
-cone argument of `mem_den_unstable_of_degenerate` needs `I_s/C ≠ 0`).
+with `C ≠ 0` (so `I_s = 0`), a stiff frozen swing (`0 ≤ D/M`, `0 < k(δ*)/M`) and DC gains of
+opposite signs (`K_p K_i < 0`). Missing step: a barrier for that sign — the rate
+`D ω² − K_p θ ΔP(θ)/(C V) + K_i θ V` of `F θ − Π(θ) − M ω²/2` then has terms of both signs on
+either side of the plane, so the angle may leave the side `ΔP(θ)/C < 0` where `V²` grows.
 -/
 
 noncomputable section
 namespace powerlib.GFM.DCLink
 open Matrix Filter
 open powerlib.Dynamics (State coord)
+
+/-- The second-order remainder of the sine: `|sin(θ + w) − sin θ − cos θ w| ≤ w²` (mean value
+inequality, `|cos(θ + u) − cos θ| ≤ |u|`). -/
+@[tmio T, powerlib_foundation] private theorem abs_sin_add_sub_le (θ w : ℝ) :
+    |Real.sin (θ + w) - Real.sin θ - Real.cos θ * w| ≤ w ^ 2 := by
+  have hd : ∀ u, HasDerivAt (fun u => Real.sin (θ + u) - u * Real.cos θ)
+      (Real.cos (θ + u) - Real.cos θ) u := fun u => by
+    have h : HasDerivAt (fun u => Real.sin (θ + u) - u * Real.cos θ)
+        (Real.cos (θ + u) * 1 - 1 * Real.cos θ) u :=
+      ((Real.hasDerivAt_sin (θ + u)).comp u ((hasDerivAt_id' u).const_add θ)).sub
+        ((hasDerivAt_id' u).mul_const (Real.cos θ))
+    convert h using 1; ring
+  have hb : ∀ u ∈ Set.uIcc 0 w, ‖Real.cos (θ + u) - Real.cos θ‖ ≤ |w| := fun u hu => by
+    rw [Real.norm_eq_abs]
+    have hu' : |u| ≤ |w| := by
+      rcases Set.mem_uIcc.mp hu with ⟨h1, h2⟩ | ⟨h1, h2⟩
+      · rw [abs_of_nonneg h1, abs_of_nonneg (h1.trans h2)]; exact h2
+      · rw [abs_of_nonpos h2, abs_of_nonpos (h1.trans h2)]; linarith
+    calc |Real.cos (θ + u) - Real.cos θ| ≤ |θ + u - θ| := Real.abs_cos_sub_cos_le _ _
+      _ = |u| := by ring_nf
+      _ ≤ |w| := hu'
+  have h := (convex_uIcc (0 : ℝ) w).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (fun u _ => (hd u).hasDerivWithinAt) hb Set.left_mem_uIcc Set.right_mem_uIcc
+  simp only [Real.norm_eq_abs, add_zero, zero_mul, sub_zero] at h
+  calc |Real.sin (θ + w) - Real.sin θ - Real.cos θ * w| =
+        |Real.sin (θ + w) - w * Real.cos θ - Real.sin θ| := by ring_nf
+    _ ≤ |w| * |w| := h
+    _ = w ^ 2 := by rw [← sq, sq_abs]
+
+/-- The power curve differs from its tangent by at most `|A| θ²`:
+`|P_e(δ + θ) − P_e(δ) − k(δ) θ| ≤ |A| θ²`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Plant.abs_Pe_add_sub_le (q : Plant) (δ θ : ℝ) :
+    |q.Pe (δ + θ) - q.Pe δ - q.k δ * θ| ≤ |q.A| * θ ^ 2 := by
+  have h := abs_sin_add_sub_le (δ - q.α) θ
+  have he : q.Pe (δ + θ) - q.Pe δ - q.k δ * θ = q.A * (Real.sin (δ - q.α + θ) -
+      Real.sin (δ - q.α) - Real.cos (δ - q.α) * θ) := by
+    simp only [Plant.Pe, Plant.k]; ring_nf
+  rw [he, abs_mul]
+  exact mul_le_mul_of_nonneg_left h (abs_nonneg _)
 
 namespace Params
 
@@ -1083,6 +1137,619 @@ both gains zero. -/
   rw [(hc _).2.2.2, p3, add_sub_cancel_left, show d / 2 * (2 / (d / 2)) = 2 by
     field_simp, abs_of_pos two_pos] at h2
   linarith
+
+/-- **Invariant singular plane, degenerate balance, flat curve, no integral gain: the swing and the
+integrator drift.** With `V* = 0`, `I_s/C = 0`, `(P_s − P_e(δ*))/C = 0` (the degenerate balance),
+a flat power curve `A = 0`, `K_i = 0` and damping `D ≠ 0`, every selected point is unstable,
+whatever `K_p`. If the frozen swing is unbalanced or `M = 0` this is
+`mem_den_unstable_of_invariant`; otherwise
+`(δ* + (K_p η/D) t, K_p η/D, η, ζ* + η t)` is a solution for every `η`: the DC voltage is frozen
+at `η` (the flat curve draws the balanced power at every angle), the proportional DC gain raises
+the power reference by `K_p η`, which the damping balances at the frequency `K_p η/D`, and the
+integrator integrates `η`, leaving every ball. With `K_p = 0` these are the solutions of
+`mem_den_unstable_of_invariant_degenerate`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_invariant_flat_degenerate (m : Model)
+    (hV : m.p.Vref = 0) (hI : m.p.Is / m.p.C = 0) (hP : (m.p.Ps - m.p.Pe m.δ) / m.p.C = 0)
+    (hA : m.p.A = 0) (hKi : m.p.Ki = 0) (hD : m.p.D ≠ 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  by_cases hM : m.p.M = 0
+  · exact mem_den_unstable_of_invariant m hV hI (Or.inr (Or.inr ⟨by simp [hM], Or.inr (by
+      simp [hM])⟩))
+  by_cases hb : (m.p.Pff + m.p.Ki * m.ζ - m.p.Pe m.δ) / m.p.M ≠ 0
+  · exact mem_den_unstable_of_invariant m hV hI (Or.inl hb)
+  push Not at hb
+  have hb' : m.p.Pff = m.p.Pe m.δ := by
+    rw [div_eq_zero_iff, or_iff_left hM, hKi, zero_mul, add_zero, sub_eq_zero] at hb
+    exact hb
+  have hPe : ∀ δ, m.p.Pe δ = m.p.Pe m.δ := fun δ => by simp [Plant.Pe, hA]
+  obtain ⟨p0, p1, p2, p3⟩ := point_apply_of_V_eq_zero m hV
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
+  intro hs
+  obtain ⟨d, hd, hdb⟩ := hs 1 one_pos
+  set κ := m.p.Kp / m.p.D with hκ
+  set η := d / (2 * (1 + |κ|)) with hηdef
+  have hη : 0 < η := by positivity
+  set e0 : State 4 := EuclideanSpace.single 0 (1 : ℝ) with he0
+  set e3 : State 4 := EuclideanSpace.single 3 (1 : ℝ) with he3
+  set w : State 4 := EuclideanSpace.single 1 (κ * η) + EuclideanSpace.single 2 η with hw
+  set φ : ℝ → State 4 := fun t => m.point + w + t • ((κ * η) • e0 + η • e3) with hφ
+  have hc : ∀ t, φ t 0 = m.δ + κ * η * t ∧ φ t 1 = κ * η ∧ φ t 2 = η ∧ φ t 3 = m.ζ + η * t := by
+    intro t
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> simp [hφ, hw, he0, he3, p0, p1, p2, p3] <;> ring
+  have hn : ∀ δ, (m.p.Is + (m.p.Ps - m.p.Pe δ) / η) / m.p.C = 0 := fun δ => by
+    rw [hPe, add_div, hI, zero_add, div_div, mul_comm, ← div_div, hP, zero_div]
+  have hf : ∀ t, m.p.field (φ t) = (κ * η) • e0 + η • e3 := by
+    intro t
+    obtain ⟨c0, c1, c2, c3⟩ := hc t
+    ext i
+    fin_cases i
+    · simp [he0, he3, c1]
+    · simp only [Fin.mk_one, Params.field_apply_one, c0, c1, c2, c3, Plant.swingRate,
+        Params.Pref, hV, hKi, hPe, ← hb']
+      simp [he0, he3, hκ]
+      left
+      field_simp
+      ring
+    · simp only [Fin.reduceFinMk, Params.field_apply_two, c0, c2, Plant.nodeRate,
+        GFL.DCLink.nodeRate, hn]
+      simp [he0, he3]
+    · simp [he0, he3, c2, hV]
+  have htraj : IsTrajectoryOn φ m.p.field 0 (2 / η) := fun t _ => by
+    show HasDerivWithinAt φ (m.p.field (φ t)) _ t
+    rw [hf t]
+    have h := ((hasDerivAt_id t).smul_const ((κ * η) • e0 + η • e3)).const_add (m.point + w)
+    simp only [id, one_smul] at h
+    exact h.hasDerivWithinAt
+  have h0 : ‖φ 0 - m.point‖ < d := by
+    simp only [hφ, zero_smul, add_zero, add_sub_cancel_left]
+    calc ‖w‖ ≤ ‖(EuclideanSpace.single 1 (κ * η) : State 4)‖ +
+          ‖(EuclideanSpace.single 2 η : State 4)‖ := norm_add_le _ _
+      _ = |κ| * η + η := by
+          rw [EuclideanSpace.single, PiLp.norm_single, EuclideanSpace.single, PiLp.norm_single,
+            Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_of_pos hη]
+      _ = d / 2 := by rw [hηdef]; field_simp; ring
+      _ < d := by linarith
+  have h1 := hdb 0 (2 / η) φ htraj h0 (2 / η) ⟨by positivity, le_rfl⟩
+  have h2 := Dynamics.abs_coord_sub_le m.point (φ (2 / η)) 3
+  rw [(hc _).2.2.2, p3, add_sub_cancel_left, show η * (2 / η) = 2 by field_simp,
+    abs_of_pos two_pos] at h2
+  linarith
+
+/-- The potential of the power curve about `δ*`, `Π(θ) = ∫₀^θ (P_e(δ* + s) − P_e(δ*)) ds`. -/
+private def Model.potential (m : Model) (θ : ℝ) : ℝ :=
+  m.p.A * (Real.cos (m.δ - m.p.α) - Real.cos (m.δ - m.p.α + θ)) -
+    m.p.A * Real.sin (m.δ - m.p.α) * θ
+
+/-- The potential is its quadratic part `k θ²/2` up to `|A| |θ|³` for `|θ| ≤ 1` (`pot_cubic`). -/
+@[tmio M, powerlib_domain] private theorem pot_bound (m : Model) {θ : ℝ} (hθ : |θ| ≤ 1) :
+    |m.potential θ - m.p.k m.δ * θ ^ 2 / 2| ≤ |m.p.A| * |θ| ^ 3 := by
+  have h := pot_cubic (θ := m.δ - m.p.α) hθ
+  have he : m.potential θ - m.p.k m.δ * θ ^ 2 / 2 =
+      m.p.A * (Real.cos (m.δ - m.p.α) - Real.cos (m.δ - m.p.α + θ) -
+        Real.sin (m.δ - m.p.α) * θ - Real.cos (m.δ - m.p.α) * θ ^ 2 / 2) := by
+    simp only [Model.potential, Plant.k]; ring
+  rw [he, abs_mul]
+  exact mul_le_mul_of_nonneg_left h (abs_nonneg _)
+
+/-- The rate of the potential barrier `F θ − Π(θ) − M ω²/2 − w₀` along the field at a state off the
+plane (`V* = 0`, `I_s = 0`, `P_s = P_e(δ*)`, the frozen swing balanced, `M ≠ 0`):
+`D ω² + θ K_p V̇ + θ K_i V`. -/
+@[tmio M, powerlib_domain] private theorem barrier_rate (m : Model) (hV : m.p.Vref = 0)
+    (hIs : m.p.Is = 0) (hP : m.p.Ps = m.p.Pe m.δ) (hb : m.p.Pff + m.p.Ki * m.ζ = m.p.Pe m.δ)
+    (hM : m.p.M ≠ 0) (hC : m.p.C ≠ 0) (w₀ : ℝ) {y : State 4} (hy : y 2 ≠ 0) :
+    fderiv ℝ (fun y : State 4 => (m.p.Kp * y 2 + m.p.Ki * (y 3 - m.ζ)) * (y 0 - m.δ) -
+        m.potential (y 0 - m.δ) - m.p.M / 2 * y 1 ^ 2 - w₀) y (m.p.field y) =
+      m.p.D * y 1 ^ 2 + (y 0 - m.δ) * m.p.Kp *
+        (-(m.p.Pe (m.δ + (y 0 - m.δ)) - m.p.Pe m.δ) / y 2 / m.p.C) +
+        (y 0 - m.δ) * m.p.Ki * y 2 := by
+  have h0 : HasFDerivAt (fun y : State 4 => y 0) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0) y :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) : State 4 →L[ℝ] ℝ).hasFDerivAt
+  have h1 : HasFDerivAt (fun y : State 4 => y 1) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 1) y :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (1 : Fin 4) : State 4 →L[ℝ] ℝ).hasFDerivAt
+  have h2 : HasFDerivAt (fun y : State 4 => y 2) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 2) y :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4) : State 4 →L[ℝ] ℝ).hasFDerivAt
+  have h3 : HasFDerivAt (fun y : State 4 => y 3) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 3) y :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (3 : Fin 4) : State 4 →L[ℝ] ℝ).hasFDerivAt
+  have hθ := h0.sub_const m.δ
+  have hF := (h2.const_mul m.p.Kp).add ((h3.sub_const m.ζ).const_mul m.p.Ki)
+  have hcos := (Real.hasDerivAt_cos (m.δ - m.p.α + (y 0 - m.δ))).comp_hasFDerivAt y
+    (hθ.const_add (m.δ - m.p.α))
+  have hP' := ((hcos.const_sub (Real.cos (m.δ - m.p.α))).const_mul m.p.A).sub
+    (hθ.const_mul (m.p.A * Real.sin (m.δ - m.p.α)))
+  have hW := (((hF.mul hθ).sub hP').sub ((h1.pow 2).const_mul (m.p.M / 2))).sub_const w₀
+  rw [show fderiv ℝ (fun y : State 4 => (m.p.Kp * y 2 + m.p.Ki * (y 3 - m.ζ)) * (y 0 - m.δ) -
+      m.potential (y 0 - m.δ) - m.p.M / 2 * y 1 ^ 2 - w₀) y = _ from hW.fderiv]
+  simp only [_root_.sub_apply, _root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
+    smul_eq_mul]
+  simp only [Params.field_apply_zero, Params.field_apply_one, Params.field_apply_two,
+    Params.field_apply_three, Plant.swingRate, Params.Pref, Plant.nodeRate,
+    GFL.DCLink.nodeRate, hV, hIs, hP]
+  have hb' : m.p.Pff = m.p.Pe m.δ - m.p.Ki * m.ζ := by linarith
+  rw [hb']
+  have harg : m.δ - m.p.α + (y 0 - m.δ) = y 0 - m.p.α := by ring
+  have harg' : m.δ + (y 0 - m.δ) = y 0 := by ring
+  rw [harg, harg']
+  simp only [Plant.Pe]
+  simp
+  field_simp
+  ring
+
+/-- The norm of a perturbation of the angle, the DC voltage and the integrator:
+`|(θ₀ e₀ + a e₂ + b e₃)| ≤ |θ₀| + |a| + |b|`. -/
+@[tmio T, powerlib_foundation] private theorem norm_seed_le (θ₀ a b : ℝ) :
+    ‖(EuclideanSpace.single 0 θ₀ + EuclideanSpace.single 2 a + EuclideanSpace.single 3 b :
+      State 4)‖ ≤ |θ₀| + |a| + |b| := by
+  have t1 := norm_add_le (EuclideanSpace.single 0 θ₀ + EuclideanSpace.single 2 a : State 4)
+    (EuclideanSpace.single 3 b)
+  have t2 := norm_add_le (EuclideanSpace.single 0 θ₀ : State 4) (EuclideanSpace.single 2 a)
+  simp only [EuclideanSpace.single, PiLp.norm_single, Real.norm_eq_abs] at t1 t2
+  linarith
+
+/-- The constants of the seeds of `mem_den_unstable_of_invariant_stiff_degenerate`: for
+`K, c, G, δ' > 0`, `a ≥ 0` there are `h, τ > 0` with `c τ + 2h < δ'`, `c τ ≤ 1/2` and
+`(K + a) c τ ≤ G h/2`. -/
+@[tmio T, powerlib_foundation] private theorem stiff_seed_constants {K a c G δ' : ℝ} (hK : 0 < K)
+    (ha : 0 ≤ a) (hc : 0 < c) (hG : 0 < G) (hδ : 0 < δ') :
+    ∃ h τ : ℝ, 0 < h ∧ 0 < τ ∧ c * τ + 2 * h < δ' ∧ c * τ ≤ 1 / 2 ∧
+      (K + a) * c * τ ≤ G * h / 2 := by
+  obtain ⟨d, hd⟩ : ∃ d, d = min δ' 1 := ⟨_, rfl⟩
+  have hd0 : 0 < d := by rw [hd]; exact lt_min hδ one_pos
+  have hd1 : d ≤ 1 := by rw [hd]; exact min_le_right _ _
+  have hdδ : d ≤ δ' := by rw [hd]; exact min_le_left _ _
+  have hK2 : 0 < 2 * K := by linarith
+  obtain ⟨q, hq⟩ : ∃ q, q = G / (2 * K) := ⟨_, rfl⟩
+  have hq0 : 0 ≤ q := by rw [hq]; exact div_nonneg hG.le hK2.le
+  obtain ⟨h, hh⟩ : ∃ h, h = d / (2 * (2 + q)) := ⟨_, rfl⟩
+  have h2q : 0 < 2 + q := by linarith
+  have hh0 : 0 < h := by rw [hh]; exact div_pos hd0 (by linarith)
+  have hhd : h * (2 + q) = d / 2 := by
+    rw [hh, div_mul_eq_mul_div, mul_comm (2 : ℝ) (2 + q), mul_comm d (2 + q),
+      mul_div_mul_left _ _ h2q.ne']
+  obtain ⟨D, hD⟩ : ∃ D, D = 2 * (K + a) * c + 1 := ⟨_, rfl⟩
+  have hD0 : 0 < D := by
+    rw [hD]; have := mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 2) (add_nonneg hK.le ha))
+      hc.le
+    linarith
+  obtain ⟨τ, hτ⟩ : ∃ τ, τ = G * h / D := ⟨_, rfl⟩
+  have hGh : 0 < G * h := mul_pos hG hh0
+  have hτ0 : 0 < τ := by rw [hτ]; exact div_pos hGh hD0
+  have hτD : τ * D = G * h := by rw [hτ, div_mul_cancel₀ _ hD0.ne']
+  have hcτ : c * τ ≤ q * h := by
+    have h1 : 2 * K * c ≤ D := by
+      rw [hD]; have := mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 2) ha) hc.le
+      nlinarith
+    have h2 : 2 * K * (c * τ) ≤ G * h := by
+      calc 2 * K * (c * τ) = (2 * K * c) * τ := by ring
+        _ ≤ D * τ := mul_le_mul_of_nonneg_right h1 hτ0.le
+        _ = G * h := by rw [mul_comm, hτD]
+    have h3 : q * h * (2 * K) = G * h := by rw [hq]; field_simp
+    nlinarith
+  refine ⟨h, τ, hh0, hτ0, ?_, ?_, ?_⟩
+  · nlinarith
+  · nlinarith
+  · have h1 : 2 * ((K + a) * c) ≤ D := by rw [hD]; linarith
+    have h2 : 2 * ((K + a) * c * τ) ≤ D * τ := by nlinarith
+    rw [mul_comm D τ, hτD] at h2
+    linarith
+
+/-- The arithmetic of the trapping region of `mem_den_unstable_of_invariant_stiff_degenerate`: in
+the region (`σ V > 0`, `C θ ≤ 0`, the barrier `F θ − Π − M ω²/2 − w₀ ≥ 0` with the potential
+`Π ≥ 0`, the
+power curve `X = ΔP(θ)` with `X θ ≥ (K/2) θ²`, coordinates in the ball of radius `ρ`) the DC
+voltage moves away from the plane, `V²` grows at the uniform rate `K c/|C|`,
+`c = w₀/((|K_p| + |K_i|) ρ + 1)`, the barrier's rate is positive and `C θ < 0`. -/
+@[tmio T, powerlib_foundation] private theorem stiff_region {σ Kp Ki C D M K w₀ ρ θ V u ω X Pt : ℝ}
+    (hσ2 : σ * σ = 1) (hKpσ : Kp * σ * C ≤ 0) (hKiσ : Ki * σ * C ≤ 0)
+    (hKpσ' : Kp ≠ 0 → Kp * σ * C < 0) (hKiσ' : Ki ≠ 0 → Ki * σ * C < 0)
+    (hgain : Kp ≠ 0 ∨ Ki ≠ 0) (hC : C ≠ 0) (hM : 0 < M) (hD : 0 ≤ D) (hK : 0 < K)
+    (hw₀ : 0 < w₀) (hρ : 0 < ρ) (hV : |V| < ρ) (hu : |u| < ρ) (hσV : 0 < σ * V)
+    (hPt : 0 ≤ Pt) (hX : K / 2 * θ ^ 2 ≤ X * θ)
+    (hW : 0 ≤ (Kp * V + Ki * u) * θ - Pt - M / 2 * ω ^ 2 - w₀) (hW2 : 0 ≤ -C * θ) :
+    0 ≤ σ * (-X / V / C) ∧
+      K * (w₀ / ((|Kp| + |Ki|) * ρ + 1)) / |C| ≤ 2 * V * (-X / V / C) ∧
+      0 < D * ω ^ 2 + θ * Kp * (-X / V / C) + θ * Ki * V ∧ C * θ < 0 := by
+  have hV0 : V ≠ 0 := fun h => by rw [h, mul_zero] at hσV; exact lt_irrefl _ hσV
+  have hC2 : 0 < C ^ 2 := by positivity
+  have hV2 : 0 < V ^ 2 := by positivity
+  -- the barrier forces `F θ ≥ w₀`
+  have hω : 0 ≤ M / 2 * ω ^ 2 := by positivity
+  have hFθ : w₀ ≤ (Kp * V + Ki * u) * θ := by linarith
+  have hF : |Kp * V + Ki * u| ≤ (|Kp| + |Ki|) * ρ := by
+    calc |Kp * V + Ki * u| ≤ |Kp| * |V| + |Ki| * |u| := by
+          rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
+      _ ≤ |Kp| * ρ + |Ki| * ρ := by gcongr
+      _ = (|Kp| + |Ki|) * ρ := by ring
+  have hden : 0 < (|Kp| + |Ki|) * ρ + 1 := by positivity
+  have hθc : w₀ / ((|Kp| + |Ki|) * ρ + 1) ≤ |θ| := by
+    rw [div_le_iff₀ hden]
+    have h1 : (Kp * V + Ki * u) * θ ≤ |Kp * V + Ki * u| * |θ| := by
+      rw [← abs_mul]; exact le_abs_self _
+    have h2 : |Kp * V + Ki * u| * |θ| ≤ (|Kp| + |Ki|) * ρ * |θ| :=
+      mul_le_mul_of_nonneg_right hF (abs_nonneg θ)
+    nlinarith [abs_nonneg θ]
+  have hθ0 : θ ≠ 0 := by
+    intro h; rw [h, abs_zero] at hθc
+    have : 0 < w₀ / ((|Kp| + |Ki|) * ρ + 1) := div_pos hw₀ hden
+    linarith
+  have hθ2 : 0 < θ ^ 2 := by positivity
+  have hCθ : C * θ < 0 := by
+    have h1 : C * θ ≤ 0 := by linarith
+    exact lt_of_le_of_ne h1 (mul_ne_zero hC hθ0)
+  have hXθ : 0 < X * θ := lt_of_lt_of_le (by positivity) hX
+  have hXC : X * C < 0 := by
+    have h1 : (X * θ) * (C * θ) < 0 := mul_neg_of_pos_of_neg hXθ hCθ
+    have h2 : (X * θ) * (C * θ) = (X * C) * θ ^ 2 := by ring
+    rw [h2] at h1
+    by_contra h3
+    have := mul_nonneg (not_lt.mp h3) hθ2.le
+    linarith
+  refine ⟨?_, ?_, ?_, hCθ⟩
+  · have e : σ * (-X / V / C) = (σ * V) * (-(X * C)) / (V ^ 2 * C ^ 2) := by
+      field_simp
+    rw [e]
+    exact div_nonneg (mul_nonneg hσV.le (by linarith)) (by positivity)
+  · have e : 2 * V * (-X / V / C) = 2 * (-(X * C)) / C ^ 2 := by
+      field_simp
+    rw [e]
+    have hXa : |X| * |θ| ≥ K / 2 * |θ| ^ 2 := by
+      rw [← abs_mul, sq_abs]; exact le_trans hX (le_abs_self _)
+    have hXk : K / 2 * |θ| ≤ |X| := by
+      have hθp : 0 < |θ| := abs_pos.mpr hθ0
+      nlinarith
+    have hXC' : -(X * C) = |X| * |C| := by rw [← abs_mul, abs_of_neg hXC]
+    have hCa : C ^ 2 = |C| * |C| := by rw [← sq, sq_abs]
+    rw [hXC', hCa]
+    have hCp : 0 < |C| := abs_pos.mpr hC
+    rw [show 2 * (|X| * |C|) / (|C| * |C|) = 2 * |X| / |C| by field_simp]
+    rw [div_le_div_iff_of_pos_right hCp]
+    have h1 : K * (w₀ / ((|Kp| + |Ki|) * ρ + 1)) ≤ K * |θ| :=
+      mul_le_mul_of_nonneg_left hθc hK.le
+    linarith
+  · have hT1 : 0 ≤ D * ω ^ 2 := by positivity
+    have e2 : θ * Kp * (-X / V / C) = (X * θ) * (-(Kp * σ * C)) * (σ * V) / (V ^ 2 * C ^ 2) := by
+      have : (X * θ) * (-(Kp * σ * C)) * (σ * V) = (X * θ) * (-(Kp * C)) * V * (σ * σ) := by ring
+      rw [this, hσ2, mul_one]
+      field_simp
+    have e3 : θ * Ki * V = (Ki * σ * C) * (C * θ) * (σ * V) / C ^ 2 := by
+      have : (Ki * σ * C) * (C * θ) * (σ * V) = Ki * θ * V * C ^ 2 * (σ * σ) := by ring
+      rw [this, hσ2, mul_one]
+      field_simp
+    rw [e2, e3]
+    have hT2 : 0 ≤ (X * θ) * (-(Kp * σ * C)) * (σ * V) / (V ^ 2 * C ^ 2) :=
+      div_nonneg (mul_nonneg (mul_nonneg hXθ.le (by linarith)) hσV.le) (by positivity)
+    have hT3 : 0 ≤ (Ki * σ * C) * (C * θ) * (σ * V) / C ^ 2 :=
+      div_nonneg (mul_nonneg (mul_nonneg_of_nonpos_of_nonpos hKiσ hCθ.le) hσV.le) hC2.le
+    rcases hgain with h | h
+    · have : 0 < (X * θ) * (-(Kp * σ * C)) * (σ * V) / (V ^ 2 * C ^ 2) :=
+        div_pos (mul_pos (mul_pos hXθ (by linarith [hKpσ' h])) hσV) (by positivity)
+      linarith
+    · have : 0 < (Ki * σ * C) * (C * θ) * (σ * V) / C ^ 2 :=
+        div_pos (mul_pos (mul_pos_of_neg_of_neg (hKiσ' h) hCθ) hσV) hC2
+      linarith
+
+/-- The escape side of `mem_den_unstable_of_invariant_stiff_degenerate`: for DC gains
+`(K_p, K_i) ≠ (0, 0)` of one sign (`K_p K_i ≥ 0`) and `C ≠ 0` there is `σ = ±1` with
+`σ (K_p + K_i) C < 0`; then `K_p σ C ≤ 0`, `K_i σ C ≤ 0`, strictly for a nonzero gain. -/
+@[tmio T, powerlib_foundation] private theorem stiff_signs {Kp Ki C : ℝ} (hC : C ≠ 0)
+    (hgain : Kp ≠ 0 ∨ Ki ≠ 0) (hsame : 0 ≤ Kp * Ki) :
+    ∃ σ : ℝ, (σ = 1 ∨ σ = -1) ∧ σ * σ = 1 ∧ σ * (Kp + Ki) * C < 0 ∧ Kp * σ * C ≤ 0 ∧
+      Ki * σ * C ≤ 0 ∧ (Kp ≠ 0 → Kp * σ * C < 0) ∧ (Ki ≠ 0 → Ki * σ * C < 0) := by
+  have hg : Kp + Ki ≠ 0 := by
+    intro h0
+    rcases hgain with h | h
+    · have : Ki = -Kp := by linarith
+      rw [this] at hsame; nlinarith [sq_pos_of_ne_zero h]
+    · have : Kp = -Ki := by linarith
+      rw [this] at hsame; nlinarith [sq_pos_of_ne_zero h]
+  obtain ⟨σ, hσ, hσgC⟩ : ∃ σ : ℝ, (σ = 1 ∨ σ = -1) ∧ σ * (Kp + Ki) * C < 0 := by
+    by_cases h : 0 < (Kp + Ki) * C
+    · exact ⟨-1, Or.inr rfl, by linarith⟩
+    · refine ⟨1, Or.inl rfl, ?_⟩
+      rw [one_mul]
+      exact lt_of_le_of_ne (not_lt.mp h) (mul_ne_zero hg hC)
+  have hσ2 : σ * σ = 1 := by rcases hσ with rfl | rfl <;> norm_num
+  have hg2 : 0 < (Kp + Ki) ^ 2 := by positivity
+  have key : ∀ K : ℝ, 0 ≤ K * (Kp + Ki) → K * σ * C ≤ 0 := fun K hK => by
+    have e : K * σ * C * (Kp + Ki) ^ 2 = K * (Kp + Ki) * (σ * (Kp + Ki) * C) := by ring
+    by_contra h
+    have h1 := mul_pos (not_le.mp h) hg2
+    rw [e] at h1
+    nlinarith [mul_nonpos_of_nonneg_of_nonpos hK hσgC.le]
+  have key' : ∀ K : ℝ, 0 < K * (Kp + Ki) → K * σ * C < 0 := fun K hK => by
+    have e : K * σ * C * (Kp + Ki) ^ 2 = K * (Kp + Ki) * (σ * (Kp + Ki) * C) := by ring
+    have h1 : K * σ * C * (Kp + Ki) ^ 2 < 0 := by rw [e]; exact mul_neg_of_pos_of_neg hK hσgC
+    by_contra h
+    nlinarith [mul_nonneg (not_lt.mp h) hg2.le]
+  refine ⟨σ, hσ, hσ2, hσgC, key _ (by nlinarith [sq_nonneg Kp]),
+    key _ (by nlinarith [sq_nonneg Ki]),
+    fun h => key' _ (by nlinarith [sq_pos_of_ne_zero h]),
+    fun h => key' _ (by nlinarith [sq_pos_of_ne_zero h])⟩
+
+/-- The power curve near a stiff angle (`k(δ*) > 0`): on the radius
+`ρ = min 1 (k/(4(|A| + 1)))` it keeps the sign of `θ`, `ΔP(θ) θ ≥ (k/2) θ²`, and its potential is
+nonnegative. -/
+@[tmio M, powerlib_domain] private theorem stiff_curve (m : Model) (hk : 0 < m.p.k m.δ) :
+    ∃ ρ, 0 < ρ ∧ ρ ≤ 1 ∧
+      (∀ θ, |θ| < ρ → m.p.k m.δ / 2 * θ ^ 2 ≤ (m.p.Pe (m.δ + θ) - m.p.Pe m.δ) * θ) ∧
+      ∀ θ, |θ| < ρ → 0 ≤ m.potential θ := by
+  obtain ⟨ρ, hρdef⟩ : ∃ ρ, ρ = min 1 (m.p.k m.δ / (4 * (|m.p.A| + 1))) := ⟨_, rfl⟩
+  have hρ : 0 < ρ := by rw [hρdef]; exact lt_min one_pos (by positivity)
+  have hρ1 : ρ ≤ 1 := by rw [hρdef]; exact min_le_left _ _
+  have hρA : |m.p.A| * ρ ≤ m.p.k m.δ / 4 := by
+    have h1 : ρ ≤ m.p.k m.δ / (4 * (|m.p.A| + 1)) := by rw [hρdef]; exact min_le_right _ _
+    have hA1 : |m.p.A| + 1 ≠ 0 := by positivity
+    calc |m.p.A| * ρ ≤ |m.p.A| * (m.p.k m.δ / (4 * (|m.p.A| + 1))) :=
+          mul_le_mul_of_nonneg_left h1 (abs_nonneg _)
+      _ = m.p.k m.δ / 4 * (|m.p.A| / (|m.p.A| + 1)) := by field_simp
+      _ ≤ m.p.k m.δ / 4 := mul_le_of_le_one_right (by positivity)
+          ((div_le_one (by positivity)).mpr (by linarith))
+  refine ⟨ρ, hρ, hρ1, fun θ hθ => ?_, fun θ hθ => ?_⟩
+  · have h := m.p.abs_Pe_add_sub_le m.δ θ
+    have ha : 0 ≤ |m.p.A| := abs_nonneg _
+    have hk' := hk
+    have hρA' := hρA
+    generalize m.p.Pe (m.δ + θ) - m.p.Pe m.δ = X at h ⊢
+    generalize m.p.k m.δ = kk at h hk' hρA' ⊢
+    generalize |m.p.A| = a at h ha hρA' ⊢
+    have e1 : |(X - kk * θ) * θ| ≤ a * θ ^ 2 * |θ| := by
+      rw [abs_mul]; exact mul_le_mul_of_nonneg_right h (abs_nonneg θ)
+    have e2 : a * θ ^ 2 * |θ| ≤ a * θ ^ 2 * ρ :=
+      mul_le_mul_of_nonneg_left hθ.le (mul_nonneg ha (sq_nonneg θ))
+    have e3 : a * ρ * θ ^ 2 ≤ kk / 4 * θ ^ 2 := mul_le_mul_of_nonneg_right hρA' (sq_nonneg θ)
+    have e4 := neg_abs_le ((X - kk * θ) * θ)
+    have e5 : 0 ≤ kk * θ ^ 2 := mul_nonneg hk'.le (sq_nonneg θ)
+    have e6 : X * θ = kk * θ ^ 2 + (X - kk * θ) * θ := by ring
+    have e7 : a * θ ^ 2 * ρ = a * ρ * θ ^ 2 := by ring
+    linarith
+  · have h := pot_bound m (hθ.le.trans hρ1)
+    have ha : 0 ≤ |m.p.A| := abs_nonneg _
+    have hk' := hk
+    have hρA' := hρA
+    have e : |θ| ^ 3 = |θ| * θ ^ 2 := by rw [pow_succ, sq_abs]; ring
+    rw [e] at h
+    generalize m.potential θ = X at h ⊢
+    generalize m.p.k m.δ = kk at h hk' hρA' ⊢
+    generalize |m.p.A| = a at h ha hρA' ⊢
+    have e2 : a * (|θ| * θ ^ 2) ≤ a * (ρ * θ ^ 2) :=
+      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hθ.le (sq_nonneg θ)) ha
+    have e3 : a * ρ * θ ^ 2 ≤ kk / 4 * θ ^ 2 := mul_le_mul_of_nonneg_right hρA' (sq_nonneg θ)
+    have e4 := neg_abs_le (X - kk * θ ^ 2 / 2)
+    have e5 : 0 ≤ kk * θ ^ 2 := mul_nonneg hk'.le (sq_nonneg θ)
+    have e6 : a * (ρ * θ ^ 2) = a * ρ * θ ^ 2 := by ring
+    linarith
+
+/-- The potential is at most `(k + |A|) θ²` for `|θ| ≤ 1`, `k(δ*) > 0`. -/
+@[tmio M, powerlib_domain] private theorem potential_le (m : Model) (hk : 0 < m.p.k m.δ)
+    {θ : ℝ} (hθ : |θ| ≤ 1) : m.potential θ ≤ (m.p.k m.δ + |m.p.A|) * θ ^ 2 := by
+  have h := pot_bound m hθ
+  have ha : 0 ≤ |m.p.A| := abs_nonneg _
+  have hk' := hk
+  have e : |θ| ^ 3 = |θ| * θ ^ 2 := by rw [pow_succ, sq_abs]; ring
+  rw [e] at h
+  generalize m.potential θ = X at h ⊢
+  generalize m.p.k m.δ = kk at h hk' ⊢
+  generalize |m.p.A| = a at h ha ⊢
+  have e2 : a * (|θ| * θ ^ 2) ≤ a * θ ^ 2 :=
+    mul_le_mul_of_nonneg_left (mul_le_of_le_one_left (sq_nonneg θ) hθ) ha
+  have e4 := le_abs_self (X - kk * θ ^ 2 / 2)
+  have e5 : 0 ≤ kk * θ ^ 2 := mul_nonneg hk'.le (sq_nonneg θ)
+  have e6 : (kk + a) * θ ^ 2 = kk * θ ^ 2 + a * θ ^ 2 := by ring
+  linarith
+
+/-- The DC row off the plane at the degenerate balance (`I_s = 0`, `P_s = P_e(δ*)`):
+`V̇ = (−ΔP(θ)/V)/C`. -/
+@[tmio M, powerlib_domain] private theorem field_two_of_balance (m : Model) (hIs : m.p.Is = 0)
+    (hP : m.p.Ps = m.p.Pe m.δ) (y : State 4) :
+    m.p.field y 2 = (-(m.p.Pe (m.δ + (y 0 - m.δ)) - m.p.Pe m.δ) / y 2) / m.p.C := by
+  rw [Params.field_apply_two]
+  simp only [Plant.nodeRate, GFL.DCLink.nodeRate, hIs, hP, zero_add]
+  rw [show m.δ + (y 0 - m.δ) = y 0 by ring]
+  ring
+
+@[tmio T, powerlib_foundation] private theorem fderiv_sq_two (y v : State 4) :
+    fderiv ℝ (fun y : State 4 => y 2 ^ 2) y v = 2 * y 2 * v 2 := by
+  have h2 : HasFDerivAt (fun y : State 4 => y 2) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 2) y :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4) : State 4 →L[ℝ] ℝ).hasFDerivAt
+  rw [(h2.pow 2).fderiv]
+  simp
+
+/-- The seeds of `mem_den_unstable_of_invariant_stiff_degenerate`: arbitrarily close to the
+point, `(δ* − C τ, 0, σ h, ζ* + σ h)` lies on the escape side with a positive barrier. -/
+@[tmio M, powerlib_domain] private theorem stiff_seed (m : Model) (hV : m.p.Vref = 0)
+    (hk : 0 < m.p.k m.δ) {σ : ℝ} (hσ : σ = 1 ∨ σ = -1) (hσ2 : σ * σ = 1)
+    (hσgC : σ * (m.p.Kp + m.p.Ki) * m.p.C < 0) {δ' : ℝ} (hδ' : 0 < δ') :
+    ∃ y₀ : State 4, ∃ w₀ > 0, ‖y₀ - m.point‖ < δ' ∧ 0 < σ * y₀ 2 ∧
+      0 < (m.p.Kp * y₀ 2 + m.p.Ki * (y₀ 3 - m.ζ)) * (y₀ 0 - m.δ) -
+        m.potential (y₀ 0 - m.δ) - m.p.M / 2 * y₀ 1 ^ 2 - w₀ ∧
+      0 < -m.p.C * (y₀ 0 - m.δ) := by
+  have hC : m.p.C ≠ 0 := fun h => by rw [h, mul_zero] at hσgC; exact lt_irrefl _ hσgC
+  have hg : m.p.Kp + m.p.Ki ≠ 0 := fun h => by
+    rw [h, mul_zero, zero_mul] at hσgC; exact lt_irrefl _ hσgC
+  obtain ⟨p0, p1, p2, p3⟩ := point_apply_of_V_eq_zero m hV
+  have hA0 : 0 ≤ |m.p.A| := abs_nonneg _
+  have hC0 : 0 < |m.p.C| := abs_pos.mpr hC
+  have hgabs : 0 < |m.p.Kp + m.p.Ki| := abs_pos.mpr hg
+  obtain ⟨h, τ, hh0, hτ0, hsmall, hτ1, hτA⟩ := stiff_seed_constants hk hA0 hC0 hgabs hδ'
+  obtain ⟨θ₀, hθ₀⟩ : ∃ θ₀, θ₀ = -(m.p.C * τ) := ⟨_, rfl⟩
+  have hθ₀abs : |θ₀| = |m.p.C| * τ := by rw [hθ₀, abs_neg, abs_mul, abs_of_pos hτ0]
+  obtain ⟨y₀, hy₀⟩ : ∃ y₀ : State 4, y₀ = m.point + (EuclideanSpace.single 0 θ₀ +
+      EuclideanSpace.single 2 (σ * h) + EuclideanSpace.single 3 (σ * h)) := ⟨_, rfl⟩
+  have c0 : y₀ 0 = m.δ + θ₀ := by simp [hy₀, p0]
+  have c1 : y₀ 1 = 0 := by simp [hy₀, p1]
+  have c2 : y₀ 2 = σ * h := by simp [hy₀, p2]
+  have c3 : y₀ 3 = m.ζ + σ * h := by simp [hy₀, p3]
+  have hσh : |σ * h| = h := by
+    rw [abs_mul, abs_of_pos hh0]; rcases hσ with rfl | rfl <;> simp
+  have hpot : m.potential θ₀ ≤ (m.p.k m.δ + |m.p.A|) * θ₀ ^ 2 :=
+    potential_le m hk (le_trans (le_of_eq hθ₀abs) (by linarith only [hτ1]))
+  have hθ₀2 : θ₀ ^ 2 = |m.p.C| * τ * (|m.p.C| * τ) := by rw [← sq_abs, hθ₀abs, sq]
+  have habs : -(σ * (m.p.Kp + m.p.Ki) * m.p.C) = |m.p.Kp + m.p.Ki| * |m.p.C| := by
+    have : |σ * (m.p.Kp + m.p.Ki) * m.p.C| = |m.p.Kp + m.p.Ki| * |m.p.C| := by
+      rw [abs_mul, abs_mul]; rcases hσ with rfl | rfl <;> simp
+    rw [← this, abs_of_neg hσgC]
+  obtain ⟨w₀, hw₀⟩ : ∃ w₀, w₀ = (|m.p.Kp + m.p.Ki| * |m.p.C| * h * τ - m.potential θ₀) / 2 :=
+    ⟨_, rfl⟩
+  have hw₀pos : 0 < w₀ := by
+    rw [hθ₀2] at hpot
+    have h2 : (m.p.k m.δ + |m.p.A|) * (|m.p.C| * τ * (|m.p.C| * τ)) ≤
+        |m.p.C| * τ * (|m.p.Kp + m.p.Ki| * h / 2) := by
+      have := mul_le_mul_of_nonneg_left hτA (mul_pos hC0 hτ0).le
+      calc (m.p.k m.δ + |m.p.A|) * (|m.p.C| * τ * (|m.p.C| * τ)) =
+            |m.p.C| * τ * ((m.p.k m.δ + |m.p.A|) * |m.p.C| * τ) := by ring
+        _ ≤ _ := this
+    have h3 : 0 < |m.p.C| * τ * (|m.p.Kp + m.p.Ki| * h) :=
+      mul_pos (mul_pos hC0 hτ0) (mul_pos hgabs hh0)
+    have h4 : |m.p.Kp + m.p.Ki| * |m.p.C| * h * τ = |m.p.C| * τ * (|m.p.Kp + m.p.Ki| * h) := by
+      ring
+    rw [hw₀]
+    linarith only [hpot, h2, h3, h4]
+  refine ⟨y₀, w₀, hw₀pos, ?_, ?_, ?_, ?_⟩
+  · rw [hy₀, add_sub_cancel_left]
+    refine (norm_seed_le θ₀ (σ * h) (σ * h)).trans_lt ?_
+    rw [hσh, hθ₀abs]
+    linarith only [hsmall]
+  · rw [c2, ← mul_assoc, hσ2, one_mul]; exact hh0
+  · rw [c0, c1, c2, c3, show m.δ + θ₀ - m.δ = θ₀ by ring, show m.ζ + σ * h - m.ζ = σ * h by ring]
+    have e3 : (m.p.Kp * (σ * h) + m.p.Ki * (σ * h)) * θ₀ =
+        -(σ * (m.p.Kp + m.p.Ki) * m.p.C) * h * τ := by rw [hθ₀]; ring
+    rw [e3, habs]
+    have e4 : |m.p.Kp + m.p.Ki| * |m.p.C| * h * τ - m.potential θ₀ = 2 * w₀ := by rw [hw₀]; ring
+    have e5 : m.p.M / 2 * (0 : ℝ) ^ 2 = 0 := by ring
+    rw [e5]
+    linarith only [e4, hw₀pos]
+  · rw [c0, show m.δ + θ₀ - m.δ = θ₀ by ring, hθ₀]
+    have : -m.p.C * -(m.p.C * τ) = m.p.C ^ 2 * τ := by ring
+    rw [this]
+    exact mul_pos (lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hC))) hτ0
+
+/-- The core of `mem_den_unstable_of_invariant_stiff_degenerate` for `M > 0`. -/
+@[tmio TM, powerlib_domain] private theorem unstable_stiff_core (m : Model)
+    (hV : m.p.Vref = 0) (hI : m.p.Is / m.p.C = 0) (hC : m.p.C ≠ 0)
+    (hP : m.p.Ps = m.p.Pe m.δ) (hb : m.p.Pff + m.p.Ki * m.ζ = m.p.Pe m.δ) (hM : 0 < m.p.M)
+    (hk : 0 < m.p.k m.δ) (hD : 0 ≤ m.p.D) (hgain : m.p.Kp ≠ 0 ∨ m.p.Ki ≠ 0)
+    (hsame : 0 ≤ m.p.Kp * m.p.Ki) : Unstable m.p.field m.point := by
+  have hIs : m.p.Is = 0 := by rwa [div_eq_zero_iff, or_iff_left hC] at hI
+  obtain ⟨p0, p1, p2, p3⟩ := point_apply_of_V_eq_zero m hV
+  obtain ⟨σ, hσ, hσ2, hσgC, hKpσ, hKiσ, hKpσ', hKiσ'⟩ := stiff_signs hC hgain hsame
+  obtain ⟨ρ, hρ, -, hΔ, hPot⟩ := stiff_curve m hk
+  refine Dynamics.Degenerate.unstable_of_barriers 2 (σ := σ) hρ (fun s hs => ?_) fun δ' hδ' => ?_
+  · obtain ⟨G, hG, hGf⟩ := m.p.exists_contDiff_eq_field_of_sign hσ hs
+    exact ⟨G, hG, fun y _ hy => hGf y hy⟩
+  obtain ⟨y₀, w₀, hw₀, hy₀x, hσ0, hW1₀, hW2₀⟩ := stiff_seed m hV hk hσ hσ2 hσgC hδ'
+  have hden : 0 < (|m.p.Kp| + |m.p.Ki|) * ρ + 1 := by
+    have := mul_nonneg (add_nonneg (abs_nonneg m.p.Kp) (abs_nonneg m.p.Ki)) hρ.le
+    linarith only [this]
+  refine ⟨y₀, hy₀x, hσ0,
+    fun y => (m.p.Kp * y 2 + m.p.Ki * (y 3 - m.ζ)) * (y 0 - m.δ) - m.potential (y 0 - m.δ) -
+      m.p.M / 2 * y 1 ^ 2 - w₀,
+    fun y => -m.p.C * (y 0 - m.δ), fun _ => 1, fun y => y 2 ^ 2,
+    m.p.k m.δ * (w₀ / ((|m.p.Kp| + |m.p.Ki|) * ρ + 1)) / |m.p.C|, ρ ^ 2,
+    div_pos (mul_pos hk (div_pos hw₀ hden)) (abs_pos.mpr hC),
+    by unfold Model.potential; fun_prop, by fun_prop, contDiff_const, by fun_prop, hW1₀, hW2₀,
+    one_pos, fun y hy => ?_, fun y hy hσy hW1 hW2 _ => ?_⟩
+  · -- `V²` is bounded near the point
+    have h1 := Dynamics.abs_coord_sub_le m.point y 2
+    rw [p2, sub_zero] at h1
+    have h2 : |y 2| < ρ := lt_of_le_of_lt h1 hy
+    show y 2 ^ 2 ≤ ρ ^ 2
+    rw [← sq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) h2.le 2
+  · -- the trapping region
+    have hθρ : |y 0 - m.δ| < ρ := by
+      have := Dynamics.abs_coord_sub_le m.point y 0; rw [p0] at this; exact lt_of_le_of_lt this hy
+    have hVρ : |y 2| < ρ := by
+      have := Dynamics.abs_coord_sub_le m.point y 2; rw [p2, sub_zero] at this
+      exact lt_of_le_of_lt this hy
+    have huρ : |y 3 - m.ζ| < ρ := by
+      have := Dynamics.abs_coord_sub_le m.point y 3; rw [p3] at this; exact lt_of_le_of_lt this hy
+    have hσV : 0 < σ * y 2 := by linarith only [hσy, hσ0]
+    have hy2 : y 2 ≠ 0 := fun h0 => by rw [h0, mul_zero] at hσV; exact lt_irrefl _ hσV
+    have hW1' : 0 ≤ (m.p.Kp * y 2 + m.p.Ki * (y 3 - m.ζ)) * (y 0 - m.δ) -
+        m.potential (y 0 - m.δ) - m.p.M / 2 * y 1 ^ 2 - w₀ := hW1
+    have hW2' : 0 ≤ -m.p.C * (y 0 - m.δ) := hW2
+    obtain ⟨r1, r2, r3, r4⟩ := stiff_region (σ := σ) (Kp := m.p.Kp) (Ki := m.p.Ki) (C := m.p.C)
+      (D := m.p.D) (M := m.p.M) (K := m.p.k m.δ) (w₀ := w₀) (ρ := ρ) (θ := y 0 - m.δ)
+      (V := y 2) (u := y 3 - m.ζ) (ω := y 1) (X := m.p.Pe (m.δ + (y 0 - m.δ)) - m.p.Pe m.δ)
+      (Pt := m.potential (y 0 - m.δ)) hσ2 hKpσ hKiσ hKpσ' hKiσ' hgain hC hM hD hk
+      hw₀ hρ hVρ huρ hσV (hPot _ hθρ) (hΔ _ hθρ) hW1' hW2'
+    refine ⟨by rw [field_two_of_balance m hIs hP y]; exact r1,
+      by rw [fderiv_sq_two, field_two_of_balance m hIs hP y]; exact r2, fun _ => ?_,
+      fun h0 => ?_, fun h0 => absurd h0 one_ne_zero⟩
+    · rw [barrier_rate m hV hIs hP hb hM.ne' hC w₀ hy2]; exact r3
+    · exfalso
+      have h5 : -m.p.C * (y 0 - m.δ) = 0 := h0
+      have h6 : m.p.C * (y 0 - m.δ) = 0 := by linarith only [h5]
+      linarith only [h6, r4]
+
+/-- The same converter with every power, gain, inertia, damping and capacitance negated: the
+field is unchanged (each row is a quotient of negated quantities). -/
+private def Model.neg (m : Model) : Model :=
+  ⟨{ toPlant :=
+      { M := -m.p.M, D := -m.p.D, C := -m.p.C, Pff := -m.p.Pff, c0 := -m.p.c0
+        A := -m.p.A, α := m.p.α, Ps := -m.p.Ps, Is := -m.p.Is }
+     Vref := m.p.Vref, Kp := -m.p.Kp, Ki := -m.p.Ki }, m.δ, m.ζ⟩
+
+@[tmio M, powerlib_domain] private theorem Model.neg_field (m : Model) :
+    m.neg.p.field = m.p.field := by
+  funext y
+  ext i
+  fin_cases i
+  · simp [Model.neg]
+  · simp only [Fin.mk_one, Params.field_apply_one, Plant.swingRate, Params.Pref, Plant.Pe,
+      Model.neg]
+    rw [div_neg]
+    ring
+  · simp only [Fin.reduceFinMk, Params.field_apply_two, Plant.nodeRate, GFL.DCLink.nodeRate,
+      Plant.Pe, Model.neg]
+    rw [div_neg]
+    ring
+  · simp [Model.neg]
+
+/-- **Invariant singular plane, degenerate balance, stiff swing, DC gains of one sign: the DC
+voltage escapes.** With `V* = 0`, `I_s/C = 0`, `C ≠ 0`, `P_s = P_e(δ*)`, the frozen swing balanced
+(`P_ff + K_i ζ* = P_e(δ*)`), stiff and not negatively damped (`0 < k(δ*)/M`, `0 ≤ D/M`) and DC
+gains `(K_p, K_i) ≠ (0, 0)` with `K_p K_i ≥ 0`, every selected point is unstable. For `M > 0`
+(`unstable_stiff_core`; `M < 0` through the negated converter `Model.neg`, the same field): on the
+side
+`σ V > 0` with `σ (K_p + K_i) C < 0` the function `W = F θ − Π(θ) − M ω²/2`
+(`F = K_p V + K_i (ζ − ζ*)`
+the power reference's deviation, `θ = δ − δ*`, `Π` the potential of the power curve) changes at the
+rate `Ẇ = D ω² − K_p θ ΔP(θ)/(C V) + K_i θ V ≥ 0` (positive where `W > 0`): it traps the solution in
+`{W ≥ W₀/2, C θ ≤ 0}`, where the swing angle stays on the side `ΔP(θ)/C < 0`, so `C V V̇ = −ΔP(θ)`
+drives `V²` up at a uniform rate and the DC voltage leaves every small ball
+(`Dynamics.Degenerate.unstable_of_barriers`, the seeds `(δ* − C τ, 0, σ h, ζ* + σ h)`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_invariant_stiff_degenerate (m : Model)
+    (hV : m.p.Vref = 0) (hI : m.p.Is / m.p.C = 0) (hC : m.p.C ≠ 0)
+    (hP : m.p.Ps = m.p.Pe m.δ) (hb : m.p.Pff + m.p.Ki * m.ζ = m.p.Pe m.δ)
+    (hk : 0 < m.p.k m.δ / m.p.M) (hD : 0 ≤ m.p.D / m.p.M) (hgain : m.p.Kp ≠ 0 ∨ m.p.Ki ≠ 0)
+    (hsame : 0 ≤ m.p.Kp * m.p.Ki) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
+  have hM : m.p.M ≠ 0 := fun h => by simp [h] at hk
+  rcases hM.lt_or_gt with hM | hM
+  · -- `M < 0`: the negated converter has the same field and `M > 0`
+    have hk0 : m.p.k m.δ < 0 := by
+      by_contra h
+      exact absurd hk (not_lt.mpr (div_nonpos_of_nonneg_of_nonpos (not_lt.mp h) hM.le))
+    have hD0 : m.p.D ≤ 0 := by
+      by_contra h
+      exact absurd hD (not_le.mpr (div_neg_of_pos_of_neg (not_le.mp h) hM))
+    have ek : m.neg.p.k m.neg.δ = -m.p.k m.δ := by simp [Model.neg, Plant.k]
+    have ePe : ∀ δ, m.neg.p.Pe δ = -m.p.Pe δ := fun δ => by simp [Model.neg, Plant.Pe]; ring
+    have hu := unstable_stiff_core m.neg (by simpa [Model.neg] using hV)
+      (by simp only [Model.neg]; rw [neg_div_neg_eq]; exact hI)
+      (by simpa [Model.neg] using hC)
+      (by rw [ePe]; simp only [Model.neg]; rw [hP])
+      (by rw [ePe]; simp only [Model.neg]; linarith)
+      (by simp only [Model.neg]; linarith) (by rw [ek]; linarith)
+      (by simp only [Model.neg]; linarith) (by simpa [Model.neg] using hgain)
+      (by simp only [Model.neg]; nlinarith)
+    rwa [Model.neg_field, show m.neg.point = m.point from rfl] at hu
+  · exact unstable_stiff_core m hV hI hC hP hb hM ((div_pos_iff_of_pos_right hM).mp hk)
+      ((div_nonneg_iff.mp hD).elim (fun h => h.1) fun h => absurd h.2 (not_le.mpr hM)) hgain
+      hsame
 
 end VSMDC
 

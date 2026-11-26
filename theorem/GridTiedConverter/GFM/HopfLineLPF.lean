@@ -25,12 +25,14 @@ Model boundary.
   coefficients never vanish together there) and, as private evidence, the cycles at every slice
   Hopf point with `ℓ₁ ≠ 0` and at both witnesses (supercritical for `μ < 0`, subcritical for
   `μ > 0`); uniqueness and orbital stability of the cycles are not proved. The
-  fold `K = 0` (a saddle-node) is in `theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`. Not
-  stated: a closed form of `ℓ₁` (and of `τ`) for all parameters (the exact real-part numerator in
-  the frame rotated with `δ*` has thousands of terms before the reduction modulo the two
-  frequency relations; open), hence no sign law and no complete local asymptotic membership for
-  this model off the zero-current slice; on the slice `δ* = 0`, `V = E` they are in
-  `theorem/GridTiedConverter/GFM/HopfLineLPFSlice.lean`.
+  fold `K = 0` (a saddle-node) is in `theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`. The
+  closed form of `ℓ₁` at every operating angle and every load, its sign law and the connection
+  theorems at every Hopf point are in `theorem/GridTiedConverter/GFM/HopfLineLPFAngle.lean`
+  (`R > 0`: the Bautin form `Line.VSMLPF.angleBautin`; the lossless line `R = 0`:
+  `Line.VSMLPF.lossBautin`); on the slice `δ* = 0`, `V = E` the closed form, the transversality
+  `τ` and the complete local asymptotic membership are in
+  `theorem/GridTiedConverter/GFM/HopfLineLPFSlice.lean`. Not stated: `τ` and the complete local
+  asymptotic membership off the slice.
 
 Source: the four-state laws `theorem/GridTiedConverter/GFM/HopfLineInstability.lean` (same
 method); Carr, *Applications of Centre Manifold Theory* (1981), §2.4; Kuznetsov, *Elements of

@@ -60,6 +60,10 @@ Results.
   point and the point is not an equilibrium (the proof of `mem_den_unstable_of_overload`); the
   bounded applied voltage bounds `(i, v)` on finite horizons whatever the integrators (the proof of
   `not_mem_den_globallyExponentiallyStable`).
+* Anti-stable filter (static): `antiEnergy`, the energy
+  `W = (L/2) i² + (1 + ρ² C/(2L)) (C/2) ṽ² − (ρ C/2) i ṽ` (`ρ = −R`, `ṽ = v − v*`), and
+  `antiEnergy_rate`: `Ẇ = (ρ/2) i² + (ρ C/(2L)) ṽ² + (i − (ρ C/(2L)) ṽ) (sat(e) − v*)` along the
+  platform (`L, C ≠ 0`).
 
 Complement (T-gfm-control, the cascade without anti-windup): the modulation limit removes global
 exponential stability for every gain and every headroom, while every local sentence of the design
@@ -82,8 +86,15 @@ Family and connection conclusions.
   `(0, 0, 0, ζ₀)` the pair `(i, v − v*)` stays below a Grönwall bound `B` on `[0, T]` independent
   of `ζ₀`, the applied voltage being bounded, so the voltage integrator moves by at most `B T`,
   while an exponential estimate halves `‖x‖` by a time `T` fixed by its constants); hence
-  `exact_globallyExponentiallyStable` (the whole-language translation is exact). Global asymptotic
-  stability is not decided here.
+  `exact_globallyExponentiallyStable` (the whole-language translation is exact).
+  `not_mem_den_globallyAsymptoticallyStable_of_R_neg`: with `L, C > 0` and a negative filter
+  resistance `R < 0` no platform is globally asymptotically stable, whatever the design, the gains,
+  the headroom and the DC link — the filter is open-loop anti-stable and the applied voltage
+  bounded, so `antiEnergy` grows from every state where it is large
+  (`Ẇ ≥ (ρ/4) i² + (ρ C/(4L)) ṽ² − B²/ρ − ρ C B²/(4L)`, `B = |V_max| + |v*|`) and the forward
+  solution never converges. Global asymptotic stability with `R ≥ 0` is not decided: it needs a
+  Lyapunov function with the saturation for the windup of the two integrators, or an exact
+  non-convergent solution (a periodic orbit of the saturated loop); neither is given.
 * M–I: `implementation : Implementation InnerCascade Spectral.Requirement LimitedCascade
   LimitRequirementGFM 4 1 4 0`, every platform realizing its design.
   `realizationExactUnder_local`: within `headroom` Lyapunov stability, local asymptotic and local
@@ -98,7 +109,11 @@ Family and connection conclusions.
   `overloaded_mem_den_unstable`). `not_realizationSoundUnder_globallyExponentiallyStable`: global
   exponential stability is not realized soundly within all realistic constraints with headroom
   (`unloaded`: the same design at `v* = 0`, `V_dc = 1`);
-  `realizationCompleteUnder_globallyExponentiallyStable` holds vacuously. Scaffold:
+  `realizationCompleteUnder_globallyExponentiallyStable` holds vacuously.
+  `not_realizationSoundUnder_globallyAsymptoticallyStable`: global asymptotic stability is not
+  realized soundly within all realistic constraints with headroom (`negResistance`: `L = C = 1`,
+  `R = −1`, `K_pc = 3`, `K_ic = K_pv = 1`, `K_iv = 1/10`, a stable linear design, at `v* = 0`,
+  `V_dc = 1`). Scaffold:
   `theorem/GridTiedConverter/GFM/LimitedCascade.agda`.
 -/
 
@@ -531,6 +546,187 @@ no platform satisfies it. -/
   exact Family.exact_of_translate_eq_univ realize_univ rfl
     (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyExponentiallyStable)
 
+/-! ## Global asymptotic stability with an anti-stable filter -/
+
+/-- **The anti-Lyapunov energy of the filter** (in the coordinates about the operating point,
+`ρ = −R`, `ṽ = v − v*`): `W = (L/2) i² + (1 + ρ² C/(2L)) (C/2) ṽ² − (ρ C/2) i ṽ`. -/
+def antiEnergy (y : LimitedCascade) (z : ℝ⁴) : ℝ :=
+  y.design.L / 2 * z 0 ^ 2 +
+    (1 + (-y.design.R) ^ 2 * y.design.C / (2 * y.design.L)) * y.design.C / 2 * z 2 ^ 2 -
+      -y.design.R * y.design.C / 2 * (z 0 * z 2)
+
+@[tmio M, powerlib_domain] private theorem hasFDerivAt_antiEnergy (y : LimitedCascade)
+    (z : ℝ⁴) : ∃ W' : ℝ⁴ →L[ℝ] ℝ, HasFDerivAt y.antiEnergy W' z ∧ ∀ v : ℝ⁴,
+      W' v = y.design.L * z 0 * v 0 +
+        (1 + (-y.design.R) ^ 2 * y.design.C / (2 * y.design.L)) * y.design.C * z 2 * v 2 -
+          -y.design.R * y.design.C / 2 * (z 0 * v 2 + z 2 * v 0) := by
+  have h0 : HasFDerivAt (fun w : ℝ⁴ => w 0) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4)) z :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (0 : Fin 4) : ℝ⁴ →L[ℝ] ℝ).hasFDerivAt
+  have h2 : HasFDerivAt (fun w : ℝ⁴ => w 2) (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4)) z :=
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) (2 : Fin 4) : ℝ⁴ →L[ℝ] ℝ).hasFDerivAt
+  have hW := (((h0.pow 2).const_mul (y.design.L / 2)).add
+    ((h2.pow 2).const_mul ((1 + (-y.design.R) ^ 2 * y.design.C / (2 * y.design.L)) *
+      y.design.C / 2))).sub ((h0.mul h2).const_mul (-y.design.R * y.design.C / 2))
+  refine ⟨_, hW, fun v => ?_⟩
+  simp only [_root_.sub_apply, _root_.add_apply, _root_.smul_apply, PiLp.proj_apply, smul_eq_mul]
+  simp
+  ring
+
+/-- **The rate of the anti-Lyapunov energy** along the platform: with `u = sat(e) − v*` the
+applied voltage about its steady value,
+`Ẇ = (ρ/2) i² + (ρ C/(2L)) ṽ² + (i − (ρ C/(2L)) ṽ) u` (`ρ = −R`; `L, C ≠ 0`). Static evidence on
+the implementation. -/
+@[tmio M, powerlib_domain] theorem antiEnergy_rate (y : LimitedCascade) (hL : y.design.L ≠ 0)
+    (hC : y.design.C ≠ 0) (z : ℝ⁴) :
+    fderiv ℝ y.antiEnergy z (y.field z) =
+      -y.design.R / 2 * z 0 ^ 2 + -y.design.R * y.design.C / (2 * y.design.L) * z 2 ^ 2 +
+        (z 0 - -y.design.R * y.design.C / (2 * y.design.L) * z 2) *
+          (y.applied (z + y.point) - y.vref) := by
+  obtain ⟨W', hW, hW'⟩ := y.hasFDerivAt_antiEnergy z
+  rw [hW.fderiv, hW']
+  have hf0 : y.field z 0 =
+      (-y.design.R * z 0 + y.applied (z + y.point) - (z 2 + y.vref)) / y.design.L := by
+    simp [field, limitedField, point, InnerCascade.equilibrium]
+  have hf2 : y.field z 2 = z 0 / y.design.C := by
+    simp [field, limitedField, point, InnerCascade.equilibrium]
+  rw [hf0, hf2]
+  field_simp
+  ring
+
+/-- **An anti-stable filter is never globally asymptotically stable.** With `L, C > 0` and a
+negative resistance `R < 0` the filter `(i, v)` is open-loop anti-stable, and the applied voltage
+is bounded by `V_max`: the anti-Lyapunov energy `antiEnergy` grows at the rate
+`Ẇ ≥ (ρ/4) i² + (ρ C/(4L)) ṽ² − B²/ρ − ρ C B²/(4L)` (`ρ = −R`, `B = |V_max| + |v*|`), so from a
+state of large `W` it never decreases, and the forward solution (which exists by global asymptotic
+stability itself) cannot converge to the operating point — whatever the design, the gains, the
+headroom and the DC link. -/
+@[tmio TM, powerlib_domain] theorem not_mem_den_globallyAsymptoticallyStable_of_R_neg
+    (y : LimitedCascade) (hL : 0 < y.design.L) (hC : 0 < y.design.C) (hR : y.design.R < 0) :
+    connection% (y ∉ family.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change ¬ Flow.GloballyAsymptoticallyStable y.field 0
+  rintro ⟨-, hfc, -, hconv⟩
+  have hρ : 0 < -y.design.R := by linarith
+  set B := |y.Vmax| + |y.vref| with hBdef
+  have hB0 : 0 ≤ B := by positivity
+  set c₁ := -y.design.R / 2 with hc₁def
+  set c₂ := -y.design.R * y.design.C / (2 * y.design.L) with hc₂def
+  have hc₁ : 0 < c₁ := by positivity
+  have hc₂ : 0 < c₂ := by positivity
+  set m := min c₁ c₂ with hmdef
+  have hm : 0 < m := lt_min hc₁ hc₂
+  set T := (B ^ 2 / c₁ + c₂ * B ^ 2) / m with hTdef
+  have hT : 0 ≤ T := by positivity
+  set a := (1 + (-y.design.R) ^ 2 * y.design.C / (2 * y.design.L)) * y.design.C / 2 with hadef
+  have ha : 0 < a := by positivity
+  set Λ := y.design.L / 2 + a + -y.design.R * y.design.C / 4 with hΛdef
+  have hΛ : 0 < Λ := by positivity
+  have hm0 : m ≠ 0 := hm.ne'
+  have hc₁0 : c₁ ≠ 0 := hc₁.ne'
+  clear_value B c₁ c₂ m T a Λ
+  -- the energy is at most `Λ (i² + ṽ²)`
+  have hWub : ∀ z : ℝ⁴, y.antiEnergy z ≤ Λ * (z 0 ^ 2 + z 2 ^ 2) := fun z => by
+    have hz : -(z 0 * z 2) ≤ (z 0 ^ 2 + z 2 ^ 2) / 2 := by nlinarith [sq_nonneg (z 0 + z 2)]
+    have hk : 0 < -y.design.R * y.design.C / 2 := by positivity
+    have h1 := mul_le_mul_of_nonneg_left hz hk.le
+    have h2 : 0 ≤ y.design.L / 2 * z 2 ^ 2 := by positivity
+    have h3 : 0 ≤ a * z 0 ^ 2 := by positivity
+    simp only [antiEnergy, ← hadef]
+    rw [hΛdef]
+    nlinarith
+  -- the rate is nonnegative once `i² + ṽ² ≥ T`
+  have hrate : ∀ z : ℝ⁴, T ≤ z 0 ^ 2 + z 2 ^ 2 → 0 ≤ fderiv ℝ y.antiEnergy z (y.field z) :=
+    fun z hz => by
+      rw [y.antiEnergy_rate hL.ne' hC.ne', ← hc₁def, ← hc₂def]
+      set u := y.applied (z + y.point) - y.vref with hu
+      have hub : |u| ≤ B := by
+        have h1 : |y.applied (z + y.point)| ≤ |y.Vmax| :=
+          SpecialFunctions.abs_clampSym_le y.Vmax (y.command (z + y.point))
+        calc |u| ≤ |y.applied (z + y.point)| + |y.vref| := abs_sub _ _
+          _ ≤ B := by rw [hBdef]; exact add_le_add h1 le_rfl
+      have e1 : -(c₁ / 2 * z 0 ^ 2 + B ^ 2 / (2 * c₁)) ≤ z 0 * u := by
+        have h1 : -(|z 0| * B) ≤ z 0 * u := by
+          have h := neg_abs_le (z 0 * u)
+          rw [abs_mul] at h
+          have h' := mul_le_mul_of_nonneg_left hub (abs_nonneg (z 0))
+          linarith
+        have key : 2 * c₁ * (|z 0| * B) ≤ c₁ ^ 2 * z 0 ^ 2 + B ^ 2 := by
+          nlinarith [sq_nonneg (c₁ * |z 0| - B), sq_abs (z 0)]
+        have eq : c₁ / 2 * z 0 ^ 2 + B ^ 2 / (2 * c₁) =
+            (c₁ ^ 2 * z 0 ^ 2 + B ^ 2) / (2 * c₁) := by field_simp
+        have h2 : |z 0| * B ≤ c₁ / 2 * z 0 ^ 2 + B ^ 2 / (2 * c₁) := by
+          rw [eq, le_div_iff₀ (by positivity)]; linarith
+        linarith
+      have e2 : c₂ * z 2 * u ≤ c₂ * (z 2 ^ 2 / 2 + B ^ 2 / 2) := by
+        have h1 : z 2 * u ≤ |z 2| * B := by
+          have h := le_abs_self (z 2 * u)
+          rw [abs_mul] at h
+          have h' := mul_le_mul_of_nonneg_left hub (abs_nonneg (z 2))
+          linarith
+        have h2 : |z 2| * B ≤ z 2 ^ 2 / 2 + B ^ 2 / 2 := by
+          nlinarith [sq_nonneg (|z 2| - B), sq_abs (z 2)]
+        have := mul_le_mul_of_nonneg_left (h1.trans h2) hc₂.le
+        linarith
+      have e3 : m / 2 * (z 0 ^ 2 + z 2 ^ 2) ≤ c₁ / 2 * z 0 ^ 2 + c₂ / 2 * z 2 ^ 2 := by
+        have h1 := mul_le_mul_of_nonneg_right (min_le_left c₁ c₂) (sq_nonneg (z 0))
+        have h2 := mul_le_mul_of_nonneg_right (min_le_right c₁ c₂) (sq_nonneg (z 2))
+        rw [← hmdef] at h1 h2
+        nlinarith
+      have e4 : m / 2 * T = B ^ 2 / (2 * c₁) + c₂ * B ^ 2 / 2 := by
+        rw [hTdef]; field_simp
+      have e5 : m / 2 * T ≤ m / 2 * (z 0 ^ 2 + z 2 ^ 2) :=
+        mul_le_mul_of_nonneg_left hz (by positivity)
+      have e6 : (z 0 - c₂ * z 2) * u = z 0 * u - c₂ * z 2 * u := by ring
+      rw [e6]
+      linarith
+  -- a state of large energy
+  obtain ⟨X, hXdef⟩ : ∃ X, X = 2 * Λ * T / y.design.L := ⟨_, rfl⟩
+  have hX : 0 ≤ X := by rw [hXdef]; positivity
+  have hLX : y.design.L / 2 * X = Λ * T := by rw [hXdef]; field_simp
+  obtain ⟨x₀, hx₀⟩ : ∃ x₀ : ℝ⁴, x₀ = WithLp.toLp 2 ![X + 1, 0, 0, 0] := ⟨_, rfl⟩
+  have hWx₀ : y.antiEnergy x₀ = y.design.L / 2 * (X + 1) ^ 2 := by
+    simp [antiEnergy, hx₀]
+  have hbig : Λ * T < y.antiEnergy x₀ := by
+    rw [hWx₀, ← hLX]
+    have hs2 : X < (X + 1) ^ 2 := by nlinarith
+    exact mul_lt_mul_of_pos_left hs2 (by positivity)
+  -- the energy never decreases below its initial value
+  have hWd : Differentiable ℝ y.antiEnergy := fun z =>
+    (y.hasFDerivAt_antiEnergy z).choose_spec.1.differentiableAt
+  have hWc : Continuous y.antiEnergy := hWd.continuous
+  set U := {z : ℝ⁴ | Λ * T < y.antiEnergy z} with hU
+  have hUo : IsOpen U := isOpen_lt continuous_const hWc
+  have hLie : ∀ z ∈ U, fderiv ℝ (fun w => -y.antiEnergy w) z (y.field z) ≤ 0 := fun z hz => by
+    rw [fderiv_fun_neg, _root_.neg_apply, neg_nonpos]
+    refine hrate z ?_
+    have h1 := hWub z
+    have h2 : Λ * T < Λ * (z 0 ^ 2 + z 2 ^ 2) := lt_of_lt_of_le hz h1
+    exact (lt_of_mul_lt_mul_left h2 hΛ.le).le
+  have hSeq : {z ∈ U | (fun w => -y.antiEnergy w) z ≤ -y.antiEnergy x₀} =
+      {z | y.antiEnergy x₀ ≤ y.antiEnergy z} := by
+    ext z
+    simp only [hU, Set.mem_ofPred_eq, neg_le_neg_iff]
+    constructor
+    · rintro ⟨-, h⟩; exact h
+    · intro h; exact ⟨lt_of_lt_of_le hbig h, h⟩
+  have hinv := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen
+    (V := fun w => -y.antiEnergy w) (c := -y.antiEnergy x₀) hUo hWd.neg hLie
+    (by rw [hSeq]; exact isClosed_le continuous_const hWc)
+  obtain ⟨φ, hφ0, hφ⟩ := hfc 0 x₀
+  have hstay : ∀ t, 0 ≤ t → y.antiEnergy x₀ ≤ y.antiEnergy (φ t) := fun t ht => by
+    have h := hinv 0 t φ (hφ.mono Set.Icc_subset_Ici_self) (by
+      rw [hφ0]; exact ⟨hbig, le_rfl⟩) t ⟨ht, le_rfl⟩
+    exact neg_le_neg_iff.mp h.2
+  have hlim : Tendsto (fun t => y.antiEnergy (φ t)) atTop (𝓝 (y.antiEnergy 0)) :=
+    (hWc.tendsto 0).comp (hconv 0 φ hφ)
+  have hW0 : y.antiEnergy 0 = 0 := by simp [antiEnergy]
+  rw [hW0] at hlim
+  have hle : y.antiEnergy x₀ ≤ 0 :=
+    ge_of_tendsto hlim (eventually_atTop.mpr ⟨0, fun t ht => hstay t ht⟩)
+  have : 0 ≤ Λ * T := by positivity
+  linarith
+
 /-! ## The implementation over the cascade design (M–I) -/
 
 /-- The voltage-limited cascades as an implementation of the cascade design
@@ -633,6 +829,37 @@ exponentially stable (`not_mem_den_globallyExponentiallyStable`). -/
   rcases hq with rfl | rfl | rfl
   · show 0 < unloaded.design.L ∧ 0 < unloaded.design.C
     norm_num [unloaded, InnerCascade.imcTuned]
+  · show (0 : ℝ) < 1; norm_num
+  · show |(0 : ℝ)| < 1 / Real.sqrt 3
+    rw [abs_zero]
+    positivity
+
+/-- A platform with an anti-stable filter and a stable design: `L = C = 1`, `R = −1`, `K_pc = 3`,
+`K_ic = K_pv = 1`, `K_iv = 1/10` (the current loop's proportional gain overcomes the negative
+resistance), at `v* = 0` with `V_dc = 1` (headroom). -/
+def negResistance : LimitedCascade := ⟨⟨1, -1, 1, 3, 1, 1, 1 / 10⟩, 0, 1⟩
+
+/-- Global asymptotic stability is not realized soundly within all realistic constraints with
+headroom: the platform `negResistance` has a globally asymptotically stable (linear, Hurwitz)
+design and is not globally asymptotically stable
+(`not_mem_den_globallyAsymptoticallyStable_of_R_neg`). -/
+@[tmio MI, powerlib_domain] theorem not_realizationSoundUnder_globallyAsymptoticallyStable :
+    connection% (¬ implementation.RealizationSoundUnder {.physical, .dcLink, .headroom}
+      (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hd := InnerCascade.mem_den_iff negResistance.design (by norm_num [negResistance])
+    (by norm_num [negResistance]) (P := .globallyAsymptoticallyStable) (Or.inl trivial)
+  have hn := not_mem_den_globallyAsymptoticallyStable_of_R_neg negResistance
+    (by norm_num [negResistance]) (by norm_num [negResistance]) (by norm_num [negResistance])
+  unfold powerlib.TMIO.Statement at hd hn
+  refine Implementation.not_realizationSoundUnder_of_design (I := implementation)
+    (y := negResistance) rfl (hd.mpr (by norm_num [negResistance])) ?_ hn
+  rw [show implementation.impl = family from rfl, (connection_proof% TMIO.mem_realize)]
+  intro q hq
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl | rfl
+  · show 0 < negResistance.design.L ∧ 0 < negResistance.design.C
+    norm_num [negResistance]
   · show (0 : ℝ) < 1; norm_num
   · show |(0 : ℝ)| < 1 / Real.sqrt 3
     rw [abs_zero]

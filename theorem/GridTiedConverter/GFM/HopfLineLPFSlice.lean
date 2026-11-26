@@ -15,7 +15,7 @@ Model boundary.
   cofactor.
 * Level: Lyapunov instability and local asymptotic stability (LeanForControl's `Unstable`,
   `LocalAsymptoticStable`) of the operating point, through `Line.VSMLPF.family`. Off the slice
-  the closed form is not stated (see the size obstruction below).
+  the all-parameter closed form is `theorem/GridTiedConverter/GFM/HopfLineLPFAngle.lean`.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (the
 projection formula `NormalForm.LyapunovCoefficient.firstLyapunov_eq_of_solve`); the Hopf laws of
@@ -66,10 +66,10 @@ Results.
   slice Hopf point, `Re Ĉ > 0`). The transversality coefficients along the damping and the
   inverse inertia and the Hopf cycles are in
   `theorem/GridTiedConverter/GFM/LineVSMLPFHopfCycle.lean`.
-* Size obstruction off the slice (measured, not a theorem): in the frame rotated with `δ*` the
-  two reduced pairings of the projection formula have 2061 and 2284 terms and the real-part
-  numerator 7579 terms before the reduction modulo the frequency relations; that reduction did not
-  finish in exact computer algebra, so no all-parameter closed form is stated.
+* Off the slice: the first Lyapunov coefficient at every angle and load, in closed form, with its
+  sign law (`Line.VSMLPF.Model.firstLyapunov_crit`, `Line.VSMLPF.Model.sign_firstLyapunov_crit`),
+  is `theorem/GridTiedConverter/GFM/HopfLineLPFAngle.lean` (rotated and scaled current frame, in
+  which both Hopf relations are linear).
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.VSMLPF.family`.

@@ -91,8 +91,13 @@ Family and connection conclusions.
   is decided for local exponential and asymptotic stability in
   `theorem/GridTiedConverter/GFM/DCLink/VSMDCPlane.lean`
   (`VSMDC.mem_den_locallyExponentiallyStable_iff_of_V_eq_zero`), and for Lyapunov stability
-  except at the balance `P_s = P_e(δ*)` of an invariant plane with DC gains
-  (`VSMDC.mem_den_lyapunovStable_iff_of_invariant`).
+  (`VSMDC.mem_den_lyapunovStable_iff_of_invariant`; at the balance `P_s = P_e(δ*)` of an
+  invariant plane with DC gains `VSMDC.mem_den_unstable_of_invariant_flat_degenerate`,
+  `VSMDC.mem_den_unstable_of_invariant_stiff_degenerate`) except for a stiff swing with DC gains of
+  opposite signs.
+* An explicit region-of-attraction estimate on `V > 0` (a quadratic Lyapunov function of the
+  linearization with an explicit quadratic remainder `VSMDC.Model.norm_field_sub_jacobian_le`) is
+  in `theorem/GridTiedConverter/GFM/DCLink/VSMDCBasin.lean`.
 -/
 
 noncomputable section

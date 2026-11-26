@@ -22,7 +22,9 @@ Model boundary.
   the damping are in `theorem/GridTiedConverter/GFM/QVDroopVirtualHopfCycle.lean` (the
   transversality coefficient in closed form and its sign, the cycles as private evidence);
   their uniqueness and orbital stability are not proved. The Bautin set `hopfNum = 0` (second
-  Lyapunov coefficient) is located, not decided.
+  Lyapunov coefficient) is located; on the path of Hopf points `QVDroopVirtual.Bautin.bpath`
+  (fixed linear data and curvatures, `μ = n_q/E*` varying) its point is decided, unstable with
+  `l₂ > 0`, in `theorem/GridTiedConverter/GFM/QVDroopVirtualBautin.lean`.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (the
 projection formula); Carr, *Applications of Centre Manifold Theory* (1981), §2.4 (both halves of
@@ -68,8 +70,10 @@ No new family: connection conclusions on `QVDroopVirtual.family`.
   `not_exact_lyapunovStable`).
 
 Corrections and limits.
-* Located, not decided: the Bautin set (needs the second Lyapunov coefficient), the double zero
-  `C = G = 0` (Bogdanov–Takens) and the cusp set (`QVDroopVirtualFold`).
+* Located, not decided: the Bautin set off the path of `QVDroopVirtualBautin`
+  (`QVDroopVirtual.bautinPath_mem_den_unstable_of_bautinQuartic_eq_zero` decides the point of
+  that path), the double zero `C = G = 0` (Bogdanov–Takens) and the cusp set
+  (`QVDroopVirtualFold`).
 -/
 
 noncomputable section

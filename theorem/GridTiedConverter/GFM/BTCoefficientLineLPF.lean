@@ -40,6 +40,9 @@ Results.
   the model is formalized).
 * `Line.VSMLPF.Model.exists_isBTChain_of_bt`: the chain exists, with
   `p₁ = (D_line, M, −1/ω_c, L E (X sin δ* − R cos δ*)/|Z|², 0)/n₅`.
+* `Line.VSMLPF.Model.coeff2_of_bt`: at the Bogdanov–Takens point `a₂ = ω_c ρ n₅/M`; the
+  instability of the point (`Line.VSMLPF.mem_den_unstable_of_bt`) is in
+  `theorem/GridTiedConverter/GFM/LineVSMLPFFold.lean`.
 * `Line.VSMLPF.Model.coeffA_mul_coeffB_pos_iff`: for `n₅ > 0`, `a b > 0` iff
   `M/ω_c < 2 L² (R² − X²) D_line/|Z|⁴` and `a b < 0` iff the reverse strict inequality holds
   (the right side is `≤ 0` when `R ≤ X` and `D_line ≥ 0`, so then `a b < 0` for `M/ω_c > 0`).
@@ -387,6 +390,30 @@ connection conclusion. -/
     ⟨fun h2 => by nlinarith, fun h2 => by nlinarith⟩
   rw [hneg, hB', sub_pos, sub_neg]
   exact ⟨Iff.rfl, Iff.rfl⟩
+
+/-- **The quadratic coefficient at the Bogdanov–Takens point with a power filter**: at a physical
+fold `K = 0` with `D = D_line`, `a₂ = ω_c ρ n₅/M` (`n₅ = btInertia`), so `a₂ > 0` exactly when
+`n₅ > 0`; through the four-state value `Line.VSM.Model.coeff2_of_bt` and
+`a₂ = D ρ/M + ω_c a₂^{(4)}`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.coeff2_of_bt (m : Model) (hp : Meets m .physical)
+    (hK : m.K = 0) (hD : m.g.D = m.g.Dline) :
+    m.g.coeff2 m.Q = m.g.ωc * m.g.ρ * m.g.btInertia / m.g.M := by
+  have h := VSM.Model.coeff2_of_bt ⟨m.g.toVSM, m.δ⟩ ⟨hp.1, hp.2.1, hp.2.2.1⟩ hK hD
+  have hL := hp.1.L.ne'
+  have hM := hp.2.1.ne'
+  have hω := hp.2.2.2.ne'
+  have hρ : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+    simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+  have e : m.g.coeff2 m.Q = m.g.D * m.g.ρ / m.g.M +
+      m.g.ωc * m.g.toVSM.coeff2 (⟨m.g.toVSM, m.δ⟩ : VSM.Model).Q := by
+    show (m.g.D / m.g.M + m.g.ωc) * m.g.ρ + 2 * m.g.σ * (m.g.D * m.g.ωc / m.g.M) -
+      m.g.ωc * m.Q / m.g.M = m.g.D * m.g.ρ / m.g.M +
+        m.g.ωc * (m.g.ρ + (2 * m.g.σ * m.g.D - m.Q) / m.g.M)
+    field_simp
+    ring
+  rw [e, h, btInertia, hD, hρ]
+  field_simp
+  ring
 
 end VSMLPF
 end powerlib.GFM.Line

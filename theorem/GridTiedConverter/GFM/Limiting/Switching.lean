@@ -1,5 +1,6 @@
 import theorem.PowerSystem.Synchronous.GeneralSwing
 import theorem.Dynamics.PiecewiseAffine
+import theorem.Dynamics.FilippovSliding
 
 /-! # Grid-forming converter with a circular current limiter: mode switching
 
@@ -16,13 +17,18 @@ Model boundary.
   relative to its reference, exporting `P_sat cos(δ − φ)`, `P_sat = V I_max` (§1.3). The mode is
   a function of `δ` (state-dependent switching without hysteresis); the switched law
   `switchedPe` is in general discontinuous on the switching angles `demand δ = capacity`.
+* On the switching surface the switched field is extended by Filippov's convex hull: a solution
+  lying on a switching line `δ = δ_s` has velocities in the segment `[f_sat(x), f_unsat(x)]` of
+  the two mode fields (`satField`, `unsatField`, absolute coordinates `(δ, ω)`).
 * Excluded: inner loops, PWM, delays, hysteresis or timed switching, virtual impedance, grid
-  dynamics, resistive lines; the switching surface itself (sliding motions) is not analysed.
+  dynamics, resistive lines; uniqueness of Filippov solutions and the stability, in the plane, of
+  the pseudo-equilibria on the switching surface.
 * The switched converter is a swing model with the arbitrary law `switchedPe`
   (`Synchronous.GeneralSwing`, `toGeneral`), read about a selected point `(δ*, 0)`.
 
 Source: work-sync `theory/T-current-limiting.md` §1.1, §1.3, §1.6 (exit angle), §1.9 (switched
-system stability framework); `theory/T-gfm-control.md` §1.10.
+system stability framework, Filippov solutions); `theory/T-gfm-control.md` §1.10; A. F. Filippov,
+*Differential Equations with Discontinuous Righthand Sides* (Kluwer, 1988), §2.4.
 
 Results.
 * `demand_lt_capacity_iff` (static): the strictly unsaturated angles are `cos δ > c_exit`,
@@ -30,6 +36,19 @@ Results.
 * Local readings at points off the switching surface: near a strictly unsaturated (saturated)
   angle the switched field is the unsaturated (saturated) swing field, so the local sentences are
   those of that mode (`Dynamics.holds_congr_nhds`).
+* The switching surface carries no sliding motion (Filippov,
+  `theorem/Dynamics/FilippovSliding.lean`): both modes have the normal component `ω` on a
+  switching line (`inner_satField_eq`), so Filippov's segment has a velocity tangent to the line
+  exactly at `ω = 0` (`exists_tangent_mem_segment_iff`); the equivalent control is undefined and
+  the surface is crossed everywhere else. The zero velocity is a Filippov velocity at `(δ_s, 0)`
+  exactly when `P_ref` lies between the saturated and the unsaturated powers at `δ_s`
+  (`zero_mem_segment_iff`, `M ≠ 0`): these pseudo-equilibria are the only motions on the surface.
+  Trajectory level (private implementation evidence, Rules §3a): every Filippov solution lying on
+  a switching line on an open time set is such a rest point (`surface_solution_eq`), and each
+  pseudo-equilibrium is a constant Filippov solution (`surface_solution_const`); stability on the
+  surface is therefore vacuous. `latchUp` has the pseudo-equilibria `(±π/3, 0)` on its switching
+  angles (`latchUp_pseudoEquilibrium`), between its stable operating point and its latched
+  state.
 
 Family and connection conclusions.
 * No family of its own: a switched converter is read as the swing model with an arbitrary law
@@ -228,6 +247,113 @@ saturated and never return to the normal mode. -/
     have : 0 < Real.sqrt (1 - (m.Pref / m.Psat) ^ 2) := Real.sqrt_pos.mpr (by nlinarith)
     nlinarith
 
+/-! ## The switching surface: Filippov solutions, no sliding motion -/
+
+/-- The unsaturated converter field `(δ, ω) ↦ (ω, (P_ref − P_max sin δ − D ω)/M)`. -/
+def unsatField : State 2 → State 2 :=
+  Synchronous.GeneralSwing.field m.M m.D m.Pref fun δ _ => m.Pmax * Real.sin δ
+
+/-- The saturated converter field `(δ, ω) ↦ (ω, (P_ref − P_sat cos(δ − φ) − D ω)/M)`. -/
+def satField : State 2 → State 2 :=
+  Synchronous.GeneralSwing.field m.M m.D m.Pref fun δ _ => m.Psat * Real.cos (δ - m.φ)
+
+/-- **The switching surface is degenerate.** The switching set `demand δ = capacity` is a union of
+lines `δ = δ_s` with normal `e_δ`; both modes have the same normal component `ω` there.
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem inner_satField_eq (x : State 2) :
+    inner ℝ (PhasePlane.mk 1 0) (m.satField x) = x 1 ∧
+      inner ℝ (PhasePlane.mk 1 0) (m.unsatField x) = x 1 := by
+  constructor <;>
+    simp [satField, unsatField, Synchronous.GeneralSwing.field, PhasePlane.mk, PiLp.inner_apply,
+      Fin.sum_univ_two]
+
+/-- **The sliding region is the rest line.** On a line `δ = δ_s`, Filippov's segment
+`[f_sat(x), f_unsat(x)]` contains a velocity tangent to the line exactly when `ω = 0`: the
+switching surface is crossed transversally everywhere else. Static evidence on the model, not a
+connection conclusion. -/
+@[tmio M, powerlib_domain] theorem exists_tangent_mem_segment_iff (x : State 2) :
+    (∃ v ∈ segment ℝ (m.satField x) (m.unsatField x), inner ℝ (PhasePlane.mk 1 0) v = 0) ↔
+      x 1 = 0 := by
+  obtain ⟨hs, hu⟩ := m.inner_satField_eq x
+  constructor
+  · rintro ⟨v, hv, hv0⟩
+    have h := Dynamics.Sliding.mul_inner_nonpos_of_mem_segment hv hv0
+    rw [hs, hu] at h
+    nlinarith [sq_nonneg (x 1)]
+  · intro h0
+    refine ⟨m.satField x, left_mem_segment ℝ _ _, ?_⟩
+    rw [hs, h0]
+
+/-- **Pseudo-equilibria.** With `M ≠ 0`, Filippov's segment at the rest point `(δ, 0)` contains
+the zero velocity exactly when `P_ref` lies between the saturated and the unsaturated powers at
+`δ`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem zero_mem_segment_iff (hM : m.M ≠ 0) (δ : ℝ) :
+    (0 : State 2) ∈ segment ℝ (m.satField (PhasePlane.mk δ 0)) (m.unsatField (PhasePlane.mk δ 0)) ↔
+      m.Pref ∈ segment ℝ (m.Psat * Real.cos (δ - m.φ)) (m.Pmax * Real.sin δ) := by
+  have hf : ∀ a b : ℝ, a • m.satField (PhasePlane.mk δ 0) + b • m.unsatField (PhasePlane.mk δ 0) =
+      PhasePlane.mk 0 ((a * (m.Pref - m.Psat * Real.cos (δ - m.φ)) +
+        b * (m.Pref - m.Pmax * Real.sin δ)) / m.M) := by
+    intro a b
+    ext i
+    fin_cases i
+    · simp [satField, unsatField, Synchronous.GeneralSwing.field, PhasePlane.mk]
+    · simp [satField, unsatField, Synchronous.GeneralSwing.field, PhasePlane.mk]
+      ring
+  constructor
+  · rintro ⟨a, b, ha, hb, hab, h⟩
+    rw [hf, PhasePlane.mk_eq_zero_iff, div_eq_zero_iff] at h
+    have h1 := h.2.resolve_right hM
+    exact ⟨a, b, ha, hb, hab, by
+      simp only [smul_eq_mul]
+      have : m.Pref = (a + b) * m.Pref := by rw [hab, one_mul]
+      linarith⟩
+  · rintro ⟨a, b, ha, hb, hab, h⟩
+    refine ⟨a, b, ha, hb, hab, ?_⟩
+    rw [hf, PhasePlane.mk_eq_zero_iff, div_eq_zero_iff]
+    simp only [smul_eq_mul] at h
+    refine ⟨rfl, Or.inl ?_⟩
+    have : m.Pref = (a + b) * m.Pref := by rw [hab, one_mul]
+    linarith
+
+/-- **No sliding motion on the switching surface** (implementation evidence: trajectory level,
+Rules §3a). A Filippov solution lying on a line `δ = δ_s` on an open time set `I`, with velocities
+in the segment `[f_sat, f_unsat]` (the convex hull of the two modes at the switching angle), stays
+at the rest point `(δ_s, 0)`, and `P_ref` lies between the two mode powers there (`M ≠ 0`): the
+surface carries no sliding motion, only pseudo-equilibria
+(`Dynamics.Sliding.inner_eq_zero_of_mem_surface` on the degenerate surface `inner_satField_eq`). -/
+@[tmio TM, powerlib_domain] private theorem surface_solution_eq (hM : m.M ≠ 0) {δs : ℝ}
+    {c v : ℝ → State 2} {I : Set ℝ} (hI : IsOpen I) (hon : ∀ s ∈ I, c s 0 = δs)
+    (hc : ∀ s ∈ I, HasDerivAt c (v s) s ∧ v s ∈ segment ℝ (m.satField (c s)) (m.unsatField (c s)))
+    {t : ℝ} (ht : t ∈ I) :
+    c t = PhasePlane.mk δs 0 ∧
+      m.Pref ∈ segment ℝ (m.Psat * Real.cos (δs - m.φ)) (m.Pmax * Real.sin δs) := by
+  have hon' : ∀ s ∈ I, inner ℝ (PhasePlane.mk 1 0) (c s) = δs := fun s hs => by
+    simp [PhasePlane.mk, PiLp.inner_apply, Fin.sum_univ_two, hon s hs]
+  have hrest : ∀ s ∈ I, c s 1 = 0 := fun s hs =>
+    (m.exists_tangent_mem_segment_iff (c s)).mp ⟨v s, (hc s hs).2,
+      Dynamics.Sliding.inner_eq_zero_of_mem_surface hI hon' hs (hc s hs).1⟩
+  have hpt : ∀ s ∈ I, c s = PhasePlane.mk δs 0 := fun s hs => by
+    rw [← PhasePlane.mk_coords (c s), hon s hs, hrest s hs]
+  refine ⟨hpt t ht, ?_⟩
+  have hv0 : v t = 0 := by
+    have hconst : HasDerivAt c 0 t :=
+      (hasDerivAt_const t (PhasePlane.mk δs 0)).congr_of_eventuallyEq
+        (Filter.eventually_of_mem (hI.mem_nhds ht) hpt)
+    exact (hc t ht).1.unique hconst
+  have h := (hc t ht).2
+  rw [hv0, hpt t ht] at h
+  exact (m.zero_mem_segment_iff hM δs).mp h
+
+/-- **The pseudo-equilibria are Filippov solutions** (implementation evidence: trajectory level).
+If `P_ref` lies between the two mode powers at `δ_s`, the rest point `(δ_s, 0)` is a constant
+solution of the Filippov inclusion `ẋ ∈ [f_sat(x), f_unsat(x)]`. -/
+@[tmio TM, powerlib_domain] private theorem surface_solution_const (hM : m.M ≠ 0) {δs : ℝ}
+    (hP : m.Pref ∈ segment ℝ (m.Psat * Real.cos (δs - m.φ)) (m.Pmax * Real.sin δs)) (t : ℝ) :
+    HasDerivAt (fun _ : ℝ => PhasePlane.mk δs 0) 0 t ∧
+      (0 : State 2) ∈ segment ℝ (m.satField (PhasePlane.mk δs 0))
+        (m.unsatField (PhasePlane.mk δs 0)) :=
+  ⟨hasDerivAt_const t _, (m.zero_mem_segment_iff hM δs).mpr hP⟩
+
 end Model
 
 /-- The latch-up example: `E = V = X = I_max = 1` (`P_max = P_sat = 1`, unsaturated exactly for
@@ -257,5 +383,27 @@ stable equilibrium in the same period as the operating point. -/
   simp only [latchUp, Model.Psat, Set.mem_ofPred_eq, h1, Real.cos_add_pi, Real.sin_add_pi,
     Real.cos_pi_div_two, Real.sin_pi_div_two]
   norm_num
+
+/-- The switching angles `±π/3` of `latchUp` (`demand = capacity`) are pseudo-equilibria: Filippov's
+segment at `(±π/3, 0)` contains the zero velocity (`P_ref = 0` lies between `−√3/2` and `√3/2`).
+Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem latchUp_pseudoEquilibrium (δ : ℝ) {θ : ℝ}
+    (hθ : θ = Real.pi / 3 ∨ θ = -(Real.pi / 3)) :
+    (latchUp δ).demand θ = (latchUp δ).capacity ∧
+      (0 : State 2) ∈ segment ℝ ((latchUp δ).satField (PhasePlane.mk θ 0))
+        ((latchUp δ).unsatField (PhasePlane.mk θ 0)) := by
+  have hcos : Real.cos θ = 1 / 2 := by
+    rcases hθ with rfl | rfl
+    · exact Real.cos_pi_div_three
+    · rw [Real.cos_neg, Real.cos_pi_div_three]
+  refine ⟨by norm_num [latchUp, Model.demand, Model.capacity, hcos], ?_⟩
+  rw [(latchUp δ).zero_mem_segment_iff one_ne_zero, segment_eq_uIcc]
+  have h1 : Real.cos (θ - -(Real.pi / 2)) = -Real.sin θ := by
+    rw [sub_neg_eq_add, Real.cos_add_pi_div_two]
+  have hs : Real.sin θ ^ 2 = 3 / 4 := by nlinarith [Real.sin_sq_add_cos_sq θ]
+  simp only [latchUp, Model.Psat, Model.Pmax, h1, one_mul, div_one, mul_one]
+  rcases le_total 0 (Real.sin θ) with h | h
+  · rw [Set.uIcc_of_le (by linarith)]; constructor <;> linarith
+  · rw [Set.uIcc_of_ge (by linarith)]; constructor <;> linarith
 
 end powerlib.Limiting.Switching

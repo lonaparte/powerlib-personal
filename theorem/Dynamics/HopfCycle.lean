@@ -1,5 +1,6 @@
 import theorem.Dynamics.HopfDichotomy
 import theorem.Dynamics.PlanarHopf
+import theorem.Dynamics.CenterManifoldBounded
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-! # Hopf cycles of a one-parameter family in any dimension
@@ -20,13 +21,18 @@ Scope.
   `τ = 2 Re ⟨p, B q⟩`, twice the speed at which the real part of the critical eigenvalues
   crosses).
 * Periodic orbits are written out in the statements, as in `theorem/NormalForm/Hopf.lean`.
-  Existence and the amplitude bound in the critical coordinates `critπ p` are proved; uniqueness,
-  orbital stability and the absence of cycles for the other sign of `μ` are not.
+  Existence and the amplitude bound in the critical coordinates `critπ p` are proved here; the
+  reduced slices are also controlled on a full neighbourhood of `0`, which gives in
+  `theorem/Dynamics/HopfCycleAmplitude.lean` the absence of small cycles for `μ τ l₁ ≥ 0` and
+  the amplitude `(1 + o(1)) ν` of every small cycle. Uniqueness up to a time shift and orbital
+  stability are not proved (they need `Dh(y) = 2H(y, ·) + o(‖y‖)` for the centre manifold and
+  the derivative of the planar return map).
 * Generic foundation, independent of any model; no model family is defined.
 
 Source: Hassard–Kazarinoff–Wan, *Theory and Applications of Hopf Bifurcation* (1981), Ch. 1
 (the centre manifold of the suspended system `μ̇ = 0`); Carr, *Applications of Centre Manifold
-Theory* (1981), §1.5 (dependence on parameters) and §2.4; Kuznetsov, *Elements of Applied
+Theory* (1981), §1.5 (dependence on parameters) and §2.4 (small bounded solutions lie on the
+centre manifold); Kuznetsov, *Elements of Applied
 Bifurcation Theory* (3rd ed.), §3.4 (Theorem 3.3) and §5.4; Guckenheimer–Holmes,
 *Nonlinear Oscillations, Dynamical Systems, and Bifurcations of Vector Fields* (1983), §3.4.
 
@@ -41,16 +47,26 @@ Results.
   (the mixed second derivative is `B`), `taylor_restrict` (on `(x, 0)` the quadratic and cubic
   Taylor terms are those of `F(·, 0)`), `eq_zero_of_isBigO_quad_cubic` (uniqueness of
   homogeneous parts), `jet_congr`, `l1_congr` (`l₁` depends only on the cubic polynomial).
-* `sliceField`, `sliceM`, `sliceQ`, `sliceC`, `isLittleO_unfoldRem_slice`,
+* `sliceField`, `sliceM`, `sliceQ`, `sliceC`, `unfoldRem_slice_eq`, `isLittleO_unfoldRem_slice`,
   `exists_lipschitzOnWith_slice`: a field on `(u, μ) ∈ ℝ³` with a cubic expansion gives the
   planar family of `theorem/Dynamics/PlanarHopf.lean`, uniformly in `μ`.
+* `xpart_emu_emu_eq_zero`, `isLittleO_unfoldRem_slice_full`: if moreover the slices are linearly
+  approximated near `0` (`‖g(μ, u) − R u − μ M u‖ ≤ ε|μ|‖u‖ + C_q‖u‖²`), the slice remainder is
+  `o(|μ| ‖u‖ + ‖u‖³)` on a full neighbourhood of `0` (no restriction `|μ| ≤ K‖u‖²`).
+* `chartField_aug_eq` (`G(y) = π Φ(ι y + h(ι y))`), `norm_taylor_le_of_lipschitzOn`
+  (second-order Taylor bound from a Lipschitz derivative), `slice_sub_eq`, `slice_linear_bound`:
+  for a graph map with strict derivative `0` at `0` containing the equilibria `(0, μ)`, the
+  slices of the reduced field satisfy that linear approximation (`Φ` analytic at `0`).
 * `chartQ`, `chartC`, `sliceM_chartQ` (the `μu` term of the reduced field is
   `critπ p ∘ B ∘ critι q`), `l1_slice_eq` (its `l₁` is Kuznetsov's `l₁` of `F(·, 0)`).
-* `exists_reducedSlice`: the parameter-dependent centre manifold (the centre manifold of the
-  augmented field, `CenterManifold.exists_centerManifold_hasQuadraticPart`): the reduced field on
-  `(u, μ)` keeps `μ` constant, its slices have the unfolded expansion with `M = critπ p ∘ B ∘
-  critι q` and `l₁` of `F(·, 0)`, are Lipschitz on a fixed disc, and small reduced solutions
-  lift to solutions of the augmented field with the same parameter and critical coordinates.
+* `reducedSlice_bounded`, `exists_reducedSlice`: the parameter-dependent centre manifold (the
+  `C¹` centre manifold of the augmented field containing its small bounded solutions,
+  `CenterManifold.exists_centerManifold_bounded`): the reduced field on `(u, μ)` keeps `μ`
+  constant, its slices have the unfolded expansion with `M = critπ p ∘ B ∘ critι q` and `l₁` of
+  `F(·, 0)` (along `|μ| ≤ K‖u‖²`, and with remainder `o(|μ| ‖u‖ + ‖u‖³)` on a full
+  neighbourhood), are Lipschitz on a fixed disc; small reduced solutions lift to solutions of the
+  augmented field with the same parameter and critical coordinates, and every whole-line solution
+  of the augmented field in a small ball is such a lift (`Λ(π z(t)) = z(t)`).
 * `exists_hopfCycle`: for every small `μ` with `μ τ l₁ < 0`, a nonconstant periodic orbit of
   `F(·, μ)`, period at most `4π/ω`, with `ν/8 ≤ ‖critπ p x(t)‖² ≤ 8ν`, `ν = −μτ/(ω l₁)`.
 -/
@@ -560,6 +576,34 @@ def sliceC : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => State 2) (State 2) :
 variable {Q₃ C₃} {ω : ℝ} {G : State (2 + 1) → State (2 + 1)}
   {L₃ : State (2 + 1) →L[ℝ] State (2 + 1)}
 
+/-- The decomposition of the slice remainder: the remainder of the expansion of `G`, the `μ²`
+term and the cubic terms with a factor `μ`. -/
+@[tmio T, powerlib_foundation] theorem unfoldRem_slice_eq
+    (hL : ∀ (u : State 2) (μ : ℝ), xpart (L₃ (xin u + μ • emu)) = rotL ω u) (μ : ℝ)
+    (u : State 2) :
+    unfoldRem (sliceM Q₃) (sliceQ Q₃) (sliceC C₃) ω (sliceField G) μ u =
+      xpart (G (xin u + μ • emu) - (L₃ (xin u + μ • emu) +
+        Q₃ (xin u + μ • emu) (xin u + μ • emu) +
+          C₃ ![xin u + μ • emu, xin u + μ • emu, xin u + μ • emu])) +
+        (μ ^ 2) • xpart (Q₃ emu emu) +
+      xpart (C₃ ![μ • emu, xin u + μ • emu, xin u + μ • emu] +
+        C₃ ![xin u, μ • emu, xin u + μ • emu] + C₃ ![xin u, xin u, μ • emu]) := by
+  set Y := xin u + μ • emu with hY
+  have hC : C₃ ![Y, Y, Y] = C₃ ![xin u, xin u, xin u] +
+      (C₃ ![μ • emu, Y, Y] + C₃ ![xin u, μ • emu, Y] + C₃ ![xin u, xin u, μ • emu]) := by
+    simp only [hY]
+    rw [trilin_add_zero, trilin_add_one, trilin_add_two]
+    abel
+  have hQ : Q₃ Y Y = Q₃ (xin u) (xin u) + μ • (Q₃ (xin u) emu + Q₃ emu (xin u)) +
+      (μ ^ 2) • Q₃ emu emu := by
+    simp only [hY, map_add, map_smul, _root_.add_apply, _root_.smul_apply]
+    module
+  have hLp : xpart (L₃ Y) = rotL ω u := hL u μ
+  simp only [unfoldRem, sliceField, sliceM_apply, sliceQ_apply, sliceC_apply]
+  rw [← hY, hC, hQ]
+  simp only [map_add, map_sub, map_smul, hLp]
+  abel
+
 /-- **The unfolded expansion of a slice.** If `G(y) = L₃ y + Q₃(y, y) + C₃(y, y, y) + o(‖y‖³)` on
 `(u, μ) ∈ ℝ³` and the `x`-part of `L₃(u, μ)` is `R u`, then the planar family
 `g(μ, u) = x-part of G(u, μ)` has the unfolded expansion of
@@ -577,23 +621,7 @@ variable {Q₃ C₃} {ω : ℝ} {G : State (2 + 1) → State (2 + 1)}
       unfoldRem (sliceM Q₃) (sliceQ Q₃) (sliceC C₃) ω (sliceField G) p.1 p.2 =
         xpart (E (Y p)) + (p.1 ^ 2) • xpart (Q₃ emu emu) +
         xpart (C₃ ![p.1 • emu, Y p, Y p] + C₃ ![xin p.2, p.1 • emu, Y p] +
-          C₃ ![xin p.2, xin p.2, p.1 • emu]) := by
-    intro p
-    have hC : C₃ ![Y p, Y p, Y p] = C₃ ![xin p.2, xin p.2, xin p.2] +
-        (C₃ ![p.1 • emu, Y p, Y p] + C₃ ![xin p.2, p.1 • emu, Y p] +
-          C₃ ![xin p.2, xin p.2, p.1 • emu]) := by
-      simp only [hY]
-      rw [trilin_add_zero, trilin_add_one, trilin_add_two]
-      abel
-    have hQ : Q₃ (Y p) (Y p) = Q₃ (xin p.2) (xin p.2) +
-        p.1 • (Q₃ (xin p.2) emu + Q₃ emu (xin p.2)) + (p.1 ^ 2) • Q₃ emu emu := by
-      simp only [hY, map_add, map_smul, _root_.add_apply, _root_.smul_apply]
-      module
-    have hLp : xpart (L₃ (Y p)) = rotL ω p.2 := hL p.2 p.1
-    simp only [unfoldRem, sliceField, sliceM_apply, sliceQ_apply, sliceC_apply, hE]
-    rw [show xin p.2 + p.1 • emu = Y p from rfl, hC, hQ]
-    simp only [map_add, map_sub, map_smul, hLp]
-    abel
+          C₃ ![xin p.2, xin p.2, p.1 • emu]) := fun p => unfoldRem_slice_eq hL p.1 p.2
   have hYt : Tendsto Y (nhdsW K) (𝓝 0) := by
     have hc : Continuous Y := by
       simp only [hY]; fun_prop
@@ -651,6 +679,219 @@ variable {Q₃ C₃} {ω : ℝ} {G : State (2 + 1) → State (2 + 1)}
     · exact (h4 hμ hx0 hYO).congr_left fun p => by ring
     · exact (h4 hμ hx0 hx0).congr_left fun p => by ring
   exact ((ha.add hb).add hc).congr_left fun p => (key p).symm
+
+/-- A vector `q` with `μ² q = o(μ²)` at `0` vanishes. -/
+@[tmio T, powerlib_foundation] private theorem eq_zero_of_isLittleO_sq {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {q : V}
+    (h : (fun μ : ℝ => (μ ^ 2) • q) =o[𝓝 0] fun μ => μ ^ 2) : q = 0 := by
+  by_contra hq
+  have hpos : 0 < ‖q‖ := norm_pos_iff.mpr hq
+  obtain ⟨r, hr, hb⟩ := Metric.eventually_nhds_iff.mp (h.def (half_pos hpos))
+  have hμ : dist (r / 2) (0 : ℝ) < r := by
+    rw [dist_zero_right, Real.norm_eq_abs, abs_of_pos (half_pos hr)]; linarith
+  have h1 := hb hμ
+  simp only [norm_smul, norm_pow, Real.norm_eq_abs] at h1
+  have h2 : 0 < |r / 2| ^ 2 := by positivity
+  nlinarith
+
+/-- The `μ²` coefficient of the slices vanishes when `g(μ, 0) = 0` for small `μ`. -/
+@[tmio T, powerlib_foundation] theorem xpart_emu_emu_eq_zero
+    (hexp : (fun y => G y - (L₃ y + Q₃ y y + C₃ ![y, y, y])) =o[𝓝 0] fun y => ‖y‖ ^ 3)
+    (hL : ∀ (u : State 2) (μ : ℝ), xpart (L₃ (xin u + μ • emu)) = rotL ω u) {r₀ : ℝ}
+    (hr₀ : 0 < r₀) (hg0 : ∀ μ : ℝ, |μ| < r₀ → sliceField G μ 0 = 0) :
+    xpart (Q₃ emu emu) = 0 := by
+  have htri : ∀ a b d : State (2 + 1), ‖C₃ ![a, b, d]‖ ≤ ‖C₃‖ * (‖a‖ * (‖b‖ * ‖d‖)) :=
+    fun a b d => by simpa [Fin.prod_univ_three, mul_assoc] using C₃.le_opNorm ![a, b, d]
+  have hne : ∀ μ : ℝ, ‖μ • (emu : State (2 + 1))‖ = |μ| := fun μ => by
+    rw [norm_smul, norm_emu, mul_one, Real.norm_eq_abs]
+  apply eq_zero_of_isLittleO_sq
+  have ht : Tendsto (fun μ : ℝ => μ • (emu : State (2 + 1))) (𝓝 0) (𝓝 0) := by
+    have := (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const (emu : State (2 + 1))
+    simpa using this
+  have h3 : (fun μ : ℝ => |μ| ^ 3) =o[𝓝 0] fun μ => μ ^ 2 := by
+    have := Dynamics.isLittleO_pow_of_tendsto (l := 𝓝 (0 : ℝ)) (s := fun μ : ℝ => |μ|)
+      (by simpa using (continuous_abs.tendsto (0 : ℝ))) (by norm_num : 2 < 3)
+    exact this.congr_right fun μ => sq_abs μ
+  have hE0 : (fun μ : ℝ => G (μ • emu) - (L₃ (μ • emu) + Q₃ (μ • emu) (μ • emu) +
+      C₃ ![μ • emu, μ • emu, μ • emu])) =o[𝓝 0] fun μ => |μ| ^ 3 :=
+    (hexp.comp_tendsto ht).congr_right fun μ => by simp only [Function.comp_apply, hne]
+  have hE1 : (fun μ : ℝ => xpart (G (μ • emu) - (L₃ (μ • emu) + Q₃ (μ • emu) (μ • emu) +
+      C₃ ![μ • emu, μ • emu, μ • emu]))) =o[𝓝 0] fun μ => μ ^ 2 :=
+    (xpart.isBigO_comp _ _).trans_isLittleO (hE0.trans h3)
+  have hC1 : (fun μ : ℝ => xpart (C₃ ![μ • emu, μ • emu, μ • emu])) =o[𝓝 0]
+      fun μ => μ ^ 2 := by
+    refine (xpart.isBigO_comp _ _).trans_isLittleO ((IsBigO.of_bound ‖C₃‖
+      (Eventually.of_forall fun μ => ?_)).trans_isLittleO h3)
+    refine (htri _ _ _).trans (le_of_eq ?_)
+    rw [hne, Real.norm_of_nonneg (by positivity)]
+    ring
+  refine ((hE1.add hC1).neg_left).congr' ?_ (Eventually.of_forall fun _ => rfl)
+  filter_upwards [Metric.ball_mem_nhds (0 : ℝ) hr₀] with μ hμ
+  rw [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs] at hμ
+  have hz0 : (![0, 0, 0] : Fin 3 → State 2) = 0 := by funext i; fin_cases i <;> rfl
+  have hL0 : unfoldRem (sliceM Q₃) (sliceQ Q₃) (sliceC C₃) ω (sliceField G) μ 0 = 0 := by
+    simp only [unfoldRem, hg0 μ hμ, map_zero, smul_zero, add_zero, hz0,
+      ContinuousMultilinearMap.map_zero, sub_zero]
+  have hx0 : ∀ a b : State (2 + 1), C₃ ![0, a, b] = 0 := fun a b =>
+    C₃.map_coord_zero 0 rfl
+  have hk := unfoldRem_slice_eq (Q₃ := Q₃) (C₃ := C₃) (G := G) hL μ 0
+  rw [hL0] at hk
+  simp only [map_zero, zero_add, hx0, add_zero] at hk
+  show -(xpart (G (μ • emu) - (L₃ (μ • emu) + Q₃ (μ • emu) (μ • emu) +
+    C₃ ![μ • emu, μ • emu, μ • emu])) + xpart (C₃ ![μ • emu, μ • emu, μ • emu])) =
+    μ ^ 2 • xpart (Q₃ emu emu)
+  linear_combination (norm := module) hk
+
+/-- The slice remainder in the linear regime `‖u‖ ≤ c |μ|`. -/
+@[tmio T, powerlib_foundation] private theorem unfoldRem_le_linear {g : ℝ → State 2 → State 2}
+    {M : State 2 →L[ℝ] State 2} {Q : State 2 →L[ℝ] State 2 →L[ℝ] State 2}
+    {C : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => State 2) (State 2)} {ε Cq c μ : ℝ}
+    {u : State 2} (h1 : ‖g μ u - rotL ω u - μ • M u‖ ≤ ε / 2 * |μ| * ‖u‖ + Cq * ‖u‖ ^ 2)
+    (hu : ‖u‖ ≤ 1) (hA : ‖u‖ ≤ c * |μ|) (hc : (|Cq| + (‖Q‖ + ‖C‖)) * c ≤ ε / 2)
+    (hε : 0 ≤ ε) : ‖unfoldRem M Q C ω g μ u‖ ≤ ε * (|μ| * ‖u‖ + ‖u‖ ^ 3) := by
+  have hun : 0 ≤ ‖u‖ := norm_nonneg u
+  have hQ : ‖Q u u‖ ≤ ‖Q‖ * ‖u‖ ^ 2 := by
+    have := Q.le_opNorm₂ u u
+    rw [sq, ← mul_assoc]; exact this
+  have hC : ‖C ![u, u, u]‖ ≤ ‖C‖ * ‖u‖ ^ 2 := by
+    have h := C.le_opNorm ![u, u, u]
+    simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at h
+    have hu3 : ‖u‖ * ‖u‖ * ‖u‖ ≤ ‖u‖ ^ 2 := by
+      rw [sq]; exact mul_le_of_le_one_right (mul_nonneg hun hun) hu
+    exact h.trans (mul_le_mul_of_nonneg_left hu3 (norm_nonneg _))
+  have e : unfoldRem M Q C ω g μ u = (g μ u - rotL ω u - μ • M u) - Q u u - C ![u, u, u] := by
+    simp only [unfoldRem]; abel
+  rw [e]
+  have hsq : ‖u‖ ^ 2 ≤ c * |μ| * ‖u‖ := by
+    rw [sq]; exact mul_le_mul_of_nonneg_right hA hun
+  have hCq : Cq * ‖u‖ ^ 2 ≤ |Cq| * ‖u‖ ^ 2 :=
+    mul_le_mul_of_nonneg_right (le_abs_self Cq) (sq_nonneg _)
+  have hK : (|Cq| + (‖Q‖ + ‖C‖)) * ‖u‖ ^ 2 ≤ ε / 2 * (|μ| * ‖u‖) := by
+    calc (|Cq| + (‖Q‖ + ‖C‖)) * ‖u‖ ^ 2 ≤ (|Cq| + (‖Q‖ + ‖C‖)) * (c * |μ| * ‖u‖) :=
+          mul_le_mul_of_nonneg_left hsq (by positivity)
+      _ = (|Cq| + (‖Q‖ + ‖C‖)) * c * (|μ| * ‖u‖) := by ring
+      _ ≤ ε / 2 * (|μ| * ‖u‖) := mul_le_mul_of_nonneg_right hc (by positivity)
+  have h3 : 0 ≤ ε * ‖u‖ ^ 3 := by positivity
+  have := norm_sub_le (g μ u - rotL ω u - μ • M u - Q u u) (C ![u, u, u])
+  have := norm_sub_le (g μ u - rotL ω u - μ • M u) (Q u u)
+  linarith only [this, ‹‖g μ u - rotL ω u - μ • M u - Q u u - C ![u, u, u]‖ ≤ _›, h1, hQ, hC,
+    hCq, hK, h3]
+
+/-- The slice remainder in the expansion regime `‖(u, μ)‖ ≤ B ‖u‖`. -/
+@[tmio T, powerlib_foundation] private theorem unfoldRem_le_expansion
+    (hL : ∀ (u : State 2) (μ : ℝ), xpart (L₃ (xin u + μ • emu)) = rotL ω u)
+    (hq : xpart (Q₃ emu emu) = 0) {ε B μ : ℝ} {u : State 2}
+    (hE : ‖G (xin u + μ • emu) - (L₃ (xin u + μ • emu) + Q₃ (xin u + μ • emu) (xin u + μ • emu)
+      + C₃ ![xin u + μ • emu, xin u + μ • emu, xin u + μ • emu])‖ ≤
+        ε / (2 * B ^ 3) * ‖xin u + μ • emu‖ ^ 3)
+    (hY : ‖xin u + μ • emu‖ ≤ B * ‖u‖) (hB0 : 0 < B) (hε : 0 < ε)
+    (hCu : ‖C₃‖ * (B ^ 2 + B + 1) * ‖u‖ ≤ ε / 2) :
+    ‖unfoldRem (sliceM Q₃) (sliceQ Q₃) (sliceC C₃) ω (sliceField G) μ u‖ ≤
+      ε * (|μ| * ‖u‖ + ‖u‖ ^ 3) := by
+  have htri : ∀ a b d : State (2 + 1), ‖C₃ ![a, b, d]‖ ≤ ‖C₃‖ * (‖a‖ * (‖b‖ * ‖d‖)) :=
+    fun a b d => by simpa [Fin.prod_univ_three, mul_assoc] using C₃.le_opNorm ![a, b, d]
+  have hne : ‖μ • (emu : State (2 + 1))‖ = |μ| := by
+    rw [norm_smul, norm_emu, mul_one, Real.norm_eq_abs]
+  have hun : 0 ≤ ‖u‖ := norm_nonneg u
+  have hμa : 0 ≤ |μ| := abs_nonneg μ
+  have hC0 : 0 ≤ ‖C₃‖ := norm_nonneg _
+  have hY0 : 0 ≤ ‖xin u + μ • emu‖ := norm_nonneg _
+  rw [unfoldRem_slice_eq hL μ u, hq, smul_zero, add_zero]
+  have ha : ‖xpart (G (xin u + μ • emu) - (L₃ (xin u + μ • emu) +
+      Q₃ (xin u + μ • emu) (xin u + μ • emu) + C₃ ![xin u + μ • emu, xin u + μ • emu,
+        xin u + μ • emu]))‖ ≤ ε / 2 * ‖u‖ ^ 3 := by
+    refine (norm_xpart_le _).trans (hE.trans ?_)
+    calc ε / (2 * B ^ 3) * ‖xin u + μ • emu‖ ^ 3 ≤ ε / (2 * B ^ 3) * (B * ‖u‖) ^ 3 := by
+          gcongr
+      _ = ε / 2 * ‖u‖ ^ 3 := by field_simp
+  have t1 := htri (μ • emu) (xin u + μ • emu) (xin u + μ • emu)
+  have t2 := htri (xin u) (μ • emu) (xin u + μ • emu)
+  have t3 := htri (xin u) (xin u) (μ • emu)
+  rw [hne] at t1
+  rw [hne, norm_xin] at t2 t3
+  have k1 : ‖C₃‖ * (|μ| * (‖xin u + μ • emu‖ * ‖xin u + μ • emu‖)) ≤
+      ‖C₃‖ * (|μ| * (B * ‖u‖ * (B * ‖u‖))) := by gcongr
+  have k2 : ‖C₃‖ * (‖u‖ * (|μ| * ‖xin u + μ • emu‖)) ≤
+      ‖C₃‖ * (‖u‖ * (|μ| * (B * ‖u‖))) := by gcongr
+  have hsum : ‖C₃‖ * (|μ| * (B * ‖u‖ * (B * ‖u‖))) + ‖C₃‖ * (‖u‖ * (|μ| * (B * ‖u‖))) +
+      ‖C₃‖ * (‖u‖ * (‖u‖ * |μ|)) = ‖C₃‖ * (B ^ 2 + B + 1) * ‖u‖ * (|μ| * ‖u‖) := by ring
+  have hlast : ‖C₃‖ * (B ^ 2 + B + 1) * ‖u‖ * (|μ| * ‖u‖) ≤ ε / 2 * (|μ| * ‖u‖) :=
+    mul_le_mul_of_nonneg_right hCu (by positivity)
+  have hb : ‖xpart (C₃ ![μ • emu, xin u + μ • emu, xin u + μ • emu] +
+      C₃ ![xin u, μ • emu, xin u + μ • emu] + C₃ ![xin u, xin u, μ • emu])‖ ≤
+      ε / 2 * (|μ| * ‖u‖) := by
+    refine (norm_xpart_le _).trans ((norm_add₃_le).trans ?_)
+    linarith only [t1, t2, t3, k1, k2, hsum, hlast]
+  calc _ ≤ _ := norm_add_le _ _
+    _ ≤ ε / 2 * ‖u‖ ^ 3 + ε / 2 * (|μ| * ‖u‖) := add_le_add ha hb
+    _ ≤ ε * (|μ| * ‖u‖ + ‖u‖ ^ 3) := by
+        have h0 : 0 ≤ ε * (|μ| * ‖u‖ + ‖u‖ ^ 3) := by positivity
+        linarith only [h0, show ε / 2 * ‖u‖ ^ 3 + ε / 2 * (|μ| * ‖u‖) =
+          ε * (|μ| * ‖u‖ + ‖u‖ ^ 3) / 2 by ring]
+
+/-- **The slice remainder on a full neighbourhood.** If, besides the expansion of `G`, the slices
+are linearly approximated near `0` (for every `ε > 0`, `‖g(μ, u) − R u − μ M u‖ ≤ ε |μ| ‖u‖ +
+C_q ‖u‖²`: the regime `‖u‖ ≪ |μ|`), then
+`g(μ, u) − (R u + μ M u + Q(u, u) + C(u, u, u)) = o(|μ| ‖u‖ + ‖u‖³)` as `(μ, u) → 0`, with no
+restriction on `μ` (the linear regime for `‖u‖ ≤ c|μ|`, the expansion of `G` for
+`‖u‖ ≥ c|μ|`; the `μ²` coefficient vanishes because `g(μ, 0) = 0`). -/
+@[tmio T, powerlib_foundation] theorem isLittleO_unfoldRem_slice_full
+    (hexp : (fun y => G y - (L₃ y + Q₃ y y + C₃ ![y, y, y])) =o[𝓝 0] fun y => ‖y‖ ^ 3)
+    (hL : ∀ (u : State 2) (μ : ℝ), xpart (L₃ (xin u + μ • emu)) = rotL ω u) {Cq : ℝ}
+    (hlin : ∀ ε > 0, ∃ r > 0, ∀ (μ : ℝ) (u : State 2), |μ| < r → ‖u‖ < r →
+      ‖sliceField G μ u - rotL ω u - μ • sliceM Q₃ u‖ ≤ ε * |μ| * ‖u‖ + Cq * ‖u‖ ^ 2) :
+    (fun p : ℝ × State 2 => unfoldRem (sliceM Q₃) (sliceQ Q₃) (sliceC C₃) ω (sliceField G) p.1
+      p.2) =o[𝓝 0] fun p => |p.1| * ‖p.2‖ + ‖p.2‖ ^ 3 := by
+  obtain ⟨r₀, hr₀, h₀⟩ := hlin 1 one_pos
+  have hq : xpart (Q₃ emu emu) = 0 := xpart_emu_emu_eq_zero hexp hL hr₀ fun μ hμ => by
+    have := h₀ μ 0 hμ (by simpa using hr₀)
+    simpa using this
+  rw [isLittleO_iff]
+  intro ε hε
+  obtain ⟨S, hS⟩ : ∃ S, S = ‖sliceQ Q₃‖ + ‖sliceC C₃‖ := ⟨_, rfl⟩
+  have hS0 : 0 ≤ S := hS ▸ by positivity
+  obtain ⟨c, hc⟩ : ∃ c, c = ε / (2 * (|Cq| + S + 1)) := ⟨_, rfl⟩
+  have hc0 : 0 < c := hc ▸ by positivity
+  have hcS : (|Cq| + S) * c ≤ ε / 2 := by
+    rw [hc, mul_div_assoc', div_le_div_iff₀ (by positivity) (by norm_num)]
+    nlinarith [abs_nonneg Cq]
+  obtain ⟨B, hB⟩ : ∃ B, B = 1 + 1 / c := ⟨_, rfl⟩
+  have hB0 : 0 < B := hB ▸ by positivity
+  obtain ⟨r₁, hr₁, h₁⟩ := hlin (ε / 2) (half_pos hε)
+  obtain ⟨r₂, hr₂, h₂⟩ := Metric.eventually_nhds_iff.mp
+    (hexp.def (show 0 < ε / (2 * B ^ 3) by positivity))
+  obtain ⟨r₃, hr₃⟩ : ∃ r, r = ε / (2 * (‖C₃‖ * (B ^ 2 + B + 1)) + 1) := ⟨_, rfl⟩
+  have hr₃0 : 0 < r₃ := hr₃ ▸ by positivity
+  have hr₃C : ‖C₃‖ * (B ^ 2 + B + 1) * r₃ ≤ ε / 2 := by
+    rw [hr₃, mul_div_assoc', div_le_div_iff₀ (by positivity) (by norm_num)]
+    nlinarith [norm_nonneg C₃, show 0 ≤ ‖C₃‖ * (B ^ 2 + B + 1) by positivity]
+  filter_upwards [Metric.ball_mem_nhds (0 : ℝ × State 2)
+    (lt_min (lt_min hr₁ one_pos) (lt_min (half_pos hr₂) hr₃0))] with pr hpr
+  obtain ⟨μ, u⟩ := pr
+  rw [Metric.mem_ball, dist_zero_right, Prod.norm_def, max_lt_iff, Real.norm_eq_abs] at hpr
+  obtain ⟨hμ, hu⟩ := hpr
+  simp only [lt_min_iff] at hμ hu
+  obtain ⟨⟨hμ1, -⟩, hμ2, -⟩ := hμ
+  obtain ⟨⟨hu1, hu1'⟩, hu2, hu3⟩ := hu
+  have hnorm : ‖|μ| * ‖u‖ + ‖u‖ ^ 3‖ = |μ| * ‖u‖ + ‖u‖ ^ 3 :=
+    Real.norm_of_nonneg (by positivity)
+  rw [hnorm]
+  rcases le_or_gt ‖u‖ (c * |μ|) with hA | hBr
+  · exact unfoldRem_le_linear (h₁ μ u hμ1 hu1) hu1'.le hA (by rw [← hS]; exact hcS) hε.le
+  · have hμu : |μ| ≤ ‖u‖ / c := by rw [le_div_iff₀ hc0]; linarith
+    have hY : ‖xin u + μ • emu‖ ≤ B * ‖u‖ := by
+      refine (norm_xin_add_smul_le u μ).trans ?_
+      rw [hB, add_mul, one_mul]
+      have : ‖u‖ / c = 1 / c * ‖u‖ := by ring
+      linarith
+    have hYr : dist (xin u + μ • emu) 0 < r₂ := by
+      rw [dist_zero_right]
+      exact lt_of_le_of_lt (norm_xin_add_smul_le u μ) (by linarith)
+    have hE2 := h₂ hYr
+    rw [norm_pow, norm_norm] at hE2
+    refine unfoldRem_le_expansion hL hq hE2 hY hB0 hε (le_trans ?_ hr₃C)
+    exact mul_le_mul_of_nonneg_left hu3.le (by positivity)
 
 /-- A slice of a field Lipschitz on a ball is Lipschitz on a ball, uniformly in small `μ`. -/
 @[tmio T, powerlib_foundation] theorem exists_lipschitzOnWith_slice {r : ℝ} {L : NNReal}
@@ -998,6 +1239,304 @@ open powerlib.Dynamics.PlanarHopf (nhdsW unfoldRem)
 
 variable {n : ℕ} {F : State n → ℝ → State n} {ω : ℝ} {q p : Fin n → ℂ}
 
+/-- The reduced field of the augmented family in the augmented critical coordinates is the
+critical coordinate of the augmented field on the graph: `G(y) = π Φ(ι y + h(ι y))` (the term
+`π A h` vanishes, `h` taking values in the stable part). -/
+@[tmio T, powerlib_foundation] theorem chartField_aug_eq {A : State n →L[ℝ] State n}
+    (hc : IsCritical A ω q p) {h : State (n + 1) → State (n + 1)}
+    (hh : IsGraphMap (augP (critP q p)) h) (y : State (2 + 1)) :
+    chartField (augL A) (fun z => augField F z - augL A z) h (augι (critι q)) (augπ (critπ p))
+        y = augπ (critπ p) (augField F (augι (critι q) y + h (augι (critι q) y))) := by
+  have hz : critπ p (xpart (h (augι (critι q) y))) = 0 := by
+    have h1 := congrArg xpart (hh.proj_apply (augι (critι q) y))
+    simp only [augP_apply, map_add, map_smul, xpart_xin, xpart_emu, smul_zero, add_zero,
+      map_zero] at h1
+    have h2 := congrArg (critπ p) h1
+    rwa [critP, ContinuousLinearMap.comp_apply, hc.critπ_critι, map_zero] at h2
+  have hA : augπ (critπ p) (augL A (h (augι (critι q) y))) = 0 := by
+    refine ext_iff_parts.mpr ⟨?_, ?_⟩
+    · rw [xpart_augπ, augL_apply, xpart_xin, hc.critπ_apply, hz, map_zero, map_zero]
+    · simp only [augπ_apply, augL_apply, map_add, map_smul, mpart_xin, mpart_emu, smul_eq_mul,
+        mul_one, zero_add, map_zero]
+  simp only [chartField, map_add, map_sub, hA]
+  abel
+
+/-- **Second-order Taylor bound.** If `Φ` is differentiable and `DΦ` is `C`-Lipschitz on the
+ball of radius `r`, then `‖Φ(a + w) − Φ(a) − DΦ(a) w‖ ≤ C ‖w‖²` for `a, a + w` in the ball. -/
+@[tmio T, powerlib_foundation] theorem norm_taylor_le_of_lipschitzOn {E V : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {Φ : E → V} (hΦ : Differentiable ℝ Φ) {C : NNReal} {r : ℝ}
+    (hL : LipschitzOnWith C (fderiv ℝ Φ) (Metric.ball 0 r)) {a w : E} (ha : ‖a‖ < r)
+    (haw : ‖a + w‖ < r) : ‖Φ (a + w) - Φ a - fderiv ℝ Φ a w‖ ≤ C * ‖w‖ ^ 2 := by
+  have hseg : segment ℝ a (a + w) ⊆ Metric.ball 0 r :=
+    (convex_ball 0 r).segment_subset (mem_ball_zero_iff.mpr ha) (mem_ball_zero_iff.mpr haw)
+  have hb : ∀ z ∈ segment ℝ a (a + w), ‖fderiv ℝ Φ z - fderiv ℝ Φ a‖ ≤ C * ‖w‖ := by
+    intro z hz
+    have h1 := hL.norm_sub_le (hseg hz) (hseg (left_mem_segment ℝ _ _))
+    refine h1.trans ?_
+    rw [segment_eq_image'] at hz
+    obtain ⟨θ, hθ, rfl⟩ := hz
+    have e : a + θ • (a + w - a) - a = θ • w := by simp only [add_sub_cancel_left]
+    rw [e, norm_smul, Real.norm_of_nonneg hθ.1]
+    exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_left (norm_nonneg _) hθ.2) C.2
+  have := (convex_segment a (a + w)).norm_image_sub_le_of_norm_fderiv_le'
+    (fun z _ => hΦ z) hb (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)
+  rw [add_sub_cancel_left] at this
+  calc _ ≤ C * ‖w‖ * ‖w‖ := this
+    _ = C * ‖w‖ ^ 2 := by ring
+
+/-- **The slice in the linear regime, exactly.** For a graph map `h` over the augmented centre,
+`z = (ι u, μ)`, `w = (ι u, 0) + h z`, the slice of the reduced field minus
+`R u + μ M u` is `π((D_μ − A − μB) ι u) + π((D_μ − A) h z) + π R`, `D_μ = D_x F(0, μ)`, `R` the
+second-order Taylor remainder of the augmented field at `(0, μ)` in the direction `w`. -/
+@[tmio T, powerlib_foundation] theorem slice_sub_eq (hF : ContDiff ℝ 1 (augField F))
+    (hF0 : ∀ μ, F 0 μ = 0) {A : State n →L[ℝ] State n} (hc : IsCritical A ω q p)
+    (B : State n →L[ℝ] State n) {h : State (n + 1) → State (n + 1)}
+    (hh : IsGraphMap (augP (critP q p)) h) (μ : ℝ) (u : State 2) :
+    sliceField (chartField (augL A) (fun z => augField F z - augL A z) h (augι (critι q))
+        (augπ (critπ p))) μ u - rotL ω u - μ • ((critπ p).comp (B.comp (critι q))) u =
+      critπ p ((fderiv ℝ (fun x => F x μ) 0 - A - μ • B) (critι q u)) +
+      critπ p ((fderiv ℝ (fun x => F x μ) 0 - A) (xpart (h (xin (critι q u) + μ • emu)))) +
+      critπ p (xpart (augField F (μ • emu + (xin (critι q u) + h (xin (critι q u) + μ • emu))) -
+        augField F (μ • emu) - fderiv ℝ (augField F) (μ • emu)
+          (xin (critι q u) + h (xin (critι q u) + μ • emu)))) := by
+  obtain ⟨z, hz⟩ : ∃ z : State (n + 1), z = xin (critι q u) + μ • emu := ⟨_, rfl⟩
+  obtain ⟨w, hw⟩ : ∃ w : State (n + 1), w = xin (critι q u) + h z := ⟨_, rfl⟩
+  rw [← hz, ← hw]
+  have hιy : augι (critι q) (xin u + μ • emu) = z := by
+    rw [hz, map_add, map_smul, augι_xin, augι_emu]
+  have hΛ : z + h z = μ • emu + w := by rw [hw, hz]; abel
+  have hhz : critP q p (xpart (h z)) = 0 := by
+    have h1 := congrArg xpart (hh.proj_apply z)
+    simpa only [augP_apply, map_add, map_smul, xpart_xin, xpart_emu, smul_zero, add_zero,
+      map_zero] using h1
+  have hπh : critπ p (xpart (h z)) = 0 := by
+    have h2 := congrArg (critπ p) hhz
+    rwa [critP, ContinuousLinearMap.comp_apply, hc.critπ_critι, map_zero] at h2
+  have hmw : mpart w = 0 := by
+    have h1 := congrArg mpart (hh.proj_apply z)
+    simp only [augP_apply, map_add, map_smul, mpart_xin, mpart_emu, smul_eq_mul, mul_one,
+      zero_add, map_zero] at h1
+    rw [hw, map_add, mpart_xin, h1, add_zero]
+  have hwx : w = xin (xpart w) := by
+    rw [← xin_add_smul w, hmw, zero_smul, add_zero, xpart_xin]
+  have hΦa : augField F (μ • emu) = 0 := by
+    have := augField_xin_add (F := F) 0 μ
+    rwa [map_zero, zero_add, hF0, map_zero] at this
+  have hDw : fderiv ℝ (augField F) (μ • emu) w =
+      xin (fderiv ℝ (fun x => F x μ) 0 (xpart w)) := by
+    conv_lhs => rw [hwx]
+    exact fderiv_augField_apply hF μ (xpart w)
+  have hxw : xpart w = critι q u + xpart (h z) := by rw [hw, map_add, xpart_xin]
+  obtain ⟨R, hR⟩ : ∃ R, R = augField F (μ • emu + w) - augField F (μ • emu) -
+      fderiv ℝ (augField F) (μ • emu) w := ⟨_, rfl⟩
+  rw [← hR]
+  have e : augField F (μ • emu + w) = fderiv ℝ (augField F) (μ • emu) w + R := by
+    rw [hR, hΦa]; abel
+  rw [sliceField, chartField_aug_eq hc hh, hιy, hΛ, xpart_augπ, e, map_add, hDw, xpart_xin, hxw]
+  simp only [map_add, _root_.sub_apply, _root_.smul_apply, map_sub,
+    map_smul, ContinuousLinearMap.comp_apply, hc.critπ_comp, hc.critπ_apply, hπh, map_zero]
+  abel
+
+/-- **The linear regime of the reduced slices.** Let `h` be a graph map over the augmented
+centre with strict derivative `0` at `0` whose graph contains the equilibria `(0, μ)` for small
+`μ`, and `G` the reduced field of the augmented family. Then, near `0`,
+`‖g(μ, u) − R u − μ M u‖ ≤ ε |μ| ‖u‖ + C_q ‖u‖²` for every `ε > 0`, `M = critπ p ∘ B ∘ critι q`,
+`C_q` from a Lipschitz bound of `DΦ` near `0` (`Φ` analytic at `0`). -/
+@[tmio T, powerlib_foundation] theorem slice_linear_bound (hF : ContDiff ℝ 1 (augField F))
+    (ha : AnalyticAt ℝ (augField F) 0) (hF0 : ∀ μ, F 0 μ = 0) {A : State n →L[ℝ] State n}
+    (hA : A = fderiv ℝ (fun x => F x 0) 0) (hc : IsCritical A ω q p)
+    {B : State n →L[ℝ] State n} (hB : HasDerivAt (fun μ => fderiv ℝ (fun x => F x μ) 0) B 0)
+    {h : State (n + 1) → State (n + 1)} (hh : IsGraphMap (augP (critP q p)) h)
+    (hhs : HasStrictFDerivAt h (0 : State (n + 1) →L[ℝ] State (n + 1)) 0) {r₀ : ℝ}
+    (hr₀ : 0 < r₀) (hhμ : ∀ μ : ℝ, |μ| < r₀ → h (μ • emu) = 0) :
+    ∃ Cq : ℝ, ∀ ε > 0, ∃ r > 0, ∀ (μ : ℝ) (u : State 2), |μ| < r → ‖u‖ < r →
+      ‖sliceField (chartField (augL A) (fun z => augField F z - augL A z) h (augι (critι q))
+        (augπ (critπ p))) μ u - rotL ω u - μ • ((critπ p).comp (B.comp (critι q))) u‖ ≤
+        ε * |μ| * ‖u‖ + Cq * ‖u‖ ^ 2 := by
+  have hc2 : ContDiffAt ℝ 2 (augField F) 0 := ha.contDiffAt
+  obtain ⟨C₂, s₂, hs₂, hL₂⟩ :=
+    (hc2.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
+  obtain ⟨r₂, hr₂, hball₂⟩ := Metric.mem_nhds_iff.mp hs₂
+  have hL₂' := hL₂.mono hball₂
+  obtain ⟨Kπ, hKπ⟩ : ∃ K, K = ‖critπ p‖ := ⟨_, rfl⟩
+  obtain ⟨Kι, hKι⟩ : ∃ K, K = ‖critι q‖ := ⟨_, rfl⟩
+  have hKπ0 : 0 ≤ Kπ := hKπ ▸ norm_nonneg _
+  have hKι0 : 0 ≤ Kι := hKι ▸ norm_nonneg _
+  refine ⟨Kπ * C₂ * (2 * Kι) ^ 2, fun ε hε => ?_⟩
+  -- the parameter derivative of the linear part
+  obtain ⟨ε₁, hε₁⟩ : ∃ e, e = min 1 (ε / (2 * (Kπ * Kι + 1))) := ⟨_, rfl⟩
+  have hε₁0 : 0 < ε₁ := hε₁ ▸ lt_min one_pos (by positivity)
+  have hε₁1 : ε₁ ≤ 1 := hε₁ ▸ min_le_left _ _
+  have hε₁2 : ε₁ * (Kπ * Kι) ≤ ε / 2 := by
+    have h1 : ε₁ ≤ ε / (2 * (Kπ * Kι + 1)) := hε₁ ▸ min_le_right _ _
+    calc ε₁ * (Kπ * Kι) ≤ ε / (2 * (Kπ * Kι + 1)) * (Kπ * Kι + 1) :=
+          mul_le_mul h1 (by linarith) (by positivity) (by positivity)
+      _ = ε / 2 := by field_simp
+  obtain ⟨rB, hrB, hBb⟩ := Metric.eventually_nhds_iff.mp
+    ((hasDerivAt_iff_isLittleO.mp hB).def hε₁0)
+  obtain ⟨θ, hθ⟩ : ∃ e, e = min 1 (ε / (2 * (Kπ * (‖B‖ + 1) * Kι + 1))) := ⟨_, rfl⟩
+  have hθ0 : 0 < θ := hθ ▸ lt_min one_pos (by positivity)
+  have hθ1 : θ ≤ 1 := hθ ▸ min_le_left _ _
+  have hθ2 : θ * (Kπ * (‖B‖ + 1) * Kι) ≤ ε / 2 := by
+    have h1 : θ ≤ ε / (2 * (Kπ * (‖B‖ + 1) * Kι + 1)) := hθ ▸ min_le_right _ _
+    calc θ * (Kπ * (‖B‖ + 1) * Kι) ≤ ε / (2 * (Kπ * (‖B‖ + 1) * Kι + 1)) *
+          (Kπ * (‖B‖ + 1) * Kι + 1) := mul_le_mul h1 (by linarith) (by positivity) (by positivity)
+      _ = ε / 2 := by field_simp
+  obtain ⟨sh, hsh, hLh⟩ := hhs.exists_lipschitzOnWith_of_nnnorm_lt (Real.toNNReal θ)
+    (by simpa using hθ0)
+  obtain ⟨rh, hrh, hballh⟩ := Metric.mem_nhds_iff.mp hsh
+  obtain ⟨r₁, hr₁⟩ : ∃ r, r = min (rh / (2 * (Kι + 1))) (r₂ / (3 * (Kι + 1))) := ⟨_, rfl⟩
+  have hr₁0 : 0 < r₁ := hr₁ ▸ lt_min (by positivity) (by positivity)
+  have hm1 : (Kι + 1) * r₁ ≤ rh / 2 := by
+    calc (Kι + 1) * r₁ ≤ (Kι + 1) * (rh / (2 * (Kι + 1))) :=
+          mul_le_mul_of_nonneg_left (hr₁ ▸ min_le_left _ _) (by positivity)
+      _ = rh / 2 := by field_simp
+  have hm2 : (Kι + 1) * r₁ ≤ r₂ / 3 := by
+    calc (Kι + 1) * r₁ ≤ (Kι + 1) * (r₂ / (3 * (Kι + 1))) :=
+          mul_le_mul_of_nonneg_left (hr₁ ▸ min_le_right _ _) (by positivity)
+      _ = r₂ / 3 := by field_simp
+  refine ⟨min r₀ (min rB r₁), lt_min hr₀ (lt_min hrB hr₁0), fun μ u hμ hu => ?_⟩
+  simp only [lt_min_iff] at hμ hu
+  obtain ⟨hμ0, hμB, hμ1⟩ := hμ
+  obtain ⟨-, -, hu1⟩ := hu
+  have hμa : 0 ≤ |μ| := abs_nonneg μ
+  have hun : 0 ≤ ‖u‖ := norm_nonneg u
+  have hιu : ‖critι q u‖ ≤ Kι * ‖u‖ := hKι ▸ (critι q).le_opNorm u
+  have hsum : Kι * ‖u‖ + |μ| ≤ (Kι + 1) * r₁ := by
+    have := mul_le_mul_of_nonneg_left hu1.le hKι0
+    linarith only [this, hμ1]
+  -- the points
+  have hne : ‖μ • (emu : State (n + 1))‖ = |μ| := by
+    rw [norm_smul, norm_emu, mul_one, Real.norm_eq_abs]
+  obtain ⟨z, hz⟩ : ∃ z : State (n + 1), z = xin (critι q u) + μ • emu := ⟨_, rfl⟩
+  have hnz : ‖z‖ ≤ Kι * ‖u‖ + |μ| := by
+    rw [hz]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_xin, hne]
+    exact add_le_add hιu le_rfl
+  have hzb : z ∈ sh := hballh (mem_ball_zero_iff.mpr (by linarith only [hnz, hsum, hm1, hrh]))
+  have hab : μ • emu ∈ sh := hballh (mem_ball_zero_iff.mpr (by
+    rw [hne]; linarith only [hsum, hm1, hrh, mul_nonneg hKι0 hun]))
+  have hhd : ‖h z‖ ≤ θ * (Kι * ‖u‖) := by
+    have h1 := hLh.norm_sub_le hzb hab
+    rw [hhμ μ hμ0, sub_zero, Real.coe_toNNReal _ hθ0.le] at h1
+    refine h1.trans ?_
+    have e : z - μ • emu = xin (critι q u) := by rw [hz]; abel
+    rw [e, norm_xin]
+    exact mul_le_mul_of_nonneg_left hιu hθ0.le
+  obtain ⟨w, hw⟩ : ∃ w : State (n + 1), w = xin (critι q u) + h z := ⟨_, rfl⟩
+  have hnw : ‖w‖ ≤ 2 * Kι * ‖u‖ := by
+    rw [hw]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_xin]
+    have : θ * (Kι * ‖u‖) ≤ 1 * (Kι * ‖u‖) :=
+      mul_le_mul_of_nonneg_right hθ1 (mul_nonneg hKι0 hun)
+    linarith only [hιu, hhd, this]
+  have hRb : ‖augField F (μ • emu + w) - augField F (μ • emu) -
+      fderiv ℝ (augField F) (μ • emu) w‖ ≤ C₂ * (2 * Kι * ‖u‖) ^ 2 := by
+    refine (norm_taylor_le_of_lipschitzOn (hF.differentiable one_ne_zero) hL₂'
+      (by rw [hne]; linarith only [hsum, hm2, hr₂, mul_nonneg hKι0 hun]) ?_).trans ?_
+    · calc ‖μ • emu + w‖ ≤ ‖μ • (emu : State (n + 1))‖ + ‖w‖ := norm_add_le _ _
+        _ < r₂ := by rw [hne]; linarith only [hnw, hsum, hm2, hr₂, hμa]
+    · exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hnw 2) C₂.2
+  -- the derivative of the linear part in the parameter
+  have hDB : ‖fderiv ℝ (fun x => F x μ) 0 - A - μ • B‖ ≤ ε₁ * |μ| := by
+    have h1 := hBb (show dist μ 0 < rB by rw [dist_zero_right, Real.norm_eq_abs]; exact hμB)
+    rwa [← hA, sub_zero, Real.norm_eq_abs] at h1
+  have hDA : ‖fderiv ℝ (fun x => F x μ) 0 - A‖ ≤ (‖B‖ + 1) * |μ| := by
+    have e : fderiv ℝ (fun x => F x μ) 0 - A = (fderiv ℝ (fun x => F x μ) 0 - A - μ • B) +
+        μ • B := by abel
+    rw [e]
+    have h2 : ‖μ • B‖ ≤ |μ| * ‖B‖ := by
+      simpa only [Real.norm_eq_abs] using norm_smul_le μ B
+    have h3 : ε₁ * |μ| ≤ 1 * |μ| := mul_le_mul_of_nonneg_right hε₁1 hμa
+    linarith only [norm_add_le (fderiv ℝ (fun x => F x μ) 0 - A - μ • B) (μ • B), hDB, h2, h3]
+  -- assembly
+  rw [slice_sub_eq hF hF0 hc B hh μ u, ← hz, ← hw]
+  have t1 : ‖critπ p ((fderiv ℝ (fun x => F x μ) 0 - A - μ • B) (critι q u))‖ ≤
+      ε / 2 * |μ| * ‖u‖ := by
+    calc _ ≤ Kπ * (‖fderiv ℝ (fun x => F x μ) 0 - A - μ • B‖ * ‖critι q u‖) := by
+          rw [hKπ]
+          exact ((critπ p).le_opNorm _).trans (mul_le_mul_of_nonneg_left
+            (ContinuousLinearMap.le_opNorm _ _) (norm_nonneg _))
+      _ ≤ Kπ * (ε₁ * |μ| * (Kι * ‖u‖)) := by gcongr
+      _ = ε₁ * (Kπ * Kι) * (|μ| * ‖u‖) := by ring
+      _ ≤ ε / 2 * (|μ| * ‖u‖) := mul_le_mul_of_nonneg_right hε₁2 (by positivity)
+      _ = _ := by ring
+  have t2 : ‖critπ p ((fderiv ℝ (fun x => F x μ) 0 - A) (xpart (h z)))‖ ≤
+      ε / 2 * |μ| * ‖u‖ := by
+    calc _ ≤ Kπ * (‖fderiv ℝ (fun x => F x μ) 0 - A‖ * ‖xpart (h z)‖) := by
+          rw [hKπ]
+          exact ((critπ p).le_opNorm _).trans (mul_le_mul_of_nonneg_left
+            (ContinuousLinearMap.le_opNorm _ _) (norm_nonneg _))
+      _ ≤ Kπ * ((‖B‖ + 1) * |μ| * (θ * (Kι * ‖u‖))) := by
+          gcongr; exact (norm_xpart_le _).trans hhd
+      _ = θ * (Kπ * (‖B‖ + 1) * Kι) * (|μ| * ‖u‖) := by ring
+      _ ≤ ε / 2 * (|μ| * ‖u‖) := mul_le_mul_of_nonneg_right hθ2 (by positivity)
+      _ = _ := by ring
+  have t3 : ‖critπ p (xpart (augField F (μ • emu + w) - augField F (μ • emu) -
+      fderiv ℝ (augField F) (μ • emu) w))‖ ≤ Kπ * C₂ * (2 * Kι) ^ 2 * ‖u‖ ^ 2 := by
+    calc _ ≤ Kπ * ‖xpart (augField F (μ • emu + w) - augField F (μ • emu) -
+          fderiv ℝ (augField F) (μ • emu) w)‖ := hKπ ▸ (critπ p).le_opNorm _
+      _ ≤ Kπ * (C₂ * (2 * Kι * ‖u‖) ^ 2) := by
+          gcongr; exact (norm_xpart_le _).trans hRb
+      _ = _ := by ring
+  refine (norm_add₃_le).trans ?_
+  linarith only [t1, t2, t3]
+
+/-- The equilibria `(0, μ)` lie on a centre manifold containing the small bounded solutions, and
+the reduced field there, with the graph map's strict derivative, gives the uniform remainder of
+the slices, the chart identity and the lift of small bounded solutions. -/
+@[tmio T, powerlib_foundation] theorem reducedSlice_bounded (hF : ContDiff ℝ 1 (augField F))
+    (ha : AnalyticAt ℝ (augField F) 0) (hF0 : ∀ μ, F 0 μ = 0) {A : State n →L[ℝ] State n}
+    (hA : A = fderiv ℝ (fun x => F x 0) 0) (hc : IsCritical A ω q p)
+    {B : State n →L[ℝ] State n} (hB : HasDerivAt (fun μ => fderiv ℝ (fun x => F x μ) 0) B 0)
+    {h : State (n + 1) → State (n + 1)} (hh : IsGraphMap (augP (critP q p)) h)
+    (hhs : HasStrictFDerivAt h (0 : State (n + 1) →L[ℝ] State (n + 1)) 0) {ρ : ℝ} (hρ : 0 < ρ)
+    (hbdd : ∀ φ : ℝ → State (n + 1), (∀ t, HasDerivAt φ (augField F (φ t)) t) →
+      (∀ t, ‖φ t‖ < ρ) → ∀ t, φ t ∈ graph (augP (critP q p)) h)
+    {L₃ : State (2 + 1) →L[ℝ] State (2 + 1)}
+    {Q₃ : State (2 + 1) →L[ℝ] State (2 + 1) →L[ℝ] State (2 + 1)}
+    {C₃ : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => State (2 + 1)) (State (2 + 1))}
+    (hexp : (fun y => chartField (augL A) (fun z => augField F z - augL A z) h (augι (critι q))
+      (augπ (critπ p)) y - (L₃ y + Q₃ y y + C₃ ![y, y, y])) =o[𝓝 0] fun y => ‖y‖ ^ 3)
+    (hL : ∀ (u : State 2) (μ : ℝ), xpart (L₃ (xin u + μ • emu)) = rotL ω u)
+    (hM : sliceM Q₃ = (critπ p).comp (B.comp (critι q))) :
+    (fun z : ℝ × State 2 => unfoldRem ((critπ p).comp (B.comp (critι q))) (sliceQ Q₃)
+      (sliceC C₃) ω (sliceField (chartField (augL A) (fun z => augField F z - augL A z) h
+        (augι (critι q)) (augπ (critπ p)))) z.1 z.2) =o[𝓝 0]
+        (fun z => |z.1| * ‖z.2‖ + ‖z.2‖ ^ 3) ∧
+    (∀ y, chartField (augL A) (fun z => augField F z - augL A z) h (augι (critι q))
+      (augπ (critπ p)) y =
+        augπ (critπ p) (augField F (augι (critι q) y + h (augι (critι q) y)))) ∧
+    ∀ z : ℝ → State (n + 1), (∀ t, HasDerivAt z (augField F (z t)) t) → (∀ t, ‖z t‖ < ρ) →
+      ∀ t, augι (critι q) (augπ (critπ p) (z t)) +
+        h (augι (critι q) (augπ (critπ p) (z t))) = z t := by
+  have hc3 : IsChart (augP (critP q p)) (augι (critι q)) (augπ (critπ p)) :=
+    isChart_aug hc.isChart
+  have hhμ : ∀ μ : ℝ, |μ| < ρ → h (μ • emu) = 0 := by
+    intro μ hμ
+    have hP : augP (critP q p) (μ • emu) = μ • emu := by simp [mpart_apply]
+    have h0 : augField F (μ • emu) = 0 := by
+      have := augField_xin_add (F := F) 0 μ
+      rwa [map_zero, zero_add, hF0, map_zero] at this
+    have hg := hbdd (fun _ => μ • emu) (fun t => by
+      simpa only [h0] using hasDerivAt_const t (μ • (emu : State (n + 1)))) (fun _ => by
+        rwa [norm_smul, norm_emu, mul_one, Real.norm_eq_abs]) 0
+    change μ • emu = augP (critP q p) (μ • emu) + h (μ • emu) at hg
+    rw [hP] at hg
+    simpa using hg.symm
+  obtain ⟨Cq, hlin⟩ := slice_linear_bound hF ha hF0 hA hc hB hh hhs hρ hhμ
+  rw [← hM] at hlin
+  have hfull := isLittleO_unfoldRem_slice_full hexp hL hlin
+  rw [hM] at hfull
+  refine ⟨hfull, fun y => chartField_aug_eq hc hh y, fun z hz hzρ t => ?_⟩
+  have hg := hbdd z hz hzρ t
+  change z t = augP (critP q p) (z t) + h (z t) at hg
+  rw [hc3.ι_π, hh.comp_proj]
+  exact hg.symm
+
 /-- **The parameter-dependent centre manifold.** The augmented field `(x, μ) ↦ (F(x, μ), 0)` has
 the three-dimensional centre `range critP ⊕ (parameter axis)`; its locally invariant centre
 manifold carries the reduced field `G` on `(u, μ) ∈ ℝ³`, whose parameter component vanishes, so
@@ -1021,6 +1560,11 @@ augmented field with the same parameter and critical coordinates. -/
       l1 (rotL ω) Q₂ C₂ ω = firstLyapunov (fun x => F x 0) 0 ω q p ∧
       (∀ y, mpart (G y) = 0) ∧ (∀ y, mpart (Λ y) = mpart y) ∧
       (∀ y, critπ p (xpart (Λ y)) = xpart y) ∧
+      (fun z : ℝ × State 2 => unfoldRem ((critπ p).comp (B.comp (critι q))) Q₂ C₂ ω
+        (sliceField G) z.1 z.2) =o[𝓝 0] (fun z => |z.1| * ‖z.2‖ + ‖z.2‖ ^ 3) ∧
+      (∀ y, G y = augπ (critπ p) (augField F (Λ y))) ∧
+      (∃ rb > 0, ∀ z : ℝ → State (n + 1), (∀ t, HasDerivAt z (augField F (z t)) t) →
+        (∀ t, ‖z t‖ < rb) → ∀ t, Λ (augπ (critπ p) (z t)) = z t) ∧
       ∃ rl > 0, ∀ (t₀ t₁ : ℝ) (ψ : ℝ → State (2 + 1)), IsTrajectoryOn ψ G t₀ t₁ →
         (∀ t ∈ Icc t₀ t₁, ‖ψ t‖ < rl) → IsTrajectoryOn (fun t => Λ (ψ t)) (augField F) t₀ t₁ := by
   obtain ⟨A, hA⟩ : ∃ A, A = fderiv ℝ (fun x => F x 0) 0 := ⟨_, rfl⟩
@@ -1056,8 +1600,8 @@ augmented field with the same parameter and critical coordinates. -/
   have hPa := isCommutingProjection_aug hc.isCommutingProjection
   obtain ⟨Ka, hcena, hsta⟩ := exists_dichotomy_aug le_rfl hcen hst
   obtain ⟨H₀, hhom, hPH⟩ := exists_isHomological_of_dichotomy hPa (by linarith) hcena hsta Qa
-  obtain ⟨ρ, hρ, h, Lh, hh, hLh, hH, hinv⟩ := exists_centerManifold_hasQuadraticPart hPa le_rfl
-    (by linarith) hcena hsta hf hf0 hDf hf2 hhom hPH
+  obtain ⟨ρ, hρ, h, Lh, hh, hLh, hH, hh1, hDh0, hinv, hbdd⟩ := exists_centerManifold_bounded hPa
+    le_rfl (by linarith) hcena hsta hf hf0 hDf hf2 hhom hPH
   have hc3 : IsChart (augP (critP q p)) (augι (critι q)) (augπ (critπ p)) :=
     isChart_aug hc.isChart
   obtain ⟨G, hGdef⟩ : ∃ G, G = chartField (augL A) f h (augι (critι q)) (augπ (critπ p)) :=
@@ -1099,12 +1643,21 @@ augmented field with the same parameter and critical coordinates. -/
   obtain ⟨Lg, hLg⟩ := exists_lipschitzOnWith_chartField (A := augL A) (π := augπ (critπ p))
     hh.map_zero hLh hLf hrLR
   rw [← hGdef] at hLg
+  -- the uniform remainder, the chart identity and the bounded solutions
+  have hhs : HasStrictFDerivAt h (0 : State (n + 1) →L[ℝ] State (n + 1)) 0 := by
+    have := (hh1.contDiffAt (x := 0)).hasStrictFDerivAt (by norm_num)
+    rwa [hDh0] at this
+  obtain ⟨hfull, hchart, hbd⟩ := reducedSlice_bounded (L₃ := (augπ (critπ p)).comp
+    ((augL A).comp (augι (critι q)))) hF ha hF0 hA hc hB hh hhs hρ
+    (fun φ hφ hφρ => hbdd φ (fun t => by rw [hff]; exact hφ t) hφρ)
+    (by rw [← hfdef, ← hGdef]; exact hexp3) hL3 hM
   -- the lift
   obtain ⟨rl, hrl, hlift⟩ := chart_lift_isTrajectoryOn hPa hh hLh hc3 hf hρ hinv
   refine ⟨G, fun y => augι (critι q) y + h (augι (critι q) y),
     sliceQ (chartQ (augπ (critπ p)) Qa (augι (critι q))),
     sliceC (chartC (augπ (critπ p)) Qa H₀ Ca (augι (critι q))), hrem,
-    exists_lipschitzOnWith_slice hrL0 hLg, ?_, hGm, ?_, ?_, rl, hrl, ?_⟩
+    exists_lipschitzOnWith_slice hrL0 hLg, ?_, hGm, ?_, ?_, by rw [hGdef, hfdef]; exact hfull,
+    fun y => by rw [hGdef, hfdef]; exact hchart y, ⟨ρ, hρ, hbd⟩, rl, hrl, ?_⟩
   · rw [hQa, hCa]
     rw [hQa, hA] at hhom
     exact l1_slice_eq hF ha hF0 (hA ▸ hc) hchar hr hhom hPH
@@ -1148,7 +1701,7 @@ satisfy `ν/8 ≤ ‖critπ p x(t)‖² ≤ 8ν`, `ν = −μτ/(ω l₁) > 0`: 
           ‖critπ p (x t)‖ ^ 2 ≤ 8 * (-(μ * PlanarHopf.paramTrace
             ((critπ p).comp (B.comp (critι q)))) /
               (ω * firstLyapunov (fun x => F x 0) 0 ω q p)) := by
-  obtain ⟨G, Λ, Q₂, C₂, hrem, hlip, hl1, hGm, hΛm, hΛc, rl, hrl, hlift⟩ :=
+  obtain ⟨G, Λ, Q₂, C₂, hrem, hlip, hl1, hGm, hΛm, hΛc, -, -, -, rl, hrl, hlift⟩ :=
     exists_reducedSlice hF ha hF0 hcp hchar hr hB
   have hω := hcp.freq_pos
   set τ := PlanarHopf.paramTrace ((critπ p).comp (B.comp (critι q))) with hτdef

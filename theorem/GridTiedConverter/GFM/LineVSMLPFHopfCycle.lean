@@ -1,5 +1,5 @@
 import theorem.GridTiedConverter.GFM.HopfLineLPFSlice
-import theorem.Dynamics.HopfCycle
+import theorem.Dynamics.HopfCycleAmplitude
 
 /-! # The VSM with a power filter on a dynamic R–L line: Hopf cycles along damping and inertia
 
@@ -25,8 +25,10 @@ Model boundary.
   neither `ℓ₁` nor `τ` is stated in closed form (the size obstruction of the slice module).
 * Level: exact identities and signs, and, as private evidence, the cycles of the generic Hopf
   theorem `Dynamics.HopfCycle.exists_hopfCycle`. Periodic orbits are not sentences of
-  `Line.VSMLPF.family`: no new family, no connection conclusion. Not proved: uniqueness and
-  orbital stability of the cycles, the cycles at the Bautin points `𝔅 = 0`.
+  `Line.VSMLPF.family`: no new family, no connection conclusion. Every small cycle
+  (`Dynamics.HopfCycle.periodic_amplitude`): no small cycle on the other side; amplitude
+  `(1 ± η) ν`. Not proved: uniqueness and orbital stability of the cycles, the cycles at the
+  Bautin points `𝔅 = 0`.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.4–3.5 (Theorem 3.3,
 the transversality coefficient `Re λ'(0) = Re ⟨p, A'(0) q⟩`); the templates
@@ -70,6 +72,10 @@ Results.
   `ω² w² (4ω² 𝔗² + 𝔍²) = (d² + ω²)(Re² Ĉ + Im² Ĉ)`
   (`Line.VSMLPF.sliceTransversality_sq_add_sliceInertia_sq`) with `Re Ĉ > 0`;
   `Line.VSMLPF.Model.paramTrace_inert_ne_zero_of_paramTrace_eq_zero_slice`.
+* Private evidence `Line.VSMLPF.Model.hopfData_slice_of_family` (the shared Hopf data),
+  `Model.periodic_amplitude_slice_of_family`, `Model.periodic_amplitude_slice_damping`,
+  `Model.periodic_amplitude_slice_inertia` (every small cycle is on the cycle side, with
+  amplitude `(1 ± η) c|μ|`).
 * Private evidence: `Line.VSMLPF.Model.exists_hopfCycle_slice_of_family` (the cycles of
   `Dynamics.HopfCycle.exists_hopfCycle` for any family through a slice Hopf point with a given
   sign of `τ`), `Line.VSMLPF.Model.exists_hopfCycle_slice_damping` (`𝔅 ≠ 0`, `𝔗 ≠ 0`, small
@@ -486,29 +492,25 @@ model. -/
 
 /-! ## The Hopf cycles (private evidence) -/
 
-/-- **Hopf cycles of a one-parameter family through a slice Hopf point.** For a family `F` of a
-balanced physical slice model at a Hopf point `ω` with `𝔅 ≠ 0`, whose augmented field is
-smooth, which keeps the origin fixed, equals the model field at `μ = 0` and whose transversality
-coefficient at (`sliceQ`, `sliceP`) has the sign of `s ≠ 0`: for every small `μ` with
-`μ s 𝔅 > 0` there is a nonconstant periodic orbit of period at most `4π/ω` with
-`c|μ|/8 ≤ ‖critπ p z(t)‖² ≤ 8c|μ|`, `c = |τ|/(ω|ℓ₁|)` (`HopfCycle.exists_hopfCycle`). Private
-evidence. -/
-@[tmio TM, powerlib_domain] private theorem Model.exists_hopfCycle_slice_of_family (m : Model)
+/-- The Hopf data of a family through a slice Hopf point (shared by the cycle and amplitude
+laws): the critical pair, the factorized characteristic polynomial, `τ ≠ 0`, `ℓ₁ ≠ 0` and
+`sign(μ τ ℓ₁) = −sign(μ s 𝔅)`. -/
+@[tmio TM, powerlib_domain] private theorem Model.hopfData_slice_of_family (m : Model)
     (hp : Meets m .physical) (hb : Meets m .balanced) (hs : m.OnSlice) {ω : ℝ}
     (hH : m.HopfAt ω) (hB : sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0)
     {F : State 5 → ℝ → State 5} {B : State 5 →L[ℝ] State 5}
-    (hF : ∀ k : WithTop ℕ∞, ContDiff ℝ k (augField F)) (hF0 : ∀ μ, F 0 μ = 0)
-    (hFm : (fun z => F z 0) = m.field)
-    (hFB : HasDerivAt (fun μ => fderiv ℝ (fun z => F z μ) 0) B 0) {s : ℝ} (hs0 : s ≠ 0)
+    (hFm : (fun z => F z 0) = m.field) {s : ℝ} (hs0 : s ≠ 0)
     (hsg : SignType.sign (Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
         (B.comp (critι (m.sliceQ ω))))) = SignType.sign s) :
-    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ →
-      0 < μ * s * sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω →
-      ∃ z : ℝ → State 5, ∃ T, 0 < T ∧ T ≤ 4 * Real.pi / ω ∧
-        (∀ t, HasDerivAt z (F (z t) μ) t) ∧ (∀ t, z (t + T) = z t) ∧ (∃ t, z t ≠ z 0) ∧
-        ∀ t, c * |μ| / 8 ≤ ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ∧
-          ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ≤ 8 * (c * |μ|) := by
-  have hω := hH.1
+    ∃ r : ℂ[X], IsCriticalPair (fun z => F z 0) 0 ω (m.sliceQ ω) (m.sliceP ω) ∧
+      (jacobianC (fun z => F z 0) 0).charpoly = (X ^ 2 + C ((ω : ℂ) ^ 2)) * r ∧
+      (∀ s : ℂ, r.eval s = 0 → s.re < 0) ∧ Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
+        (B.comp (critι (m.sliceQ ω)))) ≠ 0 ∧
+      firstLyapunov (fun z => F z 0) 0 ω (m.sliceQ ω) (m.sliceP ω) ≠ 0 ∧
+      ∀ μ : ℝ, SignType.sign (μ * Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
+        (B.comp (critι (m.sliceQ ω)))) *
+        firstLyapunov (fun z => F z 0) 0 ω (m.sliceQ ω) (m.sliceP ω)) =
+        -SignType.sign (μ * s * sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω) := by
   have hcp0 := m.isCriticalPair_slice hp hb hs hH
   have hcp : IsCriticalPair (fun z => F z 0) 0 ω (m.sliceQ ω) (m.sliceP ω) := by
     rw [hFm]; exact hcp0
@@ -532,26 +534,48 @@ evidence. -/
         -SignType.sign ℓ := by rw [hsℓ, neg_neg]
     rw [h, sign_zero] at e
     exact hB (sign_eq_zero_iff.mp e)
+  refine ⟨r, hcp, hchar', hr, hτ0, hℓ0, fun μ => ?_⟩
+  rw [sign_mul, sign_mul, hsg, hsℓ, sign_mul, sign_mul]
+  simp only [mul_neg]
+
+/-- **Hopf cycles of a one-parameter family through a slice Hopf point.** For a family `F` of a
+balanced physical slice model at a Hopf point `ω` with `𝔅 ≠ 0`, whose augmented field is
+smooth, which keeps the origin fixed, equals the model field at `μ = 0` and whose transversality
+coefficient at (`sliceQ`, `sliceP`) has the sign of `s ≠ 0`: for every small `μ` with
+`μ s 𝔅 > 0` there is a nonconstant periodic orbit of period at most `4π/ω` with
+`c|μ|/8 ≤ ‖critπ p z(t)‖² ≤ 8c|μ|`, `c = |τ|/(ω|ℓ₁|)` (`HopfCycle.exists_hopfCycle`). Private
+evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.exists_hopfCycle_slice_of_family (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hs : m.OnSlice) {ω : ℝ}
+    (hH : m.HopfAt ω) (hB : sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0)
+    {F : State 5 → ℝ → State 5} {B : State 5 →L[ℝ] State 5}
+    (hF : ∀ k : WithTop ℕ∞, ContDiff ℝ k (augField F)) (hF0 : ∀ μ, F 0 μ = 0)
+    (hFm : (fun z => F z 0) = m.field)
+    (hFB : HasDerivAt (fun μ => fderiv ℝ (fun z => F z μ) 0) B 0) {s : ℝ} (hs0 : s ≠ 0)
+    (hsg : SignType.sign (Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
+        (B.comp (critι (m.sliceQ ω))))) = SignType.sign s) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ →
+      0 < μ * s * sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω →
+      ∃ z : ℝ → State 5, ∃ T, 0 < T ∧ T ≤ 4 * Real.pi / ω ∧
+        (∀ t, HasDerivAt z (F (z t) μ) t) ∧ (∀ t, z (t + T) = z t) ∧ (∃ t, z t ≠ z 0) ∧
+        ∀ t, c * |μ| / 8 ≤ ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ∧
+          ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ≤ 8 * (c * |μ|) := by
+  have hω := hH.1
+  obtain ⟨r, hcp, hchar', hr, hτ0, hℓ0, hsgn⟩ :=
+    m.hopfData_slice_of_family hp hb hs hH hB hFm hs0 hsg
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
+      (B.comp (critι (m.sliceQ ω)))) with hτdef
+  set ℓ := firstLyapunov (fun z => F z 0) 0 ω (m.sliceQ ω) (m.sliceP ω) with hℓdef
   obtain ⟨δ, hδ, hcyc⟩ := Dynamics.HopfCycle.exists_hopfCycle (hF 1) (hF ⊤).contDiffAt.analyticAt
     hF0 hcp hchar' hr hFB hτ0 hℓ0
   have hκ : 0 < |τ| / (ω * |ℓ|) := div_pos (abs_pos.mpr hτ0) (mul_pos hω (abs_pos.mpr hℓ0))
   refine ⟨δ, hδ, |τ| / (ω * |ℓ|), hκ, fun μ hμ hpos => ?_⟩
   have hs' : μ * τ * ℓ < 0 := by
-    have e : SignType.sign (μ * τ * ℓ) = -SignType.sign (μ * s *
-        sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω) := by
-      rw [sign_mul, sign_mul, hsg, hsℓ, sign_mul, sign_mul]
-      simp only [mul_neg]
+    have e := hsgn μ
     rw [sign_pos hpos] at e
     exact sign_eq_neg_one_iff.mp e
   obtain ⟨z, T, hT0, hT4, hz, hzT, hznc, hamp⟩ := hcyc μ hμ hs'
-  have hν : -(μ * τ) / (ω * ℓ) = |τ| / (ω * |ℓ|) * |μ| := by
-    have habs : |μ| * |τ| * |ℓ| = -(μ * τ * ℓ) := by
-      rw [← abs_mul, ← abs_mul]; exact abs_of_neg hs'
-    have hl2 : ℓ ^ 2 = |ℓ| ^ 2 := (sq_abs ℓ).symm
-    have hla : |ℓ| ≠ 0 := abs_ne_zero.mpr hℓ0
-    rw [div_mul_eq_mul_div, div_eq_div_iff (mul_ne_zero hω.ne' hℓ0) (mul_ne_zero hω.ne' hla)]
-    apply mul_right_cancel₀ hℓ0
-    linear_combination (-(ω * |ℓ|)) * habs - (ω * |μ| * |τ|) * hl2
+  have hν := Dynamics.HopfCycle.hopfAmplitude_eq_abs hω hs'
   refine ⟨z, T, hT0, hT4, hz, hzT, hznc, fun t => ?_⟩
   have := hamp t
   rw [hν] at this
@@ -702,6 +726,90 @@ evidence. -/
     show -(μ * (-581472978503 / 190454141400 : ℝ)) / (1 * (795686360348046533 /
       264278927960175000)) = 19922136287875 / 19646091710033 * μ by ring] at this
   exact this
+
+
+/-- **Every small cycle of a family through a slice Hopf point.** With the hypotheses of
+`Model.exists_hopfCycle_slice_of_family`: for every `η > 0` there are `δ, c > 0` such that every
+nonconstant periodic orbit of `F(·, μ)`, `|μ| < δ`, in the ball of radius `δ` has `μ s 𝔅 > 0`
+(none on the other side) and `(1 − η) c|μ| ≤ ‖critπ p z(t)‖² ≤ (1 + η) c|μ|`
+(`HopfCycle.periodic_amplitude`). Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_slice_of_family (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hs : m.OnSlice) {ω : ℝ}
+    (hH : m.HopfAt ω) (hB : sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0)
+    {F : State 5 → ℝ → State 5} {B : State 5 →L[ℝ] State 5}
+    (hF : ∀ k : WithTop ℕ∞, ContDiff ℝ k (augField F)) (hF0 : ∀ μ, F 0 μ = 0)
+    (hFm : (fun z => F z 0) = m.field)
+    (hFB : HasDerivAt (fun μ => fderiv ℝ (fun z => F z μ) 0) B 0) {s : ℝ} (hs0 : s ≠ 0)
+    (hsg : SignType.sign (Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
+        (B.comp (critι (m.sliceQ ω))))) = SignType.sign s) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 5) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (F (z t) μ) t) → (∀ t, z (t + T) = z t) → (∃ t, z t ≠ z 0) →
+      (∀ t, ‖z t‖ < δ) →
+      0 < μ * s * sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ∧
+        ∀ t, (1 - η) * (c * |μ|) ≤ ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ∧
+          ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ≤ (1 + η) * (c * |μ|) := by
+  have hω := hH.1
+  obtain ⟨r, hcp, hchar', hr, hτ0, hℓ0, hsgn⟩ :=
+    m.hopfData_slice_of_family hp hb hs hH hB hFm hs0 hsg
+  obtain ⟨δ, hδ, hamp⟩ := Dynamics.HopfCycle.periodic_amplitude (hF 1)
+    (hF ⊤).contDiffAt.analyticAt hF0 hcp hchar' hr hFB hτ0 hℓ0 hη
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ (m.sliceP ω)).comp
+      (B.comp (critι (m.sliceQ ω)))) with hτdef
+  set ℓ := firstLyapunov (fun z => F z 0) 0 ω (m.sliceQ ω) (m.sliceP ω) with hℓdef
+  refine ⟨δ, hδ, |τ| / (ω * |ℓ|), div_pos (abs_pos.mpr hτ0) (mul_pos hω (abs_pos.mpr hℓ0)),
+    fun μ hμ z T hT hz hzT hnc hzδ => ?_⟩
+  obtain ⟨hs', hbd⟩ := hamp μ hμ z T hT hz hzT hnc hzδ
+  have e := hsgn μ
+  rw [sign_neg hs'] at e
+  refine ⟨sign_eq_one_iff.mp (neg_inj.mp e).symm, fun t => ?_⟩
+  rw [Dynamics.HopfCycle.hopfAmplitude_eq_abs hω hs'] at hbd
+  exact hbd t
+
+/-- **Every small cycle on the zero-current slice along the damping.** With the hypotheses of
+`Model.exists_hopfCycle_slice_damping`: every small nonconstant cycle has `μ 𝔗 𝔅 < 0` and the
+amplitude `(1 ± η) c|μ|`. Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_slice_damping (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hs : m.OnSlice) {ω : ℝ}
+    (hH : m.HopfAt ω) (hB : sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0)
+    (hT : sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 5) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (m.dampFamily (z t) μ) t) → (∀ t, z (t + T) = z t) →
+      (∃ t, z t ≠ z 0) → (∀ t, ‖z t‖ < δ) →
+      μ * sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω *
+          sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω < 0 ∧
+        ∀ t, (1 - η) * (c * |μ|) ≤ ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ∧
+          ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ≤ (1 + η) * (c * |μ|) := by
+  have hsg := m.sign_paramTrace_dampJac_slice hp hs hH
+  rw [← Left.sign_neg] at hsg
+  obtain ⟨δ, hδ, c, hc, h⟩ := m.periodic_amplitude_slice_of_family hp hb hs hH hB
+    (fun _ => m.contDiff_augField_dampFamily) (m.dampFamily_origin hp hb)
+    m.dampFamily_zero_param m.hasDerivAt_fderiv_dampFamily (neg_ne_zero.mpr hT) hsg hη
+  refine ⟨δ, hδ, c, hc, fun μ hμ z T hT0 hz hzT hnc hzδ => ?_⟩
+  obtain ⟨hpos, hbd⟩ := h μ hμ z T hT0 hz hzT hnc hzδ
+  refine ⟨?_, hbd⟩
+  linarith [show μ * -sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω *
+      sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω =
+    -(μ * sliceTransversality (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω *
+      sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω) by ring]
+
+/-- **Every small cycle on the zero-current slice along the inverse inertia.** With the
+hypotheses of `Model.exists_hopfCycle_slice_inertia`: every small nonconstant cycle has
+`μ 𝔍 𝔅 > 0` and the amplitude `(1 ± η) c|μ|`. Private evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_slice_inertia (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hs : m.OnSlice) {ω : ℝ}
+    (hH : m.HopfAt ω) (hB : sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0)
+    (hJ : sliceInertia (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ≠ 0) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∃ c > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 5) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (m.inertFamily (z t) μ) t) → (∀ t, z (t + T) = z t) →
+      (∃ t, z t ≠ z 0) → (∀ t, ‖z t‖ < δ) →
+      0 < μ * sliceInertia (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω *
+          sliceBautin (m.g.D / m.g.M) (m.g.R / m.g.L) m.g.ω0 ω ∧
+        ∀ t, (1 - η) * (c * |μ|) ≤ ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ∧
+          ‖critπ (m.sliceP ω) (z t)‖ ^ 2 ≤ (1 + η) * (c * |μ|) :=
+  m.periodic_amplitude_slice_of_family hp hb hs hH hB (fun _ => m.contDiff_augField_inertFamily)
+    (m.inertFamily_origin hp hb) m.inertFamily_zero_param m.hasDerivAt_fderiv_inertFamily hJ
+    (m.sign_paramTrace_inertJac_slice hp hs hH) hη
 
 end VSMLPF
 end powerlib.GFM.Line

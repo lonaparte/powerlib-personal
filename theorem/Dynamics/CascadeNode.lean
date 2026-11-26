@@ -18,8 +18,8 @@ Scope.
   coordinates, as in `theorem/Dynamics/Degenerate/RelaxedExtension.lean`), read through
   LeanForControl's notions (solution segments for Lyapunov stability, forward-complete solutions
   for attraction). The node estimate is only required on a ball around `x`; the cascade laws
-  need no regularity, the converse laws need `f` to be `C¹` near `x` and `h` to be `C¹` near
-  `π x` (uniqueness of the drive's solutions).
+  need no regularity (the first-integral law a differentiable integral), the converse laws need
+  `f` to be `C¹` near `x` and `h` to be `C¹` near `π x` (uniqueness of the drive's solutions).
 * The splitting of `ℝ⁵` into its first four coordinates and the fifth (`incl45`, `proj54`), and
   the inclusion of `ℝ³` as the first three coordinates of `ℝ⁴` (`incl34`).
 
@@ -40,6 +40,10 @@ Results.
   exponentially stable drive with a node that need not contract but whose rate is bounded by the
   drive's distance, `‖Q f(y)‖ ≤ L ‖π y − π x‖` (it vanishes at the drive's equilibrium), makes `x`
   Lyapunov stable (the node moves by at most `(L C/a) ‖π φ(t₀) − π x‖`).
+  `lyapunovStable_cascade_of_firstIntegral`: a Lyapunov stable drive with a node pinned near `x`
+  by a differentiable first integral `I` of `f`, `‖Q(y − x)‖ ≤ K (|I(y) − I(x)| + ‖π y − π x‖)`,
+  makes `x` Lyapunov stable (neither contraction of the node nor a decay rate of the drive; the
+  bootstrap `Dynamics.forall_norm_sub_lt_of_bootstrap` and `Dynamics.eq_of_lie_eq_zero_along`).
 * **Converse laws.** `lyapunovStable_drive_of_cascade`, `localAsymptoticStable_drive_of_cascade`:
   if `f` is `C¹` near `x`, `h` is `C¹` near `π x`, and `x` is Lyapunov stable (locally
   asymptotically stable) for `f`, so is `π x` for `h`: a solution of the drive is the projection
@@ -395,6 +399,56 @@ need not contract. -/
     have hKe : K * e₀ ≤ R / 2 := by
       have := (lt_div_iff₀ (by positivity : (0 : ℝ) < 2 * K)).mp he
       nlinarith
+    nlinarith
+  exact fun t ht => (key t ht).trans_le (min_le_left _ _)
+
+/-- **A drive and a node tied by a first integral.** If the drive `h` is Lyapunov stable at
+`π x` and, near `x`, a differentiable `I` is conserved by `f` (`DI(y) f(y) = 0`) and pins the node
+up to the drive's distance, `‖Q(y − x)‖ ≤ K (|I(y) − I(x)| + ‖π y − π x‖)` (`Q y = y − ι π y`),
+then `x` is Lyapunov stable for `f`: along a solution `I` keeps its initial value, close to
+`I(x)`, and the drive stays close to `π x`. The node need not contract and the drive need not be
+exponentially, nor asymptotically, stable (e.g. a voltage whose square integrates a power
+mismatch that is itself the time derivative of a function of the drive). -/
+@[tmio T, powerlib_foundation] theorem lyapunovStable_cascade_of_firstIntegral
+    (hι : ∀ u, ‖ι u‖ = ‖u‖) (hπ : ∀ y, ‖π y‖ ≤ ‖y‖) (hf : ∀ y, π (f y) = h (π y))
+    {I : State n → ℝ} (hI : Differentiable ℝ I) {ρ K : ℝ} (hρ : 0 < ρ) (hK : 0 ≤ K)
+    (hlie : ∀ y, ‖y - x‖ < ρ → fderiv ℝ I y (f y) = 0)
+    (hnode : ∀ y, ‖y - x‖ < ρ →
+      ‖(y - x) - ι (π (y - x))‖ ≤ K * (|I y - I x| + ‖π y - π x‖))
+    (hh : LyapunovStable h (π x)) : LyapunovStable f x := by
+  intro ε hε
+  set R := min ε ρ with hR
+  have hR0 : 0 < R := lt_min hε hρ
+  have hK1 : 0 < 1 + 2 * K := by linarith
+  set η := R / (2 * (1 + 2 * K)) with hη
+  have hη0 : 0 < η := div_pos hR0 (by linarith)
+  obtain ⟨δ₁, hδ₁, hdrive⟩ := hh η hη0
+  obtain ⟨δ₂, hδ₂, hIc⟩ := Metric.continuous_iff.mp hI.continuous x η hη0
+  refine ⟨min (min δ₁ δ₂) (R / 2), lt_min (lt_min hδ₁ hδ₂) (half_pos hR0),
+    fun t₀ t₁ φ hφ h0 => ?_⟩
+  have h0₁ : ‖φ t₀ - x‖ < δ₁ := h0.trans_le ((min_le_left _ _).trans (min_le_left _ _))
+  have h0₂ : ‖φ t₀ - x‖ < δ₂ := h0.trans_le ((min_le_left _ _).trans (min_le_right _ _))
+  have hd : ∀ t ∈ Icc t₀ t₁, ‖π (φ t) - π x‖ < η :=
+    hdrive t₀ t₁ _ (isIntegralCurveOn_proj_cascade hf hφ)
+      (by rw [← map_sub]; exact (hπ _).trans_lt h0₁)
+  have hI0 : |I (φ t₀) - I x| < η := by
+    have := hIc (φ t₀) (by rw [dist_eq_norm]; exact h0₂)
+    rwa [Real.dist_eq] at this
+  have key : ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ < R := by
+    refine forall_norm_sub_lt_of_bootstrap hφ.continuousOn
+      (h0.trans_le ((min_le_right _ _).trans (half_le_self hR0.le))) fun s hs hin => ?_
+    have hcons : I (φ s) = I (φ t₀) :=
+      eq_of_lie_eq_zero_along hI (convex_Icc t₀ s) (hφ.mono (Icc_subset_Icc le_rfl hs.2))
+        (fun u hu => hlie _ ((hin u hu).trans_le (min_le_right _ _))) ⟨le_rfl, hs.1⟩
+        ⟨hs.1, le_rfl⟩ hs.1
+    have hn := hnode (φ s) ((hin s ⟨hs.1, le_rfl⟩).trans_le (min_le_right _ _))
+    rw [hcons] at hn
+    have hds := hd s hs
+    have hsplit := norm_sub_le_cascade (π := π) (x := x) hι (φ s)
+    have hKb : K * (|I (φ t₀) - I x| + ‖π (φ s) - π x‖) ≤ K * (2 * η) :=
+      mul_le_mul_of_nonneg_left (by linarith) hK
+    have hRη : (1 + 2 * K) * η = R / 2 := by
+      rw [hη]; field_simp
     nlinarith
   exact fun t ht => (key t ht).trans_le (min_le_left _ _)
 

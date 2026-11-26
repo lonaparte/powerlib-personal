@@ -63,9 +63,13 @@ Family and connection conclusions.
   pair, the fold coefficient in closed form and the saddle-node law (`PSC.Model.foldCoeff_fold`,
   `PSC.mem_den_unstable_of_fold`, `PSC.mem_den_unstable_of_fold_of_ne`);
   the complete Lyapunov and local asymptotic membership off the remaining degenerate set
-  (`PSC.mem_den_lyapunovStable_iff`, `PSC.mem_den_locallyAsymptoticallyStable_iff`). The gain
-  family, its transversality coefficient (`PSC.Model.paramTrace_gainJac_crit`) and the Hopf cycles
-  along the gain: `theorem/GridTiedConverter/GFM/LinePSCHopfCycle.lean`.
+  (`PSC.mem_den_lyapunovStable_iff`, `PSC.mem_den_locallyAsymptoticallyStable_iff`). The Hopf
+  cycles (private evidence) in `theorem/GridTiedConverter/GFM/LinePSCHopfCycle.lean`: along the
+  gain (`PSC.Model.paramTrace_gainJac_crit`, zero at `K_p Q = −|Z|/L`) and along a direction of
+  the `(K_p, V)` plane whose operating point moves with `V` (`PSC.Model.dirParams`,
+  `PSC.Model.paramTrace_voltJac_crit`, `PSC.Model.transvForm_normal_pos`; the moving-equilibrium
+  law `Dynamics.HopfCycle.exists_hopfCycle_of_branch` of `theorem/Dynamics/HopfCycleBranch.lean`),
+  hence at every Hopf point with `𝔅_P ≠ 0`.
 -/
 
 noncomputable section

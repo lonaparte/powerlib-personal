@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFM.HopfCoefficient
 import theorem.GridTiedConverter.GFM.Bifurcation
-import theorem.Dynamics.HopfCycle
+import theorem.Dynamics.HopfCycleAmplitude
 
 /-! # VSM with a power filter: Hopf cycles below the Hopf damping
 
@@ -15,8 +15,10 @@ Model boundary.
   depend on the damping, so the translated family `VSMLPF.Model.dampFamily` keeps the origin as
   an equilibrium.
 * Level: the cycles of the generic Hopf theorem `Dynamics.HopfCycle.exists_hopfCycle` for this
-  family. Periodic orbits are not sentences of `VSMLPF.family`, so the conclusion on the model
-  is private evidence; no new family, no connection conclusion.
+  family, and the amplitude law of every small cycle `Dynamics.HopfCycle.periodic_amplitude`.
+  Periodic orbits are not sentences of `VSMLPF.family`, so the conclusions on the model are
+  private evidence; no new family, no connection conclusion. Uniqueness of the cycle and its
+  orbital stability are not proved.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.4–3.5 (Theorem 3.3,
 the transversality coefficient `Re λ'(0) = Re ⟨p, A'(0) q⟩`); the critical pair and `ℓ₁` of
@@ -37,7 +39,12 @@ Results.
   `τ < 0`, for every small `μ < 0` (damping just below the Hopf value, where the operating
   point is unstable) the model has a nonconstant periodic orbit around the operating point with
   `κ|μ|/8 ≤ ‖critπ p z(t)‖² ≤ 8κ|μ|`, `κ = τ/(ω₀ ℓ₁) > 0`; with it the private evidence
-  `Model.contDiff_augField_dampFamily` (the augmented field is smooth, hence analytic).
+  `Model.contDiff_augField_dampFamily` (the augmented field is smooth, hence analytic) and the
+  private helper `Model.hopfData_damping` (critical pair, factorized characteristic polynomial,
+  `τ < 0`, `ℓ₁ < 0`).
+* Private evidence `Model.periodic_amplitude_damping`: for every `η > 0`, every small
+  nonconstant periodic orbit around the operating point has `μ < 0` (none at or above the Hopf
+  damping) and `(1 − η) κ|μ| ≤ ‖critπ p z(t)‖² ≤ (1 + η) κ|μ|`.
 -/
 
 noncomputable section
@@ -178,6 +185,40 @@ open powerlib.Dynamics.Degenerate.PlanarFocus (e0 e1 e0_apply0 e0_apply1 e1_appl
   field_simp
   ring
 
+/-- The Hopf data of the damping family on the boundary: the critical pair, the factorized
+characteristic polynomial with the third root `−(D/M + ω_c) < 0`, `τ < 0` and `ℓ₁ < 0`. -/
+@[tmio TM, powerlib_domain] private theorem Model.hopfData_damping (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced)
+    (hH : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
+    IsCriticalPair (fun z => m.dampFamily z 0) 0 √(m.g.D * m.g.ωc / m.g.M)
+        (HopfCoefficient.hopfQ m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M))
+        (HopfCoefficient.hopfP m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M)) ∧
+      (jacobianC (fun z => m.dampFamily z 0) 0).charpoly =
+        (X ^ 2 + C ((√(m.g.D * m.g.ωc / m.g.M) : ℂ) ^ 2)) *
+          (X + C ((m.g.D / m.g.M + m.g.ωc : ℝ) : ℂ)) ∧
+      (∀ s : ℂ, (X + C ((m.g.D / m.g.M + m.g.ωc : ℝ) : ℂ)).eval s = 0 → s.re < 0) ∧
+      Dynamics.PlanarHopf.paramTrace ((critπ (HopfCoefficient.hopfP m.g.M m.g.D
+        √(m.g.D * m.g.ωc / m.g.M))).comp ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ)
+          (dampJac m.g.M)).comp (critι (HopfCoefficient.hopfQ m.g.M m.g.D
+            √(m.g.D * m.g.ωc / m.g.M))))) < 0 ∧
+      firstLyapunov (fun z => m.dampFamily z 0) 0 √(m.g.D * m.g.ωc / m.g.M)
+        (HopfCoefficient.hopfQ m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M))
+        (HopfCoefficient.hopfP m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M)) < 0 := by
+  obtain ⟨hM, hD, hωc⟩ := hp
+  set ω₀ := √(m.g.D * m.g.ωc / m.g.M) with hω₀
+  have hω0 : 0 < ω₀ := Real.sqrt_pos.mpr (by positivity)
+  refine ⟨?_, ?_, fun s hs => ?_, ?_, ?_⟩
+  · rw [m.dampFamily_zero_param]; exact isCriticalPair m ⟨hM, hD, hωc⟩ hb hH
+  · rw [m.dampFamily_zero_param]; exact m.charpoly_hopf ⟨hM, hD, hωc⟩ hH
+  · simp only [eval_add, eval_X, eval_C] at hs
+    have : s = -((m.g.D / m.g.M + m.g.ωc : ℝ) : ℂ) := by linear_combination hs
+    rw [this, Complex.neg_re, Complex.ofReal_re]
+    have : 0 < m.g.D / m.g.M + m.g.ωc := by positivity
+    linarith
+  · rw [paramTrace_dampJac hM hD hω0]
+    exact div_neg_of_neg_of_pos (neg_neg_of_pos (by positivity)) (by positivity)
+  · rw [m.dampFamily_zero_param]; exact firstLyapunov_neg m ⟨hM, hD, hωc⟩ hb hH
+
 /-- **Hopf cycles below the Hopf damping.** On the Hopf boundary `K = D ω_c + D²/M` (balanced,
 physical) the critical eigenvalues cross at speed `τ/2 < 0` in the damping
 (`paramTrace_dampJac`) and `ℓ₁ < 0` (`VSMLPF.firstLyapunov_neg`), so `τ l₁ > 0`: for every small
@@ -195,31 +236,10 @@ evidence: periodic orbits are not sentences of the family. -/
             ‖critπ (HopfCoefficient.hopfP m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M)) (z t)‖ ^ 2 ∧
           ‖critπ (HopfCoefficient.hopfP m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M)) (z t)‖ ^ 2 ≤
             8 * (κ * |μ|) := by
+  obtain ⟨hcp, hchar, hr, hτn, hl⟩ := m.hopfData_damping hp hb hH
   obtain ⟨hM, hD, hωc⟩ := hp
   set ω₀ := √(m.g.D * m.g.ωc / m.g.M) with hω₀
   have hω0 : 0 < ω₀ := Real.sqrt_pos.mpr (by positivity)
-  have hcp : IsCriticalPair (fun z => m.dampFamily z 0) 0 ω₀
-      (HopfCoefficient.hopfQ m.g.M m.g.D ω₀) (HopfCoefficient.hopfP m.g.M m.g.D ω₀) := by
-    rw [m.dampFamily_zero_param]; exact isCriticalPair m ⟨hM, hD, hωc⟩ hb hH
-  have hchar : (jacobianC (fun z => m.dampFamily z 0) 0).charpoly =
-      (X ^ 2 + C ((ω₀ : ℂ) ^ 2)) * (X + C ((m.g.D / m.g.M + m.g.ωc : ℝ) : ℂ)) := by
-    rw [m.dampFamily_zero_param]; exact m.charpoly_hopf ⟨hM, hD, hωc⟩ hH
-  have hr : ∀ s : ℂ, (X + C ((m.g.D / m.g.M + m.g.ωc : ℝ) : ℂ)).eval s = 0 → s.re < 0 := by
-    intro s hs
-    simp only [eval_add, eval_X, eval_C] at hs
-    have : s = -((m.g.D / m.g.M + m.g.ωc : ℝ) : ℂ) := by linear_combination hs
-    rw [this, Complex.neg_re, Complex.ofReal_re]
-    have : 0 < m.g.D / m.g.M + m.g.ωc := by positivity
-    linarith
-  have hτ := paramTrace_dampJac hM hD hω0
-  have hτn : Dynamics.PlanarHopf.paramTrace ((critπ (HopfCoefficient.hopfP m.g.M m.g.D ω₀)).comp
-      ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (dampJac m.g.M)).comp
-        (critι (HopfCoefficient.hopfQ m.g.M m.g.D ω₀)))) < 0 := by
-    rw [hτ]
-    exact div_neg_of_neg_of_pos (neg_neg_of_pos (by positivity)) (by positivity)
-  have hl : firstLyapunov (fun z => m.dampFamily z 0) 0 ω₀
-      (HopfCoefficient.hopfQ m.g.M m.g.D ω₀) (HopfCoefficient.hopfP m.g.M m.g.D ω₀) < 0 := by
-    rw [m.dampFamily_zero_param]; exact firstLyapunov_neg m ⟨hM, hD, hωc⟩ hb hH
   obtain ⟨δ, hδ, hcyc⟩ := Dynamics.HopfCycle.exists_hopfCycle m.contDiff_augField_dampFamily
     (m.contDiff_augField_dampFamily (k := ⊤)).contDiffAt.analyticAt (m.dampFamily_origin hb)
     hcp hchar hr m.hasDerivAt_fderiv_dampFamily hτn.ne hl.ne
@@ -243,6 +263,50 @@ evidence: periodic orbits are not sentences of the family. -/
   constructor
   · linarith [this.1]
   · linarith [this.2]
+
+/-- **Every small cycle around the operating point is a Hopf cycle below the Hopf damping.** On
+the Hopf boundary (balanced, physical), for every `η > 0` there are `δ > 0` and `κ > 0` such that
+every nonconstant periodic orbit of the translated model field with the damping `D + μ`,
+`|μ| < δ`, staying in the ball of radius `δ`, has `μ < 0` (no small cycle at or above the Hopf
+damping) and `(1 − η) κ|μ| ≤ ‖critπ p z(t)‖² ≤ (1 + η) κ|μ|`, `κ = τ/(ω₀ l₁)`
+(`HopfCycle.periodic_amplitude`). Private evidence: periodic orbits are not sentences of the
+family. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_damping (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced)
+    (hH : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∃ κ > 0, ∀ μ, |μ| < δ → ∀ (z : ℝ → State 3) (T : ℝ), 0 < T →
+      (∀ t, HasDerivAt z (m.dampFamily (z t) μ) t) → (∀ t, z (t + T) = z t) →
+      (∃ t, z t ≠ z 0) → (∀ t, ‖z t‖ < δ) →
+      μ < 0 ∧ ∀ t, (1 - η) * (κ * |μ|) ≤
+          ‖critπ (HopfCoefficient.hopfP m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M)) (z t)‖ ^ 2 ∧
+        ‖critπ (HopfCoefficient.hopfP m.g.M m.g.D √(m.g.D * m.g.ωc / m.g.M)) (z t)‖ ^ 2 ≤
+          (1 + η) * (κ * |μ|) := by
+  obtain ⟨hcp, hchar, hr, hτn, hl⟩ := m.hopfData_damping hp hb hH
+  obtain ⟨hM, hD, hωc⟩ := hp
+  set ω₀ := √(m.g.D * m.g.ωc / m.g.M) with hω₀
+  have hω0 : 0 < ω₀ := Real.sqrt_pos.mpr (by positivity)
+  obtain ⟨δ, hδ, hamp⟩ := Dynamics.HopfCycle.periodic_amplitude m.contDiff_augField_dampFamily
+    (m.contDiff_augField_dampFamily (k := ⊤)).contDiffAt.analyticAt (m.dampFamily_origin hb)
+    hcp hchar hr m.hasDerivAt_fderiv_dampFamily hτn.ne hl.ne hη
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ (HopfCoefficient.hopfP m.g.M m.g.D ω₀)).comp
+      ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (dampJac m.g.M)).comp
+        (critι (HopfCoefficient.hopfQ m.g.M m.g.D ω₀)))) with hτdef
+  set ℓ := firstLyapunov (fun z => m.dampFamily z 0) 0 ω₀
+      (HopfCoefficient.hopfQ m.g.M m.g.D ω₀) (HopfCoefficient.hopfP m.g.M m.g.D ω₀) with hℓdef
+  have hκ : 0 < τ / (ω₀ * ℓ) := div_pos_of_neg_of_neg hτn (mul_neg_of_pos_of_neg hω0 hl)
+  refine ⟨δ, hδ, τ / (ω₀ * ℓ), hκ, fun μ hμ z T hT hz hzT hnc hzδ => ?_⟩
+  obtain ⟨hs, hbd⟩ := hamp μ hμ z T hT hz hzT hnc hzδ
+  have hτℓ : 0 < τ * ℓ := mul_pos_of_neg_of_neg hτn hl
+  have hμn : μ < 0 := by
+    by_contra hc
+    have : 0 ≤ μ * τ * ℓ := by rw [mul_assoc]; exact mul_nonneg (not_lt.mp hc) hτℓ.le
+    linarith
+  have hν : -(μ * τ) / (ω₀ * ℓ) = τ / (ω₀ * ℓ) * |μ| := by
+    rw [abs_of_neg hμn]; ring
+  refine ⟨hμn, fun t => ?_⟩
+  have := hbd t
+  rw [hν] at this
+  exact ⟨by linarith [this.1], by linarith [this.2]⟩
 
 end VSMLPF
 end powerlib.GFM

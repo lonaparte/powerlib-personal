@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFM.QVDroopHopf
 import theorem.GridTiedConverter.GFM.VSMLPFHopfCycle
-import theorem.Dynamics.HopfCycle
+import theorem.Dynamics.HopfCycleAmplitude
 
 /-! # Grid-forming converter with Q–V droop: Hopf cycles along the damping
 
@@ -19,8 +19,10 @@ Model boundary.
   damping, in closed form on the whole Hopf surface, with its sign; and the cycles of the generic
   Hopf theorem `Dynamics.HopfCycle.exists_hopfCycle` for this family wherever `ℓ₁ ≠ 0` and
   `τ ≠ 0`. Periodic orbits are not sentences of `QVDroop.family`, so the cycles are private
-  evidence; no new family, no connection conclusion. Not proved: uniqueness and orbital stability
-  of the cycles; cycles at the Bautin set (`hopfNum = 0`) or where `τ = 0`.
+  evidence; no new family, no connection conclusion. Every small cycle
+  (`Dynamics.HopfCycle.periodic_amplitude`): no small cycle on the other side; amplitude
+  `(1 ± η) ν`. Not proved: uniqueness and orbital stability of the cycles; cycles at the Bautin
+  set (`hopfNum = 0`) or where `τ = 0`.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.4–3.5 (Theorem 3.3,
 the transversality coefficient `Re λ'(0) = Re ⟨p, A'(0) q⟩`); the critical pair and `ℓ₁` of
@@ -49,6 +51,8 @@ Results.
   `K = −3`, `T = −1/7`: `hopfTransPos_dampTransNum`) has `τ > 0`
   (`hopfTransPos_paramTrace_pos`), so the hypothesis `E* > 0` cannot be dropped
   (`not_forall_paramTrace_damping_neg`).
+* Private evidence `Model.hopfData_damping` (the shared Hopf data) and
+  `Model.periodic_amplitude_damping` (every small cycle has `κμ > 0`, amplitude `(1 ± η) κμ`).
 * Private evidence `Model.exists_hopfCycle_damping`: for `hopfNum ≠ 0` and `T ≠ 0` there are
   `δ > 0` and `κ` with `sign κ = sign (T · hopfNum)` such that for every `μ` with `|μ| < δ` and
   `κ μ > 0` the model with the damping `D + μ` has a nonconstant periodic orbit around the
@@ -351,6 +355,70 @@ witness `hopfTransPos` has `E* = −5 < 0` and `τ > 0`; the hypothesis `E* > 0`
 
 /-! ## The Hopf cycles -/
 
+/-- The Hopf data of the damping family at a Hopf point (shared by the cycle and amplitude
+laws): the critical pair, the factorized characteristic polynomial, `τ ≠ 0`, `ℓ₁ ≠ 0`, and
+`sign(−τ/(ω ℓ₁)) = sign(T · hopfNum)`. -/
+@[tmio TM, powerlib_domain] private theorem Model.hopfData_damping (m : Model)
+    (hM : 0 < m.q.M) (hD : 0 < m.q.D) (hω : 0 < m.q.ωq) (hE : m.q.emf m.Qf ≠ 0)
+    (h : m.IsHopf) (hN : m.hopfNumAt ≠ 0) (hT : m.dampTransNum ≠ 0) :
+    IsCriticalPair (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt ∧
+      (jacobianC (fun z => m.dampFamily z 0) 0).charpoly =
+        (Polynomial.X ^ 2 + Polynomial.C ((m.hopfFreq : ℂ) ^ 2)) *
+          (Polynomial.X +
+            Polynomial.C (((m.q.routhTrace m.δ (m.q.emf m.Qf)) / m.q.M : ℝ) : ℂ)) ∧
+      Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
+        ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
+          (critι m.hopfQAt))) ≠ 0 ∧
+      firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt ≠ 0 ∧
+      SignType.sign (-(Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
+        ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
+          (critι m.hopfQAt)))) / (m.hopfFreq *
+        firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt)) =
+        SignType.sign (m.dampTransNum * m.hopfNumAt) := by
+  obtain ⟨hcp0, -, hchar0⟩ := m.hopf_data hM hD hω hE h
+  have hw : 0 < m.hopfFreq := (m.hopf_relations hM hD hω h).1
+  have hz := m.dampFamily_zero_param
+  have hcp : IsCriticalPair (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt := by
+    rw [hz]; exact hcp0
+  have hchar : (jacobianC (fun z => m.dampFamily z 0) 0).charpoly =
+      (Polynomial.X ^ 2 + Polynomial.C ((m.hopfFreq : ℂ) ^ 2)) *
+        (Polynomial.X +
+          Polynomial.C (((m.q.routhTrace m.δ (m.q.emf m.Qf)) / m.q.M : ℝ) : ℂ)) := by
+    rw [hz]; exact hchar0
+  have hls : SignType.sign (firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt
+      m.hopfPAt) = SignType.sign m.hopfNumAt := by
+    rw [hz]; exact m.sign_firstLyapunov_hopf hM hD hω hE h hcp0
+  have hl : firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt ≠ 0 := by
+    intro h0
+    rw [h0, sign_zero] at hls
+    exact hN (sign_eq_zero_iff.mp hls.symm)
+  have hτs := m.sign_paramTrace_damping hM hD hω h
+  have hτ : Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
+      ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
+        (critι m.hopfQAt))) ≠ 0 := by
+    rw [m.paramTrace_damping hM hD hω h]
+    have hA := h.2.1
+    have hd : 0 < m.q.routhTrace m.δ (m.q.emf m.Qf) ^ 2 + m.q.M ^ 2 * m.hopfFreq ^ 2 := by
+      positivity
+    exact div_ne_zero (neg_ne_zero.mpr hT) hd.ne'
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
+      ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
+        (critι m.hopfQAt))) with hτdef
+  set ℓ := firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt
+    with hℓdef
+  have hc : 0 < m.hopfFreq * ℓ ^ 2 := mul_pos hw (sq_pos_of_ne_zero hl)
+  have key : -τ / (m.hopfFreq * ℓ) * (m.hopfFreq * ℓ ^ 2) = -(τ * ℓ) := by
+    field_simp
+  refine ⟨hcp, hchar, hτ, hl, ?_⟩
+  calc SignType.sign (-τ / (m.hopfFreq * ℓ))
+      = SignType.sign (-τ / (m.hopfFreq * ℓ)) * SignType.sign (m.hopfFreq * ℓ ^ 2) := by
+        rw [sign_pos hc, mul_one]
+    _ = SignType.sign (-τ / (m.hopfFreq * ℓ) * (m.hopfFreq * ℓ ^ 2)) := (sign_mul _ _).symm
+    _ = -(SignType.sign τ * SignType.sign ℓ) := by rw [key, Left.sign_neg, sign_mul]
+    _ = SignType.sign m.dampTransNum * SignType.sign m.hopfNumAt := by
+        rw [hτs, hls, neg_mul, neg_neg]
+    _ = SignType.sign (m.dampTransNum * m.hopfNumAt) := (sign_mul _ _).symm
+
 /-- **Hopf cycles along the damping.** At a Hopf point (`A > 0`, `C > 0`, `G = 0`) with
 `M, D, ω_q > 0`, `E* ≠ 0`, `hopfNum ≠ 0` (`ℓ₁ ≠ 0`, `Model.sign_firstLyapunov_hopf`) and `T ≠ 0`
 (`τ ≠ 0`, `Model.sign_paramTrace_damping`), there are `δ > 0` and `κ` with
@@ -369,39 +437,11 @@ sentences of the family. -/
           (∃ t, z t ≠ z 0) ∧
           ∀ t, κ * μ / 8 ≤ ‖critπ m.hopfPAt (z t)‖ ^ 2 ∧
             ‖critπ m.hopfPAt (z t)‖ ^ 2 ≤ 8 * (κ * μ) := by
-  obtain ⟨hcp0, -, hchar0⟩ := m.hopf_data hM hD hω hE h
+  obtain ⟨hcp, hchar, hτ, hl, hκs⟩ := m.hopfData_damping hM hD hω hE h hN hT
   have hw : 0 < m.hopfFreq := (m.hopf_relations hM hD hω h).1
-  have hz := m.dampFamily_zero_param
-  have hcp : IsCriticalPair (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt := by
-    rw [hz]; exact hcp0
-  have hchar : (jacobianC (fun z => m.dampFamily z 0) 0).charpoly =
-      (Polynomial.X ^ 2 + Polynomial.C ((m.hopfFreq : ℂ) ^ 2)) *
-        (Polynomial.X +
-          Polynomial.C (((m.q.routhTrace m.δ (m.q.emf m.Qf)) / m.q.M : ℝ) : ℂ)) := by
-    rw [hz]; exact hchar0
-  have hr : ∀ s : ℂ, (Polynomial.X +
-      Polynomial.C (((m.q.routhTrace m.δ (m.q.emf m.Qf)) / m.q.M : ℝ) : ℂ)).eval s = 0 →
-      s.re < 0 :=
-    re_neg_of_eval_X_add_C (div_pos h.2.1 hM)
-  have hls : SignType.sign (firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt
-      m.hopfPAt) = SignType.sign m.hopfNumAt := by
-    rw [hz]; exact m.sign_firstLyapunov_hopf hM hD hω hE h hcp0
-  have hl : firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt ≠ 0 := by
-    intro h0
-    rw [h0, sign_zero] at hls
-    exact hN (sign_eq_zero_iff.mp hls.symm)
-  have hτs := m.sign_paramTrace_damping hM hD hω h
-  have hτ : Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
-      ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
-        (critι m.hopfQAt))) ≠ 0 := by
-    rw [m.paramTrace_damping hM hD hω h]
-    have hA := h.2.1
-    have hd : 0 < m.q.routhTrace m.δ (m.q.emf m.Qf) ^ 2 + m.q.M ^ 2 * m.hopfFreq ^ 2 := by
-      positivity
-    exact div_ne_zero (neg_ne_zero.mpr hT) hd.ne'
   obtain ⟨δ, hδ, hcyc⟩ := Dynamics.HopfCycle.exists_hopfCycle m.contDiff_augField_dampFamily
     (m.contDiff_augField_dampFamily (k := ⊤)).contDiffAt.analyticAt (m.dampFamily_origin h.1)
-    hcp hchar hr m.hasDerivAt_fderiv_dampFamily hτ hl
+    hcp hchar (re_neg_of_eval_X_add_C (div_pos h.2.1 hM)) m.hasDerivAt_fderiv_dampFamily hτ hl
   set τ := Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
       ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
         (critι m.hopfQAt))) with hτdef
@@ -411,14 +451,7 @@ sentences of the family. -/
   have key : -τ / (m.hopfFreq * ℓ) * (m.hopfFreq * ℓ ^ 2) = -(τ * ℓ) := by
     field_simp
   refine ⟨δ, hδ, -τ / (m.hopfFreq * ℓ), ?_, fun μ hμ hκμ => ?_⟩
-  · calc SignType.sign (-τ / (m.hopfFreq * ℓ))
-        = SignType.sign (-τ / (m.hopfFreq * ℓ)) * SignType.sign (m.hopfFreq * ℓ ^ 2) := by
-          rw [sign_pos hc, mul_one]
-      _ = SignType.sign (-τ / (m.hopfFreq * ℓ) * (m.hopfFreq * ℓ ^ 2)) := (sign_mul _ _).symm
-      _ = -(SignType.sign τ * SignType.sign ℓ) := by rw [key, Left.sign_neg, sign_mul]
-      _ = SignType.sign m.dampTransNum * SignType.sign m.hopfNumAt := by
-          rw [hτs, hls, neg_mul, neg_neg]
-      _ = SignType.sign (m.dampTransNum * m.hopfNumAt) := (sign_mul _ _).symm
+  · exact hκs
   · have e : μ * τ * ℓ = -((-τ / (m.hopfFreq * ℓ) * μ) * (m.hopfFreq * ℓ ^ 2)) := by
       linear_combination μ * key
     have hs : μ * τ * ℓ < 0 := by
@@ -429,6 +462,46 @@ sentences of the family. -/
     have ht := hamp t
     rw [hν] at ht
     exact ht
+
+/-- **Every small cycle along the damping.** With the hypotheses of
+`Model.exists_hopfCycle_damping`, for every `η > 0` there are `δ > 0` and `κ` with
+`sign κ = sign (T · hopfNum)` such that every nonconstant periodic orbit of the model with the
+damping `D + μ`, `|μ| < δ`, in the ball of radius `δ` has `κ μ > 0` (no small cycle on the other
+side) and `(1 − η) κμ ≤ ‖critπ p z(t)‖² ≤ (1 + η) κμ` (`HopfCycle.periodic_amplitude`). Private
+evidence. -/
+@[tmio TM, powerlib_domain] private theorem Model.periodic_amplitude_damping (m : Model)
+    (hM : 0 < m.q.M) (hD : 0 < m.q.D) (hω : 0 < m.q.ωq) (hE : m.q.emf m.Qf ≠ 0)
+    (h : m.IsHopf) (hN : m.hopfNumAt ≠ 0) (hT : m.dampTransNum ≠ 0) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∃ κ : ℝ, SignType.sign κ = SignType.sign (m.dampTransNum * m.hopfNumAt) ∧
+      ∀ μ, |μ| < δ → ∀ (z : ℝ → State 3) (T : ℝ), 0 < T →
+        (∀ t, HasDerivAt z (m.dampFamily (z t) μ) t) → (∀ t, z (t + T) = z t) →
+        (∃ t, z t ≠ z 0) → (∀ t, ‖z t‖ < δ) →
+        0 < κ * μ ∧ ∀ t, (1 - η) * (κ * μ) ≤ ‖critπ m.hopfPAt (z t)‖ ^ 2 ∧
+          ‖critπ m.hopfPAt (z t)‖ ^ 2 ≤ (1 + η) * (κ * μ) := by
+  obtain ⟨hcp, hchar, hτ, hl, hκs⟩ := m.hopfData_damping hM hD hω hE h hN hT
+  have hw : 0 < m.hopfFreq := (m.hopf_relations hM hD hω h).1
+  obtain ⟨δ, hδ, hamp⟩ := Dynamics.HopfCycle.periodic_amplitude m.contDiff_augField_dampFamily
+    (m.contDiff_augField_dampFamily (k := ⊤)).contDiffAt.analyticAt (m.dampFamily_origin h.1)
+    hcp hchar (re_neg_of_eval_X_add_C (div_pos h.2.1 hM)) m.hasDerivAt_fderiv_dampFamily hτ hl hη
+  set τ := Dynamics.PlanarHopf.paramTrace ((critπ m.hopfPAt).comp
+      ((Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (VSMLPF.dampJac m.q.M)).comp
+        (critι m.hopfQAt))) with hτdef
+  set ℓ := firstLyapunov (fun z => m.dampFamily z 0) 0 m.hopfFreq m.hopfQAt m.hopfPAt
+    with hℓdef
+  have hc : 0 < m.hopfFreq * ℓ ^ 2 := mul_pos hw (sq_pos_of_ne_zero hl)
+  have key : -τ / (m.hopfFreq * ℓ) * (m.hopfFreq * ℓ ^ 2) = -(τ * ℓ) := by
+    field_simp
+  refine ⟨δ, hδ, -τ / (m.hopfFreq * ℓ), hκs, fun μ hμ z T hT0 hz hzT hnc hzδ => ?_⟩
+  obtain ⟨hs, hbd⟩ := hamp μ hμ z T hT0 hz hzT hnc hzδ
+  have e : μ * τ * ℓ = -((-τ / (m.hopfFreq * ℓ) * μ) * (m.hopfFreq * ℓ ^ 2)) := by
+    linear_combination μ * key
+  have hpos : 0 < -τ / (m.hopfFreq * ℓ) * μ := by
+    rw [e] at hs
+    exact pos_of_mul_pos_left (neg_neg_iff_pos.mp hs) hc.le
+  have hν : -(μ * τ) / (m.hopfFreq * ℓ) = -τ / (m.hopfFreq * ℓ) * μ := by ring
+  refine ⟨hpos, fun t => ?_⟩
+  rw [hν] at hbd
+  exact hbd t
 
 /-- **Hopf cycles on the physical branch.** In the physical range (`M, D, ω_q, n_q, X > 0`,
 `E₀ + n_q Q_ref > 0`) at a Hopf point with `E* > 0` and `hopfNum ≠ 0` (`T > 0` there,

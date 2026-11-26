@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFM.Bifurcation
 import theorem.NormalForm.BogdanovTakens
-import theorem.Dynamics.CenterReductionBT
+import theorem.Dynamics.BTInstability
 
 /-! # Bogdanov–Takens and fold coefficients of the quasi-static GFM
 
@@ -28,8 +28,8 @@ Model boundary.
   reduced dynamics: a centre manifold exists and carries the truncated Bogdanov–Takens normal
   form up to `o(‖y‖²)` (the generic reduction `theorem/Dynamics/CenterReductionBT.lean`); the
   corner has `D = 0`, outside the physical range `D > 0` of `VSMLPFLossy.Meets`. No unfolding,
-  bifurcation diagram or criticality is asserted and no family is defined: every result is
-  static evidence on the model.
+  bifurcation diagram or criticality is asserted and no family is defined; the corner is also
+  decided (Lyapunov instability, LeanForControl's `Unstable`, through `VSMLPFLossy.family`).
 
 Source: GFM counterpart study, note t3-bifurcation (b) `B3` (the coefficients of the corners
 `D = K = 0`: three states `a b < 0`, two states `b = 0`) and (d) `F1`, `F2` (the fold coefficient
@@ -59,6 +59,8 @@ Results.
   `ẏ₁ = ((P(δ*) − c₀)/(2M)) y₀² − ((P(δ*) − c₀)/(M ω_c)) y₀y₁ + o(‖y‖²)`: the instance of
   `NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm` (characteristic
   polynomial `s²(s + ω_c)`, `VSMLPF.charpoly_jacobian`; one-dimensional kernel).
+* `VSMLPFLossy.Model.coeffA_of_corner_eq_zero_iff`: at the corner `a = 0` exactly when `A = 0`
+  (no synchronizing power): the codimension-three degeneracy is located.
 * The damped fold `K = 0`, `D ≠ 0`, where the zero eigenvalue is simple
   (`VSMLPF.rootMultiplicity_zero_le_one`): the normalised null pair `q = (1, 0, 0)`,
   `p = (1, M/D, −1/(D ω_c))` (`VSMLPFLossy.Model.isNullPair_of_fold`); for every normalised
@@ -70,6 +72,13 @@ Results.
   `(e₁, e₂)`, which is itself a chain (`swing_coeff_of_corner`): the swing friction does not
   depend on the angle; the damped fold has the null pair `(1, 0)`, `(1, M/D)` and
   `a_SN = (P_e(δ*) − k₁)/(2D)`, `⟨p, ∂f/∂P_m⟩ = 1/D` (`swing_foldCoeff_of_fold`).
+
+Family and connection conclusions.
+No new family: connection conclusions on `VSMLPFLossy.family`.
+* **`VSMLPFLossy.mem_den_unstable_of_corner`** (the corner is a cusp): at `D = 0`, `K = 0` with
+  power balance, `M, ω_c > 0` and `A ≠ 0` the three-state model is unstable
+  (`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`,
+  `theorem/Dynamics/BTInstability.lean`).
 -/
 
 noncomputable section
@@ -253,35 +262,22 @@ open powerlib.NormalForm.LyapunovCoefficient (cmat cmat_toEuclideanCLM)
     rw [fderiv_comp_add_right]
   rw [h, fderiv_comp_add_right, zero_add]
 
-/-- **The centre-manifold reduction at the corner.** At `D = 0`, `K = 0` with power balance
-(`M, ω_c > 0`) the three-state model has a Lipschitz, `C¹`, tangent centre manifold satisfying
-the invariance equation near `0` (the static form of local invariance; the trajectory form is in
-`NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm`) over the plane of the
-chain `q₀ = (1, 0, 0)`, `q₁ = (0, 1, 0)`, `p₀ = (1, 0, 1/(M ω_c²))`,
-`p₁ = (0, 1, −1/(M ω_c))`, and on it the field, in the coordinates `w = π x` and after Kuznetsov's
-quadratic change of coordinates, is the Bogdanov–Takens normal form
-`ẏ₀ = y₁`, `ẏ₁ = a y₀² + b y₀ y₁ + o(‖y‖²)` with `a = (P(δ*) − c₀)/(2M)`,
-`b = −(P(δ*) − c₀)/(M ω_c)`. Static evidence on the model, not a connection conclusion. -/
-@[tmio M, powerlib_domain] theorem Model.exists_centerManifold_btNormalForm_of_corner
-    (m : Model) (hM : 0 < m.p.M) (hω : 0 < m.p.ωc) (hD : m.p.D = 0) (hK : m.K = 0)
-    (hb : m.p.Pe m.δ = m.p.Pref) :
-    ∃ h : State 3 → State 3, ∃ L : NNReal,
-      IsGraphMap (btP (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
-        (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) h ∧ LipschitzWith L h ∧
-      IsLittleOrder (btP (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
-        (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) h 1 ∧ ContDiff ℝ 1 h ∧
-      IsInvariantGraph (fderiv ℝ m.field 0) (btP (mk3 1 0 0) (mk3 0 1 0)
-        (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))))
-        (fun x => m.field x - fderiv ℝ m.field 0 x) h ∧
-      (fun w => fderiv ℝ (btCoordChange m.field (mk3 1 0 0) (mk3 0 1 0)
-            (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) w
-          (btπ (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))
-            (m.field (btι (mk3 1 0 0) (mk3 0 1 0) w +
-              h (btι (mk3 1 0 0) (mk3 0 1 0) w)))) -
-        NormalForm.BogdanovTakens.field ⟨0, 0, (m.p.Pe m.δ - m.p.c0) / (2 * m.p.M),
-          -(m.p.Pe m.δ - m.p.c0) / (m.p.M * m.p.ωc)⟩
-          (btCoordChange m.field (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
-            (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) w)) =o[𝓝 0] fun w => ‖w‖ ^ 2 := by
+/-- The hypotheses of the reduction at the corner `D = 0`, `K = 0` with power balance
+(`M, ω_c > 0`): the field is `C²` and vanishes at `0`, the chain `q₀ = (1, 0, 0)`,
+`q₁ = (0, 1, 0)`, `p₀ = (1, 0, 1/(M ω_c²))`, `p₁ = (0, 1, −1/(M ω_c))`, a one-dimensional kernel,
+`det(sI − J) = s² (s + ω_c)` and `a = (P(δ*) − c₀)/(2M)`, `b = −(P(δ*) − c₀)/(M ω_c)`. -/
+@[tmio M, powerlib_domain] private theorem corner_data (m : Model) (hM : 0 < m.p.M)
+    (hω : 0 < m.p.ωc) (hD : m.p.D = 0) (hK : m.K = 0) (hb : m.p.Pe m.δ = m.p.Pref) :
+    ContDiff ℝ 2 m.field ∧ m.field 0 = 0 ∧
+      IsBTChain (fderiv ℝ m.field 0) (mk3 1 0 0) (mk3 0 1 0)
+        (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) ∧
+      (∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • mk3 1 0 0) ∧
+      (cmat (fderiv ℝ m.field 0)).charpoly = X ^ 2 * (X + C (m.p.ωc : ℂ)) ∧
+      (∀ s : ℂ, (X + C (m.p.ωc : ℂ)).eval s = 0 → s.re < 0) ∧
+      coeffA m.field 0 (mk3 1 0 0) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) =
+        (m.p.Pe m.δ - m.p.c0) / (2 * m.p.M) ∧
+      coeffB m.field 0 (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+        (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) = -(m.p.Pe m.δ - m.p.c0) / (m.p.M * m.p.ωc) := by
   have hK' : m.p.A * Real.cos (m.δ - m.p.α) = 0 := hK
   have hF : ContDiff ℝ 2 m.field := m.p.contDiff_field.comp (contDiff_id.add contDiff_const)
   have hF0 : m.field 0 = 0 := by
@@ -323,23 +319,90 @@ quadratic change of coordinates, is the Bogdanov–Takens normal form
     simp only [eval_add, eval_X, eval_C] at hs
     have : s = -(m.p.ωc : ℂ) := by linear_combination hs
     rw [this]; simp [hω]
-  obtain ⟨-, -, h, L, hgm, hL, hh, hC1, hieq, -, hnf⟩ :=
-    hch.exists_centerManifold_btNormalForm hF hF0 hker hchar hr
-  refine ⟨h, L, hgm, hL, hh, hC1, hieq, ?_⟩
   have hch' : IsBTChain (fderiv ℝ m.p.field m.point) (mk3 1 0 0) (mk3 0 1 0)
       (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) :=
     m.isBTChain_of_corner hM.ne' hω.ne' hD hK
   obtain ⟨ha, hb'⟩ := m.coeff_of_corner hM.ne' hω.ne' hD hK hch'
-  have eA : coeffA m.field 0 (mk3 1 0 0) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) =
-      (m.p.Pe m.δ - m.p.c0) / (2 * m.p.M) := by
-    rw [coeffA, model_fderiv2, ← ha, coeffA]
-  have eB : coeffB m.field 0 (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
-      (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) = -(m.p.Pe m.δ - m.p.c0) / (m.p.M * m.p.ωc) := by
-    rw [coeffB, model_fderiv2, ← hb', coeffB]
+  refine ⟨hF, hF0, hch, hker, hchar, hr, ?_, ?_⟩
+  · rw [coeffA, model_fderiv2, ← ha, coeffA]
+  · rw [coeffB, model_fderiv2, ← hb', coeffB]
+
+/-- **The centre-manifold reduction at the corner.** At `D = 0`, `K = 0` with power balance
+(`M, ω_c > 0`) the three-state model has a Lipschitz, `C¹`, tangent centre manifold satisfying
+the invariance equation near `0` (the static form of local invariance; the trajectory form is in
+`NormalForm.BogdanovTakens.IsBTChain.exists_centerManifold_btNormalForm`) over the plane of the
+chain `q₀ = (1, 0, 0)`, `q₁ = (0, 1, 0)`, `p₀ = (1, 0, 1/(M ω_c²))`,
+`p₁ = (0, 1, −1/(M ω_c))`, and on it the field, in the coordinates `w = π x` and after Kuznetsov's
+quadratic change of coordinates, is the Bogdanov–Takens normal form
+`ẏ₀ = y₁`, `ẏ₁ = a y₀² + b y₀ y₁ + o(‖y‖²)` with `a = (P(δ*) − c₀)/(2M)`,
+`b = −(P(δ*) − c₀)/(M ω_c)`. Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.exists_centerManifold_btNormalForm_of_corner
+    (m : Model) (hM : 0 < m.p.M) (hω : 0 < m.p.ωc) (hD : m.p.D = 0) (hK : m.K = 0)
+    (hb : m.p.Pe m.δ = m.p.Pref) :
+    ∃ h : State 3 → State 3, ∃ L : NNReal,
+      IsGraphMap (btP (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+        (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) h ∧ LipschitzWith L h ∧
+      IsLittleOrder (btP (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+        (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) h 1 ∧ ContDiff ℝ 1 h ∧
+      IsInvariantGraph (fderiv ℝ m.field 0) (btP (mk3 1 0 0) (mk3 0 1 0)
+        (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))))
+        (fun x => m.field x - fderiv ℝ m.field 0 x) h ∧
+      (fun w => fderiv ℝ (btCoordChange m.field (mk3 1 0 0) (mk3 0 1 0)
+            (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))) w
+          (btπ (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2))) (mk3 0 1 (-1 / (m.p.M * m.p.ωc)))
+            (m.field (btι (mk3 1 0 0) (mk3 0 1 0) w +
+              h (btι (mk3 1 0 0) (mk3 0 1 0) w)))) -
+        NormalForm.BogdanovTakens.field ⟨0, 0, (m.p.Pe m.δ - m.p.c0) / (2 * m.p.M),
+          -(m.p.Pe m.δ - m.p.c0) / (m.p.M * m.p.ωc)⟩
+          (btCoordChange m.field (mk3 1 0 0) (mk3 0 1 0) (mk3 1 0 (1 / (m.p.M * m.p.ωc ^ 2)))
+            (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) w)) =o[𝓝 0] fun w => ‖w‖ ^ 2 := by
+  obtain ⟨hF, hF0, hch, hker, hchar, hr, eA, eB⟩ := corner_data m hM hω hD hK hb
+  obtain ⟨-, -, h, L, hgm, hL, hh, hC1, hieq, -, hnf⟩ :=
+    hch.exists_centerManifold_btNormalForm hF hF0 hker hchar hr
+  refine ⟨h, L, hgm, hL, hh, hC1, hieq, ?_⟩
   rw [eA, eB] at hnf
   exact hnf
 
+/-- **The coefficient `a` vanishes at the corner only without synchronizing power.** At
+`D = 0`, `K = A cos(δ* − α) = 0` with power balance (`M, ω_c > 0`), `a = (P(δ*) − c₀)/(2M) =
+A sin(δ* − α)/(2M)` is zero exactly when `A = 0` (then `K = 0` for every angle and the field does
+not depend on `δ`). Static evidence on the model, not a connection conclusion. -/
+@[tmio M, powerlib_domain] theorem Model.coeffA_of_corner_eq_zero_iff (m : Model)
+    (hM : 0 < m.p.M) (hω : 0 < m.p.ωc) (hD : m.p.D = 0) (hK : m.K = 0)
+    (hb : m.p.Pe m.δ = m.p.Pref) :
+    coeffA m.field 0 (mk3 1 0 0) (mk3 0 1 (-1 / (m.p.M * m.p.ωc))) = 0 ↔ m.p.A = 0 := by
+  obtain ⟨-, -, -, -, -, -, eA, -⟩ := corner_data m hM hω hD hK hb
+  have hK' : m.p.A * Real.cos (m.δ - m.p.α) = 0 := hK
+  have hP : m.p.Pe m.δ - m.p.c0 = m.p.A * Real.sin (m.δ - m.p.α) := by simp [Pe]
+  rw [eA, hP, div_eq_zero_iff, or_iff_left (by positivity)]
+  constructor
+  · intro h
+    have h2 : m.p.A ^ 2 * (Real.sin (m.δ - m.p.α) ^ 2 + Real.cos (m.δ - m.p.α) ^ 2) = 0 := by
+      linear_combination (m.p.A * Real.sin (m.δ - m.p.α)) * h +
+        (m.p.A * Real.cos (m.δ - m.p.α)) * hK'
+    rw [Real.sin_sq_add_cos_sq, mul_one] at h2
+    exact pow_eq_zero_iff (two_ne_zero) |>.mp h2
+  · intro h; rw [h, zero_mul]
+
 end Reduction
+
+/-! ## The corner is unstable -/
+
+/-- **The Bogdanov–Takens corner is unstable** (the cusp,
+`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`): at `D = 0`, `K = 0` with power
+balance, `M, ω_c > 0` and `A ≠ 0` the three-state model is unstable; its coefficient
+`a = (P(δ*) − c₀)/(2M)` does not vanish (`Model.coeffA_of_corner_eq_zero_iff`). The corner lies
+outside the physical range `D > 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_corner (m : Model) (hM : 0 < m.p.M)
+    (hω : 0 < m.p.ωc) (hD : m.p.D = 0) (hK : m.K = 0) (hb : m.p.Pe m.δ = m.p.Pref)
+    (hA : m.p.A ≠ 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
+  obtain ⟨hF, hF0, hch, hker, hchar, hr, -, -⟩ := corner_data m hM hω hD hK hb
+  exact hch.unstable_of_coeffA_ne_zero hF hF0 hker hchar hr
+    (fun h => hA ((m.coeffA_of_corner_eq_zero_iff hM hω hD hK hb).mp h))
 
 /-! ## The damped fold `K = 0`, `D ≠ 0` -/
 

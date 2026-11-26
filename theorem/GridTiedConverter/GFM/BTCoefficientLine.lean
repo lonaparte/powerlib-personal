@@ -1,6 +1,6 @@
 import theorem.GridTiedConverter.GFM.BifurcationLine
 import theorem.NormalForm.BogdanovTakens
-import theorem.Dynamics.CenterReductionBT
+import theorem.Dynamics.BTInstability
 
 /-! # The Bogdanov–Takens coefficients of the VSM on a dynamic R–L line
 
@@ -22,7 +22,8 @@ projection formulas from the first and second `fderiv` of the field at the opera
 carries the truncated normal form up to `o(‖y‖²)` (`theorem/Dynamics/CenterReductionBT.lean`).
 The unfolding (fold line, Hopf curve, linear versality) is in
 `theorem/GridTiedConverter/GFM/BifurcationLine.lean`; no homoclinic curve or criticality is
-asserted and no family is defined: every result is static evidence on the model.
+asserted and no family is defined. The Bogdanov–Takens point is decided: Lyapunov instability
+(LeanForControl's `Unstable`) through `Line.VSM.family`.
 
 Source: GFM counterpart study, note t3-bifurcation (b) (the BT point of the dynamic line at
 `D_BT = D_line`, its coefficients and the sign of `a b` computed numerically on 20 random sets,
@@ -59,6 +60,19 @@ Results.
 * `Line.VSM.Model.coeffA_mul_coeffB_pos_iff`: for `R, X, L > 0`, `E V ≠ 0`, `n > 0`,
   `a b = (P(δ*) − c₀)² L² (R² − X²) D_line/(|Z|⁴ n³)`, so `a b > 0` iff `X < R` and `a b < 0`
   iff `R < X`.
+* `Line.VSM.Model.coeff2_of_bt` (`a₂ = |Z|² n/(L² M)` at the Bogdanov–Takens point) and
+  `Line.VSM.Model.qssPower_sub_c0_ne_zero_of_fold` (`P(δ*) − c₀ = ± A ≠ 0` at every physical
+  fold): `a = (P(δ*) − c₀)/(2n)` never vanishes, the Bogdanov–Takens points of `Line.VSM` have no
+  codimension-three degeneracy `a = 0`.
+
+Family and connection conclusions.
+No new family: connection conclusions on `Line.VSM.family`.
+* **`Line.VSM.mem_den_unstable_of_bt`** (the Bogdanov–Takens point is a cusp): a balanced
+  physical model at `K = 0` with `D = D_line` and `n > 0` is unstable
+  (`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`,
+  `theorem/Dynamics/BTInstability.lean`); with `n < 0` the strict Routh violation `a₂ < 0`
+  decides it (`Line.VSM.mem_den_unstable_of_fold_of_ne_zeroHopf`,
+  `theorem/GridTiedConverter/GFM/HopfLineMembership.lean`).
 -/
 
 noncomputable section
@@ -424,8 +438,10 @@ open powerlib.NormalForm.LyapunovCoefficient (cmat cmat_toEuclideanCLM)
     rw [fderiv_comp_add_right]
   rw [h, fderiv_comp_add_right, zero_add]
 
-/-- At the Bogdanov–Takens point `a₂ = |Z|² n/(L² M)` (`n = btInertia`). -/
-@[tmio M, powerlib_domain] private theorem coeff2_of_bt (m : Model) (hp : Meets m .physical)
+/-- **The quadratic coefficient at the Bogdanov–Takens point**: at a physical fold `K = 0` with
+`D = D_line`, `a₂ = |Z|² n/(L² M)` (`n = btInertia`), so the two eigenvalues besides the double
+zero are stable exactly when `n > 0`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.coeff2_of_bt (m : Model) (hp : Meets m .physical)
     (hK : m.K = 0) (hD : m.g.D = m.g.Dline) :
     m.g.coeff2 m.Q = m.g.absSq * m.g.btInertia / (m.g.L ^ 2 * m.g.M) := by
   have hZ := hp.1.absSq_pos
@@ -443,6 +459,96 @@ open powerlib.NormalForm.LyapunovCoefficient (cmat cmat_toEuclideanCLM)
   field_simp
   rw [hXd]
   ring
+
+/-- **The coefficient `P(δ*) − c₀` at a fold**: at a physical model with `K = 0`,
+`P(δ*) − c₀ = ± A ≠ 0`, `A = E V/|Z|` (the fold has no cusp points and the Bogdanov–Takens
+coefficient `a` does not vanish). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.qssPower_sub_c0_ne_zero_of_fold {m : Model}
+    (hp : Meets m .physical) (hK : m.K = 0) : m.g.qssPower m.δ - m.g.c0 ≠ 0 := by
+  have hZ := hp.1.absSq_pos
+  have hA : m.g.A ≠ 0 :=
+    div_ne_zero (mul_pos hp.1.E hp.1.V).ne' (Real.sqrt_pos.mpr hZ).ne'
+  have hcos : Real.cos (m.δ - m.g.α) = 0 :=
+    (mul_eq_zero.mp (show m.g.A * Real.cos (m.δ - m.g.α) = 0 from hK)).resolve_left hA
+  have h : 0 < (m.g.qssPower m.δ - m.g.c0) ^ 2 := by
+    rw [m.g.qssPower_eq_polar hZ, add_sub_cancel_left, mul_pow,
+      show Real.sin (m.δ - m.g.α) ^ 2 = 1 by
+        nlinarith [Real.sin_sq_add_cos_sq (m.δ - m.g.α)], mul_one]
+    positivity
+  intro h0
+  rw [h0] at h
+  simp at h
+
+/-- The hypotheses of the reduction at the Bogdanov–Takens point (balanced physical, `K = 0`,
+`D = D_line`, `n > 0`): an adjoint chain, the field `C²` and zero at `0`, a one-dimensional kernel,
+`det(sI − J) = s² (s² + a₃ s + a₂)` with a Hurwitz cofactor, and the coefficients `a`, `b`. -/
+@[tmio M, powerlib_domain] private theorem bt_data (m : Model) (hp : Meets m .physical)
+    (hb : Meets m .balanced) (hK : m.K = 0) (hD : m.g.D = m.g.Dline)
+    (hn : 0 < m.g.btInertia) :
+    ∃ p₀ p₁ : State 4,
+      IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ ∧
+      ContDiff ℝ 2 m.field ∧ m.field 0 = 0 ∧
+      (∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • WithLp.toLp 2 m.tangent) ∧
+      (cmat (fderiv ℝ m.field 0)).charpoly =
+        X ^ 2 * (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X + C ((m.g.coeff2 m.Q : ℝ) : ℂ)) ∧
+      (∀ s : ℂ, (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X +
+        C ((m.g.coeff2 m.Q : ℝ) : ℂ)).eval s = 0 → s.re < 0) ∧
+      coeffA m.field 0 (WithLp.toLp 2 m.tangent) p₁ =
+        (m.g.qssPower m.δ - m.g.c0) / (2 * m.g.btInertia) ∧
+      coeffB m.field 0 (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ =
+        2 * (m.g.qssPower m.δ - m.g.c0) * m.g.L ^ 2 * (m.g.R ^ 2 - m.g.X ^ 2) * m.g.Dline /
+          (m.g.absSq ^ 2 * m.g.btInertia ^ 2) := by
+  have hZ := hp.1.absSq_pos
+  have hL := hp.1.L
+  have hM := hp.2.1
+  have hV : m.g.E * m.g.V ≠ 0 := (mul_pos hp.1.E hp.1.V).ne'
+  obtain ⟨p₀, p₁, hch'⟩ := m.exists_isBTChain_of_bt hM.ne' hL.ne' hZ hV hK hD hn.ne'
+  have hch : IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain)
+      p₀ p₁ := by rw [model_fderiv]; exact hch'
+  refine ⟨p₀, p₁, hch, ?_⟩
+  have hF : ContDiff ℝ 2 m.field := (m.g.contDiff_field (k := 2)).comp
+    (contDiff_id.add contDiff_const)
+  have hF0 : m.field 0 = 0 := by
+    show m.g.field (0 + m.point) = 0
+    rw [zero_add]
+    exact (m.field_point_eq_zero_iff hM.ne' hL.ne' hZ.ne').mpr hb
+  have hker : ∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • WithLp.toLp 2 m.tangent := by
+    intro v hv
+    rw [model_fderiv, m.fderiv_point] at hv
+    have hv' : m.jac *ᵥ (WithLp.ofLp v) = 0 := by
+      have := congrArg WithLp.ofLp hv
+      simpa [Matrix.ofLp_toEuclideanCLM] using this
+    have he := m.eq_smul_tangent_of_mulVec_eq_zero hL.ne' hZ hv'
+    refine ⟨v 0, ?_⟩
+    ext i
+    have := congrFun he i
+    simpa using this
+  have h1 : m.g.coeff1 m.Q = 0 := by
+    rw [m.coeff1_eq hL.ne' hZ, hK, hD, sub_self]; simp
+  have h0 : m.g.coeff0 m.Q = 0 := by
+    rw [m.coeff0_eq hL.ne' hZ, hK]; simp
+  have h2 := m.coeff2_of_bt hp hK hD
+  have hchar : (cmat (fderiv ℝ m.field 0)).charpoly =
+      X ^ 2 * (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X + C ((m.g.coeff2 m.Q : ℝ) : ℂ)) := by
+    rw [model_fderiv, m.fderiv_point, cmat_toEuclideanCLM,
+      show (fun x : ℝ => (x : ℂ)) = ⇑(algebraMap ℝ ℂ) from rfl, Matrix.charpoly_map,
+      m.charpoly_jac, h1, h0]
+    simp
+    ring
+  have h3p : 0 < m.g.coeff3 := by
+    have : 0 ≤ m.g.σ := div_nonneg hp.1.R hL.le
+    have := hp.2.2
+    unfold coeff3; positivity
+  have h2p : 0 < m.g.coeff2 m.Q := by rw [h2]; positivity
+  have hr : ∀ s : ℂ, (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X +
+      C ((m.g.coeff2 m.Q : ℝ) : ℂ)).eval s = 0 → s.re < 0 := by
+    intro s hs
+    simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at hs
+    exact (Criteria.quadratic_roots_re_neg_iff _ _).mpr ⟨h3p, h2p⟩ s hs
+  obtain ⟨ha, hb'⟩ := m.coeff_of_bt hM.ne' hL.ne' hZ hV hK hn.ne' hch'
+  refine ⟨hF, hF0, hker, hchar, hr, ?_, ?_⟩
+  · rw [coeffA, model_fderiv2, ← ha, coeffA]
+  · rw [coeffB, model_fderiv2, ← hb', coeffB]
 
 /-- **The centre-manifold reduction at the Bogdanov–Takens point of the dynamic line.** For a
 balanced physical model at a fold `K = 0` with the line damping `D = D_line` and a positive
@@ -478,68 +584,36 @@ connection conclusion. -/
               (m.g.absSq ^ 2 * m.g.btInertia ^ 2)⟩
             (btCoordChange m.field (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ w))
           =o[𝓝 0] fun w => ‖w‖ ^ 2 := by
-  have hZ := hp.1.absSq_pos
-  have hL := hp.1.L
-  have hM := hp.2.1
-  have hV : m.g.E * m.g.V ≠ 0 := (mul_pos hp.1.E hp.1.V).ne'
-  obtain ⟨p₀, p₁, hch'⟩ := m.exists_isBTChain_of_bt hM.ne' hL.ne' hZ hV hK hD hn.ne'
-  have hch : IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain)
-      p₀ p₁ := by rw [model_fderiv]; exact hch'
+  obtain ⟨p₀, p₁, hch, hF, hF0, hker, hchar, hr, eA, eB⟩ := bt_data m hp hb hK hD hn
   refine ⟨p₀, p₁, hch, ?_⟩
-  have hF : ContDiff ℝ 2 m.field := (m.g.contDiff_field (k := 2)).comp
-    (contDiff_id.add contDiff_const)
-  have hF0 : m.field 0 = 0 := by
-    show m.g.field (0 + m.point) = 0
-    rw [zero_add]
-    exact (m.field_point_eq_zero_iff hM.ne' hL.ne' hZ.ne').mpr hb
-  have hker : ∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • WithLp.toLp 2 m.tangent := by
-    intro v hv
-    rw [model_fderiv, m.fderiv_point] at hv
-    have hv' : m.jac *ᵥ (WithLp.ofLp v) = 0 := by
-      have := congrArg WithLp.ofLp hv
-      simpa [Matrix.ofLp_toEuclideanCLM] using this
-    have he := m.eq_smul_tangent_of_mulVec_eq_zero hL.ne' hZ hv'
-    refine ⟨v 0, ?_⟩
-    ext i
-    have := congrFun he i
-    simpa using this
-  have h1 : m.g.coeff1 m.Q = 0 := by
-    rw [m.coeff1_eq hL.ne' hZ, hK, hD, sub_self]; simp
-  have h0 : m.g.coeff0 m.Q = 0 := by
-    rw [m.coeff0_eq hL.ne' hZ, hK]; simp
-  have h2 := coeff2_of_bt m hp hK hD
-  have hchar : (cmat (fderiv ℝ m.field 0)).charpoly =
-      X ^ 2 * (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X + C ((m.g.coeff2 m.Q : ℝ) : ℂ)) := by
-    rw [model_fderiv, m.fderiv_point, cmat_toEuclideanCLM,
-      show (fun x : ℝ => (x : ℂ)) = ⇑(algebraMap ℝ ℂ) from rfl, Matrix.charpoly_map,
-      m.charpoly_jac, h1, h0]
-    simp
-    ring
-  have h3p : 0 < m.g.coeff3 := by
-    have : 0 ≤ m.g.σ := div_nonneg hp.1.R hL.le
-    have := hp.2.2
-    unfold coeff3; positivity
-  have h2p : 0 < m.g.coeff2 m.Q := by rw [h2]; positivity
-  have hr : ∀ s : ℂ, (X ^ 2 + C ((m.g.coeff3 : ℝ) : ℂ) * X +
-      C ((m.g.coeff2 m.Q : ℝ) : ℂ)).eval s = 0 → s.re < 0 := by
-    intro s hs
-    simp only [eval_add, eval_pow, eval_X, eval_mul, eval_C] at hs
-    exact (Criteria.quadratic_roots_re_neg_iff _ _).mpr ⟨h3p, h2p⟩ s hs
   obtain ⟨-, -, h, L, hgm, hL', hh, hC1, hieq, -, hnf⟩ :=
     hch.exists_centerManifold_btNormalForm hF hF0 hker hchar hr
   refine ⟨h, L, hgm, hL', hh, hC1, hieq, ?_⟩
-  obtain ⟨ha, hb'⟩ := m.coeff_of_bt hM.ne' hL.ne' hZ hV hK hn.ne' hch'
-  have eA : coeffA m.field 0 (WithLp.toLp 2 m.tangent) p₁ =
-      (m.g.qssPower m.δ - m.g.c0) / (2 * m.g.btInertia) := by
-    rw [coeffA, model_fderiv2, ← ha, coeffA]
-  have eB : coeffB m.field 0 (WithLp.toLp 2 m.tangent) (WithLp.toLp 2 m.chain) p₀ p₁ =
-      2 * (m.g.qssPower m.δ - m.g.c0) * m.g.L ^ 2 * (m.g.R ^ 2 - m.g.X ^ 2) * m.g.Dline /
-        (m.g.absSq ^ 2 * m.g.btInertia ^ 2) := by
-    rw [coeffB, model_fderiv2, ← hb', coeffB]
   rw [eA, eB] at hnf
   exact hnf
 
 end Reduction
+
+/-! ## The Bogdanov–Takens point is unstable -/
+
+/-- **The Bogdanov–Takens point of the dynamic line is unstable** (the cusp,
+`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`): a balanced physical model at a
+fold `K = 0` with the line damping `D = D_line` and a positive effective inertia `n > 0` (the
+other two eigenvalues stable, `Model.coeff2_of_bt`) is unstable. Its coefficient
+`a = (P(δ*) − c₀)/(2n)` never vanishes there (`Model.qssPower_sub_c0_ne_zero_of_fold`): the
+Bogdanov–Takens points of `Line.VSM` have no codimension-three degeneracy `a = 0`. -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_bt (m : Model) (hp : Meets m .physical)
+    (hb : Meets m .balanced) (hK : m.K = 0) (hD : m.g.D = m.g.Dline)
+    (hn : 0 < m.g.btInertia) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
+  obtain ⟨p₀, p₁, hch, hF, hF0, hker, hchar, hr, eA, -⟩ := bt_data m hp hb hK hD hn
+  refine hch.unstable_of_coeffA_ne_zero hF hF0 hker hchar hr ?_
+  rw [eA]
+  exact div_ne_zero (m.qssPower_sub_c0_ne_zero_of_fold hp hK)
+    (mul_ne_zero two_ne_zero hn.ne')
 
 end VSM
 end powerlib.GFM.Line

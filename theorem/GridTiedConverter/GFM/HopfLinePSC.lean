@@ -1,6 +1,7 @@
 import theorem.GridTiedConverter.GFM.Line.PSC
 import theorem.Dynamics.HopfDichotomy
 import theorem.Dynamics.SaddleNodeReduction
+import theorem.Dynamics.BTInstability
 
 /-! # Hopf and fold points of power synchronization on a dynamic R–L line
 
@@ -25,17 +26,23 @@ Model boundary.
   the coordinate invariance `NormalForm.LyapunovCoefficient.firstLyapunov_conj` carries `ℓ₁` back.
 * Level: exact identities and signs for all parameters and every angle, and Lyapunov instability /
   local asymptotic stability of the operating point (LeanForControl's `Unstable`,
-  `LocalAsymptoticStable`, `LyapunovStable`). The bifurcating cycles along the gain `K_p` are
-  private evidence of `theorem/GridTiedConverter/GFM/LinePSCHopfCycle.lean`
-  (`Dynamics.HopfCycle.exists_hopfCycle`, wherever `𝔅_P ≠ 0` and the transversality coefficient
-  does not vanish); their uniqueness and orbital stability are not proved. Not decided: the
+  `LocalAsymptoticStable`, `LyapunovStable`). The bifurcating cycles are private evidence of
+  `theorem/GridTiedConverter/GFM/LinePSCHopfCycle.lean` at every Hopf point with `𝔅_P ≠ 0`
+  (along the gain `K_p` where its transversality coefficient does not vanish, and along a
+  direction of the `(K_p, V)` plane in general, `Dynamics.HopfCycle.exists_hopfCycle_of_branch`);
+  their uniqueness and orbital stability are not proved. Not decided: the
   degenerate points `Line.PSC.Model.Degenerate` (located): the zeros of `𝔅_P` on the Hopf
-  boundary and the fold points `K = 0` at the Bogdanov–Takens gain `K_p D_line = 1` (`a₁ = 0`,
-  a double zero) or at a zero–Hopf point (`a₂ = 0`, eigenvalues `0, ±i√a₁`).
+  boundary and the fold points `K = 0` at a zero–Hopf point (`a₂ = 0`, eigenvalues `0, ±i√a₁`,
+  or a triple zero). The Bogdanov–Takens gain `K_p D_line = 1` (`a₁ = 0`, a double zero) is
+  decided where `a₂ ≠ 0`; the zero–Hopf points with `a₁ > 0` are decided in
+  `theorem/GridTiedConverter/GFM/LinePSCZeroHopf.lean`, and the membership with only the triple
+  zero and the Bautin-type points left is `theorem/GridTiedConverter/GFM/LinePSCMembership.lean`.
 * The fold `a₀ = K_p ρ K = 0` (`K = 0`, a zero eigenvalue): there `Q = E² X/|Z|²`,
   `det(sI − J) = s (s² + a₂ s + a₁)` and `a₁ = ρ (1 − K_p D_line)`,
   `D_line = 2E²RXL/|Z|⁴` (`Line.Network.Dline`); the null vectors are the tangent
-  `(1, i_s'(δ*))` of the quasi-steady set and its left partner normalised by `1 − K_p D_line`.
+  `(1, i_s'(δ*))` of the quasi-steady set and its left partner normalised by `1 − K_p D_line`;
+  at `K_p D_line = 1` the Jordan chain `q₁ = (0, −j L E e^{jδ*}/(R + jX)²)` and the left vector
+  normalised by `a₂/ρ`, `a₂ = (3R² − X²)/(2RL)` there.
 
 Source: the four-state template `theorem/GridTiedConverter/GFM/HopfLyapunovCurrent.lean` (same
 method); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4
@@ -47,8 +54,10 @@ certificate. The family laws are `theorem/Dynamics/HopfDichotomy.lean`. The fold
 saddle-node law `Dynamics.CenterManifold.unstable_of_foldCoeff_ne_zero_of_charpoly`
 (`theorem/Dynamics/SaddleNodeReduction.lean`; Kuznetsov, §3.2 and §5.4, the fold coefficient
 `a = ½⟨p, B(q, q)⟩`), as for `Line.VSM` in `theorem/GridTiedConverter/GFM/HopfLineMembership.lean`;
-the null pair and the fold coefficient were derived with SymPy (untrusted) and are proved here by
-`field_simp` and `linear_combination`.
+the Bogdanov–Takens law `NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`
+(`theorem/Dynamics/BTInstability.lean`; Kuznetsov, §8.4, §8.7); the null pair, the chain and the
+coefficients were derived with SymPy (untrusted) and are proved here by `field_simp` and
+`linear_combination`.
 
 Results.
 * The field in pieces (`Line.PSC.field_eq_pieces`, `Line.PSC.affinePart`, `Line.PSC.constPart`);
@@ -73,13 +82,15 @@ Results.
 * **The symbolic boundary between sub- and supercritical at every angle**:
   `Line.PSC.Model.sign_firstLyapunov_crit` (every critical pair:
   `sign ℓ₁ = −sign 𝔅_P(K_p Q, R/L, ω₀, t)`). The degenerate (Bautin-type) points of the boundary
-  are therefore exactly the zeros of `𝔅_P`: located, not decided.
+  are therefore exactly the zeros of `𝔅_P`: located, not decided in general (the second
+  Lyapunov coefficient decides a point, `theorem/GridTiedConverter/GFM/HopfBautinPSC.lean`).
 * Witnesses on the unit line `E = 1`, `R = L = ω₀ = 1` at `δ* = 0` (`Line.PSC.unitLine V K_p`,
   `t = 0`, `𝔅_P = a₂ a₁² ℌ_P(K_p Q, 1, 1)`): the zero-load model at the critical gain `K_p = 4`
   (`𝔅_P = 64`), the model `V = 20/17`, `K_p = 34` (`κ = −3`, `𝔅_P = −69440`) and an exact
   degenerate point `V = 6/5`, `K_p = 20` (`κ = −2`, `ℌ_P(−2, 1, 1) = 0`;
   `Line.PSC.unitLine_bautin_firstLyapunov`: a critical pair exists and every critical pair has
-  `ℓ₁ = 0`).
+  `ℓ₁ = 0`; decided unstable by the second Lyapunov coefficient `ℓ₂ = 51200√6/77 > 0` in
+  `theorem/GridTiedConverter/GFM/HopfBautinPSC.lean`, `Line.PSC.unitLine_bautin_mem_den_unstable`).
 * The fold data at every angle: the tangent `Line.PSC.Model.foldQ` and the left null vector
   `Line.PSC.Model.foldP`, `Line.PSC.Model.coeff_fold` (at `K = 0`: `Q = E² X/|Z|²`,
   `a₁ = ρ (1 − K_p D_line)`), `Line.PSC.Model.isNullPair_fold` (a normalised null pair at `K = 0`,
@@ -87,10 +98,19 @@ Results.
   `Line.PSC.Model.foldCoeff_fold`: the fold coefficient in closed form,
   `a = K_p (P(δ*) − c₀)/(2 (1 − K_p D_line))`, `c₀ = E² R/|Z|²`; at a fold `P(δ*) − c₀ = ± A ≠ 0`,
   so the fold coefficient vanishes nowhere on the fold off `K_p D_line = 1`
-  (`Line.PSC.Model.foldCoeff_fold_ne_zero`).
+  (`Line.PSC.Model.foldCoeff_fold_ne_zero`); through the unnormalised left vector
+  `Line.PSC.Model.foldPu` (`Line.PSC.Model.jac_mulVec_foldQ`, `Line.PSC.Model.vecMul_foldPu_jac`,
+  `Line.PSC.Model.inner_foldPu_bilin`: `⟨p_u, B(q, q)⟩ = K_p (P(δ*) − c₀)` at every angle).
+* The Bogdanov–Takens gain `K_p D_line = 1`: `Line.PSC.Model.btChain`,
+  `Line.PSC.Model.jac_mulVec_btChain` (`J q₁ = q₀`), `Line.PSC.Model.foldPu_dot_btChain_eq`
+  (`⟨p_u, q₁⟩ = K_p E² L² X (3R² − X²)/|Z|⁶`), `Line.PSC.Model.foldPu_dot_btChain`
+  (`ρ ⟨p_u, q₁⟩ = a₂`), `Line.PSC.Model.eq_smul_foldQ_of_mulVec_eq_zero` (one-dimensional
+  kernel), `Line.PSC.Model.btLeft`, `Line.PSC.Model.exists_isBTChain_of_bt` (the normalised chain
+  for `a₂ ≠ 0`) and `Line.PSC.Model.coeffA_bt`: `a = K_p ρ (P(δ*) − c₀)/(2 a₂)`, which never
+  vanishes at a fold (no codimension-three point `a = 0`).
 * `Line.PSC.Model.Degenerate`: the degenerate balanced points still undecided: the fold points with
-  `a₁, a₂ ≥ 0` and `a₁ = 0` (Bogdanov–Takens) or `a₂ = 0` (zero–Hopf), and the zeros of `𝔅_P` on
-  the Hopf boundary.
+  `a₁ ≥ 0` and `a₂ = 0` (zero–Hopf, or the triple zero at `K_p D_line = 1`, `X² = 3R²`), and the
+  zeros of `𝔅_P` on the Hopf boundary.
 
 Family and connection conclusions.
 No new family: connection conclusions on `Line.PSC.family`.
@@ -108,6 +128,10 @@ No new family: connection conclusions on `Line.PSC.family`.
   at `K = 0` with `a₁, a₂ > 0` is unstable; **`Line.PSC.mem_den_unstable_of_fold_of_ne`** (the
   fold decided): at `K = 0` with `a₁ ≠ 0` and `a₂ ≠ 0` it is unstable (a strict Routh violation,
   or the saddle-node law).
+* **`Line.PSC.mem_den_unstable_of_bt`** (the Bogdanov–Takens point is a cusp): a balanced
+  physical model at `K = 0` with `K_p D_line = 1` and `a₂ > 0` is unstable;
+  **`Line.PSC.mem_den_unstable_of_fold_of_coeff2_ne`** (the fold decided off the zero–Hopf
+  points): at `K = 0` with `a₂ ≠ 0` it is unstable.
 * **`Line.PSC.mem_den_locallyAsymptoticallyStable_iff`** and
   **`Line.PSC.mem_den_lyapunovStable_iff`** (complete membership off the degenerate set, the
   counterpart of `GFL.RatePLL.mem_den_locallyAsymptoticallyStable_iff`): a physical model is
@@ -2801,8 +2825,9 @@ eigenvalues `±i√2`. -/
 /-- **A degenerate (Bautin-type) point, located**: on the unit line with `V = 6/5` and `K_p = 20`
 (`Q = −1/10`, `κ = −2`; the cubic `(s² + 6)(s + 4)`) the model is balanced, physical and on the
 Hopf boundary, it has a critical pair, and every critical pair has `ℓ₁ = 0`
-(`Line.PSC.Model.sign_firstLyapunov_crit`, `ℌ_P(−2, 1, 1) = 0`). Its stability is not decided
-here. Static evidence on the model. -/
+(`Line.PSC.Model.sign_firstLyapunov_crit`, `ℌ_P(−2, 1, 1) = 0`). Its stability is decided by the
+second Lyapunov coefficient in `theorem/GridTiedConverter/GFM/HopfBautinPSC.lean` (unstable,
+`Line.PSC.unitLine_bautin_mem_den_unstable`). Static evidence on the model. -/
 @[tmio M, powerlib_domain] theorem unitLine_bautin_firstLyapunov :
     (∃ q p : Fin 3 → ℂ, IsCriticalPair (unitLine (6 / 5) 20).field 0 (Real.sqrt 6) q p) ∧
       ∀ ω (q p : Fin 3 → ℂ), IsCriticalPair (unitLine (6 / 5) 20).field 0 ω q p →
@@ -2876,7 +2901,8 @@ Routh boundary and is locally asymptotically stable
 section Fold
 
 open scoped RealInnerProductSpace
-open powerlib.NormalForm.BogdanovTakens (IsNullPair foldCoeff isNullPair_toEuclideanCLM_iff)
+open powerlib.NormalForm.BogdanovTakens (IsNullPair foldCoeff isNullPair_toEuclideanCLM_iff
+  IsBTChain coeffA)
 
 /-- The tangent `(1, i_s'(δ*))` of the quasi-steady set at the operating point,
 `i_s'(δ) = j E e^{jδ}/(R + jX)`: the right null vector at a fold. -/
@@ -2891,6 +2917,13 @@ def Model.foldQ (m : Model) : Fin 3 → ℝ :=
 def Model.foldP (m : Model) : Fin 3 → ℝ :=
   (1 - m.g.Kp * m.g.Dline)⁻¹ • ![1,
     m.g.Kp * m.g.E * m.g.L * (m.g.X * Real.sin m.δ - m.g.R * Real.cos m.δ) / m.g.absSq,
+    -(m.g.Kp * m.g.E * m.g.L * (m.g.X * Real.cos m.δ + m.g.R * Real.sin m.δ) / m.g.absSq)]
+
+/-- The left null vector at a fold before normalisation:
+`p_u = (1, K_p E L (X sin δ* − R cos δ*)/|Z|², −K_p E L (X cos δ* + R sin δ*)/|Z|²)`;
+`Line.PSC.Model.foldP = p_u/(1 − K_p D_line)`. -/
+def Model.foldPu (m : Model) : Fin 3 → ℝ :=
+  ![1, m.g.Kp * m.g.E * m.g.L * (m.g.X * Real.sin m.δ - m.g.R * Real.cos m.δ) / m.g.absSq,
     -(m.g.Kp * m.g.E * m.g.L * (m.g.X * Real.cos m.δ + m.g.R * Real.sin m.δ) / m.g.absSq)]
 
 @[tmio M, powerlib_domain] private theorem fold_fderiv (m : Model) :
@@ -2918,6 +2951,41 @@ evidence on the model. -/
   rw [coeff1, hQ, hρ, Network.Dline, Network.σ]
   field_simp
 
+/-- **The tangent is a right null vector at a fold**: for `L ≠ 0`, `|Z|² > 0` and `K = 0`,
+`J q = 0` for `q = Line.PSC.Model.foldQ` (at every angle). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.jac_mulVec_foldQ {m : Model} (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hK : m.K = 0) : m.jac *ᵥ m.foldQ = 0 := by
+  have hZ' := hZ.ne'
+  have hQ := fold_Q hZ hK
+  have hX : m.g.X = m.g.ω0 * m.g.L := rfl
+  have hcs := Real.cos_sq_add_sin_sq m.δ
+  have hA : m.g.absSq = m.g.R ^ 2 + (m.g.ω0 * m.g.L) ^ 2 := by rw [Network.absSq, hX]
+  rw [m.jac_eq hL]
+  ext i
+  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three, Model.foldQ, hQ, hX] <;>
+    field_simp
+  · linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.ω0 * m.g.L)) * hcs
+  · linear_combination (-(m.g.E * Real.sin m.δ)) * hA
+  · linear_combination (m.g.E * Real.cos m.δ) * hA
+
+/-- **The unnormalised left null vector at a fold**: for `L ≠ 0`, `|Z|² > 0` and `K = 0`,
+`p_uᵀ J = 0` for `p_u = Line.PSC.Model.foldPu` (at every angle). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem Model.vecMul_foldPu_jac {m : Model} (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hK : m.K = 0) : m.foldPu ᵥ* m.jac = 0 := by
+  have hZ' := hZ.ne'
+  have hQ := fold_Q hZ hK
+  have hX : m.g.X = m.g.ω0 * m.g.L := rfl
+  have hcs := Real.cos_sq_add_sin_sq m.δ
+  have hA : m.g.absSq = m.g.R ^ 2 + (m.g.ω0 * m.g.L) ^ 2 := by rw [Network.absSq, hX]
+  rw [m.jac_eq hL]
+  ext j
+  fin_cases j <;> simp [Matrix.vecMul, dotProduct, Fin.sum_univ_three, Model.foldPu, hQ, hX] <;>
+    field_simp
+  · linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.ω0 * m.g.L)) * hcs
+  · linear_combination (-(m.g.Kp * m.g.E * Real.cos m.δ)) * hA
+  · linear_combination (-(m.g.Kp * m.g.E * Real.sin m.δ)) * hA
+
 /-- **The null pair of a fold**: at a physical model with `K = 0` and `K_p D_line ≠ 1`, the
 tangent `q = (1, i_s'(δ*))` (`Line.PSC.Model.foldQ`) and `p = Line.PSC.Model.foldP` are a
 normalised null pair of the Jacobian at the operating point (`J q = 0`, `pᵀ J = 0`,
@@ -2928,26 +2996,15 @@ normalised null pair of the Jacobian at the operating point (`J q = 0`, `pᵀ J 
   obtain ⟨hN, -⟩ := hp
   have hL := hN.L.ne'
   have hZ := hN.absSq_pos
-  have hZ' := hZ.ne'
-  have hQ := fold_Q hZ hK
   have hX : m.g.X = m.g.ω0 * m.g.L := rfl
   have hcs := Real.cos_sq_add_sin_sq m.δ
   have hDD : 1 - m.g.Kp * m.g.Dline ≠ 0 := sub_ne_zero.mpr (Ne.symm hD)
   have hA : m.g.absSq = m.g.R ^ 2 + (m.g.ω0 * m.g.L) ^ 2 := by rw [Network.absSq, hX]
-  rw [fold_fderiv, isNullPair_toEuclideanCLM_iff, m.jac_eq hL]
-  refine ⟨?_, ?_, ?_⟩
-  · ext i
-    fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three, Model.foldQ, hQ, hX] <;>
-      field_simp
-    · linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.ω0 * m.g.L)) * hcs
-    · linear_combination (-(m.g.E * Real.sin m.δ)) * hA
-    · linear_combination (m.g.E * Real.cos m.δ) * hA
-  · ext j
-    fin_cases j <;> simp [Matrix.vecMul, dotProduct, Fin.sum_univ_three, Model.foldP, hQ, hX] <;>
-      field_simp
-    · linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.ω0 * m.g.L)) * hcs
-    · linear_combination (-(m.g.Kp * m.g.E * Real.cos m.δ)) * hA
-    · linear_combination (-(m.g.Kp * m.g.E * Real.sin m.δ)) * hA
+  have hZ' := hZ.ne'
+  rw [fold_fderiv, isNullPair_toEuclideanCLM_iff]
+  refine ⟨m.jac_mulVec_foldQ hL hZ hK, ?_, ?_⟩
+  · rw [show m.foldP = (1 - m.g.Kp * m.g.Dline)⁻¹ • m.foldPu from rfl, Matrix.smul_vecMul,
+      m.vecMul_foldPu_jac hL hZ hK, smul_zero]
   · simp only [dotProduct, Fin.sum_univ_three, Model.foldP, Model.foldQ, Pi.smul_apply,
       smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.tail_cons, Matrix.head_cons, hX]
@@ -2962,23 +3019,19 @@ normalised null pair of the Jacobian at the operating point (`J q = 0`, `pᵀ J 
   rw [bilinC_toC, iteratedFDeriv_two_apply]
   simp
 
-/-- **The fold coefficient**: for `L ≠ 0`, `|Z|² > 0` and `K_p D_line ≠ 1`, Kuznetsov's quadratic
-coefficient `a = ½ ⟨p, B(q, q)⟩` of the tangent `q = Line.PSC.Model.foldQ` and
-`p = Line.PSC.Model.foldP` is `a = K_p (P(δ*) − c₀)/(2 (1 − K_p D_line))`, `c₀ = E² R/|Z|²` (at
-every angle; at a fold `K = 0` it is the coefficient of the saddle-node). Static evidence on the
-model. -/
-@[tmio M, powerlib_domain] theorem Model.foldCoeff_fold (m : Model) (hL : m.g.L ≠ 0)
-    (hZ : 0 < m.g.absSq) (hD : m.g.Kp * m.g.Dline ≠ 1) :
-    foldCoeff m.field 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldP) =
-      m.g.Kp * (m.g.qssPower m.δ - m.g.c0) / (2 * (1 - m.g.Kp * m.g.Dline)) := by
-  have hDD : 1 - m.g.Kp * m.g.Dline ≠ 0 := sub_ne_zero.mpr (Ne.symm hD)
+/-- **The quadratic form of the fold**: for `L ≠ 0` and `|Z|² > 0`,
+`⟨p_u, B(q, q)⟩ = K_p (P(δ*) − c₀)` for the tangent `q = Line.PSC.Model.foldQ` and
+`p_u = Line.PSC.Model.foldPu`, `c₀ = E² R/|Z|²` (at every angle). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.inner_foldPu_bilin (m : Model) (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) :
+    ⟪WithLp.toLp 2 m.foldPu, fderiv ℝ (fderiv ℝ m.field) 0 (WithLp.toLp 2 m.foldQ)
+      (WithLp.toLp 2 m.foldQ)⟫ = m.g.Kp * (m.g.qssPower m.δ - m.g.c0) := by
   have hZ' := hZ.ne'
   have hcs := Real.cos_sq_add_sin_sq m.δ
   have v0 := fold_fderiv2 m (WithLp.toLp 2 m.foldQ) 0
   have v1 := fold_fderiv2 m (WithLp.toLp 2 m.foldQ) 1
   have v2 := fold_fderiv2 m (WithLp.toLp 2 m.foldQ) 2
   rw [m.bilinC_field] at v0 v1 v2
-  rw [foldCoeff]
   generalize fderiv ℝ (fderiv ℝ m.field) 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldQ) = v
     at v0 v1 v2 ⊢
   simp only [toC, Model.foldQ, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
@@ -2993,12 +3046,26 @@ model. -/
     apply Complex.ofReal_injective; rw [v1]; push_cast; ring
   have e2 : v 2 = -(m.g.E / m.g.L * Real.sin m.δ) := by
     apply Complex.ofReal_injective; rw [v2]; push_cast; ring
-  simp only [Model.foldP, PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial,
-    Pi.smul_apply, smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, e0, e1, e2]
+  simp only [Model.foldPu, PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply,
+    conj_trivial, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons, e0, e1, e2]
   rw [Network.c0]
   field_simp
   linear_combination (-(m.g.Kp * m.g.E ^ 2 * m.g.R)) * hcs
+
+/-- **The fold coefficient**: for `L ≠ 0`, `|Z|² > 0` and `K_p D_line ≠ 1`, Kuznetsov's quadratic
+coefficient `a = ½ ⟨p, B(q, q)⟩` of the tangent `q = Line.PSC.Model.foldQ` and
+`p = Line.PSC.Model.foldP` is `a = K_p (P(δ*) − c₀)/(2 (1 − K_p D_line))`, `c₀ = E² R/|Z|²` (at
+every angle; at a fold `K = 0` it is the coefficient of the saddle-node). Static evidence on the
+model. -/
+@[tmio M, powerlib_domain] theorem Model.foldCoeff_fold (m : Model) (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hD : m.g.Kp * m.g.Dline ≠ 1) :
+    foldCoeff m.field 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.foldP) =
+      m.g.Kp * (m.g.qssPower m.δ - m.g.c0) / (2 * (1 - m.g.Kp * m.g.Dline)) := by
+  have hDD : 1 - m.g.Kp * m.g.Dline ≠ 0 := sub_ne_zero.mpr (Ne.symm hD)
+  rw [foldCoeff, show m.foldP = (1 - m.g.Kp * m.g.Dline)⁻¹ • m.foldPu from rfl,
+    WithLp.toLp_smul, real_inner_smul_left, m.inner_foldPu_bilin hL hZ]
+  field_simp
 
 /-- **The characteristic polynomial at a fold**: for `L ≠ 0`, `|Z|² > 0` and `K = 0` (`a₀ = 0`),
 `det(sI − J) = s (s² + a₂ s + a₁)`. Static evidence on the model. -/
@@ -3093,19 +3160,224 @@ saddle-node law (`Line.PSC.mem_den_unstable_of_fold`). -/
   · exact mem_den_unstable m hp hb (Or.inl h2)
   exact mem_den_unstable_of_fold m hp hb hK h1 h2
 
+/-! ### The Bogdanov–Takens gain `K_p D_line = 1` -/
+
+/-- The second Jordan vector at the Bogdanov–Takens gain, `q₁ = (0, w)`,
+`w = −j L E e^{jδ*}/(R + jX)²`:
+`w = L E ((R² − X²) sin δ* − 2RX cos δ*, −((R² − X²) cos δ* + 2RX sin δ*))/|Z|⁴`. -/
+def Model.btChain (m : Model) : Fin 3 → ℝ :=
+  ![0, m.g.L * m.g.E * ((m.g.R ^ 2 - m.g.X ^ 2) * Real.sin m.δ -
+      2 * m.g.R * m.g.X * Real.cos m.δ) / m.g.absSq ^ 2,
+    -(m.g.L * m.g.E * ((m.g.R ^ 2 - m.g.X ^ 2) * Real.cos m.δ +
+      2 * m.g.R * m.g.X * Real.sin m.δ) / m.g.absSq ^ 2)]
+
+/-- The left null vector at the Bogdanov–Takens gain, normalised against
+`Line.PSC.Model.btChain`: `p₁ = (ρ/a₂) p_u` (`p_u = Line.PSC.Model.foldPu`). -/
+def Model.btLeft (m : Model) : Fin 3 → ℝ := (m.g.ρ / m.g.coeff2 m.Q) • m.foldPu
+
+/-- **The Jordan chain at the Bogdanov–Takens gain**: for `L ≠ 0`, `|Z|² > 0` and
+`K_p D_line = 1`, `J q₁ = q₀` for `q₁ = Line.PSC.Model.btChain`, `q₀ = Line.PSC.Model.foldQ` (at
+every angle; the first row is `K_p D_line = 1`). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.jac_mulVec_btChain {m : Model} (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hD : m.g.Kp * m.g.Dline = 1) : m.jac *ᵥ m.btChain = m.foldQ := by
+  have hZ' := hZ.ne'
+  have hX : m.g.X = m.g.ω0 * m.g.L := rfl
+  have hcs := Real.cos_sq_add_sin_sq m.δ
+  have hA : m.g.absSq = m.g.R ^ 2 + (m.g.ω0 * m.g.L) ^ 2 := by rw [Network.absSq, hX]
+  have hDl : m.g.Dline * m.g.absSq ^ 2 = 2 * m.g.E ^ 2 * m.g.R * (m.g.ω0 * m.g.L) * m.g.L := by
+    rw [Network.Dline, hX]; field_simp
+  rw [m.jac_eq hL]
+  ext i
+  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three, Model.btChain,
+    Model.foldQ, hX] <;> field_simp
+  · linear_combination (2 * m.g.Kp * m.g.E ^ 2 * m.g.L ^ 2 * m.g.R * m.g.ω0) * hcs -
+      m.g.Kp * hDl + m.g.absSq ^ 2 * hD
+  · linear_combination (m.g.E * m.g.R * Real.sin m.δ - m.g.E * m.g.L * m.g.ω0 * Real.cos m.δ) *
+      hA
+  · linear_combination (-(m.g.E * m.g.ω0 * m.g.L * Real.sin m.δ) -
+      m.g.E * m.g.R * Real.cos m.δ) * hA
+
+/-- `⟨p_u, q₁⟩ = K_p E² L² X (3R² − X²)/|Z|⁶` at every angle. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.foldPu_dot_btChain_eq (m : Model)
+    (hZ : 0 < m.g.absSq) :
+    m.foldPu ⬝ᵥ m.btChain = m.g.Kp * m.g.E ^ 2 * m.g.L ^ 2 * m.g.X *
+      (3 * m.g.R ^ 2 - m.g.X ^ 2) / m.g.absSq ^ 3 := by
+  have hZ' := hZ.ne'
+  have hcs := Real.cos_sq_add_sin_sq m.δ
+  simp only [dotProduct, Fin.sum_univ_three, Model.foldPu, Model.btChain, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+  field_simp
+  linear_combination (3 * m.g.Kp * m.g.E ^ 2 * m.g.L ^ 2 * m.g.X * m.g.R ^ 2 -
+    m.g.Kp * m.g.E ^ 2 * m.g.L ^ 2 * m.g.X ^ 3) * hcs
+
+/-- **The normalisation at the Bogdanov–Takens point**: at a fold `K = 0` with
+`K_p D_line = 1` (`L ≠ 0`, `|Z|² > 0`), `ρ ⟨p_u, q₁⟩ = a₂ = (3R² − X²)/(2RL)`: the chain normalises
+exactly when the third eigenvalue `−a₂` is not zero. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.foldPu_dot_btChain {m : Model} (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) (hK : m.K = 0) (hD : m.g.Kp * m.g.Dline = 1) :
+    m.g.ρ * (m.foldPu ⬝ᵥ m.btChain) = m.g.coeff2 m.Q := by
+  have hZ' := hZ.ne'
+  have hQ := fold_Q hZ hK
+  have hA : m.g.absSq = m.g.R ^ 2 + m.g.X ^ 2 := rfl
+  have hDl : m.g.Dline * m.g.absSq ^ 2 = 2 * m.g.E ^ 2 * m.g.R * m.g.X * m.g.L := by
+    rw [Network.Dline]; field_simp
+  have hρ : m.g.ρ = m.g.absSq / m.g.L ^ 2 := by
+    simp only [Network.ρ, Network.σ, Network.absSq]; field_simp
+  rw [m.foldPu_dot_btChain_eq hZ, coeff2, hQ, hρ, Network.σ]
+  field_simp
+  linear_combination (m.g.L * m.g.Kp * m.g.E ^ 2 * m.g.X) * hA - 2 * m.g.R * m.g.Kp * hDl +
+    2 * m.g.R * m.g.absSq ^ 2 * hD
+
+/-- **The kernel is one-dimensional**: for `L ≠ 0` and `|Z|² > 0` every null vector of the
+Jacobian is a multiple of the tangent `Line.PSC.Model.foldQ` (the line rows alone; at every
+angle). Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.eq_smul_foldQ_of_mulVec_eq_zero (m : Model)
+    (hL : m.g.L ≠ 0) (hZ : 0 < m.g.absSq) {v : Fin 3 → ℝ} (hv : m.jac *ᵥ v = 0) :
+    v = v 0 • m.foldQ := by
+  have hZ' := hZ.ne'
+  have hX : m.g.X = m.g.ω0 * m.g.L := rfl
+  have hA : m.g.absSq = m.g.R ^ 2 + (m.g.ω0 * m.g.L) ^ 2 := by rw [Network.absSq, hX]
+  have h1 : (m.jac *ᵥ v) 1 = 0 := by rw [hv]; rfl
+  have h2 : (m.jac *ᵥ v) 2 = 0 := by rw [hv]; rfl
+  rw [m.jac_eq hL] at h1 h2
+  simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three] at h1 h2
+  field_simp at h1 h2
+  funext i
+  fin_cases i
+  · show v 0 = v 0 * 1
+    ring
+  · show v 1 = v 0 * (m.g.E * (m.g.X * Real.cos m.δ - m.g.R * Real.sin m.δ) / m.g.absSq)
+    field_simp
+    rw [hX, hA]
+    linear_combination (-m.g.R) * h1 + (-(m.g.L * m.g.ω0)) * h2
+  · show v 2 = v 0 * (m.g.E * (m.g.X * Real.sin m.δ + m.g.R * Real.cos m.δ) / m.g.absSq)
+    field_simp
+    rw [hX, hA]
+    linear_combination (m.g.L * m.g.ω0) * h1 + (-m.g.R) * h2
+
+/-- **The Bogdanov–Takens chain**: at a physical fold `K = 0` with the gain `K_p D_line = 1` and
+`a₂ ≠ 0`, `q₀ = Line.PSC.Model.foldQ`, `q₁ = Line.PSC.Model.btChain` and
+`p₁ = Line.PSC.Model.btLeft` complete to a normalised chain (`IsBTChain.exists_of_left`). Static
+evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.exists_isBTChain_of_bt {m : Model}
+    (hp : Meets m .physical) (hK : m.K = 0) (hD : m.g.Kp * m.g.Dline = 1)
+    (h2 : m.g.coeff2 m.Q ≠ 0) :
+    ∃ p₀ : State 3, IsBTChain (fderiv ℝ m.field 0) (WithLp.toLp 2 m.foldQ)
+      (WithLp.toLp 2 m.btChain) p₀ (WithLp.toLp 2 m.btLeft) := by
+  have hL := hp.1.L.ne'
+  have hZ := hp.1.absSq_pos
+  have hin : ∀ a b : Fin 3 → ℝ, ⟪(WithLp.toLp 2 a : State 3), WithLp.toLp 2 b⟫ = a ⬝ᵥ b :=
+    fun a b => by rw [EuclideanSpace.inner_toLp_toLp, star_trivial, dotProduct_comm]
+  rw [fold_fderiv]
+  refine NormalForm.BogdanovTakens.IsBTChain.exists_of_left ?_ ?_ (fun v hv => ?_)
+    (fun v => ?_) ?_
+  · rw [Matrix.toEuclideanCLM_toLp, m.jac_mulVec_foldQ hL hZ hK]; rfl
+  · rw [Matrix.toEuclideanCLM_toLp, m.jac_mulVec_btChain hL hZ hD]
+  · have hv' : m.jac *ᵥ (WithLp.ofLp v) = 0 := by
+      have := congrArg WithLp.ofLp hv
+      simpa [Matrix.ofLp_toEuclideanCLM] using this
+    have he := m.eq_smul_foldQ_of_mulVec_eq_zero hL hZ hv'
+    refine ⟨v 0, ?_⟩
+    ext i
+    have := congrFun he i
+    simpa using this
+  · rw [Matrix.inner_toEuclideanCLM, Matrix.dotProduct_mulVec, Model.btLeft, Matrix.smul_vecMul,
+      m.vecMul_foldPu_jac hL hZ hK, smul_zero, zero_dotProduct]
+  · rw [hin, Model.btLeft, smul_dotProduct, smul_eq_mul, div_mul_eq_mul_div,
+      m.foldPu_dot_btChain hL hZ hK hD, div_self h2]
+
+/-- **The Bogdanov–Takens coefficient `a`**: for `L ≠ 0` and `|Z|² > 0`,
+`a = ½ ⟨p₁, B(q₀, q₀)⟩ = K_p ρ (P(δ*) − c₀)/(2 a₂)` for `q₀ = Line.PSC.Model.foldQ`,
+`p₁ = Line.PSC.Model.btLeft`. Static evidence on the model. -/
+@[tmio M, powerlib_domain] theorem Model.coeffA_bt (m : Model) (hL : m.g.L ≠ 0)
+    (hZ : 0 < m.g.absSq) :
+    coeffA m.field 0 (WithLp.toLp 2 m.foldQ) (WithLp.toLp 2 m.btLeft) =
+      m.g.Kp * m.g.ρ * (m.g.qssPower m.δ - m.g.c0) / (2 * m.g.coeff2 m.Q) := by
+  rw [coeffA, Model.btLeft, WithLp.toLp_smul, real_inner_smul_left, m.inner_foldPu_bilin hL hZ]
+  ring
+
+/-- **The Bogdanov–Takens point is unstable** (the cusp,
+`NormalForm.BogdanovTakens.IsBTChain.unstable_of_coeffA_ne_zero`): a balanced physical model at a
+fold `K = 0` with the gain `K_p D_line = 1` and `a₂ > 0` (`det(sI − J) = s² (s + a₂)`) is
+unstable. Its coefficient `a = K_p ρ (P(δ*) − c₀)/(2 a₂)` (`Line.PSC.Model.coeffA_bt`) never
+vanishes there (`P(δ*) − c₀ = ± A`): no codimension-three point `a = 0`; the chain degenerates
+only at `a₂ = 0` (`X² = 3R²`, a triple zero). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_bt (m : Model) (hp : Meets m .physical)
+    (hb : Meets m .balanced) (hK : m.K = 0) (hD : m.g.Kp * m.g.Dline = 1)
+    (h2 : 0 < m.g.coeff2 m.Q) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
+  have hL := hp.1.L.ne'
+  have hZ := hp.1.absSq_pos
+  obtain ⟨p₀, hch⟩ := m.exists_isBTChain_of_bt hp hK hD h2.ne'
+  have hF : ContDiff ℝ 2 m.field := (m.g.contDiff_field (k := 2)).comp
+    (contDiff_id.add contDiff_const)
+  have hF0 : m.field 0 = 0 := by
+    show m.g.field (0 + m.point) = 0
+    rw [zero_add]
+    exact (m.field_point_eq_zero_iff hp.2.ne' hL hZ.ne').mpr hb
+  have hker : ∀ v, fderiv ℝ m.field 0 v = 0 → ∃ s : ℝ, v = s • WithLp.toLp 2 m.foldQ := by
+    intro v hv
+    rw [fold_fderiv] at hv
+    have hv' : m.jac *ᵥ (WithLp.ofLp v) = 0 := by
+      have := congrArg WithLp.ofLp hv
+      simpa [Matrix.ofLp_toEuclideanCLM] using this
+    have he := m.eq_smul_foldQ_of_mulVec_eq_zero hL hZ hv'
+    refine ⟨v 0, ?_⟩
+    ext i
+    have := congrFun he i
+    simpa using this
+  have h1 : m.g.coeff1 m.Q = 0 := by rw [(m.coeff_fold hL hZ hK).2, hD, sub_self, mul_zero]
+  have hchar : (cmat (fderiv ℝ m.field 0)).charpoly =
+      X ^ 2 * (X + C ((m.g.coeff2 m.Q : ℝ) : ℂ)) := by
+    have h := m.charpoly_fold hL hZ hK
+    rw [h1] at h
+    rw [show cmat (fderiv ℝ m.field 0) = jacobianC m.field 0 from rfl, h]
+    simp
+    ring
+  have hr : ∀ s : ℂ, (X + C ((m.g.coeff2 m.Q : ℝ) : ℂ)).eval s = 0 → s.re < 0 := by
+    intro s hs
+    simp only [eval_add, eval_X, eval_C] at hs
+    have : s = -((m.g.coeff2 m.Q : ℝ) : ℂ) := by linear_combination hs
+    rw [this]; simp [h2]
+  refine hch.unstable_of_coeffA_ne_zero hF hF0 hker hchar hr ?_
+  rw [m.coeffA_bt hL hZ]
+  exact div_ne_zero (mul_ne_zero (mul_ne_zero hp.2.ne' (fold_ρ_pos hp).ne')
+    (fold_P_sub_c0_ne hp hK)) (mul_ne_zero two_ne_zero h2.ne')
+
+/-- **The fold decided off the zero–Hopf points**: a balanced physical model at a fold `K = 0`
+with `a₂ ≠ 0` is unstable: off the Bogdanov–Takens gain (`a₁ ≠ 0`)
+`Line.PSC.mem_den_unstable_of_fold_of_ne`; at it (`a₁ = 0`, `K_p D_line = 1`) a strict Routh
+violation (`a₂ < 0`, `Line.PSC.mem_den_unstable`) or the cusp (`a₂ > 0`,
+`Line.PSC.mem_den_unstable_of_bt`). -/
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold_of_coeff2_ne (m : Model)
+    (hp : Meets m .physical) (hb : Meets m .balanced) (hK : m.K = 0)
+    (h2 : m.g.coeff2 m.Q ≠ 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  by_cases h1 : m.g.coeff1 m.Q = 0
+  swap
+  · exact mem_den_unstable_of_fold_of_ne m hp hb hK h1 h2
+  rcases h2.lt_or_gt with h2 | h2
+  · exact mem_den_unstable m hp hb (Or.inl h2)
+  have hD : m.g.Kp * m.g.Dline = 1 := by
+    rw [(m.coeff_fold hp.1.L.ne' hp.1.absSq_pos hK).2] at h1
+    exact (sub_eq_zero.mp ((mul_eq_zero.mp h1).resolve_left (fold_ρ_pos hp).ne')).symm
+  exact mem_den_unstable_of_bt m hp hb hK hD h2
+
 end Fold
 
 /-! ## Complete Lyapunov and local asymptotic membership off the degenerate set -/
 
-/-- The degenerate balanced points of power synchronization on the line: the fold points `K = 0`
-(`a₀ = 0`, a zero eigenvalue) with `a₁, a₂ ≥ 0` at the Bogdanov–Takens gain (`a₁ = 0`, i.e.
-`K_p D_line = 1`: a double zero) or with a pair of imaginary eigenvalues (`a₂ = 0`, i.e.
-`K_p Q = 2σ`: zero–Hopf), and the Bautin-type points of the Hopf boundary (`a₂ a₁ = a₀`,
-`a₁, a₀ > 0`, `𝔅_P = 0`). The other fold points are decided
-(`Line.PSC.mem_den_unstable_of_fold_of_ne`). -/
+/-- The degenerate balanced points of power synchronization on the line still undecided: the
+fold points `K = 0` (`a₀ = 0`, a zero eigenvalue) with `a₁ ≥ 0` and a pair of imaginary
+eigenvalues or a triple zero (`a₂ = 0`, i.e. `K_p Q = 2σ`: zero–Hopf), and the Bautin-type points
+of the Hopf boundary (`a₂ a₁ = a₀`, `a₁, a₀ > 0`, `𝔅_P = 0`). The other fold points, the
+Bogdanov–Takens gain `K_p D_line = 1` included, are decided
+(`Line.PSC.mem_den_unstable_of_fold_of_coeff2_ne`). -/
 def Model.Degenerate (m : Model) : Prop :=
-  Meets m .balanced ∧ ((m.K = 0 ∧ 0 ≤ m.g.coeff1 m.Q ∧ 0 ≤ m.g.coeff2 m.Q ∧
-    (m.g.coeff1 m.Q = 0 ∨ m.g.coeff2 m.Q = 0)) ∨
+  Meets m .balanced ∧ ((m.K = 0 ∧ 0 ≤ m.g.coeff1 m.Q ∧ m.g.coeff2 m.Q = 0) ∨
     (m.g.coeff2 m.Q * m.g.coeff1 m.Q = m.g.coeff0 m.Q ∧ 0 < m.g.coeff1 m.Q ∧
       0 < m.g.coeff0 m.Q ∧ bautinForm (m.g.Kp * m.Q) (m.g.R / m.g.L) m.g.ω0 m.angleShift = 0))
 
@@ -3143,9 +3415,7 @@ supercritical Hopf point is unstable (strict Routh violation, the fold law, the 
       rcases mul_eq_zero.mp h0.symm with h' | h'
       · exact absurd h' hp.2.ne'
       · exact (mul_eq_zero.mp h').resolve_left (fold_ρ_pos hp).ne'
-    refine mem_den_unstable_of_fold_of_ne m hp hb hK (fun h => hd ?_) (fun h => hd ?_)
-    · exact ⟨hb, Or.inl ⟨hK, v1, v2, Or.inl h⟩⟩
-    · exact ⟨hb, Or.inl ⟨hK, v1, v2, Or.inr h⟩⟩
+    exact mem_den_unstable_of_fold_of_coeff2_ne m hp hb hK fun h => hd ⟨hb, Or.inl ⟨hK, v1, h⟩⟩
 
 /-- **Complete local asymptotic membership** (the counterpart of the rate-coupled GFL PLL's
 `GFL.RatePLL.mem_den_locallyAsymptoticallyStable_iff`): a physical model off the degenerate set

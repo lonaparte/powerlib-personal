@@ -20,8 +20,10 @@ Scope.
   `ẋ = F(x, μ)` on `State n` with the hypotheses of `HopfCycle.exists_hopfCycle`, except that the
   augmented field is only `C¹` on an open set `U ∋ 0` (and analytic at `0`).
 * Periodic orbits are written out in the statements, as in `theorem/Dynamics/HopfCycle.lean`;
-  existence and the amplitude bound in the critical coordinates are proved; uniqueness, orbital
-  stability and the period are not stated.
+  existence and the amplitude bound in the critical coordinates are proved (the amplitude of
+  every small cycle and their absence for `μ τ l₁ ≥ 0`:
+  `HopfCycle.periodic_amplitude_local`, `theorem/Dynamics/HopfCycleAmplitude.lean`); uniqueness,
+  orbital stability and the period are not stated.
 
 Source: Hassard–Kazarinoff–Wan, *Theory and Applications of Hopf Bifurcation* (1981), Ch. 1;
 Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.4 (Theorem 3.3) and §2.1

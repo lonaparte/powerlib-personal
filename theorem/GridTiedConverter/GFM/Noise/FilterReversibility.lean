@@ -53,9 +53,11 @@ Model boundary.
   value as `ω_c → ∞`. The large-deviation principle of the noisy models is proved
   (`GFM.Noise.Params3.isLDP_setPoint`), the quasi-potential of its rate equals this exponent
   (`GFM.Noise.Params3.fwQP_eq_setPointQP`) and the mean exit time from a compact set obeys the
-  Freidlin–Wentzell upper bound (`GFM.Noise.Params3.limsup_log_exitTime_le`); the matching lower
-  bound (strong Markov property at hitting times), the exit place and the exponential law of
-  `τ/E τ` are not formalized, and no closed form at finite `ω_c` is known. "No closed form"
+  Freidlin–Wentzell upper bound (`GFM.Noise.Params3.limsup_log_exitTime_le`); from the sublevel
+  wells of the filter-lag function the mean exit time is bounded below at the Hamilton–Jacobi
+  rate (`GFM.Noise.Params3.le_liminf_log_exitTime_filterWell`, `A < D ω_c`); the matching value
+  at the saddle, the exit place and the exponential law of `τ/E τ` are not formalized, and no
+  closed form at finite `ω_c` is known. "No closed form"
   describes the state of knowledge; it is not a theorem.
 * Two-state stationary states: positive differentiable densities on `Fin 2 → ℝ` in the
   coordinates `(δ − α, M Δω)` of `Params.genDetailedBalance_gibbs`, nominal damping, any noise

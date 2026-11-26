@@ -21,7 +21,8 @@ Scope.
 * Generic: `E` a real Banach space, `b` globally Lipschitz, `N : ℝ →L[ℝ] E` (one noise column,
   written `(Fin 1 → ℝ) →L[ℝ] E`), `c` any real noise scale (`c = √ε`), `T₁, T₂ > 0`, path spaces
   `C([0, T], ·)` with their Borel σ-algebras. Deterministic restart times only; the strong Markov
-  property (at stopping times) is not formalized.
+  property at bounded stopping times is `Stochastic.LDP.integral_solMap_strongMarkov`
+  (`theorem/Stochastic/StrongMarkov.lean`).
 * No Itô calculus: additive noise, the solution is a continuous functional of the driving path
   (`Stochastic.LDP.solMap`).
 
