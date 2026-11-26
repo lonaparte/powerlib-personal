@@ -348,6 +348,9 @@ import theorem.ParametricResonance.EnergyBalance
 import theorem.ParametricResonance.Wirtinger
 import theorem.ParametricResonance.Meissner
 import theorem.ParametricResonance.Signature
+import theorem.ParametricResonance.UniversalThreshold
+import theorem.ParametricResonance.Kapitza
+import theorem.ParametricResonance.SlowFlowBranches
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -359,6 +362,8 @@ import theorem.Periodic.Transition
 import theorem.Periodic.ForcedRegime
 import theorem.Periodic.Liouville
 import theorem.Periodic.TwoStateBoundary
+import theorem.Periodic.MeanTrace
+import theorem.Periodic.Persistence
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
