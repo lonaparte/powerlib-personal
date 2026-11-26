@@ -78,8 +78,9 @@ Results.
   `peakToPeak_floquet_eq_envelope` — `X_{i+1} = |μ| X_i`, `X_i = |μ|ⁱ X₀`, `X₀ > 0`, and the
   natural envelope (3-3) with `σ = ln |μ|/T`.
 * `slope_floquet` (via `LTI.StartUp.olsSlope_congr`), `classify_floquet`,
-  `classify_floquet_eq_natural` — the TR-110 slope of a parametric start-up is `ln |μ|`; the verdict is never "forced", is "natural"
-  iff `ε < ln |μ|`, and equals that of every natural start-up with `σT = ln |μ|`.
+  `classify_floquet_eq_natural` — the TR-110 slope of a parametric start-up is `ln |μ|`; the
+  verdict is never "forced", is "natural" iff `ε < ln |μ|`, and equals that of every natural
+  start-up with `σT = ln |μ|`.
 * `frozen_hurwitz` — positive damping and stiffness `ω₀²(1 ± ε)`, `|ε| < 1`: every frozen state
   matrix is Hurwitz.
 * `frozen_damping_paradox` — for `c > 0`, `ν > 0`, `4πc ≤ ν`, the Meissner system with
