@@ -27,11 +27,13 @@ Scope.
   every window), and the variables are circular: `E Z_w² = 0`, `E N_{x,w}² = 0`,
   `E[N_{r,w} N_{g,w}] = 0`. Fourth moments are not needed: each product in `S̄_r S_g` contains
   at most two values of the same window.
-* The natural case of (3-18) is `c_x = γβ_x` (the persisting "Transient" term and the "Noise 1"
-  random sinusoid share the modal factor `β_x = c_x u_n` of the undamped mode, the common factors
-  being absorbed in `γ` and `Z`) and the forced case of (3-19) is `β_x = 0`; "Noise 2" / "Noise"
-  is `N`. That the on-bin DFTs of the sampled responses have this structure (on-bin frequency, no
-  leakage, independence of windows separated by `Δk ≥ N_T`) is the model boundary, not derived.
+* The natural case of (3-18) is `c_x = γβ_x`: the persisting "Transient" term and the "Noise 1"
+  random sinusoid share the channel factor `𝐜_x u_n` of the undamped mode (TR-110's output row
+  `𝐜_x`, `CrossSpectrum.residue_eq_mul`), the common factors `v_n x(0)` and `v_n b_{2l}` being
+  absorbed in `γ` and `Z`; the forced case of (3-19) is `β_x = 0`; "Noise 2" / "Noise" is `N`.
+  That the on-bin DFTs of the sampled responses have this structure (on-bin frequency, no
+  leakage, vanishing image term as in `CrossSpectrum.dft_rankOne_of_modal`, independence of
+  windows separated by `Δk ≥ N_T`) is the model boundary, not derived.
 * Generic mathematics; no power-system model is selected.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.5, eqs. (3-18)–(3-22)

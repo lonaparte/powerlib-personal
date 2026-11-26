@@ -71,6 +71,9 @@ Results.
   `(λ²/4)(δ_α + δ_{−α})`); `continuous_qAutocov`, `integrable_lorentzian`, `integrable_F`,
   `integrable_psdQ`, `charFun_acMeasure_psdQ` (limit cycle: absolutely continuous with density
   (3-38)); `acMeasure_psdQ_forced`, `charFun_spectralMeasure_Q` (both at once).
+* `continuous_spectralDensity`, `charFun_acMeasure_filteredCov` — **filtering law for spectral
+  measures**: a filter `h` maps the absolutely continuous spectrum `S dω/2π` to
+  `|ĥ|² S dω/2π` (from `Periodogram.spectralDensity_filteredCov`).
 * The observed output: `filteredCov_cos` — a filter maps the line covariance `c cos(ατ)` to
   `c|ĥ(α)|² cos(ατ)`; `forcedOutputCov_eq`, `continuous_ouAutocov`, `integrable_ouAutocov`,
   `integrable_ouDensity`, `charFun_acMeasure_ou`, `charFun_spectralMeasure_forcedOutput`,
@@ -688,6 +691,44 @@ with the density (3-37)/(3-38): for `β > 0`, `λ ≠ 0`, `σ₁ ≠ 0`,
     have := Periodogram.psdQ_nonneg l α σ₁ ω
     positivity
   · exact Periodogram.spectralDensity_lagOutput_Q hβ hl hσ α σ₂ ω
+
+@[tmio T, powerlib_foundation] private theorem norm_spectralIntegrand (h : ℝ → ℝ) (ω τ : ℝ) :
+    ‖((h τ : ℝ) : ℂ) * cexp (-(ω * τ) * I)‖ = ‖h τ‖ := by
+  rw [norm_mul, show -((ω : ℂ) * τ) * I = ((-(ω * τ) : ℝ) : ℂ) * I by push_cast; ring,
+    norm_exp_ofReal_mul_I, mul_one, Complex.norm_real]
+
+/-- The transfer function `ĥ(ω) = ∫ h(t) e^{−iωt} dt` of an integrable impulse response is
+continuous and bounded by `∫ |h|`. -/
+@[tmio T, powerlib_foundation] theorem continuous_spectralDensity {h : ℝ → ℝ} (hh : Integrable h) :
+    Continuous (spectralDensity h) ∧ ∀ ω, ‖spectralDensity h ω‖ ≤ ∫ τ, ‖h τ‖ := by
+  refine ⟨?_, fun ω => ?_⟩
+  · unfold spectralDensity
+    exact continuous_of_dominated (bound := fun τ => ‖h τ‖)
+      (fun ω => (Periodogram.integrable_spectralIntegrand hh ω).aestronglyMeasurable)
+      (fun ω => ae_of_all _ fun τ => (norm_spectralIntegrand h ω τ).le) hh.norm
+      (ae_of_all _ fun τ => by fun_prop)
+  · unfold spectralDensity
+    exact (norm_integral_le_integral_norm _).trans_eq (by simp_rw [norm_spectralIntegrand])
+
+/-- **Filtering law for spectral measures.** If a bounded, continuous, integrable covariance `R`
+has a real, nonnegative, integrable spectral density `S`, then for an integrable impulse response
+`h` the output covariance `filteredCov h R` has the absolutely continuous spectral measure
+`|ĥ(ω)|² S(ω) dω/(2π)`: the power of the output in a frequency band is the band integral of
+`|ĥ|² S/(2π)`. -/
+@[tmio T, powerlib_foundation] theorem charFun_acMeasure_filteredCov {h R S : ℝ → ℝ}
+    (hh : Integrable h) (hRc : Continuous R) (hR : Integrable R) {M : ℝ} (hM : ∀ t, |R t| ≤ M)
+    (hS : Integrable S) (hS0 : ∀ ω, 0 ≤ S ω) (hRS : ∀ ω, spectralDensity R ω = S ω) (τ : ℝ) :
+    charFun (acMeasure fun ω => ‖spectralDensity h ω‖ ^ 2 * S ω) τ = filteredCov h R τ := by
+  obtain ⟨hc, hb⟩ := continuous_spectralDensity hh
+  refine charFun_acMeasure (continuous_filteredCov hh hRc hM)
+    (Periodogram.integrable_filteredCov hh hR) ?_ (fun ω => by have := hS0 ω; positivity)
+    (fun ω => ?_) τ
+  · refine hS.bdd_mul (c := (∫ τ, ‖h τ‖) ^ 2) ((hc.norm.pow 2).aestronglyMeasurable)
+      (ae_of_all _ fun ω => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hb ω) 2
+  · rw [Periodogram.spectralDensity_filteredCov hh hR, hRS]
+    push_cast; ring
 
 /-- **(3-37)/(3-38) as an identity of spectral measures, for every `σ₁`.** For `β > 0`, `λ ≠ 0`
 the observed output `x` has the spectral measure
