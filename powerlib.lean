@@ -339,6 +339,8 @@ import theorem.ParametricResonance.StableBasis
 import theorem.ParametricResonance.SmoothOrbitStability
 import theorem.ParametricResonance.FieldTransfer
 import theorem.ParametricResonance.TongueQuadratic
+import theorem.ParametricResonance.EnergyBalance
+import theorem.ParametricResonance.Wirtinger
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -421,6 +423,7 @@ import theorem.Passive.PortEuler
 import theorem.GridTiedConverter.GFL.DCLink.PortEuler
 import theorem.PowerSystem.Synchronous.PortEuler
 import theorem.PowerSystem.Synchronous.OscillationPhasor
+import theorem.PowerSystem.Synchronous.ParametricSwing
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance
