@@ -18,7 +18,9 @@ first-order forced response):
   of the field on the first-order displacement (frequencies `0` and `2ω`) and the first-order
   state perturbation acting on the first-order response; the second-order forced response `y₂` is
   its periodic response `ẏ₂ = ∂ₓF(q₀) y₂ + h₂`, unique and given by the Green function
-  (`second_response`);
+  (`second_response`), explicitly `y₂ = w₀ + Re{w₁ e^{jωt}} + Re{w₂ e^{2jωt}}` with
+  `A w₀ = −h₀`, `(jωI − A) w₁ = A₀' z`, `(2jωI − A) w₂ = h₂ᶜ` by harmonic balance
+  (`smH2_harmonic`, `second_response_harmonic`);
 * the second-order part of the variational matrix
   `A₂ = D_x(∂ₓF)(q₀)[y₂] + ½ D²(∂ₓF)(q₀)[k, k]` (`smDx`, `smB2`): the second-order response through
   the curvature of the Jacobian, plus the third derivatives of the field on the first-order
@@ -65,7 +67,9 @@ Results.
   `continuous_smB2`, `smH2_periodic` — the second-order data of the field.
 * `smooth_h2_bound`, `smooth_B2_bound`, `smooth_jac_lip` — the second-order estimates of the
   nonlinearity and of the Jacobian along the first-order orbit.
-* `second_response` — existence, uniqueness and Green-function form of `y₂`.
+* `second_response` — existence, uniqueness and Green-function form of `y₂`; `kapR`, `kapI`,
+  `smH0`, `smH2c`, `smK_eq`, `smH2_harmonic` (`h₂ = h₀ + Re{h₂ᶜ e^{2jωt}} + Re{A₀' z e^{jωt}}`),
+  `second_response_harmonic` — `y₂ = w₀ + Re{w₁ e^{jωt}} + Re{w₂ e^{2jωt}}` by harmonic balance.
 * `smooth_orbit_boundary_floquet` — level L1 on the boundary, decided by the sign of `Δ`.
 * `smooth_orbit_L0` — from the multipliers of any small periodic solution to its nonlinear
   stability or instability; `smooth_orbit_boundary` — level L0 on the boundary.
@@ -726,6 +730,97 @@ the nonlinear driven system; if `Δ < 0`, it exists and is unstable from every i
   have hp := smH2_periodic F q0 Vh hω.ne' A0' z
   refine ⟨ForcedOrbit.green_periodic _ _ _ hc hp, ForcedOrbit.green_hasDerivAt hL hR hc hp,
     fun y₂ hy hd => funext fun t => ForcedOrbit.periodic_eq_green hL hR hc hp hd hy t⟩
+
+/-! ### The second-order response by harmonic balance -/
+
+/-- The cosine part `(Re z, V̂)` of the first-order displacement `k(t)`. -/
+def kapR (z : X → ℂ) (Vh : ℝ) : (X → ℝ) × ℝ := (fun i => (z i).re, Vh)
+
+/-- The sine part `(Im z, 0)` of the first-order displacement `k(t)`. -/
+def kapI (z : X → ℂ) : (X → ℝ) × ℝ := (fun i => (z i).im, 0)
+
+/-- The constant part of `½ D²F(q₀)[k, k]`: `¼ (D²F[κᵣ, κᵣ] + D²F[κᵢ, κᵢ])`. -/
+def smH0 (F : (X → ℝ) × ℝ → X → ℝ) (q0 : (X → ℝ) × ℝ) (Vh : ℝ) (z : X → ℂ) : X → ℝ :=
+  (1 / 4 : ℝ) • (fderiv ℝ (fderiv ℝ F) q0 (kapR z Vh) (kapR z Vh) +
+    fderiv ℝ (fderiv ℝ F) q0 (kapI z) (kapI z))
+
+/-- The second-harmonic amplitude of `½ D²F(q₀)[k, k] = h₀ + Re{h₂ e^{2jωt}}`:
+`h₂ = ¼ (D²F[κᵣ, κᵣ] − D²F[κᵢ, κᵢ]) + ¼ j (D²F[κᵣ, κᵢ] + D²F[κᵢ, κᵣ])`. -/
+def smH2c (F : (X → ℝ) × ℝ → X → ℝ) (q0 : (X → ℝ) × ℝ) (Vh : ℝ) (z : X → ℂ) : X → ℂ :=
+  fun i => ⟨(1 / 4 : ℝ) * (fderiv ℝ (fderiv ℝ F) q0 (kapR z Vh) (kapR z Vh) i -
+      fderiv ℝ (fderiv ℝ F) q0 (kapI z) (kapI z) i),
+    (1 / 4 : ℝ) * (fderiv ℝ (fderiv ℝ F) q0 (kapR z Vh) (kapI z) i +
+      fderiv ℝ (fderiv ℝ F) q0 (kapI z) (kapR z Vh) i)⟩
+
+omit [Fintype X] [DecidableEq X] in
+@[tmio T, powerlib_foundation] theorem smK_eq (z : X → ℂ) (Vh ω t : ℝ) :
+    smK z Vh ω t = Real.cos (ω * t) • kapR z Vh - Real.sin (ω * t) • kapI z := by
+  ext i <;> simp [smK, kapR, kapI, harm] <;> ring
+
+omit [DecidableEq X] in
+/-- **The second-order forcing in harmonics:** `h₂(t) = h₀ + Re{h₂ᶜ e^{2jωt}} + Re{A₀' z e^{jωt}}`
+— the quadratic term of the field contributes the frequencies `0` and `2ω`, the state
+perturbation acting on the first-order response the frequency `ω`. -/
+@[tmio T, powerlib_foundation] theorem smH2_harmonic (F : (X → ℝ) × ℝ → X → ℝ)
+    (q0 : (X → ℝ) × ℝ) (Vh ω : ℝ) (A0' : Matrix X X ℝ) (z : X → ℂ) (t : ℝ) :
+    smH2 F q0 Vh ω A0' z t = smH0 F q0 Vh z + harm (smH2c F q0 Vh z) (2 * ω) t +
+      harm (A0'.map (algebraMap ℝ ℂ) *ᵥ z) ω t := by
+  set D2 := fderiv ℝ (fderiv ℝ F) q0 with hD2
+  have hk : D2 (smK z Vh ω t) (smK z Vh ω t) =
+      (Real.cos (ω * t) ^ 2) • D2 (kapR z Vh) (kapR z Vh) -
+        (Real.cos (ω * t) * Real.sin (ω * t)) • (D2 (kapR z Vh) (kapI z) +
+          D2 (kapI z) (kapR z Vh)) + (Real.sin (ω * t) ^ 2) • D2 (kapI z) (kapI z) := by
+    rw [smK_eq]
+    simp only [map_sub, map_smul, _root_.sub_apply, _root_.smul_apply, smul_sub, smul_smul]
+    module
+  have hc2 : Real.cos (2 * ω * t) = Real.cos (ω * t) ^ 2 - Real.sin (ω * t) ^ 2 := by
+    rw [show 2 * ω * t = 2 * (ω * t) by ring, Real.cos_two_mul, ← Real.cos_sq_add_sin_sq (ω * t)]
+    ring
+  have hs2 : Real.sin (2 * ω * t) = 2 * Real.sin (ω * t) * Real.cos (ω * t) := by
+    rw [show 2 * ω * t = 2 * (ω * t) by ring, Real.sin_two_mul]
+  have hsc := Real.sin_sq_add_cos_sq (ω * t)
+  have hA : A0' *ᵥ harm z ω t = harm (A0'.map (algebraMap ℝ ℂ) *ᵥ z) ω t := by
+    funext i
+    simp only [harm, Matrix.mulVec, dotProduct, Matrix.map_apply, Complex.re_sum, Complex.im_sum,
+      Finset.sum_mul, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    simp
+    ring
+  rw [smH2, hk, hA]
+  funext i
+  simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, smH0, harm, smH2c, hc2, hs2]
+  linear_combination (1 / 4 * (D2 (kapR z Vh) (kapR z Vh) i + D2 (kapI z) (kapI z) i)) * hsc
+
+/-- **The second-order forced response by harmonic balance.** If `w₀`, `w₁`, `w₂` solve
+`A w₀ + h₀ = 0`, `(jωI − A) w₁ = A₀' z`, `(2jωI − A) w₂ = h₂ᶜ` (`A = ∂ₓF(q₀)`), then
+`y₂(t) = w₀ + Re{w₁ e^{jωt}} + Re{w₂ e^{2jωt}}` is a `T`-periodic solution of
+`ẏ₂ = A y₂ + h₂` (`T = 2π/ω`), hence the second-order response of `second_response`. -/
+@[tmio T, powerlib_foundation] theorem second_response_harmonic {F : (X → ℝ) × ℝ → X → ℝ}
+    {q0 : (X → ℝ) × ℝ} {Vh ω : ℝ} (hω : ω ≠ 0) (A0' : Matrix X X ℝ) (z : X → ℂ)
+    {w₀ : X → ℝ} {w₁ w₂ : X → ℂ} (h₀ : matX F q0 *ᵥ w₀ + smH0 F q0 Vh z = 0)
+    (h₁ : ((ω : ℂ) * I) • w₁ - (matX F q0).map (algebraMap ℝ ℂ) *ᵥ w₁ =
+      A0'.map (algebraMap ℝ ℂ) *ᵥ z)
+    (h₂ : (((2 * ω : ℝ) : ℂ) * I) • w₂ - (matX F q0).map (algebraMap ℝ ℂ) *ᵥ w₂ =
+      smH2c F q0 Vh z) :
+    (∀ t, w₀ + harm w₁ ω (t + 2 * Real.pi / ω) + harm w₂ (2 * ω) (t + 2 * Real.pi / ω) =
+      w₀ + harm w₁ ω t + harm w₂ (2 * ω) t) ∧
+    ∀ t, HasDerivAt (fun t => w₀ + harm w₁ ω t + harm w₂ (2 * ω) t)
+      (matX F q0 *ᵥ (w₀ + harm w₁ ω t + harm w₂ (2 * ω) t) + smH2 F q0 Vh ω A0' z t) t := by
+  refine ⟨fun t => ?_, fun t => ?_⟩
+  · have e2 : 2 * ω * (t + 2 * Real.pi / ω) = 2 * ω * t + 2 * Real.pi + 2 * Real.pi := by
+      field_simp; ring
+    rw [ForcedOrbit.harm_periodic w₁ hω]
+    congr 1
+    funext i
+    simp only [harm, e2, Real.cos_add_two_pi, Real.sin_add_two_pi]
+  · have d1 := ForcedOrbit.harm_hasDerivAt h₁ t
+    have d2 := ForcedOrbit.harm_hasDerivAt h₂ t
+    have h := ((hasDerivAt_const t w₀).add d1).add d2
+    refine h.congr_deriv ?_
+    rw [smH2_harmonic, Matrix.mulVec_add, Matrix.mulVec_add, ← sub_eq_zero]
+    have h₀' : matX F q0 *ᵥ w₀ = -smH0 F q0 Vh z := eq_neg_of_add_eq_zero_left h₀
+    rw [h₀']
+    abel
 
 end Smooth
 
