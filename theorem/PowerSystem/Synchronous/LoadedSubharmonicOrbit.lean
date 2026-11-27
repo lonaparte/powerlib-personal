@@ -2135,7 +2135,7 @@ transformed amplitude, `loaded_unique_Icc`). -/
     ⟨hlow e, (MatrixAlgebra.quadraticForm_le_opNorm_mul_norm_sq P e).trans
       (mul_le_mul_of_nonneg_right (by linarith) (sq_nonneg _))⟩
   have hQ1 : ∀ e : ℝ², 1 * ‖e‖ ^ 2 ≤ MatrixAlgebra.quadraticForm 1 e := fun e => by
-    simp [MatrixAlgebra.quadraticForm, real_inner_self_eq_norm_sq]
+    simp [MatrixAlgebra.quadraticForm]
   set a := ‖Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J‖ with ha
   set κ := min 1 (p₁ / (96 * p₂ ^ 3)) with hκ
   have hκ0 : 0 < κ := lt_min one_pos (by positivity)
@@ -2348,5 +2348,288 @@ transformed amplitude, `loaded_unique_Icc`). -/
   calc √ε * ‖x t - w t‖ ≤ √ε * (3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (t - τ))) *
       ‖x τ - w τ‖) := mul_le_mul_of_nonneg_left this hs0.le
     _ = 3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (t - τ))) * (√ε * ‖x τ - w τ‖) := by ring
+
+/-! ## Instability of the loaded subharmonic orbit -/
+
+/-- The first time a continuous function reaches a level. -/
+@[tmio T, powerlib_foundation] private theorem exists_first_hit₂ {g : ℝ → ℝ} (hg : Continuous g)
+    {a t c : ℝ} (hat : a ≤ t) (ha : g a < c) (ht : c ≤ g t) :
+    ∃ s ∈ Icc a t, c ≤ g s ∧ ∀ u ∈ Icc a s, g u ≤ c := by
+  set S := Icc a t ∩ g ⁻¹' Ici c with hS
+  have hSc : IsClosed S := isClosed_Icc.inter (isClosed_Ici.preimage hg)
+  have hSne : S.Nonempty := ⟨t, ⟨hat, le_rfl⟩, ht⟩
+  have hSbdd : BddBelow S := ⟨a, fun u hu => hu.1.1⟩
+  have hsS : sInf S ∈ S := hSc.csInf_mem hSne hSbdd
+  have hbefore : ∀ u ∈ Ico a (sInf S), g u < c := by
+    intro u hu
+    by_contra h
+    push Not at h
+    exact absurd (csInf_le hSbdd ⟨⟨hu.1, hu.2.le.trans hsS.1.2⟩, h⟩) (not_le.mpr hu.2)
+  have has : a < sInf S := by
+    rcases eq_or_lt_of_le hsS.1.1 with h | h
+    · exfalso
+      have : c ≤ g (sInf S) := hsS.2
+      rw [← h] at this
+      linarith
+    · exact h
+  have hle : g (sInf S) ≤ c := by
+    have hcl : sInf S ∈ closure (Ico a (sInf S)) := by
+      rw [closure_Ico has.ne]; exact ⟨has.le, le_rfl⟩
+    exact (hg.continuousWithinAt (s := Ico a (sInf S))).closure_le hcl continuousWithinAt_const
+      fun u hu => (hbefore u hu).le
+  refine ⟨sInf S, hsS.1, hsS.2, fun u hu => ?_⟩
+  rcases eq_or_lt_of_le hu.2 with h | h
+  · rw [h]; exact hle
+  · exact (hbefore u ⟨hu.1, h⟩).le
+
+/-- The transformed amplitude is continuous along a continuous curve. -/
+@[tmio T, powerlib_foundation] private theorem continuous_Wmap_comp {α₂ ν ε ρc : ℝ} {x : ℝ → ℂ}
+    (hx : Continuous x) : Continuous fun s => Wmap α₂ ν ε ρc (x s) s := by
+  have hc : Continuous fun s => clampC ρc (x s) := (DuffingMathieu.continuous_clampC ρc).comp hx
+  have hp : Continuous fun t : ℝ => phase ν t := by unfold phase; fun_prop
+  have hpi : Continuous fun t : ℝ => (phase ν t)⁻¹ :=
+    hp.inv₀ fun t => QuadraticCubic.phase_ne_zero ν t
+  simp only [Wmap, nearId]
+  fun_prop
+
+set_option maxHeartbeats 1000000 in
+/-- **The loaded subharmonic orbit of a locked state with an unstable averaged Jacobian is
+unstable in the loaded swing model.** If the Jacobian `loadedJac b d ν δ₀ w*` of a nondegenerate
+locked state has a characteristic root `μ` with `Re μ > 0` (e.g. a saddle, negative determinant),
+there are `ε₀, ρ_s > 0` and `C ≥ 0` such that for every `0 < ε ≤ ε₀` and every machine of the
+scaling the `2π/ν`-periodic solution `(δ_ε, δ̇_ε)` of `loaded_subharmonic_orbit` is unstable: for
+every `η > 0` some solution of the loaded swing model starts within `√ε η` of it in the
+phase-plane norm `|Δδ − jΔδ̇/ν|` and later reaches the distance `√ε ρ_s`
+(`Averaging.unstable_perturbed` with the Chetaev form of the averaged Jacobian). -/
+@[tmio M, powerlib_domain] theorem loaded_orbit_unstable {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (hc : 0 < Real.cos δ₀) {wstar : ℂ} (hw0 : loadedAmp b d ν δ₀ wstar = 0)
+    (hdet : (loadedJac b d ν δ₀ wstar).det ≠ 0) {μ : ℂ}
+    (hroot : (Linear.characteristicMatrix (loadedJac b d ν δ₀ wstar) μ).det = 0)
+    (hμ : 0 < μ.re) :
+    ∃ ε₀ C ρs : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ 0 < ρs ∧
+      ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ p : Params, p.Pos →
+      p.D / p.M = ε * b → loadedFreqSq p δ₀ = ν ^ 2 - ε * d →
+      ∃ δε δε' : ℝ → ℝ, (∀ t, HasDerivAt δε (δε' t) t) ∧
+        (∀ t, HasDerivAt δε' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δε t) (δε' t)) t) ∧
+        (∀ t, δε (t + 2 * Real.pi / ν) = δε t ∧ δε' (t + 2 * Real.pi / ν) = δε' t) ∧
+        (∀ t, |δε t - δ₀ - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε) ∧
+        ∀ η, 0 < η → ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
+          (∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t) ∧
+          ‖vdp ν 0 (δ 0 - δε 0) (δ' 0 - δε' 0)‖ ≤ √ε * η ∧
+          ∃ t, 0 ≤ t ∧ √ε * ρs ≤ ‖vdp ν t (δ t - δε t) (δ' t - δε' t)‖ := by
+  obtain ⟨ε₁, Mq, Lq, Dc, hε₁, hε₁1, hMq, hLq, hDc0, hcore⟩ :=
+    loaded_core (b := b) (d := d) hν hc wstar
+  obtain ⟨ε₂, C, hε₂, hC, horb⟩ := loaded_orbit_core hν hc hw0 hdet
+  set ρc := ‖wstar‖ + 3 with hρc
+  have hρc0 : 0 ≤ ρc := by positivity
+  set T := 2 * Real.pi / ν with hT
+  have hT0 : 0 < T := by positivity
+  have hfh := SubharmonicOrbit.realField_hyp (QuadraticCubic.cutSecond_hyp (b := b)
+    (k₀ := ν ^ 2 - d) (k₁ := ν ^ 2) (α₂ := -(ν ^ 2 * Real.tan δ₀) / 2) (α₃ := -(ν ^ 2) / 6) hν
+    hρc0)
+  set ℓ := QuadraticCubic.lipSecond b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2)
+    (-(ν ^ 2) / 6) ν (2 * ρc) with hℓ
+  set M := ℓ * (2 * ρc) with hM
+  have hℓ0 : 0 ≤ ℓ := hfh.2.1
+  have hM0 : 0 ≤ M := by positivity
+  obtain ⟨hD, hDl, hDc, -, hA⟩ := limit_hyp (ρc := ρc) hν hw0 (by linarith)
+  set L₂ := (6 * |-(ν ^ 2) / 6| / ν + 5 * (-(ν ^ 2 * Real.tan δ₀) / 2) ^ 2 / ν ^ 3) *
+    (‖wstar‖ + 1) with hL₂
+  have hL₂0 : 0 ≤ L₂ := by positivity
+  set J := loadedJac b d ν δ₀ wstar with hJdef
+  -- the Chetaev certificate
+  obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hroot
+  obtain ⟨α, H, wv, hα, hH, -, hHw, hQ⟩ :=
+    LinearSystems.exists_instability_quadratic_certificate_of_complex_eigenvalue_re_pos J hv heig hμ
+  obtain ⟨q₁, hq₁, hqlow⟩ := MatrixAlgebra.exists_pos_mul_norm_sq_le_quadraticForm _ hQ
+  set ηH := ‖Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) H‖ with hηH
+  set a := ‖Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J‖ with ha
+  have hηH0 : 0 ≤ ηH := norm_nonneg _
+  have ha0 : 0 ≤ a := norm_nonneg _
+  set κ := min 1 (q₁ / (16 * (ηH + 1))) with hκ
+  have hκ0 : 0 < κ := lt_min one_pos (by positivity)
+  have hκ1 : κ ≤ 1 := min_le_left _ _
+  have hκq : 16 * ηH * κ ≤ q₁ := by
+    have h1 : κ ≤ q₁ / (16 * (ηH + 1)) := min_le_right _ _
+    rw [le_div_iff₀ (by positivity)] at h1
+    nlinarith
+  set r₁ := min (1 / 2) (κ / (2 * (L₂ + 1))) with hr₁
+  have hr₁0 : 0 < r₁ := lt_min (by norm_num) (by positivity)
+  have hr₁h : r₁ ≤ 1 / 2 := min_le_left _ _
+  have hr₁ρ : 2 * r₁ ≤ 1 := by linarith
+  have hr₁κ : 2 * L₂ * r₁ ≤ κ := by
+    have h1 : r₁ ≤ κ / (2 * (L₂ + 1)) := min_le_right _ _
+    rw [le_div_iff₀ (by positivity)] at h1
+    nlinarith
+  set LS := Averaging.stroboLip ℓ (2 * Lq) L₂ M Mq T with hLS
+  have hLS0 : 0 ≤ LS := by
+    rw [hLS, Averaging.stroboLip]
+    refine mul_nonneg (Real.exp_pos _).le (add_nonneg (mul_nonneg (sq_nonneg T) (add_nonneg
+      (mul_nonneg hL₂0 (add_nonneg hM0 hMq)) (mul_nonneg hℓ0 (by linarith)))) (mul_nonneg hT0.le
+      (by linarith)))
+  set σ := min (κ * T / (2 * LS + 1)) (min (r₁ / 2 / (Dc + C + 1)) (1 / (2 * (C + 1)))) with hσ
+  have hσ0 : 0 < σ := lt_min (by positivity) (lt_min (by positivity) (by positivity))
+  set ε₀ := min (min (min ε₁ ε₂) (min (1 / (T * a + 1)) (q₁ / (4 * T * ηH * (a ^ 2 + 1) + 1))))
+    (min (1 / (2 * (M + Mq) * T + 1)) (σ ^ 2)) with hε₀
+  refine ⟨ε₀, C, r₁ / 3, by positivity, hC, by positivity, ?_⟩
+  intro ε hε hεε₀ p hp hb hd
+  have hεε₁ : ε ≤ ε₁ := hεε₀.trans ((min_le_left _ _).trans ((min_le_left _ _).trans
+    (min_le_left _ _)))
+  have hεε₂ : ε ≤ ε₂ := hεε₀.trans ((min_le_left _ _).trans ((min_le_left _ _).trans
+    (min_le_right _ _)))
+  have hε1 : ε ≤ 1 := hεε₁.trans hε₁1
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hs0' : ((√ε : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hs0.ne'
+  have hs1 : √ε ≤ 1 := Real.sqrt_le_one.mpr hε1
+  have hss : √ε * √ε = ε := Real.mul_self_sqrt hε.le
+  have hεs : ε ≤ √ε := by
+    calc ε = √ε * √ε := hss.symm
+      _ ≤ √ε * 1 := mul_le_mul_of_nonneg_left hs1 hs0.le
+      _ = √ε := mul_one _
+  have hsσ : √ε ≤ σ := by
+    have : ε ≤ σ ^ 2 := hεε₀.trans ((min_le_right _ _).trans (min_le_right _ _))
+    calc √ε ≤ √(σ ^ 2) := Real.sqrt_le_sqrt this
+      _ = σ := Real.sqrt_sq hσ0.le
+  obtain ⟨hbil, hbil', hWD, hsurj, -, hbund, hTR⟩ := hcore ε hε hεε₁ p hp hb hd
+  obtain ⟨w, hw, hwper, hw32, hwC⟩ := horb ε hε hεε₂ p hp hb hd
+  obtain ⟨h1, h2, h3, h4⟩ := loaded_swing_of_orbit hp hν hε hb hd hw hwper hw32 hwC
+  refine ⟨_, _, h1, h2, h3, h4, ?_⟩
+  intro η hη
+  -- the order conditions of the escape estimate
+  have hηε : ε * √ε ≤ ε := mul_le_of_le_one_right hε.le hs1
+  have hεη : ε ^ 2 ≤ ε * √ε := by rw [sq]; exact mul_le_mul_of_nonneg_left hεs hε.le
+  have hεa : ε * T * a ≤ 1 := by
+    have h5 : ε ≤ 1 / (T * a + 1) := hεε₀.trans ((min_le_left _ _).trans
+      ((min_le_right _ _).trans (min_le_left _ _)))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : ε * (T * a + 1) = ε * T * a + ε := by ring
+    linarith only [h5, e, hε]
+  have hεH : 4 * (ε * T) * ηH * (a ^ 2 + 1) ≤ q₁ := by
+    have h5 : ε ≤ q₁ / (4 * T * ηH * (a ^ 2 + 1) + 1) := hεε₀.trans ((min_le_left _ _).trans
+      ((min_le_right _ _).trans (min_le_right _ _)))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : ε * (4 * T * ηH * (a ^ 2 + 1) + 1) = 4 * (ε * T) * ηH * (a ^ 2 + 1) + ε := by ring
+    linarith only [h5, e, hε]
+  have hερ : 2 * ε * (M + Mq) * T ≤ 1 := by
+    have h5 : ε ≤ 1 / (2 * (M + Mq) * T + 1) := hεε₀.trans ((min_le_right _ _).trans
+      (min_le_left _ _))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : ε * (2 * (M + Mq) * T + 1) = 2 * ε * (M + Mq) * T + ε := by ring
+    linarith only [h5, e, hε]
+  have hηκ : 2 * (ε * √ε) * LS ≤ κ * (ε * T) := by
+    have h5 : √ε ≤ κ * T / (2 * LS + 1) := hsσ.trans (min_le_left _ _)
+    rw [le_div_iff₀ (by positivity)] at h5
+    have h6 : 2 * √ε * LS ≤ κ * T := by
+      have e : √ε * (2 * LS + 1) = 2 * √ε * LS + √ε := by ring
+      linarith only [h5, e, hs0]
+    calc 2 * (ε * √ε) * LS = ε * (2 * √ε * LS) := by ring
+      _ ≤ ε * (κ * T) := mul_le_mul_of_nonneg_left h6 hε.le
+      _ = κ * (ε * T) := by ring
+  have hsDC : √ε * (Dc + C) ≤ r₁ / 2 := by
+    have h5 : √ε ≤ r₁ / 2 / (Dc + C + 1) := hsσ.trans ((min_le_right _ _).trans (min_le_left _ _))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : √ε * (Dc + C + 1) = √ε * (Dc + C) + √ε := by ring
+    linarith only [h5, e, hs0]
+  -- the family of transformed amplitudes from time `0`
+  choose w₀ hw₀ using fun y : ℝ² => hsurj (toReal.symm y) 0
+  choose xs hxs0 hxs using fun y : ℝ² =>
+    exists_clamped_solution (b := b) hp hν hc hε hε1 hd hρc0 0 (w₀ y)
+  set X : ℝ² → ℝ → ℝ² := fun y s => toReal (Wmap (alpha2 p δ₀) ν ε ρc (xs y s) s) with hX
+  set Z : ℝ → ℝ² := fun s => toReal (Wmap (alpha2 p δ₀) ν ε ρc (w s) s) with hZ
+  have hX0 : ∀ y, X y 0 = y := fun y => by
+    simp only [hX, hxs0, hw₀, ContinuousLinearEquiv.apply_symm_apply]
+  have hXZ : ∀ y s, ‖X y s - Z s‖ = ‖Wmap (alpha2 p δ₀) ν ε ρc (xs y s) s -
+      Wmap (alpha2 p δ₀) ν ε ρc (w s) s‖ := fun y s => by
+    simp only [hX, hZ, ← map_sub, Saturation.norm_toReal]
+  have hZb : ∀ s, ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar‖ ≤ r₁ / 2 := fun s =>
+    calc ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar‖ ≤
+        ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - w s‖ + ‖w s - wstar‖ :=
+          norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ √ε * Dc + √ε * C := add_le_add (hWD _ _) (hwC s)
+      _ = √ε * (Dc + C) := by ring
+      _ ≤ r₁ / 2 := hsDC
+  have hzb : ∀ s, ‖Z s - toReal wstar‖ ≤ r₁ / 2 := fun s => by
+    simp only [hZ, ← map_sub, Saturation.norm_toReal]; exact hZb s
+  obtain ⟨y, hy, t, ht, hesc⟩ := Averaging.unstable_perturbed hfh one_pos hL₂0 hD hDl hDc hA hH
+    hHw hα (fun e => hqlow e) (le_refl a) (le_refl ηH) hr₁0 hr₁ρ hκ0.le hκ1 hκq hr₁κ hε hε1 hηε
+    hεη (by positivity) hMq hεa hεH hερ hηκ (X := X)
+    (Q := fun y s => toReal (transRemL p δ₀ b d ν ε (xs y s) s)) hX0 (z := Z)
+    (qz := fun s => toReal (transRemL p δ₀ b d ν ε (w s) s))
+    (fun y s hxs' hzs u hu => by
+      have hx' := hbund (xs y) (hxs y) s (by
+        simpa only [hX, ← map_sub, Saturation.norm_toReal] using hxs'.trans hr₁h) u hu
+      have hz' := hbund w hw s (by
+        simpa only [hZ, ← map_sub, Saturation.norm_toReal] using hzs.trans hr₁h) u hu
+      refine ⟨hx'.2, hz'.2, ?_, ?_, ?_⟩
+      · rw [Saturation.norm_toReal]; exact (hTR _ _ u hx'.1 hx'.1).1
+      · rw [Saturation.norm_toReal]; exact (hTR _ _ u hz'.1 hz'.1).1
+      · rw [← map_sub, Saturation.norm_toReal, hXZ]
+        calc _ ≤ ε * √ε * Lq * ‖xs y u - w u‖ := (hTR _ _ u hx'.1 hz'.1).2
+          _ ≤ ε * √ε * Lq * (2 * ‖Wmap (alpha2 p δ₀) ν ε ρc (xs y u) u -
+              Wmap (alpha2 p δ₀) ν ε ρc (w u) u‖) :=
+              mul_le_mul_of_nonneg_left (hbil _ _ u) (by positivity)
+          _ = ε * √ε * (2 * Lq) * ‖Wmap (alpha2 p δ₀) ν ε ρc (xs y u) u -
+              Wmap (alpha2 p δ₀) ν ε ρc (w u) u‖ := by ring)
+    hzb (δ := min (η / 2) (r₁ / 4)) (lt_min (by positivity) (by positivity))
+  set x := xs y with hxdef
+  -- the first time the transformed deviation reaches `r₁/2`
+  have hg : Continuous fun s => ‖X y s - Z s‖ := by
+    have hxc : Continuous x := continuous_iff_continuousAt.mpr fun s => (hxs y s).continuousAt
+    have hwc : Continuous w := continuous_iff_continuousAt.mpr fun s => (hw s).continuousAt
+    exact ((toReal.continuous.comp (continuous_Wmap_comp hxc)).sub
+      (toReal.continuous.comp (continuous_Wmap_comp hwc))).norm
+  have hg0 : ‖X y 0 - Z 0‖ < r₁ / 2 := by
+    have : ‖X y 0 - Z 0‖ ≤ r₁ / 4 := by rw [hX0]; exact hy.trans (min_le_right _ _)
+    linarith
+  obtain ⟨t₁, ht₁, hhit, hbefore⟩ := exists_first_hit₂ hg ht hg0 hesc
+  -- before `t₁` the clamped solution stays inside the clamp
+  have hin : ∀ s ∈ Icc 0 t₁, ‖x s‖ < ρc := by
+    intro s hs
+    have h5 := hbefore s hs
+    rw [hXZ] at h5
+    have h6 : ‖Wmap (alpha2 p δ₀) ν ε ρc (x s) s - wstar‖ ≤ r₁ := by
+      calc _ ≤ ‖Wmap (alpha2 p δ₀) ν ε ρc (x s) s - Wmap (alpha2 p δ₀) ν ε ρc (w s) s‖ +
+            ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+        _ ≤ r₁ / 2 + r₁ / 2 := add_le_add h5 (hZb s)
+        _ = r₁ := by ring
+    have h7 : ‖x s - Wmap (alpha2 p δ₀) ν ε ρc (x s) s‖ ≤ r₁ / 2 := by
+      rw [norm_sub_rev]
+      refine (hWD _ _).trans ?_
+      have : √ε * Dc ≤ √ε * (Dc + C) := mul_le_mul_of_nonneg_left (by linarith) hs0.le
+      linarith
+    have h8 : ‖x s - wstar‖ ≤ 1 := by
+      calc ‖x s - wstar‖ ≤ ‖x s - Wmap (alpha2 p δ₀) ν ε ρc (x s) s‖ +
+            ‖Wmap (alpha2 p δ₀) ν ε ρc (x s) s - wstar‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+        _ ≤ r₁ / 2 + r₁ := add_le_add h7 h6
+        _ ≤ 1 := by linarith
+    have := norm_le_norm_add_norm_sub' (x s) wstar
+    rw [hρc]; linarith
+  -- the swing solution from the same initial state
+  obtain ⟨δ, δ', hδ0, hδ'0, hδ, hδ'⟩ := exists_loaded_solution hp δ₀ ε (2 * ν) 0
+    (δ₀ + pos ν (((√ε : ℝ) : ℂ) * x 0) 0) (vel ν (((√ε : ℝ) : ℂ) * x 0) 0)
+  have hsw := fun s (hs : s ∈ Icc 0 t₁) => swing_of_clamped hp hν hε hb hd (hxs y s) (hin s hs)
+  have huniq := loaded_unique_Icc hp (τ := 0) (T₁ := t₁) (fun s hs => (hsw s hs).1)
+    (fun s hs => (hsw s hs).2) (fun s _ => hδ s) (fun s _ => hδ' s) hδ0.symm hδ'0.symm
+  have hdev : ∀ s ∈ Icc 0 t₁, ‖vdp ν s (δ s - (δ₀ + pos ν (((√ε : ℝ) : ℂ) * w s) s))
+      (δ' s - vel ν (((√ε : ℝ) : ℂ) * w s) s)‖ = √ε * ‖x s - w s‖ := by
+    intro s hs
+    rw [vdp_dev hν.ne' hε, norm_mul, Complex.norm_real, Real.norm_of_nonneg hs0.le]
+    congr 2
+    rw [← (huniq s hs).1, ← (huniq s hs).2, show δ₀ + pos ν (((√ε : ℝ) : ℂ) * x s) s - δ₀ =
+      pos ν (((√ε : ℝ) : ℂ) * x s) s by ring, vdp_pos_vel₂ hν.ne']
+    field_simp
+  refine ⟨δ, δ', hδ, hδ', ?_, t₁, ht₁.1, ?_⟩
+  · rw [hdev 0 ⟨le_rfl, ht₁.1⟩]
+    have h5 := hbil (x 0) (w 0) 0
+    rw [← hXZ, hX0] at h5
+    have h6 : ‖y - Z 0‖ ≤ η / 2 := hy.trans (min_le_left _ _)
+    calc √ε * ‖x 0 - w 0‖ ≤ √ε * (2 * (η / 2)) :=
+          mul_le_mul_of_nonneg_left (h5.trans (by linarith)) hs0.le
+      _ = √ε * η := by ring
+  · rw [hdev t₁ ⟨ht₁.1, le_rfl⟩]
+    have h5 := hbil' (x t₁) (w t₁) t₁
+    rw [← hXZ] at h5
+    have h6 : r₁ / 3 ≤ ‖x t₁ - w t₁‖ := by linarith
+    exact mul_le_mul_of_nonneg_left h6 hs0.le
 
 end powerlib.Synchronous.LoadedSubharmonicOrbit
