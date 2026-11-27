@@ -32,7 +32,8 @@ complement (`autonomous_trivial_multiplier`, through
 give there is the reduced map itself, the identity, so the period map and the periodic solution
 are Lyapunov stable (`FoldReduction.lyapunovStable_of_fixedCurve`, the Andronov–Witt theorem
 without its orbital attraction). Orbital asymptotic stability, through a Poincaré section
-transverse to the orbit, is not treated here.
+transverse to the orbit, is not treated here; it is `theorem/Periodic/AndronovWitt.lean`
+(`andronov_witt`, `orbit_unstable`), with the section in `theorem/Periodic/PoincareSection.lean`.
 
 Scope.
 * As in `theorem/Periodic/FlipOrbit.lean`: solutions in `ℝ^{Fin n}` with the sup norm, the map
@@ -49,7 +50,7 @@ Scope.
   nonconstant orbit (`a = b = 0`).
 * The solution statements concern the initial time `0` (solutions on `[0, ∞)`); `a = b = 0` is
   not decided for non-autonomous systems; orbital asymptotic stability of autonomous orbits is
-  not treated.
+  not treated here (`AndronovWitt`).
 * Generic mathematics; no model family.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), Ch. 4 and Ch. 9 (the fold
@@ -575,7 +576,7 @@ is the identity: the period map is Lyapunov stable at `x_*(0)` and `x_*` is a Ly
 solution from the initial time `0` (`FoldReduction.lyapunovStable_of_fixedCurve`; the
 Andronov–Witt theorem without its orbital attraction). So for autonomous systems the fold and
 pitchfork verdicts never apply; the remaining question, orbital asymptotic stability, needs a
-Poincaré section transverse to the orbit. -/
+Poincaré section transverse to the orbit (`AndronovWitt.andronov_witt`). -/
 @[tmio T, powerlib_foundation] theorem autonomous_trivial_multiplier (hf : ContDiff ℝ 4 f)
     (hfK : LipschitzWith K f) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t)
     {T : ℝ} (hT : 0 < T) (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) :

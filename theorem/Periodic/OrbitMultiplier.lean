@@ -26,7 +26,9 @@ Results.
 * `one_mem_spectrum_monodromy` — if the orbit is not an equilibrium (`f(x_p(0)) ≠ 0`), `1` is a
   Floquet multiplier (an eigenvalue of the complexified monodromy matrix). Its consequence for the
   centre-manifold reduction at `+1` (reduced map the identity, Lyapunov stable, never
-  asymptotically stable) is `FoldOrbit.autonomous_trivial_multiplier`.
+  asymptotically stable) is `FoldOrbit.autonomous_trivial_multiplier`; orbital asymptotic
+  stability with asymptotic phase when the other multipliers lie inside the unit circle
+  (Andronov–Witt) is `AndronovWitt.andronov_witt_of_multipliers`.
 -/
 
 noncomputable section

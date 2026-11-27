@@ -432,6 +432,8 @@ import theorem.Periodic.LocalField
 import theorem.Periodic.PeriodMapJet
 import theorem.Periodic.DegenerateFlipOrbit
 import theorem.Periodic.JetVariation
+import theorem.Periodic.PoincareSection
+import theorem.Periodic.AndronovWitt
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
