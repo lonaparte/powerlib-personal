@@ -2,15 +2,80 @@ import theorem.Periodic.PoincareSection
 import theorem.Periodic.FlipOrbitUniform
 import theorem.Periodic.OrbitalInstability
 
-/-! # Andronov–Witt (draft)
+/-! # The Andronov–Witt theorem: orbital stability and instability of autonomous periodic orbits
+
+A nonconstant `T`-periodic orbit `x_*` of an autonomous system `ẋ = f(x)` always has the trivial
+multiplier `1` (velocity direction), so its period map is never asymptotically stable
+(`FoldOrbit.autonomous_trivial_multiplier`) and the periodic solution itself is at best Lyapunov
+stable: nearby solutions drift in phase. The correct notion is **orbital** stability, decided by
+the **nontrivial** multipliers through the Poincaré map `Π` of a section transverse to the orbit
+(`theorem/Periodic/PoincareSection.lean`), whose Jacobian `DΠ(p) = sectionMatrix M f(p)` has those
+multipliers as its eigenvalues on the section.
+
+* **Stable side (Andronov–Witt).** If `DΠ(p)` is Schur stable — equivalently `M − f(p) wᵀ` is
+  Schur stable for some `w ⬝ f(p) = 1`, equivalently `1` is a simple multiplier and all other
+  multipliers lie strictly inside the unit circle (`PoincareSection.schurStable_deflate_iff`) —
+  then `Π` is locally exponentially stable (`Map.locallyExponentiallyStable_of_schurStable`), and
+  this gives the orbit **asymptotic phase**: every solution starting within `δ` of `x_*(σ)` has a
+  phase `θ`, `|θ| ≤ C ‖x(0) − x_*(σ)‖`, with
+  `‖x(t) − x_*(t + σ + θ)‖ ≤ C e^{−λt} ‖x(0) − x_*(σ)‖`, and the distance to the orbit decays,
+  `dist(x(t), x_*(ℝ)) ≤ C e^{−λt} dist(x(0), x_*(ℝ))`. The proof samples the solution at its
+  successive crossings `t_k = τ₀ + ⋯ + τ_{k−1}` of the section (`iterate_poincareMap`): the
+  crossing points converge geometrically to `p`, the return times `τ_k` converge geometrically to
+  `T` (the return time is Lipschitz at `p`), so `t_k − kT` converges to `−θ` with a geometric tail,
+  and Grönwall on `[t_k, t_{k+1}]` interpolates between the crossings.
+* **Unstable side.** If a multiplier has `|μ| > 1` (necessarily nontrivial), it is an eigenvalue of
+  `DΠ(p)` (`PoincareSection.mem_spectrum_deflate_iff`) and `Π` is unstable
+  (`Map.unstable_of_eigenvalue`). The escaping orbit of `Π` leaves a small ball about `p` through
+  a point of the section, and near `p` the section meets the orbit only in `p`
+  (`orbit_section_eq`); a compactness argument turns the escape into a positive distance from
+  the whole orbit: the orbit is **orbitally unstable** (`orbit_unstable`).
 
 Scope.
-* draft
+* `ẋ = f(x)` on `ℝ^{Fin n}` with the sup norm, continuous time, solutions on `[0, ∞)` (Mathlib
+  `IsIntegralCurveOn`); `f` of class `C¹` and globally `K`-Lipschitz (as in
+  `theorem/Periodic/PoincareSection.lean`; locally Lipschitz fields would first be cut off near the
+  orbit as in `theorem/Periodic/LocalField.lean`, which is not done here). `x_*` is a global
+  `T`-periodic solution, `T > 0`, `f(x_*(0)) ≠ 0`; `T` need not be the minimal period.
+* The map semantics on `ℝⁿ = EuclideanSpace ℝ (Fin n)` is used through `FlipOrbit.euclidMap`
+  (`poincareMap_stability`); the solution statements are in the sup norm. Orbital distance is
+  `Metric.infDist` to the range of `x_*`.
+* The constants `δ`, `C`, `λ` are not explicit: the rate is `λ = −log q/(3T/2)` with `q < 1` a
+  geometric rate of `Π` (from the Schur stability of `DΠ(p)`), not the optimal
+  `−log ρ(DΠ(p))/T`. The critical case (a nontrivial multiplier on the unit circle, the
+  others inside) is not decided here.
+* Generic mathematics; no model family.
 
-Source: draft.
+Source: A. A. Andronov and A. A. Witt, "Zur Stabilität nach Liapounoff", Phys. Z. Sowjetunion 4
+(1933) (orbital stability of a cycle from its nontrivial multipliers); Coddington and Levinson,
+*Theory of Ordinary Differential Equations*, Ch. 13 §2 (orbital asymptotic stability with
+asymptotic phase); Hartman, *Ordinary Differential Equations* (the asymptotic phase);
+Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §1.5 (the Poincaré map of a cycle
+and its multipliers); Hirsch, Smale and Devaney, *Differential Equations, Dynamical Systems, and
+an Introduction to Chaos*, Ch. 10; the open item of `theorem/Periodic/FoldOrbit.lean` (Scope:
+"orbital asymptotic stability of autonomous orbits is not treated";
+`autonomous_trivial_multiplier`: "the remaining question, orbital asymptotic stability, needs a
+Poincaré section transverse to the orbit").
 
 Results.
-* draft
+* `iterate_poincareMap` — `Πᵏ(x(0)) = x(τ₀ + ⋯ + τ_{k−1})` for every solution `x` on `[0, ∞)`.
+* **Stable side**: `asymptoticPhase_of_section` (from `x_*(0)`), `asymptoticPhase` (uniformly
+  from every point `x_*(σ)`: asymptotic phase with exponential rate), `infDist_orbit_le`
+  (orbital exponential stability: `dist(x(t), x_*(ℝ)) ≤ C e^{−λt} dist(x(0), x_*(ℝ))`).
+* **Unstable side**: `orbit_section_eq` (near `x_*(0)` the section meets the orbit only in
+  `x_*(0)`), `orbit_unstable` (a multiplier `|μ| > 1` makes the orbit orbitally unstable).
+* `poincareMap_stability` — the Poincaré map in the map semantics: locally exponentially stable
+  for a Schur stable `DΠ(p)`, unstable for a multiplier `|μ| > 1`.
+* **The theorem** `andronov_witt` (deflated form: `M − f(p) wᵀ` Schur stable for some
+  `w ⬝ f(p) = 1`) and `andronov_witt_of_multipliers` (`1` simple, all other multipliers strictly
+  inside the unit circle): asymptotic phase and orbital exponential stability.
+
+Corrections.
+None: an extension (orbital asymptotic stability with asymptotic phase and orbital instability of
+autonomous periodic orbits, which `theorem/Periodic/FoldOrbit.lean` left open).
+
+Family and connection conclusions.
+None: static evidence on autonomous ODEs (orbital stability of a periodic orbit).
 -/
 
 noncomputable section
@@ -51,6 +116,29 @@ times of the first `k` iterates are nonnegative, `Πᵏ(x(0)) = x(t_k)` with
     rw [hy0] at h
     rw [Function.iterate_succ_apply', Finset.sum_range_succ, h, add_comm]
 
+/-! ## Maps of `Fin n → ℝ` read in the map semantics -/
+
+/-- A strict derivative and a fixed point of a map of `Fin n → ℝ`, read for `euclidMap` on
+`ℝⁿ`. -/
+@[tmio T, powerlib_foundation] private theorem euclid_data {F : (Fin n → ℝ) → Fin n → ℝ}
+    {p : Fin n → ℝ} {A : Matrix (Fin n) (Fin n) ℝ}
+    (hF : HasStrictFDerivAt F (Matrix.toLin' A).toContinuousLinearMap p) (hFp : F p = p) :
+    HasStrictFDerivAt (euclidMap F) (Linear.op A) ((EuclideanSpace.equiv (Fin n) ℝ).symm p) ∧
+      euclidMap F ((EuclideanSpace.equiv (Fin n) ℝ).symm p) =
+        (EuclideanSpace.equiv (Fin n) ℝ).symm p := by
+  set ε := EuclideanSpace.equiv (Fin n) ℝ with hε
+  have h1 : HasStrictFDerivAt F (Matrix.toLin' A).toContinuousLinearMap (ε (ε.symm p)) := by
+    rwa [ContinuousLinearEquiv.apply_symm_apply]
+  have h := (ε.symm.hasStrictFDerivAt (x := F (ε (ε.symm p)))).comp (ε.symm p)
+    (h1.comp (ε.symm p) ε.hasStrictFDerivAt)
+  have hfun : euclidMap F = fun x => ε.symm (F (ε x)) := rfl
+  have hM : Linear.op A = (ε.symm : (Fin n → ℝ) →L[ℝ] ℝⁿ).comp
+      ((Matrix.toLin' A).toContinuousLinearMap.comp (ε : ℝⁿ →L[ℝ] (Fin n → ℝ))) := by
+    ext1 y; rfl
+  refine ⟨by rw [hfun, hM]; exact h, ?_⟩
+  show ε.symm (F (ε (ε.symm p))) = ε.symm p
+  rw [ContinuousLinearEquiv.apply_symm_apply, hFp]
+
 /-! ## Local exponential stability of a map, in the sup norm -/
 
 /-- A map of `Fin n → ℝ` with fixed point `p` and Schur stable strict derivative `A` there is
@@ -65,19 +153,7 @@ read through `euclidMap`), with a rate `0 < q < 1`. -/
   set ε := EuclideanSpace.equiv (Fin n) ℝ with hε
   set εL : ℝⁿ →L[ℝ] (Fin n → ℝ) := (ε : ℝⁿ →L[ℝ] (Fin n → ℝ)) with hεL
   set εS : (Fin n → ℝ) →L[ℝ] ℝⁿ := (ε.symm : (Fin n → ℝ) →L[ℝ] ℝⁿ) with hεS
-  have h1 : HasStrictFDerivAt F (Matrix.toLin' A).toContinuousLinearMap (ε (ε.symm p)) := by
-    rwa [ContinuousLinearEquiv.apply_symm_apply]
-  have h := (ε.symm.hasStrictFDerivAt (x := F (ε (ε.symm p)))).comp (ε.symm p)
-    (h1.comp (ε.symm p) ε.hasStrictFDerivAt)
-  have hfun : euclidMap F = fun x => ε.symm (F (ε x)) := rfl
-  have hM : Linear.op A = (ε.symm : (Fin n → ℝ) →L[ℝ] ℝⁿ).comp
-      ((Matrix.toLin' A).toContinuousLinearMap.comp (ε : ℝⁿ →L[ℝ] (Fin n → ℝ))) := by
-    ext1 y; rfl
-  have hE : HasStrictFDerivAt (euclidMap F) (Linear.op A) (ε.symm p) := by
-    rw [hfun, hM]; exact h
-  have hEp : euclidMap F (ε.symm p) = ε.symm p := by
-    show ε.symm (F (ε (ε.symm p))) = ε.symm p
-    rw [ContinuousLinearEquiv.apply_symm_apply, hFp]
+  obtain ⟨hE, hEp⟩ := euclid_data hF hFp
   obtain ⟨r, C, q, hr, hC, hq0, hq1, hb⟩ :=
     Map.locallyExponentiallyStable_of_schurStable hE.hasFDerivAt hEp hA
   set q' := max q (1 / 2) with hq'
@@ -453,5 +529,295 @@ distance to the orbit decays exponentially: every solution `x` on `[0, ∞)` wit
       _ ≤ (c + 1) * (ε / (c + 1)) := mul_le_mul_of_nonneg_left hη1 (by positivity)
       _ = ε := by field_simp
   linarith [mul_add c D η]
+
+/-! ## Orbital instability -/
+
+/-- **The orbit meets the section only at `x_*(0)` near `x_*(0)`.** For a nonconstant
+`T`-periodic orbit there is `ρ > 0` such that a point `x_*(σ)` of the orbit on the hyperplane
+`f(p) ⬝ (x − p) = 0`, `p = x_*(0)`, with `‖x_*(σ) − p‖ < ρ` is `p` itself (the orbit crosses the
+section transversally, and returns to `p` only at the times where it closes). -/
+@[tmio T, powerlib_foundation] theorem orbit_section_eq (hfK : LipschitzWith K f)
+    {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
+    (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) :
+    ∃ ρ > 0, ∀ σ, f (xs 0) ⬝ᵥ (xs σ - xs 0) = 0 → ‖xs σ - xs 0‖ < ρ → xs σ = xs 0 := by
+  set p := xs 0 with hp
+  set v := f (xs 0) with hv
+  have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
+  -- a return to `p` is a period
+  have hshift : ∀ σ', xs σ' = p → ∀ u, xs (u + σ') = xs u := fun σ' h => by
+    have e := ODE_solution_unique_univ (v := fun _ => f) (s := fun _ => univ) (K := K) (t₀ := 0)
+      (f := fun u => xs (u + σ')) (g := xs) (fun _ => hfK.lipschitzOnWith)
+      (fun t => ⟨(hxs (t + σ')).comp_add_const t σ', trivial⟩) (fun t => ⟨hxs t, trivial⟩)
+      (by simpa using h)
+    exact fun u => congrFun e u
+  -- near the time `0` the orbit crosses the section only once
+  have hd : HasDerivAt (fun u => v ⬝ᵥ (xs u - p)) (v ⬝ᵥ v) 0 := by
+    exact (dotCLM v).hasFDerivAt.comp_hasDerivAt 0 ((hxs 0).sub_const p)
+  have hloc := hd.eventually_ne (c := 0) (dotProduct_self_eq_zero.not.2 hne)
+  rw [eventually_nhdsWithin_iff] at hloc
+  obtain ⟨σ₀, hσ₀, hσ₀loc⟩ := Metric.eventually_nhds_iff.1 hloc
+  -- away from the returns the orbit stays away from `p`
+  set Z := {σ' : ℝ | σ' ∈ Icc 0 T ∧ xs σ' = p} with hZ
+  set Kc := Icc 0 T ∩ {σ : ℝ | ∀ σ' ∈ Z, σ₀ ≤ |σ - σ'|} with hKc
+  have hKcl : IsClosed {σ : ℝ | ∀ σ' ∈ Z, σ₀ ≤ |σ - σ'|} := by
+    have e : {σ : ℝ | ∀ σ' ∈ Z, σ₀ ≤ |σ - σ'|} = ⋂ σ' ∈ Z, {σ | σ₀ ≤ |σ - σ'|} := by
+      ext; simp
+    rw [e]
+    exact isClosed_biInter fun σ' _ => isClosed_le continuous_const (by fun_prop)
+  have hKcpt : IsCompact Kc := isCompact_Icc.inter_right hKcl
+  have hfar : ∃ ρ > 0, ∀ σ ∈ Kc, ρ ≤ ‖xs σ - p‖ := by
+    by_cases hKne : Kc.Nonempty
+    · obtain ⟨σm, hσm, hmin⟩ := hKcpt.exists_isMinOn hKne
+        (continuous_norm.comp (hxc.sub continuous_const)).continuousOn
+      refine ⟨‖xs σm - p‖, ?_, fun σ hσ => hmin hσ⟩
+      refine norm_pos_iff.2 fun h0 => ?_
+      have := hσm.2 σm ⟨hσm.1, sub_eq_zero.1 h0⟩
+      rw [sub_self, abs_zero] at this
+      linarith
+    · exact ⟨1, one_pos, fun σ hσ => absurd ⟨σ, hσ⟩ hKne⟩
+  obtain ⟨ρ, hρ, hρK⟩ := hfar
+  refine ⟨ρ, hρ, fun σ hσv hσρ => ?_⟩
+  obtain ⟨σ₁, hσ₁, hσσ₁⟩ := hper.exists_mem_Ico₀ hT σ
+  rw [hσσ₁] at hσv hσρ ⊢
+  have hσ₁K : σ₁ ∉ Kc := fun h => absurd (hρK σ₁ h) (not_le.2 hσρ)
+  simp only [hKc, mem_inter_iff, Set.mem_ofPred_eq, not_and, not_forall, not_le] at hσ₁K
+  obtain ⟨σ', hσ'Z, hσ'σ⟩ := hσ₁K (Ico_subset_Icc_self hσ₁)
+  have he : xs σ₁ = xs (σ₁ - σ') := by
+    rw [← hshift σ' hσ'Z.2 (σ₁ - σ'), sub_add_cancel]
+  by_cases h0 : σ₁ - σ' = 0
+  · rw [sub_eq_zero.1 h0]; exact hσ'Z.2
+  · have := hσ₀loc (show dist (σ₁ - σ') 0 < σ₀ by rwa [Real.dist_eq, sub_zero]) h0
+    rw [← he] at this
+    exact absurd hσv this
+
+/-- **Orbital instability.** If the monodromy of a nonconstant `T`-periodic orbit of
+`ẋ = f(x)` (`f` of class `C¹`, globally Lipschitz) has a multiplier `|μ| > 1`, the orbit is
+orbitally unstable: there is `ε > 0` such that solutions starting arbitrarily close to `x_*(0)`
+reach the distance `ε` from the whole orbit `x_*(ℝ)`. -/
+@[tmio T, powerlib_foundation] theorem orbit_unstable (hf : ContDiff ℝ 1 f)
+    (hfK : LipschitzWith K f) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t)
+    {T : ℝ} (hT : 0 < T) (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) {μ : ℂ}
+    (hμ : μ ∈ spectrum ℂ ((monodromy (variationalMatrix f xs) T 0).map (algebraMap ℝ ℂ)))
+    (h1 : 1 < ‖μ‖) :
+    ∃ ε > 0, ∀ δ > 0, ∃ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x (fun _ => f) (Ici 0) ∧
+      ‖x 0 - xs 0‖ < δ ∧ ∃ t, 0 ≤ t ∧ ε ≤ Metric.infDist (x t) (range xs) := by
+  obtain ⟨τ, -, -, ⟨r, s, hr, hs, hsT, hsec, -⟩, hPp, hPD, hMv, -, -, -⟩ :=
+    exists_poincareMap hf hfK hxs hT hper hne
+  set P := poincareMap hfK τ with hP
+  set p := xs 0 with hp
+  set v := f (xs 0) with hv
+  set M := monodromy (variationalMatrix f xs) T 0 with hM
+  -- the multiplier is an eigenvalue of the Poincaré Jacobian
+  have hμ0 : μ ≠ 0 := by rintro rfl; norm_num at h1
+  have hμ1 : μ ≠ 1 := by rintro rfl; norm_num at h1
+  have hμS : μ ∈ spectrum ℂ ((sectionMatrix M v).map (algebraMap ℝ ℂ)) :=
+    (mem_spectrum_deflate_iff hMv (sectionVec_dotProduct hMv hne) hμ0 hμ1).2 hμ
+  -- the Poincaré map is unstable at `p`
+  set ε := EuclideanSpace.equiv (Fin n) ℝ with hε
+  set εL : ℝⁿ →L[ℝ] (Fin n → ℝ) := (ε : ℝⁿ →L[ℝ] (Fin n → ℝ)) with hεL
+  set εS : (Fin n → ℝ) →L[ℝ] ℝⁿ := (ε.symm : (Fin n → ℝ) →L[ℝ] ℝⁿ) with hεS
+  obtain ⟨hE, hEp⟩ := euclid_data hPD hPp
+  have hun := Map.unstable_of_eigenvalue hE.hasFDerivAt hEp hμS h1
+  unfold Map.Unstable Map.LyapunovStable at hun
+  push Not at hun
+  obtain ⟨ε₀, hε₀, hesc⟩ := hun
+  -- the Poincaré map is Lipschitz at `p`
+  obtain ⟨L₀, hL₀⟩ := hPD.hasFDerivAt.isBigO_sub.bound
+  obtain ⟨r₃, hr₃, hPL₀⟩ := Metric.eventually_nhds_iff.1 hL₀
+  set L := max L₀ 0 with hLdef
+  have hL0 : 0 ≤ L := le_max_right _ _
+  have hPL : ∀ ξ, ‖ξ - p‖ < r₃ → ‖P ξ - p‖ ≤ L * ‖ξ - p‖ := fun ξ hξ => by
+    have h := hPL₀ (show dist ξ p < r₃ by rwa [dist_eq_norm])
+    rw [hPp] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+  obtain ⟨ρS, hρS, hSig⟩ := orbit_section_eq hfK hxs hT hper hne
+  -- the radii
+  set ε₁ := ε₀ / (‖εS‖ + 1) with hε₁
+  have hε₁0 : 0 < ε₁ := by positivity
+  set ε₂ := min (min ε₁ r) (min r₃ (ρS / (L + 2))) with hε₂
+  have hε₂0 : 0 < ε₂ := by positivity
+  have hε₂1 : ε₂ ≤ ε₁ := (min_le_left _ _).trans (min_le_left _ _)
+  have hε₂r : ε₂ ≤ r := (min_le_left _ _).trans (min_le_right _ _)
+  have hε₂r₃ : ε₂ ≤ r₃ := (min_le_right _ _).trans (min_le_left _ _)
+  have hε₂ρ : ε₂ ≤ ρS / (L + 2) := (min_le_right _ _).trans (min_le_right _ _)
+  -- the escape set on the section, at a positive distance from the orbit
+  set S := {z : Fin n → ℝ | v ⬝ᵥ (z - p) = 0 ∧ ε₂ ≤ ‖z - p‖ ∧ ‖z - p‖ ≤ (L + 1) * ε₂} with hS
+  have hScl : IsClosed S := by
+    have hc1 : Continuous fun z : Fin n → ℝ => v ⬝ᵥ (z - p) :=
+      (dotCLM v).continuous.comp (continuous_id.sub continuous_const)
+    have hc2 : Continuous fun z : Fin n → ℝ => ‖z - p‖ :=
+      continuous_norm.comp (continuous_id.sub continuous_const)
+    exact (isClosed_eq hc1 continuous_const).inter
+      ((isClosed_le continuous_const hc2).inter (isClosed_le hc2 continuous_const))
+  have hSb : Bornology.IsBounded S :=
+    (Metric.isBounded_closedBall (x := p) (r := (L + 1) * ε₂)).subset fun z hz => by
+      rw [Metric.mem_closedBall, dist_eq_norm]; exact hz.2.2
+  have hScpt : IsCompact S := Metric.isCompact_of_isClosed_isBounded hScl hSb
+  have hOcl : IsClosed (range xs) := by
+    have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
+    have e : range xs = xs '' Icc 0 T := by
+      ext z
+      constructor
+      · rintro ⟨σ, rfl⟩
+        obtain ⟨y, hy, hσy⟩ := hper.exists_mem_Ico₀ hT σ
+        exact ⟨y, Ico_subset_Icc_self hy, hσy.symm⟩
+      · rintro ⟨σ, -, rfl⟩; exact mem_range_self σ
+    rw [e]
+    exact (isCompact_Icc.image hxc).isClosed
+  have hSpos : ∀ z ∈ S, 0 < Metric.infDist z (range xs) := fun z hz => by
+    refine (hOcl.notMem_iff_infDist_pos (range_nonempty xs)).1 ?_
+    rintro ⟨σ, hσ⟩
+    rw [← hσ] at hz
+    have hlt : ‖xs σ - p‖ < ρS := by
+      calc ‖xs σ - p‖ ≤ (L + 1) * ε₂ := hz.2.2
+        _ < (L + 2) * ε₂ := by nlinarith
+        _ ≤ (L + 2) * (ρS / (L + 2)) := mul_le_mul_of_nonneg_left hε₂ρ (by positivity)
+        _ = ρS := by field_simp
+    have h0 := hSig σ hz.1 hlt
+    have := hz.2.1
+    rw [h0, sub_self, norm_zero] at this
+    linarith
+  obtain ⟨εf, hεf, hεfS⟩ : ∃ εf > 0, ∀ z ∈ S, εf ≤ Metric.infDist z (range xs) := by
+    by_cases hSne : S.Nonempty
+    · obtain ⟨zm, hzm, hmin⟩ := hScpt.exists_isMinOn hSne
+        (Metric.continuous_infDist_pt (range xs)).continuousOn
+      exact ⟨_, hSpos zm hzm, fun z hz => hmin hz⟩
+    · exact ⟨1, one_pos, fun z hz => absurd ⟨z, hz⟩ hSne⟩
+  refine ⟨εf, hεf, fun δ hδ => ?_⟩
+  -- an escaping orbit of the Poincaré map
+  set δ' := min δ ε₂ with hδ'
+  have hδ'0 : 0 < δ' := lt_min hδ hε₂0
+  obtain ⟨yE, hyE, k, hk⟩ := hesc (δ' / (‖εL‖ + 1)) (by positivity)
+  set ξ := ε yE with hξ
+  have hξp : ‖ξ - p‖ < δ' := by
+    have e : ξ - p = ε (yE - ε.symm p) := by
+      rw [map_sub, ContinuousLinearEquiv.apply_symm_apply]
+    rw [e]
+    calc ‖ε (yE - ε.symm p)‖ ≤ ‖εL‖ * ‖yE - ε.symm p‖ := εL.le_opNorm _
+      _ ≤ (‖εL‖ + 1) * ‖yE - ε.symm p‖ := by nlinarith [norm_nonneg (yE - ε.symm p)]
+      _ < δ' := by rwa [lt_div_iff₀' (by positivity)] at hyE
+  have hkξ : ε₂ ≤ ‖P^[k] ξ - p‖ := by
+    rw [iterate_euclidMap] at hk
+    have e : ε.symm (P^[k] (ε yE)) - ε.symm p = ε.symm (P^[k] ξ - p) := by rw [map_sub]
+    rw [e] at hk
+    have h2 : ε₀ ≤ (‖εS‖ + 1) * ‖P^[k] ξ - p‖ :=
+      hk.trans ((εS.le_opNorm _).trans (by nlinarith [norm_nonneg (P^[k] ξ - p)]))
+    refine hε₂1.trans ?_
+    rw [hε₁, div_le_iff₀' (by positivity)]
+    exact h2
+  classical
+  have hex : ∃ k, ε₂ ≤ ‖P^[k] ξ - p‖ := ⟨k, hkξ⟩
+  set k₀ := Nat.find hex with hk₀
+  have hk₀spec : ε₂ ≤ ‖P^[k₀] ξ - p‖ := Nat.find_spec hex
+  have hk₀min : ∀ j < k₀, ‖P^[j] ξ - p‖ < ε₂ := fun j hj => not_le.1 (Nat.find_min hex hj)
+  have hk₀pos : 0 < k₀ := by
+    rcases Nat.eq_zero_or_pos k₀ with h0 | h0
+    · exfalso
+      have := hk₀spec
+      rw [h0, Function.iterate_zero, id] at this
+      linarith [hξp.trans_le (min_le_right δ ε₂)]
+    · exact h0
+  -- the solution from `ξ` and its crossing at the escape
+  set x := flow (G := fun _ => f) (hfK.continuous.comp continuous_snd) (fun _ => hfK) 0 ξ with hx
+  have hxI : IsIntegralCurveOn x (fun _ => f) (Ici 0) := flow_solution _ _ 0 ξ
+  have hx0 : x 0 = ξ := flow_start _ _ 0 ξ
+  have hτnn : ∀ j < k₀, 0 ≤ τ (P^[j] (x 0)) := fun j hj => by
+    rw [hx0]
+    have h := (hsec _ ((hk₀min j hj).trans_le hε₂r)).1
+    have := abs_lt.1 h
+    linarith
+  have hiter := iterate_poincareMap hfK τ hxI k₀ hτnn
+  refine ⟨x, hxI, by rw [hx0]; exact hξp.trans_le (min_le_left _ _), _,
+    Finset.sum_nonneg fun j hj => hτnn j (Finset.mem_range.1 hj), ?_⟩
+  rw [← hiter, hx0]
+  apply hεfS
+  -- the escaping point lies in `S`
+  set w := P^[k₀ - 1] ξ with hw
+  have hwk : P^[k₀] ξ = P w := by
+    rw [hw, ← Function.iterate_succ_apply' P, Nat.succ_eq_add_one, Nat.sub_add_cancel hk₀pos]
+  have hwp : ‖w - p‖ < ε₂ := hk₀min (k₀ - 1) (by omega)
+  refine ⟨?_, hk₀spec, ?_⟩
+  · rw [hwk]; exact (hsec w (hwp.trans_le hε₂r)).2
+  · rw [hwk]
+    calc ‖P w - p‖ ≤ L * ‖w - p‖ := hPL w (hwp.trans_le hε₂r₃)
+      _ ≤ L * ε₂ := mul_le_mul_of_nonneg_left hwp.le hL0
+      _ ≤ (L + 1) * ε₂ := by nlinarith
+
+/-! ## The Andronov–Witt theorem -/
+
+/-- **The Poincaré map in the map semantics.** For a nonconstant `T`-periodic orbit of
+`ẋ = f(x)` there is a return time `τ`, `τ(x_*(0)) = T`, whose Poincaré map, read on `ℝⁿ`, fixes
+`x_*(0)`, is locally exponentially stable there when its Jacobian `sectionMatrix M f(x_*(0))` is
+Schur stable, and is unstable there when the monodromy has a multiplier `|μ| > 1`. -/
+@[tmio T, powerlib_foundation] theorem poincareMap_stability (hf : ContDiff ℝ 1 f)
+    (hfK : LipschitzWith K f) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t)
+    {T : ℝ} (hT : 0 < T) (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) :
+    ∃ τ : (Fin n → ℝ) → ℝ, τ (xs 0) = T ∧
+      euclidMap (poincareMap hfK τ) ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) =
+        (EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0) ∧
+      (LTI.SchurStable (sectionMatrix (monodromy (variationalMatrix f xs) T 0) (f (xs 0))) →
+        Map.LocallyExponentiallyStable (euclidMap (poincareMap hfK τ))
+          ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) ∧
+      ∀ μ ∈ spectrum ℂ ((monodromy (variationalMatrix f xs) T 0).map (algebraMap ℝ ℂ)),
+        1 < ‖μ‖ → Map.Unstable (euclidMap (poincareMap hfK τ))
+          ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) := by
+  obtain ⟨τ, hτp, -, -, hPp, hPD, hMv, -, -, -⟩ := exists_poincareMap hf hfK hxs hT hper hne
+  obtain ⟨hE, hEp⟩ := euclid_data hPD hPp
+  refine ⟨τ, hτp, hEp,
+    fun hS => Map.locallyExponentiallyStable_of_schurStable hE.hasFDerivAt hEp hS,
+    fun μ hμ h1 => Map.unstable_of_eigenvalue hE.hasFDerivAt hEp ?_ h1⟩
+  have hμ0 : μ ≠ 0 := by rintro rfl; norm_num at h1
+  have hμ1 : μ ≠ 1 := by rintro rfl; norm_num at h1
+  exact (mem_spectrum_deflate_iff hMv (sectionVec_dotProduct hMv hne) hμ0 hμ1).2 hμ
+
+/-- **The Andronov–Witt theorem, deflated form.** Let `x_*` be a nonconstant `T`-periodic orbit
+of `ẋ = f(x)` (`f` of class `C¹`, globally Lipschitz) with monodromy `M` (`M f(p) = f(p)`,
+`p = x_*(0)`), and let `M − f(p) wᵀ` be Schur stable for some `w` with `w ⬝ f(p) = 1` (every
+nontrivial multiplier strictly inside the unit circle, `PoincareSection.schurStable_deflate_iff`).
+Then the orbit is orbitally exponentially stable with asymptotic phase: there are `δ > 0`,
+`C ≥ 0`, `λ > 0` such that every solution starting within `δ` of a point `x_*(σ)` satisfies
+`‖x(t) − x_*(t + σ + θ)‖ ≤ C e^{−λt} ‖x(0) − x_*(σ)‖` for a phase `|θ| ≤ C ‖x(0) − x_*(σ)‖`,
+and every solution starting within `δ` of the orbit satisfies
+`dist(x(t), x_*(ℝ)) ≤ C e^{−λt} dist(x(0), x_*(ℝ))`. -/
+@[tmio T, powerlib_foundation] theorem andronov_witt (hf : ContDiff ℝ 1 f)
+    (hfK : LipschitzWith K f) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t)
+    {T : ℝ} (hT : 0 < T) (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) {w : Fin n → ℝ}
+    (hw : w ⬝ᵥ f (xs 0) = 1)
+    (hS : LTI.SchurStable (monodromy (variationalMatrix f xs) T 0 - vecMulVec (f (xs 0)) w)) :
+    (∃ δ C lam : ℝ, 0 < δ ∧ 0 ≤ C ∧ 0 < lam ∧ ∀ (σ : ℝ) (x : ℝ → Fin n → ℝ),
+      IsIntegralCurveOn x (fun _ => f) (Ici 0) → ‖x 0 - xs σ‖ < δ →
+      ∃ θ : ℝ, |θ| ≤ C * ‖x 0 - xs σ‖ ∧
+        ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ C * Real.exp (-(lam * t)) * ‖x 0 - xs σ‖) ∧
+    ∃ δ C lam : ℝ, 0 < δ ∧ 0 ≤ C ∧ 0 < lam ∧ ∀ x : ℝ → Fin n → ℝ,
+      IsIntegralCurveOn x (fun _ => f) (Ici 0) → Metric.infDist (x 0) (range xs) < δ →
+      ∀ t, 0 ≤ t → Metric.infDist (x t) (range xs) ≤
+        C * Real.exp (-(lam * t)) * Metric.infDist (x 0) (range xs) := by
+  have hMv := monodromy_mulVec_velocity hf hxs hT hper
+  have hS' := (schurStable_sectionMatrix_iff hMv hne hw).1.2 hS
+  exact ⟨asymptoticPhase hf hfK hxs hT hper hne hS', infDist_orbit_le hf hfK hxs hT hper hne hS'⟩
+
+/-- **The Andronov–Witt theorem, multiplier form.** If the trivial multiplier `1` of a
+nonconstant `T`-periodic orbit of `ẋ = f(x)` (`f` of class `C¹`, globally Lipschitz) is a simple
+root of the characteristic polynomial of the monodromy `M` and every other multiplier lies
+strictly inside the unit circle, the orbit is orbitally exponentially stable with asymptotic
+phase (the two conclusions of `andronov_witt`). -/
+@[tmio T, powerlib_foundation] theorem andronov_witt_of_multipliers (hf : ContDiff ℝ 1 f)
+    (hfK : LipschitzWith K f) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t)
+    {T : ℝ} (hT : 0 < T) (hper : Periodic xs T) (hne : f (xs 0) ≠ 0)
+    (h1 : (monodromy (variationalMatrix f xs) T 0).charpoly.rootMultiplicity 1 = 1)
+    (hμ : ∀ μ ∈ spectrum ℂ ((monodromy (variationalMatrix f xs) T 0).map (algebraMap ℝ ℂ)),
+      μ ≠ 1 → ‖μ‖ < 1) :
+    (∃ δ C lam : ℝ, 0 < δ ∧ 0 ≤ C ∧ 0 < lam ∧ ∀ (σ : ℝ) (x : ℝ → Fin n → ℝ),
+      IsIntegralCurveOn x (fun _ => f) (Ici 0) → ‖x 0 - xs σ‖ < δ →
+      ∃ θ : ℝ, |θ| ≤ C * ‖x 0 - xs σ‖ ∧
+        ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ C * Real.exp (-(lam * t)) * ‖x 0 - xs σ‖) ∧
+    ∃ δ C lam : ℝ, 0 < δ ∧ 0 ≤ C ∧ 0 < lam ∧ ∀ x : ℝ → Fin n → ℝ,
+      IsIntegralCurveOn x (fun _ => f) (Ici 0) → Metric.infDist (x 0) (range xs) < δ →
+      ∀ t, 0 ≤ t → Metric.infDist (x t) (range xs) ≤
+        C * Real.exp (-(lam * t)) * Metric.infDist (x 0) (range xs) := by
+  have hMv := monodromy_mulVec_velocity hf hxs hT hper
+  have hw := sectionVec_dotProduct hMv hne
+  have hS := (schurStable_deflate_iff hMv hne hw).2 ⟨h1, hμ⟩
+  exact andronov_witt hf hfK hxs hT hper hne hw hS
 
 end powerlib.Periodic.AndronovWitt

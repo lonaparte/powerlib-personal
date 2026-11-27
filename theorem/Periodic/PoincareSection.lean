@@ -46,11 +46,10 @@ Scope.
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §1.5 (the Poincaré map of a
 cycle, its fixed point and the multipliers: the monodromy has the trivial multiplier `1`, the other
 `n − 1` multipliers are the eigenvalues of the Jacobian of the Poincaré map); Hartman, *Ordinary
-Differential Equations*, Ch. V (differentiability of the flow) and Ch. IX §10 (the Andronov–Witt
-theorem via a transversal section); Hirsch, Smale and Devaney, *Differential Equations, Dynamical
-Systems, and an Introduction to Chaos*, Ch. 10 (local sections and the return time by the implicit
-function theorem); A. Brauer, "Limits for the characteristic roots of a matrix IV", Duke
-Math. J. 19 (1952) (the deflation `M − v wᵀ`); the open item of
+Differential Equations*, Ch. V (differentiability of the flow); Hirsch, Smale and Devaney,
+*Differential Equations, Dynamical Systems, and an Introduction to Chaos*, Ch. 10 (local sections
+and the return time by the implicit function theorem); A. Brauer, "Limits for the characteristic
+roots of a matrix IV", Duke Math. J. 19 (1952) (the deflation `M − v wᵀ`); the open item of
 `theorem/Periodic/FoldOrbit.lean` (Scope: "orbital asymptotic stability of autonomous orbits is not
 treated", "Orbital asymptotic stability, through a Poincaré section transverse to the orbit, is not
 treated here").
@@ -132,7 +131,8 @@ variable {n : ℕ} {f : (Fin n → ℝ) → Fin n → ℝ} {K : NNReal}
   have hC₁0 : 0 ≤ C₁ := by positivity
   set η := c / (3 * (C₁ + 1)) with hηdef
   have hη : 0 < η := by positivity
-  obtain ⟨ρ, hρ, hρη⟩ := exists_radius_fderiv_le (G := fun _ => f) hD (s := 0) (t := T₁) hx₀c.continuousOn hη
+  obtain ⟨ρ, hρ, hρη⟩ :=
+    exists_radius_fderiv_le (G := fun _ => f) hD (s := 0) (t := T₁) hx₀c.continuousOn hη
   -- the transition matrix is continuous in time
   have hΦc : ContinuousAt (fun t => transition A t 0) t₀ :=
     (Dynamics.stm_hasDerivAt hAc t₀ 0).continuousAt
@@ -282,7 +282,8 @@ variable {n : ℕ} {f : (Fin n → ℝ) → Fin n → ℝ} {K : NNReal}
 
 /-! ## The return time -/
 
-@[tmio T, powerlib_foundation] private theorem dot_self_pos {v : Fin n → ℝ} (hv : v ≠ 0) : 0 < v ⬝ᵥ v :=
+@[tmio T, powerlib_foundation] private theorem dot_self_pos {v : Fin n → ℝ} (hv : v ≠ 0) :
+    0 < v ⬝ᵥ v :=
   lt_of_le_of_ne (Finset.sum_nonneg fun i _ => mul_self_nonneg (v i))
     (Ne.symm (dotProduct_self_eq_zero.not.2 hv))
 
