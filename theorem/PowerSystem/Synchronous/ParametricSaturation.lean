@@ -26,8 +26,9 @@ Model boundary.
   (`ForcedOscillation.Classification.natFreq_sq`,
   `ForcedOscillation.Classification.oscDamping_eq`).
 * Excluded: a loaded operating point `δ₀ ≠ 0` (the even, quadratic terms of `sin(δ₀ + x)` act on
-  the amplitude through second-order averaging and change the effective cubic coefficient; not
-  treated here), AVR/PSS, network and multi-machine dynamics, a modulation of `K_d`.
+  the amplitude through second-order averaging and change the effective cubic coefficient;
+  treated in `theorem/PowerSystem/Synchronous/LoadedSwing.lean`), AVR/PSS, network and
+  multi-machine dynamics, a modulation of `K_d`.
 * Scope boundary (assumption levels). The exact statements are: the normalization
   (`accel_eq`), the decomposition into the Duffing–Mathieu acceleration and the truncation
   remainder with its bound (`accel_eq_duffing`, `abs_remainder_le`), the exact van der Pol form
@@ -37,10 +38,11 @@ Model boundary.
   step itself is rigorous for the truncated (Duffing–Mathieu) model on bounded sets and times
   `O(1/ε)` (`DuffingMathieu.averaging_valid`, `DuffingMathieu.oscillator_averaging`, with `ξ`,
   `d` and `ε` small of one order and amplitudes of the order of their square root,
-  `DuffingMathieu.vdpField_scaled`). Not formalized: the propagation of the truncation remainder
-  `R = O(δ⁵, εδ³)` through that estimate (it is of higher order, `O(ε^{5/2})` in that scaling,
-  but `Averaging.kbm_first_order` admits no such perturbation), so the closeness of the swing
-  model itself to the averaged amplitude is not proved.
+  `DuffingMathieu.vdpField_scaled`). The propagation of the truncation remainder
+  `R = O(δ⁵, εδ³)` through that estimate, i.e. the closeness of the swing model itself to the
+  averaged amplitude, is proved in
+  `theorem/PowerSystem/Synchronous/ParametricSaturationRigorous.lean` (`swing_averaging`,
+  `swing_averaging_physical`, via `Averaging.kbm_perturbed_local`).
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11)
 (swing model, damping ratio); the power-angle curve `P_e = K_s sin δ` of the classical machine

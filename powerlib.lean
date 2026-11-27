@@ -25,6 +25,7 @@ import theorem.Averaging.SlidingFourier
 import theorem.Averaging.StateSpaceAveraging
 import theorem.Averaging.SwitchedStability
 import theorem.Averaging.SwitchedFamily
+import theorem.Averaging.KBMPerturbed
 import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
@@ -142,6 +143,7 @@ import theorem.PowerSystem.ForcedOscillation.Turbulence
 import theorem.PowerSystem.ForcedOscillation.GridCode
 import theorem.PowerSystem.ForcedOscillation.TurbulenceField
 import theorem.PowerSystem.ForcedOscillation.Classification
+import theorem.PowerSystem.ForcedOscillation.HalfFrequencyRule
 import theorem.GridTiedConverter.GFL.DCLink.BasinGuard
 import theorem.GridTiedConverter.GFL.DCLink.Cascade
 import theorem.GridTiedConverter.GFL.DCLink.DCSource
@@ -356,6 +358,7 @@ import theorem.ParametricResonance.DuffingMathieu
 import theorem.ParametricResonance.BoundaryUndecided
 import theorem.ParametricResonance.SquareWaveAveraging
 import theorem.ParametricResonance.SubharmonicContent
+import theorem.ParametricResonance.QuadraticCubicNormalForm
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -466,6 +469,8 @@ import theorem.PowerSystem.Synchronous.PortEuler
 import theorem.PowerSystem.Synchronous.OscillationPhasor
 import theorem.PowerSystem.Synchronous.ParametricSwing
 import theorem.PowerSystem.Synchronous.ParametricSaturation
+import theorem.PowerSystem.Synchronous.LoadedSwing
+import theorem.PowerSystem.Synchronous.ParametricSaturationRigorous
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

@@ -39,8 +39,11 @@ Corrections.
   omits the `∂_ε f` contribution.
 
 Not formalized.
-* The almost-periodic case, higher-order averaging, and the domain-restricted (local Lipschitz,
-  `x̄` staying in a compact set with margin) version; here the bounds are global.
+* The almost-periodic case and general higher-order averaging; here the bounds are global. The
+  domain-restricted version (local Lipschitz, `x̄` staying in a set with margin) with an additive
+  perturbation is `theorem/Averaging/KBMPerturbed.lean` (`kbm_perturbed_local`,
+  `kbm_perturbed_sq`); a second-order averaging with quadratic stiffness is
+  `ParametricResonance.QuadraticCubic.second_order_averaging`.
 -/
 
 noncomputable section
