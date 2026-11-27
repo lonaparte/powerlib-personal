@@ -47,7 +47,9 @@ Scope.
   coordinates `x = state − x₀`. Solutions of the instability statements are integral curves on
   segments `[s, t]`, those of the stability statements on `[s, ∞)`.
 * The thresholds `|V̂||g₁| ≶ 2|λ₁|` are the first-order (in `ε`) criterion of the actual forced
-  orbit, exact for all small `ε`; the boundary `|V̂||g₁| = 2|λ₁|` itself is not decided.
+  orbit, exact for all small `ε`; the boundary `|V̂||g₁| = 2|λ₁|` itself is not decided at that
+  order (decided at second order in `theorem/ParametricResonance/SmoothForcedOrbitSecond.lean`,
+  `smooth_orbit_at_threshold`).
 * Oscillator: the variational equation is written out in the statements (its link to the field is
   `ScalarOscillator.hasFDerivAt_field`); only the multiplier `−1` (antiperiodic solutions) is
   bounded, with the derivative bound `|q̇_o| ≤ V` of the operating trajectory; the exact forced

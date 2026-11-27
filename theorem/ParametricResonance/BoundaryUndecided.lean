@@ -43,16 +43,19 @@ boundary `|V̂||g₁| = 2|λ₁|` (`forced_threshold_boundary_iff`). For the two
 among `O(ε²)` completions of the variational matrix (`full_boundary_completions`), decided by
 `λ₂`. For the `n`-state forced orbit the `O(ε²)` part of its variational matrix (third Taylor
 coefficients of the field, second-order forced response, coupling to the stable block) and its
-second-order averaging are not formalized: no theorem here decides the nonlinear forced orbit on
-the boundary. Given the second-order data of an `n`-state block monodromy (critical block `N`,
-couplings `Q₁`, `R₁`, stable block `E`), the boundary is decided by the sign of
-`mixedDet(M, N + Q₁(I + E)⁻¹R₁)` in `theorem/ParametricResonance/BlockBoundary.lean`; the closed
-form of `mixedDet(M, N₂)` for the two-state standard form is
+second-order averaging are not formalized here: no theorem in this module decides the nonlinear
+forced orbit on the boundary; this is done, from the second and third derivatives of a `C⁴` field,
+in `theorem/ParametricResonance/SmoothForcedOrbitSecond.lean` (`smooth_orbit_boundary`,
+`smooth_orbit_at_threshold`, levels L1 and L0). Given the second-order data of an `n`-state block
+monodromy (critical block `N`, couplings `Q₁`, `R₁`, stable block `E`), the boundary is decided by
+the sign of `mixedDet(M, N + Q₁(I + E)⁻¹R₁)` in `theorem/ParametricResonance/BlockBoundary.lean`;
+the closed form of `mixedDet(M, N₂)` for the two-state standard form is
 `theorem/ParametricResonance/SecondOrderClosedForm.lean`, and the case `s = 0` is
 `theorem/ParametricResonance/ZeroDampingBranch.lean`. Even an exactly marginal variational
 equation would leave the step L1 → L0 open (multiplier `−1`: the flip normal form of
 `theorem/Periodic/CriticalMultiplier.lean`, reduced to it for a periodic orbit with a stable
-complement in `theorem/Periodic/FlipReduction.lean`).
+complement in `theorem/Periodic/FlipReduction.lean`, with the period map derived from the field
+in `theorem/Periodic/FlipOrbit.lean`).
 
 Scope.
 * Normal form: `NormalForm.nfMatrix σ Ω ω c` (state `(Re z, Im z)`, pump frequency `ω > 0`, period

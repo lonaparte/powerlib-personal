@@ -50,6 +50,10 @@ Scope.
 * Not covered: `BlockAveragingRemainder.fullR = fullB + ε² R_ε(t)` with a remainder that is only
   bounded: its contribution `T R̄_ε` to the `O(ε²)` term is not determined by those hypotheses, so
   the boundary is not decided there; closed forms of `N_eff` for particular cores are not derived.
+  Both are taken up in `theorem/ParametricResonance/BlockRemainderSecond.lean` (an expanded
+  remainder `ε²R₂ + O(ε³)` decides, a merely bounded one provably does not:
+  `averagingR2_boundary`, `averagingR_bounded_undecided`) and
+  `theorem/ParametricResonance/ThreeStateCore.lean` (`effSecond_core`, `three_state_boundary`).
 * Generic mathematics; no model family.
 
 Source: the wave-5 question of this library (the second-order decision of the first-order

@@ -376,6 +376,10 @@ import theorem.ParametricResonance.PhysicalBoundary
 import theorem.ParametricResonance.DutyCycleLevels
 import theorem.ParametricResonance.ForcedPumpInteraction
 import theorem.ParametricResonance.FirstOrderAveragingFails
+import theorem.ParametricResonance.BlockRemainderSecond
+import theorem.ParametricResonance.ForcedOrbitSecond
+import theorem.ParametricResonance.SmoothForcedOrbitSecond
+import theorem.ParametricResonance.ThreeStateCore
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
