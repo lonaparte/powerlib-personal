@@ -4,15 +4,104 @@ import theorem.Averaging.PeriodicOrbitConstants
 
 /-! # The loaded half-frequency swing oscillation is a periodic solution of the swing model
 
-(header in progress)
+`theorem/PowerSystem/Synchronous/LoadedSwing.lean` derives the second-order averaged amplitude
+equation of TR-110's swing model at a loaded operating point `δ₀` (the quadratic stiffness
+`α₂ = −K_s sin δ₀/(2M)` is removed by the near-identity transformation
+`W = w − √ε u(w, t)` of `ParametricResonance.QuadraticCubic`, and leaves the frequency shift
+`β_L`), and shows that the swing model follows it on the time scale `1/ε`
+(`LoadedSwing.loaded_second_order`). Here the averaged locked states become properties of the
+loaded swing model for all time: every nondegenerate locked state `w*` of the averaged limit
+equation is, for all small depths `ε`, a genuine `2π/ν`-periodic solution of the loaded swing
+model with `δ_ε(t) = δ₀ + √ε Re(w* e^{jνt}) + O(ε)` uniformly in `t`; it is exponentially stable
+when the averaged Jacobian at `w*` is Hurwitz and unstable when that Jacobian has a root with
+positive real part. The transformed amplitude obeys `Ẇ = ε F⁰(W, t) + O(ε^{3/2})` with the limit
+second-order field `F⁰` — a perturbation of fractional order, so the theorems of
+`theorem/Averaging/PerturbedPeriodicOrbits.lean` (`Averaging.exists_periodic_point_perturbed`) and
+`theorem/Averaging/PeriodicOrbitConstants.lean` (`Averaging.exp_stable_perturbed`,
+`Averaging.unstable_perturbed`) are used with `η = ε√ε`.
 
 Model boundary.
-* x
+* One generator, TR-110's swing equation (3-8) at a loaded operating point `δ₀` with
+  `cos δ₀ > 0`, as in `LoadedSwing`: the model `LoadedSwing.loadedSwing` with mechanical power
+  `K_s(t) sin δ₀` and power-angle curve `K_s(t) sin δ`, `K_s(t) = K_s(1 + ε cos 2νt)` (pump
+  frequency `Ω = 2ν`, `ν > 0`), `Params.Pos`, state `(δ, δ̇)`, continuous time; the angle is the
+  deviation `δ − δ₀`. Solutions are global `C²` curves (`exists_loaded_solution`,
+  `loaded_unique_Icc`).
+* The weakly nonlinear limit: `b`, `d`, `ν`, `δ₀` are fixed and the machine is scaled with the
+  depth by `D/M = εb`, `ω_L² = K_s cos δ₀/M = ν² − εd`; then `α₂ = −ω_L² tan δ₀/2`,
+  `α₃ = −ω_L²/6` (`machine_bounds`). Amplitudes are of order `√ε`
+  (`δ − δ₀ = √ε Re(w e^{jνt})`). The constants depend on `b, d, ν, δ₀, w*` only, and every
+  machine of the scaling with `0 < ε ≤ ε₀` is covered.
+* Limit field: the second-order field at `ω_L² = ν²`, `limitSecond b d ν δ₀ =
+  secondField b (ν² − d) ν² (−ν² tan δ₀/2) (−ν²/6) ν`; its period average is `loadedAmp b d ν δ₀ =
+  ampField (b/2) (d/(2ν)) (jν/4) 0 β⁰`, `β⁰ = −(ν/48)(3 + 5 tan²δ₀)`
+  (`fieldAverage_limitSecond`) — the scaled limit of `LoadedSwing.averaged_loaded`, with `β_L` at
+  the loaded resonance (`LoadedSwing.betaLoaded_resonance`). Locked states are the zeros of
+  `loadedAmp`; their amplitudes and Jacobian criterion are those of `Saturation.shift_states` /
+  `LoadedSwing.loaded_states`, `LoadedSwing.loaded_stable_iff`, and are not restated here.
+* The `O(ε)` changes of pump, quadratic and cubic coefficient, the near-identity correction and the
+  fourth-order remainder of `sin` (`LoadedSwing.remainder`) form the remainder `transRemL` of the
+  transformed equation, bounded by `ε√ε M_q` and `ε√ε L_q`-Lipschitz on discs
+  (`transRem_bounds`). The proof works with the amplitude equation read through the clamp
+  `clampC (‖w*‖ + 3)` (`clampField`, `Wmap`); the periodic and the attracted solutions stay in the
+  disc `‖w − w*‖ ≤ 3/2` where the clamp is the identity.
+* Excluded as in `LoadedSwing`: a constant mechanical power (`LoadedSwingConstantPower`, whose
+  forced response at the pump frequency shifts the state), AVR/PSS, network and multi-machine
+  dynamics, a modulation of `K_d`. No uniqueness statement for the loaded orbit is made here.
 
-Source: x
+Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11);
+Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations* (the second
+theorem of Bogoliubov and the stability of its periodic solutions); Sanders–Verhulst–Murdock,
+*Averaging Methods in Nonlinear Dynamical Systems*, Ch. 2.9 (second-order averaging, near-identity
+transformations); Nayfeh–Mook, *Nonlinear Oscillations*, Ch. 4–5 (quadratic and cubic
+stiffness); the transformation `QuadraticCubic.nearId`, `QuadraticCubic.hasDerivAt_nearId`,
+`QuadraticCubic.nearIdDeriv_quadField`, `QuadraticCubic.fieldAverage_secondField`; the loaded
+model `LoadedSwing.accel_eq`; the van der Pol field `DuffingMathieu.hasDerivAt_vdp`,
+`SubharmonicOrbit.hasFDerivAt_vdpField`; the averaged Jacobian `Saturation.hasFDerivAt_ampSystem`;
+the Lyapunov equation (LeanForControl `IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov`)
+and Chetaev's certificate
+(`LinearSystems.exists_instability_quadratic_certificate_of_complex_eigenvalue_re_pos`).
+
+Corrections and sharpenings.
+* `LoadedSwing.loaded_second_order` gives the loaded half-frequency oscillation on `[0, L/ε]` only.
+  Here a nondegenerate locked state is a periodic solution of the loaded swing model itself for
+  all `t ∈ ℝ`, with the uniform error `C ε` (relative error `O(√ε)`), and its stability is decided
+  by the averaged Jacobian of the second-order (not the first-order) equation.
+* The transformed equation is `Ẇ = ε F⁰ + O(ε^{3/2})`, not `ε F⁰ + O(ε²)`; Bogoliubov's theorem in
+  the form `ẋ = εf + ε²r` (`Averaging.exists_periodic_orbit`) does not apply and its fractional
+  generalization is needed. Correspondingly the periodic transformed amplitude is only
+  `O(√ε)`-close to `w*`.
 
 Results.
-* x
+* `cubicCoeffH`, `cubicCoeffC`, `cubicDeriv`, `cubicDeriv_apply`, `hasFDerivAt_cubicCorr`,
+  `norm_cubicDeriv_sub_le`, `continuous_cubicDeriv`, `secondDeriv`, `hasFDerivAt_secondField`,
+  `norm_secondDeriv_sub_le`, `continuous_secondDeriv` — the second-order field is `C¹` in the
+  amplitude with a Lipschitz derivative on discs.
+* `norm_nearId_sub_le`, `nearIdDeriv_sub_sub`, `norm_nearIdDeriv_sub_sub_le`,
+  `norm_quadField_sub_le`, `norm_quadField_le` — bounds of the transformation on discs.
+* `remLip`, `abs_loadedRemainder_sub_le` — the loaded remainder is Lipschitz of third order.
+* `loaded_field_lipschitz`, `exists_loaded_solution`, `loaded_unique_Icc` — the loaded swing field
+  is globally Lipschitz; existence and uniqueness of its solutions.
+* `remW`, `inputW`, `scaledField`, `hasDerivAt_scaledAmp` — the loaded swing as an equation for
+  the scaled amplitude.
+* `vdpField_sub_coeff`, `cubicCorr_eq_sq_mul`, `norm_secondField_coeff_sub_le`,
+  `hasFDerivAt_cutSecond`, `transRem`, `transRem_bounds` — the remainder of the transformed
+  equation is `O(ε^{3/2})` with an `O(ε^{3/2})` Lipschitz constant.
+* `machine_bounds`, `remConstW`, `remW_bounds`, `speedConst`, `lipConstW`, `scaledField_bounds` —
+  uniform bounds for the machines of the scaling.
+* `clampField`, `Wmap`, `continuous_clampField`, `clampField_lipschitz`, `norm_clampField_le`,
+  `exists_clamped_solution`, `clampField_periodic`, `clamped_unique`, `norm_Wmap_sub_le`,
+  `norm_Wmap_sub_sub_le`, `Wmap_bilipschitz`, `exists_Wmap_eq`, `Wmap_periodic`, `transField`,
+  `hasDerivAt_Wmap`, `swing_of_clamped` — the clamped amplitude equation, the clamped
+  transformation, and the swing solutions they carry.
+* `limitSecond`, `loadedAmp`, `loadedJac`, `fieldAverage_limitSecond`, `limitDerivR`, `limit_hyp`,
+  `limitCutR`, `transRemL` — the limit field in the hypotheses of the periodic-orbit theorem.
+* `loaded_swing_of_orbit`, `loaded_subharmonic_orbit` — **the sustained loaded subharmonic
+  oscillation**: for `0 < ε ≤ ε₀` a `2π/ν`-periodic solution of the loaded swing model with
+  `|δ(t) − δ₀ − √ε Re(w* e^{jνt})| ≤ C ε`.
+* `loaded_orbit_stable` — a Hurwitz averaged Jacobian: the loaded orbit attracts every solution
+  starting within `√ε ρ_s` in the phase-plane norm `|Δδ − jΔδ̇/ν|`, at the rate `βε`.
+* `loaded_orbit_unstable` — an averaged root `Re μ > 0`: the loaded orbit is unstable.
 -/
 
 noncomputable section
