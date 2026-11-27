@@ -41,11 +41,12 @@ Scope.
   approximation theorem are `theorem/Map/CenterReduction.lean`.
 
 Source: the graph-transform proof of the centre manifold theorem for maps: Hirsch, Pugh and
-Shub, *Invariant Manifolds* (LNM 583, 1977), §5; Carr, *Applications of Centre Manifold Theory*
-(1981), §2.1 and §2.8 (maps); Iooss, *Bifurcation of Maps and Applications* (1979), Ch. III;
-Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §5.1 (Theorem 5.3, the centre
-manifold of a fixed point of a map); the flow counterpart is the Lyapunov–Perron construction
-(Vanderbauwhede 1989, §2). Required by `theorem/Periodic/CriticalMultiplier.lean` (Scope: a
+Shub, *Invariant Manifolds* (LNM 583, 1977) (the graph transform); Carr, *Applications of Centre
+Manifold Theory* (1981), Ch. 2 (Theorem 1 and its version for maps); Iooss, *Bifurcation of Maps
+and Applications* (1979); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §5.1
+(the centre manifold of a fixed point of a map); the flow counterpart is the Lyapunov–Perron
+construction (Vanderbauwhede, "Centre manifolds, normal forms and elementary bifurcations",
+1989). Required by `theorem/Periodic/CriticalMultiplier.lean` (Scope: a
 periodic orbit with a simple critical multiplier and a stable complement needs the centre-manifold
 reduction).
 

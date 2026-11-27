@@ -48,10 +48,11 @@ Scope.
 * `a² + b = 0` (a degenerate flip) is not decided here.
 * Generic; nothing here describes a physical system (foundation).
 
-Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §4.4–§4.5 (the flip
-bifurcation of maps, the normal form `−η + c η³`) and §5.4.2 (restricted normalized maps: the flip
-coefficient by the projection method); Carr, *Applications of Centre Manifold Theory* (1981), §2.8;
-Iooss, *Bifurcation of Maps and Applications* (1979), Ch. III; the open item of
+Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), Ch. 4 (the flip
+bifurcation of fixed points of maps, the normal form `η ↦ −η + c η³`) and §5.4 (computation of
+centre manifolds: restricted normalized maps, the flip coefficient by the projection method);
+Carr, *Applications of Centre Manifold Theory* (1981), Ch. 2; Iooss, *Bifurcation of Maps and
+Applications* (1979); the open item of
 `theorem/Periodic/CriticalMultiplier.lean` (Scope: "a genuinely nonconstant periodic orbit with a
 simple critical multiplier and a stable complement is not treated (it needs the centre-manifold
 reduction)").

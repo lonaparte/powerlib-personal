@@ -41,11 +41,11 @@ Scope.
   those that decide the normal forms (asymptotic stability both ways, instability from `r` to `G`).
 * Generic; nothing here describes a physical system (foundation).
 
-Source: Carr, *Applications of Centre Manifold Theory* (1981), §2.4 (Theorem 2, the reduction
-principle; Theorem 3, the approximation theorem) and §2.8 (maps); Pliss, "A reduction principle
-in the theory of stability of motion" (1964); Kuznetsov, *Elements of Applied Bifurcation
-Theory* (3rd ed.), §5.1 (Theorem 5.4); total stability of an asymptotically stable fixed point:
-Hahn, *Stability of Motion* (1967), §56.
+Source: Carr, *Applications of Centre Manifold Theory* (1981), Ch. 2 (Theorem 2, the reduction
+principle; Theorem 3, the approximation theorem; their versions for maps); Pliss, "A reduction
+principle in the theory of stability of motion" (1964); Kuznetsov, *Elements of Applied
+Bifurcation Theory* (3rd ed.), §5.1 (the reduction principle for maps); total stability of an
+asymptotically stable fixed point: Hahn, *Stability of Motion* (1967).
 
 Results.
 * Pseudo-orbits of a locally asymptotically stable map on `ℝᶜ`:
