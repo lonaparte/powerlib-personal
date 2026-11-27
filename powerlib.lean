@@ -359,6 +359,7 @@ import theorem.ParametricResonance.BoundaryUndecided
 import theorem.ParametricResonance.SquareWaveAveraging
 import theorem.ParametricResonance.SubharmonicContent
 import theorem.ParametricResonance.QuadraticCubicNormalForm
+import theorem.ParametricResonance.RobustVsUniversal
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -379,6 +380,9 @@ import theorem.Periodic.RobustThreshold
 import theorem.Periodic.CombinationResonance
 import theorem.Periodic.UniformEscape
 import theorem.Periodic.CriticalMultiplier
+import theorem.Periodic.UniformRoughness
+import theorem.Periodic.LyapunovNorm
+import theorem.Periodic.CombinationFrequencies
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative

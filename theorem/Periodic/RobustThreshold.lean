@@ -33,7 +33,12 @@ size `‖B(t)‖ ≤ εK̄/m` in the state `(δ, δ̇)`, and the robust conditio
 modulation whenever `m + 2D ≤ 4K̄` (in the time unit `ω₀ = 1`: damping ratio `ξ ≤ 3/4`; at small
 `ξ` it allows `ε ≈ 2ξ`, the robust one at most `ε < ξ`); the robust threshold covers what the
 universal one does not — any perturbation matrix (damping and cross-coupling modulation), any
-dimension, and modulations that are not periodic.
+dimension, and modulations that are not periodic. For the Lyapunov form of the robust threshold
+the comparison holds in every region, `m + 2D > 4K̄` included (it is the universal curve
+evaluated at `D/(m + K̄)` instead of `ξ = D/(2√(mK̄))`, equal exactly when `K̄ = m`), and the
+uniform-in-period instability under small perturbations is
+`theorem/Periodic/UniformRoughness.lean`; see
+`theorem/ParametricResonance/RobustVsUniversal.lean`.
 
 Scope.
 * `ẋ = (A₀ + B(t)) x` on `ℝ^X` (finite `X`; `Fin n` where Hurwitz or Schur stability is used),

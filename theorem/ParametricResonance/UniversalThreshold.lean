@@ -22,6 +22,11 @@ stiffness and the same deviation `εK̄`, for which the threshold is violated a 
 multipliers have `|μ|² = det M = e^{−DT/m} < 1`. Hence below the threshold every multiplier lies
 strictly inside the unit circle, for every pump period and every waveform: in the region
 `ξ > 0`, `ε / √(1 − ε) < 2ξ` the frozen small-signal analysis and the Floquet analysis agree.
+This region is not the largest waveform-free one: a common quadratic Lyapunov function gives
+Schur stability for every period and waveform under the strictly weaker condition
+`2ε / (√(1 + ε) + √(1 − ε)) < 2ξ`, which is exact among quadratic certificates
+(`RobustVsUniversal.quadratic_schurStable`, `quadratic_threshold_converse`,
+`universal_lt_quadratic` in `theorem/ParametricResonance/RobustVsUniversal.lean`).
 
 Scope.
 * The scalar real equation `m δ̈ + D δ̇ + K(t) δ = 0`, continuous time, constants `m > 0` and `D`,
