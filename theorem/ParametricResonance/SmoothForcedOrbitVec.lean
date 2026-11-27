@@ -44,8 +44,8 @@ Results.
 * `uMag`, `uAng`, `gridSrc`, `harm_gridSrc`, `forced_gridSrc`, `smA1V_gridSrc` — the grid phasor
   source `(v̂, θ̂)` and the general source form of a grid-synchronized converter:
   `(jωI − A₀) z_rel = v̂ b_V − jωθ̂ e` and `A₁ = D_x(∂ₓF) z_rel + v̂ D_V(∂ₓF)`.
-* `smooth_orbit_floquet_three_stable_vec`, `smooth_orbit_floquet_three_unstable_vec` — three-state
-  fields from their eigen-data.
+* `smooth_orbit_floquet_three_stable_vec`, `smooth_orbit_floquet_three_unstable_vec`,
+  `smooth_orbit_exp_three_stable_vec` — three-state fields from their eigen-data.
 
 Corrections.
 None: an extension.
@@ -946,6 +946,41 @@ pair `±jΩ`, real pole `λ₃ < 0`; drive at `2Ω`). -/
     exact mul_neg_of_pos_of_neg (by positivity) hl3
   exact smooth_orbit_floquet_unstable_vec hF hF0 hω hPQ hQP _ hA0
     (BlockAveraging.spectralRadius_lt_one_of_norm _ hq) hz A0' (by rw [hLu, hRr]; exact hg)
+
+/-- Three-state `C³` fields with a phasor input, end-to-end with orbital stability: in the stable
+case the forced orbit is locally exponentially stable. -/
+@[tmio T, powerlib_foundation] theorem smooth_orbit_exp_three_stable_vec
+    {F : (Fin 3 → ℝ) × (U → ℝ) → Fin 3 → ℝ} {q0 : (Fin 3 → ℝ) × (U → ℝ)}
+    (hF : ContDiffAt ℝ 3 F q0) (hF0 : F q0 = 0) {w : U → ℂ} {Ω : ℝ} (hΩ : 0 < Ω)
+    {l3 : ℝ} (hl3 : l3 < 0) {r u : Fin 3 → ℂ} {r3 u3 : Fin 3 → ℝ}
+    (hr : (matXV F q0).map (algebraMap ℝ ℂ) *ᵥ r = ((Ω : ℂ) * I) • r)
+    (hu : u ᵥ* (matXV F q0).map (algebraMap ℝ ℂ) = ((Ω : ℂ) * I) • u) (hur : u ⬝ᵥ r = 1)
+    (hr3 : matXV F q0 *ᵥ r3 = l3 • r3) (hu3 : u3 ᵥ* matXV F q0 = l3 • u3) (hur3 : u3 ⬝ᵥ r3 = 1)
+    {z : Fin 3 → ℂ}
+    (hz : (((2 * Ω : ℝ) : ℂ) * I) • z - (matXV F q0).map (algebraMap ℝ ℂ) *ᵥ z = fderivWC F q0 w)
+    (A0' : Matrix (Fin 3) (Fin 3) ℝ)
+    (hs : (u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)).re < 0)
+    (hg : ‖u ⬝ᵥ (smA1V F q0 w z *ᵥ star r) / 2‖ ^ 2 <
+      ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 3 → ℝ,
+      (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+      (∀ t, HasDerivAt y (F (q0.1 + y t, q0.2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → Fin 3 → ℝ),
+        IsIntegralCurveOn x (fun t v => F (q0.1 + v, q0.2 + ε • harm w (2 * Ω) t) +
+          ε • (A0' *ᵥ v)) (Ici s) →
+        ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+          ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖ := by
+  obtain ⟨hQP, hPQ, hQAP, hLu, hRr⟩ := modal_three hΩ.ne' hr hu hur hr3 hu3 hur3
+  have hω : 0 < 2 * Ω := by linarith
+  have hA0 : modalQ u u3 * matXV F q0 * modalP r r3 =
+      fromBlocks (base 0 (2 * Ω / 2)) 0 0 !![l3] := by
+    rw [hQAP, mul_div_cancel_left₀ _ two_ne_zero]
+  have hq : ‖expS (!![l3] : Matrix (Fin 1) (Fin 1) ℝ) (2 * Real.pi / (2 * Ω))‖ < 1 := by
+    rw [norm_expS_one, Real.exp_lt_one_iff]
+    exact mul_neg_of_pos_of_neg (by positivity) hl3
+  exact smooth_orbit_exp_stable_vec hF hF0 hω hPQ hQP _ hA0
+    (BlockAveraging.spectralRadius_lt_one_of_norm _ hq) hz A0'
+    (by rw [hLu, hRr]; exact hs) (by rw [hLu, hRr]; exact hg)
 
 end Three
 

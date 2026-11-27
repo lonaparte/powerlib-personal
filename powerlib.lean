@@ -209,6 +209,7 @@ import theorem.GridTiedConverter.GFM.DVOCOrbit
 import theorem.GridTiedConverter.GFM.VoltageModulationSmooth
 import theorem.GridTiedConverter.GFM.VoltageModulationPhasor
 import theorem.GridTiedConverter.GFM.VoltageModulationPort
+import theorem.GridTiedConverter.GFM.VoltageModulationPortVariants
 import theorem.GridTiedConverter.GFM.DroopVoltageOrbit
 import theorem.GridTiedConverter.GFM.MatchingVoltageOrbit
 import theorem.GridTiedConverter.GFM.GFMOrbitStability

@@ -1,50 +1,67 @@
 import theorem.ParametricResonance.SmoothForcedOrbitVec
 
-/-! # Port disturbances: voltage and current, magnitude and angle
+/-! # Port disturbances of grid-tied converters: one form for every source and every model
 
-A grid-tied converter sees the network through its port. The disturbance at the port is either a
-voltage-type source (the grid source `E∠θ_E` behind the grid impedance `Z_g`) or a current-type
-source (a current `J∠φ` injected at the port), each with a magnitude and an angle channel. The
-converter sees both only through the Thevenin source at the port,
-`e_th = E e^{jθ_E} + Z_g J e^{jφ}`. This file gives
-* the reparametrization of the input of a smooth field, `F(x, w) = G(x, Φ(w))`: the forced
-  response, the modulation `A₁` and the end-to-end hypotheses transform with `Φ'(w₀)`;
-* the port map `w = (ê, θ̂, ι̂, φ̂) ↦` (magnitude, angle) of `e_th`, its derivative, and the
-  resulting Thevenin amplitudes `(v̂, θ̂_th) = (effV ŵ, effθ ŵ)` for complex `ŵ`;
-* the channel dualities on a lossless grid: an active injected current acts through its magnitude
-  as an angle source and through its angle as a magnitude source; a reactive one the other way.
+A disturbance is an external source at the grid port. Its channels are the magnitude and the angle
+of the grid voltage source behind the grid impedance `Z_g`, and either the magnitude and the angle
+of a current injected at the port (VI chart) or the active and reactive power injected at the port
+(PQV chart). A converter sees the network only through the Thevenin source at the port,
+`e_th = E e^{jθ_E} + Z_g J` (`port_thevenin`), so every disturbance acts through the Thevenin
+amplitudes `(v̂, θ̂_th)` of its chart; every grid-synchronized model then has the same
+forced-orbit and Floquet statements.
 
 Model boundary.
-* `Φ : ℝ^W → ℝ^U`, `G` of class `C²` (`C³` for the end-to-end statements) at `(x₀, Φ(w₀))`.
-* The port: `E = E₀(1 + e)`, `θ_E = θ_{E0} + θ`, `J = J₀ + ι` (absolute, so `J₀ = 0` is allowed),
-  `φ = φ₀ + φ`; the Thevenin source at the operating point is normalized to `V₀∠0`, `V₀ > 0`
-  (`eth 0 = V₀`). The converter models must depend on the network only through the Thevenin
-  source at the port, behind the impedance `Z_g`.
+* Charts: `e : ℝ^W → ℂ` of class `C³` at `0`, `e(0) = V₀∠0`, `V₀ > 0`; the VI chart
+  (`E = E₀(1 + ê)`, `θ_E = θ_{E0} + θ̂`, `J = J₀ + ι̂`, `φ = φ₀ + φ̂`) and the PQV chart
+  (`J = (P − jQ) e^{jψ₀}/U₀`, the current injecting `P + jQ` at the reference port voltage
+  `U₀∠ψ₀`).
+* Models: a scalar-voltage model `G(x, V)` in relative-angle coordinates with the relative angle
+  along `e` (`phasor G e`), or an absolute-frame model `H(x, (V, θ_g))` agreeing with `G` at
+  `θ_g = 0`; `C³` at the operating point; modal coordinates or three-state eigen-data of
+  `∂ₓG`; decay and detuning `εA₀'` of order `ε`.
 
 Source: technical report `GFM_five_unified_A0A1_Gamma` (2026-11-07) §2.1 (input vector `û`,
-`A₁ = Σ (∂A/∂x_l) z_l + G û`); the port formulation with voltage- and current-type sources is
-new.
+`A₁ = Σ (∂A/∂x_l) z_l + G û`); the port formulation with voltage, current and power sources is new.
 
 Results.
 * `reparam`, `linCV`, `contDiffAt_reparam`, `matXV_reparam`, `fderivW_reparam`,
-  `fderivWC_reparam`, `smDxV_reparam`, `smMwV_reparam`, `smA1V_reparam` — the reparametrized
-  field: `∂_wF ŵ = ∂_uG(Φ'ŵ)`, `A₁^F(ŵ, z) = A₁^G(Φ'ŵ, z)`.
-* `PortDisturbance.Port`, `eth`, `lth`, `polar`, `polarAbs`, `ca`, `cc`, `dth`, `effV`, `effθ`,
-  `ca_add`, `lth_zero`, `polar_zero`, `polarAbs_zero`, `polar_eq`, `contDiff_eth`,
-  `contDiffAt_lth`, `contDiffAt_polar`, `contDiffAt_polarAbs` — the port map.
-* `hasDerivAt_eth_line`, `hasDerivAt_lth_line`, `hasDerivAt_polar_line`,
-  `hasDerivAt_polarAbs_line`, `fderiv_polar`, `fderiv_polarAbs`, `linCV_polar`, `linCV_polarAbs`
-  — the four channels act as the Thevenin disturbance
-  `v̂ = Re a ê − Im a θ̂ + Re c ι̂ − J₀ Im c φ̂`, `θ̂_th = Im a ê + Re a θ̂ + Im c ι̂ + J₀ Re c φ̂`,
-  `a = E₀e^{jθ_{E0}}/V₀`, `c = Z_g e^{jφ₀}/V₀`.
-* `cc_lossless`, `eff_active`, `eff_reactive`, `eff_no_injection`, `pump_channels` — the channel
-  dualities and the pump over the four channels.
+  `fderivWC_reparam`, `smDxV_reparam`, `smMwV_reparam`, `smA1V_reparam` — reparametrized inputs:
+  the source transforms with the derivative of the chart.
+* `thLog`, `thPolar`, `thPolarAbs`, `thLog_zero`, `thPolar_zero`, `thPolarAbs_zero`, `thPolar_eq`,
+  `contDiffAt_thLog`, `contDiffAt_thPolar`, `contDiffAt_thPolarAbs`, `hasDerivAt_thLog_line`,
+  `fderiv_thPolar`, `fderiv_thPolarAbs`, `linCV_thPolar`, `linCV_thPolarAbs` — Thevenin
+  coordinates of a chart and its amplitudes `(Σ Re D_k ŵ_k, Σ Im D_k ŵ_k)`.
+* `Port`, `Port.eth`, `Port.ca`, `Port.cc`, `Port.Dth`, `Port.effV`, `Port.effθ`, `Port.ca_add`,
+  `Port.contDiff_eth`, `Port.hasDerivAt_eth_line`, `Port.linCV_polar`, `Port.linCV_polarAbs`,
+  `Port.cc_lossless`, `Port.eff_active`, `Port.eff_reactive`, `Port.eff_no_injection`,
+  `Port.pump_channels` — the VI chart: `v̂ = Re a ê − Im a θ̂ + Re c ι̂ − J₀ Im c φ̂`,
+  `θ̂_th = Im a ê + Re a θ̂ + Im c ι̂ + J₀ Re c φ̂`; active and reactive dualities.
+* `PQVPort`, `PQVPort.jinj`, `PQVPort.power_jinj`, `PQVPort.eth`, `PQVPort.ca`, `PQVPort.ck`,
+  `PQVPort.Dth`, `PQVPort.effV`, `PQVPort.effθ`, `PQVPort.contDiff_eth`,
+  `PQVPort.hasDerivAt_eth_line`, `PQVPort.linCV_polar`, `PQVPort.linCV_polarAbs`,
+  `PQVPort.ck_lossless`, `PQVPort.eff_PQ_lossless`, `PQVPort.pump_channels` — the PQV chart:
+  `v̂ = Re a ê − Im a θ̂ + Re κ P̂ + Im κ Q̂`, `θ̂_th = Im a ê + Re a θ̂ + Im κ P̂ − Re κ Q̂`,
+  `κ = Z_g e^{jψ₀}/(U₀V₀)`; on a lossless grid with `ψ₀ = 0` the active power acts as an angle
+  source and the reactive power as a magnitude source, both with `X/(U₀V₀)`.
+* `port_thevenin` — the port current and voltage depend on the network only through `e_th`.
+* `phasor`, `phasor_shift`, `contDiff_phasorArg`, `contDiffAt_phasor`, `matXV_phasor`,
+  `fderivW_phasor`, `smDxV_phasor`, `smMwV_phasor`, `smA1V_phasor`, `forced_phasor` — the
+  grid-phasor model of a scalar-voltage model.
+* `phasor_port_data`, `orbit_phasor_port_stable`, `orbit_phasor_port_unstable`,
+  `orbit_phasor_port_exp_stable`, `orbit_phasor_port_three_stable`,
+  `orbit_phasor_port_three_unstable`, `orbit_phasor_port_three_exp_stable` — end-to-end for
+  every grid-synchronized model and every chart: `(jωI − A₀) z_rel = v̂ b_V − jωθ̂ e`,
+  `A₁ = D_x(∂ₓG) z_rel + v̂ D_V(∂ₓG)`.
+* `matXV_slice`, `fderivW_slice`, `smDxV_slice`, `smMwV_slice`, `slice_port_data`,
+  `orbit_slice_port_stable`, `orbit_slice_port_unstable`, `orbit_slice_port_exp_stable` —
+  absolute-frame models: `(jωI − A₀) z = v̂ b_V + θ̂ b_θ`,
+  `A₁ = D_x(∂ₓG) z + v̂ D_V(∂ₓG) + θ̂ D_θ(∂ₓH)`.
 
 Corrections.
 None: an extension.
 
 Family and connection conclusions.
-None: static evidence on the port disturbances of grid-tied converters.
+None: static evidence on port disturbances of grid-tied converters.
 -/
 
 noncomputable section
@@ -188,11 +205,178 @@ end Reparam
 end powerlib.ParametricResonance.ForcedOrbit
 
 namespace powerlib.ParametricResonance
-open Complex
-
-/-! ### The port disturbance -/
+open Complex Filter Topology Matrix
 
 namespace PortDisturbance
+
+/-! ### Thevenin coordinates of a source chart
+
+A disturbance chart is a smooth map `e : ℝ^W → ℂ`, the Thevenin source at the port as a function
+of the disturbance channels, normalized `e(0) = V₀∠0`. Its coordinates are the relative
+magnitude and the angle (`thPolar`), or the magnitude and the angle (`thPolarAbs`), of `e`. -/
+
+section Chart
+
+variable {W : Type*} [Fintype W]
+
+/-- `log(e/V₀)`: log-magnitude and angle of the Thevenin source relative to `V₀∠0`. -/
+def thLog (e : (W → ℝ) → ℂ) (V0 : ℝ) (w : W → ℝ) : ℂ := Complex.log (e w / V0)
+
+/-- The Thevenin source as relative magnitude and angle, `(|e|/V₀ − 1, arg e)`. -/
+def thPolar (e : (W → ℝ) → ℂ) (V0 : ℝ) (w : W → ℝ) : Fin 2 → ℝ :=
+  ![Real.exp (thLog e V0 w).re - 1, (thLog e V0 w).im]
+
+/-- The Thevenin source as magnitude and angle, `(|e|, arg e)`. -/
+def thPolarAbs (e : (W → ℝ) → ℂ) (V0 : ℝ) (w : W → ℝ) : Fin 2 → ℝ :=
+  ![V0 * Real.exp (thLog e V0 w).re, (thLog e V0 w).im]
+
+variable {e : (W → ℝ) → ℂ} {V0 : ℝ}
+
+omit [Fintype W] in
+@[tmio T, powerlib_foundation] theorem thLog_zero (h0 : e 0 = V0) (hV : V0 ≠ 0) :
+    thLog e V0 0 = 0 := by
+  have hV' : (V0 : ℂ) ≠ 0 := by exact_mod_cast hV
+  simp [thLog, h0, div_self hV']
+
+omit [Fintype W] in
+@[tmio T, powerlib_foundation] theorem thPolar_zero (h0 : e 0 = V0) (hV : V0 ≠ 0) :
+    thPolar e V0 0 = 0 := by
+  funext k; fin_cases k <;> simp [thPolar, thLog_zero h0 hV]
+
+omit [Fintype W] in
+@[tmio T, powerlib_foundation] theorem thPolarAbs_zero (h0 : e 0 = V0) (hV : V0 ≠ 0) :
+    thPolarAbs e V0 0 = ![V0, 0] := by
+  funext k; fin_cases k <;> simp [thPolarAbs, thLog_zero h0 hV]
+
+omit [Fintype W] in
+/-- The coordinates are the magnitude and the angle of the Thevenin source. -/
+@[tmio T, powerlib_foundation] theorem thPolar_eq (hV : 0 < V0) (w : W → ℝ) (h : e w ≠ 0) :
+    thPolar e V0 w = ![‖e w‖ / V0 - 1, Complex.arg (e w)] := by
+  have hV' : (V0 : ℂ) ≠ 0 := by exact_mod_cast hV.ne'
+  have hz : e w / V0 ≠ 0 := div_ne_zero h hV'
+  have e1 : e w / V0 = ((V0⁻¹ : ℝ) : ℂ) * e w := by push_cast; field_simp
+  funext k
+  fin_cases k
+  · simp only [thPolar, thLog, Complex.log_re]
+    rw [Real.exp_log (norm_pos_iff.2 hz), norm_div, Complex.norm_real, Real.norm_of_nonneg hV.le]
+    simp
+  · simp only [thPolar, thLog, Complex.log_im]
+    rw [e1, Complex.arg_real_mul _ (inv_pos.2 hV)]
+    simp
+
+@[tmio T, powerlib_foundation] theorem contDiffAt_thLog {n : WithTop ℕ∞} (he : ContDiffAt ℝ n e 0)
+    (h0 : e 0 = V0) (hV : 0 < V0) : ContDiffAt ℝ n (thLog e V0) 0 := by
+  have hV' : (V0 : ℂ) ≠ 0 := by exact_mod_cast hV.ne'
+  have h1 : e 0 / V0 ∈ Complex.slitPlane := by
+    rw [h0, div_self hV']; exact Complex.one_mem_slitPlane
+  have hl := (Complex.contDiffAt_log h1 (n := n)).restrict_scalars ℝ
+  exact hl.comp (0 : W → ℝ) (he.div_const _)
+
+@[tmio T, powerlib_foundation] theorem contDiffAt_thPolar {n : WithTop ℕ∞}
+    (he : ContDiffAt ℝ n e 0) (h0 : e 0 = V0) (hV : 0 < V0) :
+    ContDiffAt ℝ n (thPolar e V0) 0 := by
+  have hl := contDiffAt_thLog he h0 hV
+  refine contDiffAt_pi.2 fun k => ?_
+  fin_cases k
+  · exact ((Real.contDiff_exp.contDiffAt.comp _ (Complex.reCLM.contDiff.contDiffAt.comp _ hl)).sub
+      contDiffAt_const)
+  · exact Complex.imCLM.contDiff.contDiffAt.comp _ hl
+
+@[tmio T, powerlib_foundation] theorem contDiffAt_thPolarAbs {n : WithTop ℕ∞}
+    (he : ContDiffAt ℝ n e 0) (h0 : e 0 = V0) (hV : 0 < V0) :
+    ContDiffAt ℝ n (thPolarAbs e V0) 0 := by
+  have hl := contDiffAt_thLog he h0 hV
+  refine contDiffAt_pi.2 fun k => ?_
+  fin_cases k
+  · exact contDiffAt_const.mul
+      (Real.contDiff_exp.contDiffAt.comp _ (Complex.reCLM.contDiff.contDiffAt.comp _ hl))
+  · exact Complex.imCLM.contDiff.contDiffAt.comp _ hl
+
+omit [Fintype W] in
+/-- Along a direction with `d e = V₀ d`, `d log(e/V₀) = d`. -/
+@[tmio T, powerlib_foundation] theorem hasDerivAt_thLog_line (h0 : e 0 = V0) (hV : 0 < V0)
+    {v : W → ℝ} {d : ℂ} (hd : HasDerivAt (fun s : ℝ => e (s • v)) (V0 * d) 0) :
+    HasDerivAt (fun s : ℝ => thLog e V0 (s • v)) d 0 := by
+  have hV' : (V0 : ℂ) ≠ 0 := by exact_mod_cast hV.ne'
+  have h1 : e ((0 : ℝ) • v) / V0 = 1 := by simp [h0, div_self hV']
+  have hl := (hd.div_const (V0 : ℂ)).clog_real (by rw [h1]; exact Complex.one_mem_slitPlane)
+  rw [h1, div_one, mul_div_cancel_left₀ _ hV'] at hl
+  exact hl
+
+/-- The derivative of the relative coordinates: `thPolar' v = (Re d, Im d)`. -/
+@[tmio T, powerlib_foundation] theorem fderiv_thPolar (he : ContDiffAt ℝ 1 e 0) (h0 : e 0 = V0)
+    (hV : 0 < V0) {v : W → ℝ} {d : ℂ} (hd : HasDerivAt (fun s : ℝ => e (s • v)) (V0 * d) 0) :
+    fderiv ℝ (thPolar e V0) 0 v = ![d.re, d.im] := by
+  have hl := hasDerivAt_thLog_line h0 hV hd
+  have h00 : (thLog e V0 ((0 : ℝ) • v)).re = 0 := by rw [zero_smul, thLog_zero h0 hV.ne']; simp
+  have hline : HasDerivAt (fun s : ℝ => thPolar e V0 (s • v)) ![d.re, d.im] 0 := by
+    refine hasDerivAt_pi.2 fun k => ?_
+    fin_cases k
+    · have hre := (Complex.reCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl).exp.sub_const 1
+      simp only [Function.comp_def, Complex.reCLM_apply, h00, Real.exp_zero, one_mul] at hre
+      simpa [thPolar] using hre
+    · have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl
+      simpa [thPolar, Function.comp_def] using him
+  have hdiff : DifferentiableAt ℝ (thPolar e V0) 0 :=
+    (contDiffAt_thPolar he h0 hV).differentiableAt (by norm_num)
+  have hs : HasDerivAt (fun s : ℝ => s • v) v 0 := by
+    simpa using (hasDerivAt_id (0 : ℝ)).smul_const v
+  exact (hdiff.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hs (by simp)).unique hline
+
+/-- The derivative of the absolute coordinates: `thPolarAbs' v = (V₀ Re d, Im d)`. -/
+@[tmio T, powerlib_foundation] theorem fderiv_thPolarAbs (he : ContDiffAt ℝ 1 e 0)
+    (h0 : e 0 = V0) (hV : 0 < V0) {v : W → ℝ} {d : ℂ}
+    (hd : HasDerivAt (fun s : ℝ => e (s • v)) (V0 * d) 0) :
+    fderiv ℝ (thPolarAbs e V0) 0 v = ![V0 * d.re, d.im] := by
+  have hl := hasDerivAt_thLog_line h0 hV hd
+  have h00 : (thLog e V0 ((0 : ℝ) • v)).re = 0 := by rw [zero_smul, thLog_zero h0 hV.ne']; simp
+  have hline : HasDerivAt (fun s : ℝ => thPolarAbs e V0 (s • v)) ![V0 * d.re, d.im] 0 := by
+    refine hasDerivAt_pi.2 fun k => ?_
+    fin_cases k
+    · have hre := ((Complex.reCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl).exp).const_mul V0
+      simp only [Function.comp_def, Complex.reCLM_apply, h00, Real.exp_zero, one_mul] at hre
+      simpa [thPolarAbs] using hre
+    · have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl
+      simpa [thPolarAbs, Function.comp_def] using him
+  have hdiff : DifferentiableAt ℝ (thPolarAbs e V0) 0 :=
+    (contDiffAt_thPolarAbs he h0 hV).differentiableAt (by norm_num)
+  have hs : HasDerivAt (fun s : ℝ => s • v) v 0 := by
+    simpa using (hasDerivAt_id (0 : ℝ)).smul_const v
+  exact (hdiff.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hs (by simp)).unique hline
+
+/-- The amplitudes of a chart with a complex-linear first-order source `D`: if every direction has
+`d e = V₀ (Σ_k v_k D_k)`, the disturbance `ŵ` acts as the Thevenin disturbance
+`(Σ Re D_k ŵ_k, Σ Im D_k ŵ_k)`. -/
+@[tmio T, powerlib_foundation] theorem linCV_thPolar (he : ContDiffAt ℝ 1 e 0) (h0 : e 0 = V0)
+    (hV : 0 < V0) (D : W → ℂ)
+    (hd : ∀ v : W → ℝ, HasDerivAt (fun s : ℝ => e (s • v)) (V0 * ∑ k, (v k : ℂ) * D k) 0)
+    (w : W → ℂ) :
+    ForcedOrbit.linCV (fderiv ℝ (thPolar e V0) 0) w =
+      ForcedOrbit.gridSrc (∑ k, ((D k).re : ℂ) * w k) (∑ k, ((D k).im : ℂ) * w k) := by
+  funext i
+  fin_cases i <;> apply Complex.ext <;>
+    simp [ForcedOrbit.linCV, fderiv_thPolar he h0 hV (hd _), ForcedOrbit.gridSrc,
+      ForcedOrbit.ofv, ForcedOrbit.uMag, ForcedOrbit.uAng, Complex.re_sum, Complex.im_sum,
+      Complex.mul_re, Complex.mul_im, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff, mul_comm]
+
+/-- The same in the absolute coordinates: `(V₀ Σ Re D_k ŵ_k, Σ Im D_k ŵ_k)`. -/
+@[tmio T, powerlib_foundation] theorem linCV_thPolarAbs (he : ContDiffAt ℝ 1 e 0)
+    (h0 : e 0 = V0) (hV : 0 < V0) (D : W → ℂ)
+    (hd : ∀ v : W → ℝ, HasDerivAt (fun s : ℝ => e (s • v)) (V0 * ∑ k, (v k : ℂ) * D k) 0)
+    (w : W → ℂ) :
+    ForcedOrbit.linCV (fderiv ℝ (thPolarAbs e V0) 0) w =
+      ForcedOrbit.gridSrc (V0 * ∑ k, ((D k).re : ℂ) * w k) (∑ k, ((D k).im : ℂ) * w k) := by
+  funext i
+  fin_cases i <;> apply Complex.ext <;>
+    simp [ForcedOrbit.linCV, fderiv_thPolarAbs he h0 hV (hd _), ForcedOrbit.gridSrc,
+      ForcedOrbit.ofv, ForcedOrbit.uMag, ForcedOrbit.uAng, Complex.re_sum, Complex.im_sum,
+      Complex.mul_re, Complex.mul_im, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff, mul_comm,
+      Finset.mul_sum]
+
+end Chart
+
+/-! ### The voltage–current chart: magnitude and angle of the grid source and of an injected
+current -/
 
 /-- The port of a grid-tied converter: the grid source `E₀∠θ_{E0}` behind the grid impedance
 `Z_g` and a current `J₀∠φ₀` injected at the port; `V₀` is the magnitude of the Thevenin source at
@@ -222,23 +406,14 @@ def eth (w : Fin 4 → ℝ) : ℂ :=
   ((pt.E0 * (1 + w 0) : ℝ) : ℂ) * cexp (((pt.θE0 + w 1 : ℝ) : ℂ) * I) +
     pt.Zg * (((pt.J0 + w 2 : ℝ) : ℂ) * cexp (((pt.φ0 + w 3 : ℝ) : ℂ) * I))
 
-/-- `log(e_th/V₀)`: log-magnitude and angle of the Thevenin source relative to `V₀∠0`. -/
-def lth (w : Fin 4 → ℝ) : ℂ := Complex.log (pt.eth w / pt.V0)
-
-/-- The Thevenin source as relative magnitude and angle, `(|e_th|/V₀ − 1, arg e_th)`. -/
-def polar (w : Fin 4 → ℝ) : Fin 2 → ℝ := ![Real.exp (pt.lth w).re - 1, (pt.lth w).im]
-
-/-- The Thevenin source as magnitude and angle, `(|e_th|, arg e_th)`. -/
-def polarAbs (w : Fin 4 → ℝ) : Fin 2 → ℝ := ![pt.V0 * Real.exp (pt.lth w).re, (pt.lth w).im]
-
 /-- The voltage coefficient `a = E₀ e^{jθ_{E0}}/V₀`. -/
 def ca : ℂ := (pt.E0 : ℂ) * cexp ((pt.θE0 : ℂ) * I) / pt.V0
 /-- The current coefficient `c = Z_g e^{jφ₀}/V₀`. -/
 def cc : ℂ := pt.Zg * cexp ((pt.φ0 : ℂ) * I) / pt.V0
 
-/-- The first-order Thevenin source of a direction `v`: `a(v_e + jv_θ) + c(v_ι + jJ₀v_φ)`. -/
-def dth (v : Fin 4 → ℝ) : ℂ :=
-  pt.ca * (v 0 + v 1 * I) + pt.cc * (v 2 + pt.J0 * v 3 * I)
+/-- The first-order Thevenin source of the channels, `d e_th = V₀ Σ v_k D_k`:
+`D = (a, ja, c, jJ₀c)`. -/
+def Dth : Fin 4 → ℂ := ![pt.ca, pt.ca * I, pt.cc, pt.cc * pt.J0 * I]
 
 /-- The relative-magnitude amplitude of the Thevenin source for the port disturbance `ŵ`:
 `v̂ = Re a ê − Im a θ̂ + Re c ι̂ − J₀ Im c φ̂`. -/
@@ -261,35 +436,6 @@ def effθ (w : Fin 4 → ℂ) : ℂ :=
   field_simp
   linear_combination hN
 
-@[tmio M, powerlib_domain] theorem lth_zero (hN : pt.eth 0 = pt.V0) (hV : pt.V0 ≠ 0) :
-    pt.lth 0 = 0 := by
-  have hV' : (pt.V0 : ℂ) ≠ 0 := by exact_mod_cast hV
-  simp [lth, hN, div_self hV']
-
-@[tmio M, powerlib_domain] theorem polar_zero (hN : pt.eth 0 = pt.V0) (hV : pt.V0 ≠ 0) :
-    pt.polar 0 = 0 := by
-  funext k; fin_cases k <;> simp [polar, pt.lth_zero hN hV]
-
-@[tmio M, powerlib_domain] theorem polarAbs_zero (hN : pt.eth 0 = pt.V0) (hV : pt.V0 ≠ 0) :
-    pt.polarAbs 0 = ![pt.V0, 0] := by
-  funext k; fin_cases k <;> simp [polarAbs, pt.lth_zero hN hV]
-
-/-- The coordinates are the magnitude and the angle of the Thevenin source. -/
-@[tmio M, powerlib_domain] theorem polar_eq (hV : 0 < pt.V0) (w : Fin 4 → ℝ) (h : pt.eth w ≠ 0) :
-    pt.polar w = ![‖pt.eth w‖ / pt.V0 - 1, Complex.arg (pt.eth w)] := by
-  have hV' : (pt.V0 : ℂ) ≠ 0 := by exact_mod_cast hV.ne'
-  have hz : pt.eth w / pt.V0 ≠ 0 := div_ne_zero h hV'
-  have e : pt.eth w / pt.V0 = ((pt.V0⁻¹ : ℝ) : ℂ) * pt.eth w := by
-    push_cast; field_simp
-  funext k
-  fin_cases k
-  · simp only [polar, lth, Complex.log_re]
-    rw [Real.exp_log (norm_pos_iff.2 hz), norm_div, Complex.norm_real, Real.norm_of_nonneg hV.le]
-    simp
-  · simp only [polar, lth, Complex.log_im]
-    rw [e, Complex.arg_real_mul _ (inv_pos.2 hV)]
-    simp
-
 @[tmio M, powerlib_domain] theorem contDiff_eth {n : WithTop ℕ∞} : ContDiff ℝ n pt.eth := by
   have hof : ContDiff ℝ n (fun x : ℝ => (x : ℂ)) := Complex.ofRealCLM.contDiff
   have hx : ∀ k : Fin 4, ContDiff ℝ n fun w : Fin 4 → ℝ => w k := fun k => contDiff_apply ℝ ℝ k
@@ -302,36 +448,9 @@ def effθ (w : Fin 4 → ℂ) : ℂ :=
     hof.comp (contDiff_const.add (hx 2))
   exact (t1.mul (hex pt.θE0 1)).add (contDiff_const.mul (t3.mul (hex pt.φ0 3)))
 
-@[tmio M, powerlib_domain] theorem contDiffAt_lth (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
-    {n : WithTop ℕ∞} : ContDiffAt ℝ n pt.lth 0 := by
-  have hV' : (pt.V0 : ℂ) ≠ 0 := by exact_mod_cast hV.ne'
-  have h1 : pt.eth 0 / pt.V0 ∈ Complex.slitPlane := by
-    rw [hN, div_self hV']; exact Complex.one_mem_slitPlane
-  have hl := (Complex.contDiffAt_log h1 (n := n)).restrict_scalars ℝ
-  have hd : ContDiff ℝ n fun w => pt.eth w / pt.V0 := pt.contDiff_eth.div_const _
-  exact hl.comp (0 : Fin 4 → ℝ) hd.contDiffAt
-
-@[tmio M, powerlib_domain] theorem contDiffAt_polar (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
-    {n : WithTop ℕ∞} : ContDiffAt ℝ n pt.polar 0 := by
-  have hl := pt.contDiffAt_lth hN hV (n := n)
-  refine contDiffAt_pi.2 fun k => ?_
-  fin_cases k
-  · exact ((Real.contDiff_exp.contDiffAt.comp _ (Complex.reCLM.contDiff.contDiffAt.comp _ hl)).sub
-      contDiffAt_const)
-  · exact Complex.imCLM.contDiff.contDiffAt.comp _ hl
-
-@[tmio M, powerlib_domain] theorem contDiffAt_polarAbs (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
-    {n : WithTop ℕ∞} : ContDiffAt ℝ n pt.polarAbs 0 := by
-  have hl := pt.contDiffAt_lth hN hV (n := n)
-  refine contDiffAt_pi.2 fun k => ?_
-  fin_cases k
-  · exact contDiffAt_const.mul
-      (Real.contDiff_exp.contDiffAt.comp _ (Complex.reCLM.contDiff.contDiffAt.comp _ hl))
-  · exact Complex.imCLM.contDiff.contDiffAt.comp _ hl
-
 /-- The Thevenin source along a direction: `d e_th = V₀ (a(v_e + jv_θ) + c(v_ι + jJ₀v_φ))`. -/
 @[tmio M, powerlib_domain] theorem hasDerivAt_eth_line (hV : pt.V0 ≠ 0) (v : Fin 4 → ℝ) :
-    HasDerivAt (fun s : ℝ => pt.eth (s • v)) (pt.V0 * pt.dth v) 0 := by
+    HasDerivAt (fun s : ℝ => pt.eth (s • v)) (pt.V0 * ∑ k, (v k : ℂ) * pt.Dth k) 0 := by
   have hV' : (pt.V0 : ℂ) ≠ 0 := by exact_mod_cast hV
   have hr : ∀ (α β : ℝ), HasDerivAt (fun s : ℝ => ((α + s * β : ℝ) : ℂ)) (β : ℂ) 0 := fun α β => by
     have := ((hasDerivAt_id (0 : ℝ)).mul_const β).const_add α
@@ -347,89 +466,36 @@ def effθ (w : Fin 4 → ℂ) : ℂ :=
   have h := (h1.mul (he pt.θE0 (v 1))).add (((hr pt.J0 (v 2)).mul (he pt.φ0 (v 3))).const_mul pt.Zg)
   refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => ?_)).congr_deriv ?_
   · simp [eth, Pi.smul_apply, smul_eq_mul]
-  · simp only [dth, ca, cc]
+  · simp only [Fin.sum_univ_four, Dth, ca, cc, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
     field_simp
     push_cast
     ring_nf
-
-/-- The Thevenin coordinates along a direction: `d(polar) v = (Re d_th v, Im d_th v)`. -/
-@[tmio M, powerlib_domain] theorem hasDerivAt_lth_line (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
-    (v : Fin 4 → ℝ) : HasDerivAt (fun s : ℝ => pt.lth (s • v)) (pt.dth v) 0 := by
-  have hV' : (pt.V0 : ℂ) ≠ 0 := by exact_mod_cast hV.ne'
-  have h0 : pt.eth ((0 : ℝ) • v) / pt.V0 = 1 := by simp [hN, div_self hV']
-  have hd : HasDerivAt (fun s : ℝ => pt.eth (s • v) / pt.V0) (pt.V0 * pt.dth v / pt.V0) 0 :=
-    (pt.hasDerivAt_eth_line hV.ne' v).div_const _
-  have hl := hd.clog_real (by rw [h0]; exact Complex.one_mem_slitPlane)
-  rw [h0, div_one, mul_div_cancel_left₀ _ hV'] at hl
-  exact hl
-
-@[tmio M, powerlib_domain] theorem hasDerivAt_polar_line (hN : pt.eth 0 = pt.V0)
-    (hV : 0 < pt.V0) (v : Fin 4 → ℝ) :
-    HasDerivAt (fun s : ℝ => pt.polar (s • v)) ![(pt.dth v).re, (pt.dth v).im] 0 := by
-  have hl := pt.hasDerivAt_lth_line hN hV v
-  have h00 : (pt.lth ((0 : ℝ) • v)).re = 0 := by rw [zero_smul, pt.lth_zero hN hV.ne']; simp
-  refine hasDerivAt_pi.2 fun k => ?_
-  fin_cases k
-  · have hre := (Complex.reCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl).exp.sub_const 1
-    simp only [Function.comp_def, Complex.reCLM_apply, h00, Real.exp_zero, one_mul] at hre
-    simpa [polar] using hre
-  · have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl
-    simpa [polar, Function.comp_def] using him
-
-@[tmio M, powerlib_domain] theorem hasDerivAt_polarAbs_line (hN : pt.eth 0 = pt.V0)
-    (hV : 0 < pt.V0) (v : Fin 4 → ℝ) :
-    HasDerivAt (fun s : ℝ => pt.polarAbs (s • v)) ![pt.V0 * (pt.dth v).re, (pt.dth v).im] 0 := by
-  have hl := pt.hasDerivAt_lth_line hN hV v
-  have h00 : (pt.lth ((0 : ℝ) • v)).re = 0 := by rw [zero_smul, pt.lth_zero hN hV.ne']; simp
-  refine hasDerivAt_pi.2 fun k => ?_
-  fin_cases k
-  · have hre := ((Complex.reCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl).exp).const_mul pt.V0
-    simp only [Function.comp_def, Complex.reCLM_apply, h00, Real.exp_zero, one_mul] at hre
-    simpa [polarAbs] using hre
-  · have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl
-    simpa [polarAbs, Function.comp_def] using him
-
-@[tmio M, powerlib_domain] theorem fderiv_polar (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
-    (v : Fin 4 → ℝ) : fderiv ℝ pt.polar 0 v = ![(pt.dth v).re, (pt.dth v).im] := by
-  have hd : DifferentiableAt ℝ pt.polar 0 :=
-    (pt.contDiffAt_polar hN hV (n := 1)).differentiableAt (by norm_num)
-  have hline : HasDerivAt (fun s : ℝ => s • v) v 0 := by
-    simpa using (hasDerivAt_id (0 : ℝ)).smul_const v
-  have h1 := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hline (by simp)
-  exact h1.unique (pt.hasDerivAt_polar_line hN hV v)
-
-@[tmio M, powerlib_domain] theorem fderiv_polarAbs (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
-    (v : Fin 4 → ℝ) : fderiv ℝ pt.polarAbs 0 v = ![pt.V0 * (pt.dth v).re, (pt.dth v).im] := by
-  have hd : DifferentiableAt ℝ pt.polarAbs 0 :=
-    (pt.contDiffAt_polarAbs hN hV (n := 1)).differentiableAt (by norm_num)
-  have hline : HasDerivAt (fun s : ℝ => s • v) v 0 := by
-    simpa using (hasDerivAt_id (0 : ℝ)).smul_const v
-  have h1 := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hline (by simp)
-  exact h1.unique (pt.hasDerivAt_polarAbs_line hN hV v)
 
 /-- The port disturbance `ŵ = (ê, θ̂, ι̂, φ̂)` acts on the converter as the Thevenin-source
 disturbance `(v̂, θ̂_th) = (effV ŵ, effθ ŵ)` (relative magnitude, angle). -/
 @[tmio M, powerlib_domain] theorem linCV_polar (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
     (w : Fin 4 → ℂ) :
-    ForcedOrbit.linCV (fderiv ℝ pt.polar 0) w = ForcedOrbit.gridSrc (pt.effV w) (pt.effθ w) := by
-  funext k
-  fin_cases k <;> apply Complex.ext <;>
-    simp [ForcedOrbit.linCV, pt.fderiv_polar hN hV, dth, effV, effθ, ForcedOrbit.gridSrc,
-      ForcedOrbit.ofv, ForcedOrbit.uMag, ForcedOrbit.uAng, Complex.mul_re, Complex.mul_im,
-      -mul_eq_mul_left_iff, -mul_eq_mul_right_iff] <;>
-    ring
+    ForcedOrbit.linCV (fderiv ℝ (thPolar pt.eth pt.V0) 0) w =
+      ForcedOrbit.gridSrc (pt.effV w) (pt.effθ w) := by
+  rw [linCV_thPolar pt.contDiff_eth.contDiffAt hN hV pt.Dth (pt.hasDerivAt_eth_line hV.ne')]
+  have h1 : ∑ k, ((pt.Dth k).re : ℂ) * w k = pt.effV w := by
+    simp [Fin.sum_univ_four, Dth, effV, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  have h2 : ∑ k, ((pt.Dth k).im : ℂ) * w k = pt.effθ w := by
+    simp [Fin.sum_univ_four, Dth, effθ, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  rw [h1, h2]
 
 /-- The same with the absolute magnitude: `(V₀ effV ŵ, effθ ŵ)`. -/
 @[tmio M, powerlib_domain] theorem linCV_polarAbs (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0)
     (w : Fin 4 → ℂ) :
-    ForcedOrbit.linCV (fderiv ℝ pt.polarAbs 0) w =
+    ForcedOrbit.linCV (fderiv ℝ (thPolarAbs pt.eth pt.V0) 0) w =
       ForcedOrbit.gridSrc (pt.V0 * pt.effV w) (pt.effθ w) := by
-  funext k
-  fin_cases k <;> apply Complex.ext <;>
-    simp [ForcedOrbit.linCV, pt.fderiv_polarAbs hN hV, dth, effV, effθ, ForcedOrbit.gridSrc,
-      ForcedOrbit.ofv, ForcedOrbit.uMag, ForcedOrbit.uAng, Complex.mul_re, Complex.mul_im,
-      -mul_eq_mul_left_iff, -mul_eq_mul_right_iff] <;>
-    ring
+  rw [linCV_thPolarAbs pt.contDiff_eth.contDiffAt hN hV pt.Dth (pt.hasDerivAt_eth_line hV.ne')]
+  have h1 : ∑ k, ((pt.Dth k).re : ℂ) * w k = pt.effV w := by
+    simp [Fin.sum_univ_four, Dth, effV, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  have h2 : ∑ k, ((pt.Dth k).im : ℂ) * w k = pt.effθ w := by
+    simp [Fin.sum_univ_four, Dth, effθ, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  rw [h1, h2]
 
 /-! ### The channels on a lossless grid -/
 
@@ -489,6 +555,804 @@ magnitude) and `g_θ` (angle): `g = v̂ g_V + θ̂_th g_θ` expands over the fou
   ring
 
 end Port
+
+/-! ### The PQV chart: grid-source magnitude and angle, injected active and reactive power -/
+
+/-- The port with the disturbance source given by its power: the grid source `E₀∠θ_{E0}` behind
+`Z_g` and the power `P₀ + jQ₀` injected at the reference port voltage `U₀∠ψ₀`; `V₀` is the
+Thevenin magnitude at the port. -/
+structure PQVPort where
+  /-- grid-source magnitude -/
+  E0 : ℝ
+  /-- grid-source angle -/
+  θE0 : ℝ
+  /-- injected active power -/
+  P0 : ℝ
+  /-- injected reactive power -/
+  Q0 : ℝ
+  /-- reference port-voltage magnitude -/
+  U0 : ℝ
+  /-- reference port-voltage angle -/
+  ψ0 : ℝ
+  /-- grid impedance between the port and the grid source -/
+  Zg : ℂ
+  /-- Thevenin-source magnitude at the port -/
+  V0 : ℝ
+
+namespace PQVPort
+variable (pq : PQVPort)
+
+/-- The current that injects `P + jQ` at the reference voltage: `J = (P − jQ) e^{jψ₀}/U₀`. -/
+def jinj (P Q : ℝ) : ℂ := ((P : ℂ) - (Q : ℂ) * I) * cexp ((pq.ψ0 : ℂ) * I) / pq.U0
+
+/-- The injected current carries the power `P + jQ` at the reference voltage. -/
+@[tmio M, powerlib_domain] theorem power_jinj (hU : pq.U0 ≠ 0) (P Q : ℝ) :
+    ((pq.U0 : ℂ) * cexp ((pq.ψ0 : ℂ) * I)) * (starRingEnd ℂ) (pq.jinj P Q) = P + Q * I := by
+  have hU' : (pq.U0 : ℂ) ≠ 0 := by exact_mod_cast hU
+  have hc : (starRingEnd ℂ) (cexp ((pq.ψ0 : ℂ) * I)) = cexp (-((pq.ψ0 : ℂ) * I)) := by
+    rw [← Complex.exp_conj]; simp
+  simp only [jinj, map_div₀, map_mul, map_sub, Complex.conj_ofReal, Complex.conj_I, hc]
+  rw [mul_comm ((pq.U0 : ℂ)) _]
+  field_simp
+  have hE : cexp ((pq.ψ0 : ℂ) * I) * cexp (-((pq.ψ0 : ℂ) * I)) = 1 := by
+    rw [← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
+  linear_combination ((P : ℂ) + I * Q) * hE
+
+/-- The Thevenin source under the channels `w = (ê, θ̂, P̂, Q̂)`:
+`e_th = E₀(1 + ê) e^{j(θ_{E0} + θ̂)} + Z_g J(P₀ + P̂, Q₀ + Q̂)`. -/
+def eth (w : Fin 4 → ℝ) : ℂ :=
+  ((pq.E0 * (1 + w 0) : ℝ) : ℂ) * cexp (((pq.θE0 + w 1 : ℝ) : ℂ) * I) +
+    pq.Zg * pq.jinj (pq.P0 + w 2) (pq.Q0 + w 3)
+
+/-- The voltage coefficient `a = E₀ e^{jθ_{E0}}/V₀`. -/
+def ca : ℂ := (pq.E0 : ℂ) * cexp ((pq.θE0 : ℂ) * I) / pq.V0
+/-- The power coefficient `κ = Z_g e^{jψ₀}/(U₀V₀)`. -/
+def ck : ℂ := pq.Zg * cexp ((pq.ψ0 : ℂ) * I) / (pq.U0 * pq.V0)
+
+/-- The first-order Thevenin source of the channels: `D = (a, ja, κ, −jκ)`. -/
+def Dth : Fin 4 → ℂ := ![pq.ca, pq.ca * I, pq.ck, -(pq.ck * I)]
+
+/-- The relative-magnitude amplitude: `v̂ = Re a ê − Im a θ̂ + Re κ P̂ + Im κ Q̂`. -/
+def effV (w : Fin 4 → ℂ) : ℂ :=
+  pq.ca.re * w 0 - pq.ca.im * w 1 + pq.ck.re * w 2 + pq.ck.im * w 3
+
+/-- The angle amplitude: `θ̂_th = Im a ê + Re a θ̂ + Im κ P̂ − Re κ Q̂`. -/
+def effθ (w : Fin 4 → ℂ) : ℂ :=
+  pq.ca.im * w 0 + pq.ca.re * w 1 + pq.ck.im * w 2 - pq.ck.re * w 3
+
+@[tmio M, powerlib_domain] theorem contDiff_eth {n : WithTop ℕ∞} : ContDiff ℝ n pq.eth := by
+  have hof : ContDiff ℝ n (fun x : ℝ => (x : ℂ)) := Complex.ofRealCLM.contDiff
+  have hx : ∀ k : Fin 4, ContDiff ℝ n fun w : Fin 4 → ℝ => w k := fun k => contDiff_apply ℝ ℝ k
+  have t1 : ContDiff ℝ n fun w : Fin 4 → ℝ => ((pq.E0 * (1 + w 0) : ℝ) : ℂ) :=
+    hof.comp (contDiff_const.mul (contDiff_const.add (hx 0)))
+  have t2 : ContDiff ℝ n fun w : Fin 4 → ℝ => cexp (((pq.θE0 + w 1 : ℝ) : ℂ) * I) :=
+    (Complex.contDiff_exp (𝕜 := ℝ)).comp ((hof.comp (contDiff_const.add (hx 1))).mul contDiff_const)
+  have t3 : ContDiff ℝ n fun w : Fin 4 → ℝ => pq.jinj (pq.P0 + w 2) (pq.Q0 + w 3) := by
+    unfold jinj
+    exact (((hof.comp (contDiff_const.add (hx 2))).sub
+      ((hof.comp (contDiff_const.add (hx 3))).mul contDiff_const)).mul contDiff_const).div_const _
+  exact (t1.mul t2).add (contDiff_const.mul t3)
+
+@[tmio M, powerlib_domain] theorem hasDerivAt_eth_line (hV : pq.V0 ≠ 0) (hU : pq.U0 ≠ 0)
+    (v : Fin 4 → ℝ) :
+    HasDerivAt (fun s : ℝ => pq.eth (s • v)) (pq.V0 * ∑ k, (v k : ℂ) * pq.Dth k) 0 := by
+  have hV' : (pq.V0 : ℂ) ≠ 0 := by exact_mod_cast hV
+  have hU' : (pq.U0 : ℂ) ≠ 0 := by exact_mod_cast hU
+  have hr : ∀ (α β : ℝ), HasDerivAt (fun s : ℝ => ((α + s * β : ℝ) : ℂ)) (β : ℂ) 0 := fun α β => by
+    have := ((hasDerivAt_id (0 : ℝ)).mul_const β).const_add α
+    simpa using this.ofReal_comp
+  have he : HasDerivAt (fun s : ℝ => cexp (((pq.θE0 + s * v 1 : ℝ) : ℂ) * I))
+      (cexp ((pq.θE0 : ℂ) * I) * ((v 1 : ℂ) * I)) 0 := by
+    have := ((hr pq.θE0 (v 1)).mul_const I).cexp
+    simpa using this
+  have h1 : HasDerivAt (fun s : ℝ => ((pq.E0 * (1 + s * v 0) : ℝ) : ℂ))
+      ((pq.E0 * v 0 : ℝ) : ℂ) 0 := by
+    have := ((((hasDerivAt_id (0 : ℝ)).mul_const (v 0)).const_add 1).const_mul pq.E0)
+    simpa using this.ofReal_comp
+  have hj : HasDerivAt (fun s : ℝ => pq.jinj (pq.P0 + s * v 2) (pq.Q0 + s * v 3))
+      (((v 2 : ℂ) - (v 3 : ℂ) * I) * cexp ((pq.ψ0 : ℂ) * I) / pq.U0) 0 := by
+    unfold jinj
+    have := ((((hr pq.P0 (v 2)).sub ((hr pq.Q0 (v 3)).mul_const I)).mul_const
+      (cexp ((pq.ψ0 : ℂ) * I))).div_const (pq.U0 : ℂ))
+    simpa using this
+  have h := (h1.mul he).add (hj.const_mul pq.Zg)
+  refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => ?_)).congr_deriv ?_
+  · simp [eth, Pi.smul_apply, smul_eq_mul]
+  · simp only [Fin.sum_univ_four, Dth, ca, ck, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
+    field_simp
+    push_cast
+    ring_nf
+
+/-- The PQV disturbance `ŵ = (ê, θ̂, P̂, Q̂)` acts as the Thevenin disturbance
+`(v̂, θ̂_th) = (effV ŵ, effθ ŵ)`. -/
+@[tmio M, powerlib_domain] theorem linCV_polar (hN : pq.eth 0 = pq.V0) (hV : 0 < pq.V0)
+    (hU : pq.U0 ≠ 0) (w : Fin 4 → ℂ) :
+    ForcedOrbit.linCV (fderiv ℝ (thPolar pq.eth pq.V0) 0) w =
+      ForcedOrbit.gridSrc (pq.effV w) (pq.effθ w) := by
+  rw [linCV_thPolar pq.contDiff_eth.contDiffAt hN hV pq.Dth (pq.hasDerivAt_eth_line hV.ne' hU)]
+  have h1 : ∑ k, ((pq.Dth k).re : ℂ) * w k = pq.effV w := by
+    simp [Fin.sum_univ_four, Dth, effV, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  have h2 : ∑ k, ((pq.Dth k).im : ℂ) * w k = pq.effθ w := by
+    simp [Fin.sum_univ_four, Dth, effθ, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  rw [h1, h2]
+
+/-- The same with the absolute magnitude: `(V₀ effV ŵ, effθ ŵ)`. -/
+@[tmio M, powerlib_domain] theorem linCV_polarAbs (hN : pq.eth 0 = pq.V0) (hV : 0 < pq.V0)
+    (hU : pq.U0 ≠ 0) (w : Fin 4 → ℂ) :
+    ForcedOrbit.linCV (fderiv ℝ (thPolarAbs pq.eth pq.V0) 0) w =
+      ForcedOrbit.gridSrc (pq.V0 * pq.effV w) (pq.effθ w) := by
+  rw [linCV_thPolarAbs pq.contDiff_eth.contDiffAt hN hV pq.Dth
+    (pq.hasDerivAt_eth_line hV.ne' hU)]
+  have h1 : ∑ k, ((pq.Dth k).re : ℂ) * w k = pq.effV w := by
+    simp [Fin.sum_univ_four, Dth, effV, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  have h2 : ∑ k, ((pq.Dth k).im : ℂ) * w k = pq.effθ w := by
+    simp [Fin.sum_univ_four, Dth, effθ, -mul_eq_mul_left_iff, -mul_eq_mul_right_iff]; ring
+  rw [h1, h2]
+
+/-- On a lossless grid `Z_g = jX`: `κ = jX e^{jψ₀}/(U₀V₀)`. -/
+@[tmio M, powerlib_domain] theorem ck_lossless {X : ℝ} (hZ : pq.Zg = (X : ℂ) * I) :
+    pq.ck.re = -(X * Real.sin pq.ψ0) / (pq.U0 * pq.V0) ∧
+      pq.ck.im = X * Real.cos pq.ψ0 / (pq.U0 * pq.V0) := by
+  have e : pq.ck = ((X : ℂ) * I * cexp ((pq.ψ0 : ℂ) * I)) / ((pq.U0 * pq.V0 : ℝ) : ℂ) := by
+    rw [ck, hZ]; push_cast; ring
+  rw [e, Complex.div_ofReal_re, Complex.div_ofReal_im]
+  simp [Complex.mul_re, Complex.mul_im, Complex.exp_ofReal_mul_I_re,
+    Complex.exp_ofReal_mul_I_im]
+
+/-- The classical decoupling on a lossless grid with the reference voltage in phase with the
+Thevenin source (`ψ₀ = 0`): the active power acts as an angle source `X P̂/(U₀V₀)`, the reactive
+power as a magnitude source `X Q̂/(U₀V₀)`. -/
+@[tmio M, powerlib_domain] theorem eff_PQ_lossless {X : ℝ} (hZ : pq.Zg = (X : ℂ) * I)
+    (hψ : pq.ψ0 = 0) (w : Fin 4 → ℂ) :
+    pq.effV w = pq.ca.re * w 0 - pq.ca.im * w 1 + X / (pq.U0 * pq.V0) * w 3 ∧
+      pq.effθ w = pq.ca.im * w 0 + pq.ca.re * w 1 + X / (pq.U0 * pq.V0) * w 2 := by
+  obtain ⟨h1, h2⟩ := pq.ck_lossless hZ
+  rw [hψ] at h1 h2
+  simp only [Real.sin_zero, mul_zero, neg_zero, zero_div, Real.cos_zero, mul_one] at h1 h2
+  refine ⟨?_, ?_⟩ <;> simp only [effV, effθ, h1, h2] <;> push_cast <;> ring
+
+/-- The pump of a PQV disturbance over its channels for Thevenin pumps `g_V`, `g_θ`. -/
+@[tmio M, powerlib_domain] theorem pump_channels (gV gθ : ℂ) (w : Fin 4 → ℂ) :
+    pq.effV w * gV + pq.effθ w * gθ =
+      w 0 * (pq.ca.re * gV + pq.ca.im * gθ) + w 1 * (pq.ca.re * gθ - pq.ca.im * gV) +
+        w 2 * (pq.ck.re * gV + pq.ck.im * gθ) + w 3 * (pq.ck.im * gV - pq.ck.re * gθ) := by
+  simp only [effV, effθ]
+  ring
+
+end PQVPort
+
+/-! ### The Thevenin reduction at the port -/
+
+/-- A converter with internal source `u` behind `Z_u` at a port where the grid source `e_g`
+behind `Z_g` and the injected current `J` meet: the port current and the port voltage depend on
+the network only through the Thevenin source `e_th = e_g + Z_g J`. -/
+@[tmio M, powerlib_domain] theorem port_thevenin {u eg J Zu Zg i vp : ℂ} (hZ : Zu + Zg ≠ 0)
+    (hi : u - vp = Zu * i) (hv : vp = eg + Zg * (i + J)) :
+    i = (u - (eg + Zg * J)) / (Zu + Zg) ∧ vp = (Zg * u + Zu * (eg + Zg * J)) / (Zu + Zg) := by
+  have hi' : i = (u - (eg + Zg * J)) / (Zu + Zg) := by
+    rw [eq_div_iff hZ]
+    linear_combination -hi - hv
+  refine ⟨hi', ?_⟩
+  rw [eq_div_iff hZ]
+  rw [hi'] at hv
+  rw [hv]
+  field_simp
+  ring
+
+/-! ### Grid-synchronized models from their scalar-voltage form
+
+A converter model in relative-angle coordinates driven by the grid-voltage magnitude,
+`G(x, V)`, with the relative angle along `e`, becomes a grid-phasor model in the absolute angle by
+`phasor G e (x, (V, θ_g)) = G(x − θ_g e, V)`, invariant under the joint rotation of the converter
+angle and the grid angle. Composed with a disturbance chart `Φ` (`reparam (phasor G e) Φ`), every
+port disturbance acts through the Thevenin amplitudes `(v̂, θ̂_th)` of `Φ`. -/
+
+section Phasor
+
+open ForcedOrbit
+
+variable {X : Type*} [Fintype X] [DecidableEq X]
+
+/-- The grid-phasor model of a scalar-voltage model `G` with the relative angle along `e`. -/
+def phasor (G : (X → ℝ) × ℝ → X → ℝ) (e : X → ℝ) : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ :=
+  fun q => G (q.1 - q.2 1 • e, q.2 0)
+
+omit [Fintype X] [DecidableEq X] in
+@[tmio T, powerlib_foundation] theorem phasor_shift (G : (X → ℝ) × ℝ → X → ℝ) (e : X → ℝ)
+    (q : (X → ℝ) × (Fin 2 → ℝ)) (s : ℝ) : phasor G e (q + s • (e, uAng)) = phasor G e q := by
+  simp only [phasor]
+  congr 1
+  ext i
+  · simp [uAng]; ring
+  · simp [uAng]
+
+omit [DecidableEq X] in
+@[tmio T, powerlib_foundation] theorem contDiff_phasorArg {n : WithTop ℕ∞} (e : X → ℝ) :
+    ContDiff ℝ n (fun q : (X → ℝ) × (Fin 2 → ℝ) => ((q.1 - q.2 1 • e, q.2 0) : (X → ℝ) × ℝ)) :=
+  (contDiff_fst.sub (((contDiff_apply ℝ ℝ (1 : Fin 2)).comp contDiff_snd).smul
+    contDiff_const)).prodMk ((contDiff_apply ℝ ℝ (0 : Fin 2)).comp contDiff_snd)
+
+omit [DecidableEq X] in
+@[tmio T, powerlib_foundation] theorem contDiffAt_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ} {n : WithTop ℕ∞} (hG : ContDiffAt ℝ n G (x0, u0)) :
+    ContDiffAt ℝ n (phasor G e) (x0, ![u0, 0]) := by
+  have h : ContDiffAt ℝ n G (((x0, ![u0, 0]) : (X → ℝ) × (Fin 2 → ℝ)).1 -
+      ((x0, ![u0, 0]) : (X → ℝ) × (Fin 2 → ℝ)).2 1 • e,
+      ((x0, ![u0, 0]) : (X → ℝ) × (Fin 2 → ℝ)).2 0) := by simpa using hG
+  exact ContDiffAt.comp (f := fun q : (X → ℝ) × (Fin 2 → ℝ) => ((q.1 - q.2 1 • e, q.2 0) :
+    (X → ℝ) × ℝ)) (x0, ![u0, 0]) h (contDiff_phasorArg e).contDiffAt
+
+/-- The partial Jacobian is that of `G` at the relative state. -/
+@[tmio T, powerlib_foundation] theorem matXV_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {q : (X → ℝ) × (Fin 2 → ℝ)} (hG : DifferentiableAt ℝ G (q.1 - q.2 1 • e, q.2 0)) :
+    matXV (phasor G e) q = matX G (q.1 - q.2 1 • e, q.2 0) := by
+  have hL : DifferentiableAt ℝ (fun q : (X → ℝ) × (Fin 2 → ℝ) =>
+      ((q.1 - q.2 1 • e, q.2 0) : (X → ℝ) × ℝ)) q :=
+    ((contDiff_phasorArg (n := 1) e).differentiable (by norm_num)) q
+  refine matXV_of_line (hG.comp q hL) fun y => ?_
+  set g : (X → ℝ) × ℝ := (q.1 - q.2 1 • e, q.2 0) with hg
+  have hl := hG.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) (hasDerivAt_line g (y, 0)) (by simp)
+  rw [← matX_mulVec] at hl
+  refine hl.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => ?_)
+  simp only [Function.comp_def, hg]
+  show G _ = G _
+  congr 1
+  ext i
+  · simp; ring
+  · simp
+
+omit [DecidableEq X] in
+/-- The magnitude direction is that of `G`: `∂_V(phasor) = ∂_V G`. -/
+@[tmio T, powerlib_foundation] theorem fderivW_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 1 G (x0, u0)) :
+    fderiv ℝ (phasor G e) (x0, ![u0, 0]) (0, uMag) = fderiv ℝ G (x0, u0) (0, 1) := by
+  refine fderivW_of_lineV ((contDiffAt_phasor hG).differentiableAt (by norm_num)) uMag ?_
+  have hl := (hG.differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
+    (hasDerivAt_line (x0, u0) (0, 1)) (by simp)
+  refine hl.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => ?_)
+  simp only [Function.comp_def, phasor]
+  congr 1
+  ext i
+  · simp [uMag]
+  · simp [uMag]
+
+omit [DecidableEq X] in
+@[tmio T, powerlib_foundation] private theorem eventually_diff_line {G : (X → ℝ) × ℝ → X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 2 G (x0, u0)) (c : ℝ → (X → ℝ) × ℝ) (hc : Continuous c)
+    (hc0 : c 0 = (x0, u0)) : ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ G (c t) := by
+  have h1 : ∀ᶠ q in 𝓝 (x0, u0), ContDiffAt ℝ 2 G q := hG.eventually (by simp)
+  have h2 := hc.tendsto 0
+  rw [hc0] at h2
+  exact (h2.eventually h1).mono fun t ht => ht.differentiableAt (by norm_num)
+
+@[tmio T, powerlib_foundation] theorem smDxV_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 2 G (x0, u0)) (y : X → ℝ) :
+    smDxV (phasor G e) (x0, ![u0, 0]) y = smDx G (x0, u0) y := by
+  refine smDxV_eq_smDx (contDiffAt_phasor hG) hG y ?_
+  filter_upwards [eventually_diff_line hG (fun t => (x0 + t • y, u0)) (by fun_prop) (by simp)]
+    with t ht
+  rw [matXV_phasor (by simpa using ht)]
+  simp
+
+@[tmio T, powerlib_foundation] theorem smMwV_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 2 G (x0, u0)) :
+    smMwV (phasor G e) (x0, ![u0, 0]) uMag = smM1 G (x0, u0) := by
+  refine smMwV_eq_smM1 (contDiffAt_phasor hG) hG uMag ?_
+  filter_upwards [eventually_diff_line hG (fun t => (x0, u0 + t)) (by fun_prop) (by simp)]
+    with t ht
+  rw [matXV_phasor (by simpa [uMag] using ht)]
+  simp [uMag]
+
+/-- The general source form for the phasor model:
+`A₁(v̂, θ̂; z + θ̂ e) = D_x(∂ₓG) z + v̂ D_V(∂ₓG)`. -/
+@[tmio T, powerlib_foundation] theorem smA1V_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 2 G (x0, u0)) (v θ : ℂ) (z : X → ℂ) :
+    smA1V (phasor G e) (x0, ![u0, 0]) (gridSrc v θ) (z + θ • ofv e) =
+      DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ) := by
+  rw [smA1V_gridSrc (phasor_shift G e) (contDiffAt_phasor hG), smMwV_phasor hG]
+  have hD : smDxV (phasor G e) (x0, ![u0, 0]) = smDx G (x0, u0) :=
+    LinearMap.ext fun y => smDxV_phasor hG y
+  rw [hD]
+
+/-- The general source form for the phasor model, forced response. -/
+@[tmio T, powerlib_foundation] theorem forced_phasor {G : (X → ℝ) × ℝ → X → ℝ} {e : X → ℝ}
+    {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 1 G (x0, u0)) (v θ : ℂ) (ω : ℝ) (z : X → ℂ) :
+    ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+        fderivWC (phasor G e) (x0, ![u0, 0]) (gridSrc v θ) ↔
+      ((ω : ℂ) * I) • (z - θ • ofv e) -
+          (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ (z - θ • ofv e) =
+        v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - (((ω : ℂ) * I) * θ) • ofv e := by
+  have hm : matXV (phasor G e) (x0, ![u0, 0]) = matX G (x0, u0) := by
+    rw [matXV_phasor (by simpa using hG.differentiableAt (by norm_num))]; simp
+  rw [← hm, forced_gridSrc (phasor_shift G e) ((contDiffAt_phasor hG).differentiableAt
+    (by norm_num)), fderivW_phasor hG]
+
+end Phasor
+
+/-! ### End-to-end for every grid-synchronized model and every disturbance chart -/
+
+section EndToEnd
+
+open ForcedOrbit
+open TwoToOne (base)
+open BlockAveraging (expS physLeft physRight)
+open scoped Matrix.Norms.Operator
+
+variable {X : Type*} [Fintype X] [DecidableEq X] {W : Type*} [Fintype W]
+
+/-- The data shared by the end-to-end statements: for `F = reparam (phasor G e) Φ` at `(x₀, 0)`,
+the Jacobian is `∂ₓG(x₀, u₀)`, the response `z_rel + θ̂ e` solves the forced equation, and
+`A₁ = D_x(∂ₓG) z_rel + v̂ D_V(∂ₓG)`. -/
+@[tmio T, powerlib_foundation] theorem phasor_port_data {G : (X → ℝ) × ℝ → X → ℝ} {x0 : X → ℝ}
+    {u0 : ℝ} (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : X → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - (((ω : ℂ) * I) * θ) • ofv e) :
+    ContDiffAt ℝ 3 (reparam (phasor G e) Φ) (x0, 0) ∧ reparam (phasor G e) Φ (x0, 0) = 0 ∧
+      matXV (reparam (phasor G e) Φ) (x0, 0) = matX G (x0, u0) ∧
+      ((ω : ℂ) * I) • (z + θ • ofv e) -
+          (matXV (reparam (phasor G e) Φ) (x0, 0)).map (algebraMap ℝ ℂ) *ᵥ (z + θ • ofv e) =
+        fderivWC (reparam (phasor G e) Φ) (x0, 0) w ∧
+      smA1V (reparam (phasor G e) Φ) (x0, 0) w (z + θ • ofv e) =
+        DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ) := by
+  have hph : ContDiffAt ℝ 3 (phasor G e) ((x0, (0 : W → ℝ)).1, Φ (x0, (0 : W → ℝ)).2) := by
+    simp only [hΦ0]; exact contDiffAt_phasor hG
+  have hΦd : HasFDerivAt Φ (fderiv ℝ Φ 0) 0 := (hΦ.differentiableAt (by norm_num)).hasFDerivAt
+  have hm : matXV (reparam (phasor G e) Φ) (x0, 0) = matX G (x0, u0) := by
+    rw [matXV_reparam (hph.differentiableAt (by norm_num)) (hΦ.differentiableAt (by norm_num))]
+    simp only [hΦ0]
+    rw [matXV_phasor (by simpa using hG.differentiableAt (by norm_num))]
+    simp
+  refine ⟨contDiffAt_reparam hph hΦ, ?_, hm, ?_, ?_⟩
+  · simp only [reparam, phasor, hΦ0]; simpa using hG0
+  · rw [hm, fderivWC_reparam (hph.differentiableAt (by norm_num)) hΦd, hvθ]
+    simp only [hΦ0]
+    refine (forced_phasor (hG.of_le (by norm_num)) v θ ω _).2 ?_
+    rw [add_sub_cancel_right]; exact hz
+  · rw [smA1V_reparam (hph.of_le (by norm_num)) (hΦ.of_le (by norm_num)) hΦd, hvθ]
+    simp only [hΦ0]
+    exact smA1V_phasor (hG.of_le (by norm_num)) v θ z
+
+/-- End-to-end, stability, for every grid-synchronized model `G` (relative angle along `e`,
+magnitude input) and every port-disturbance chart `Φ` with Thevenin amplitudes `(v̂, θ̂)`: with
+modal coordinates of `∂ₓG(x₀, u₀)` (pair `±jω/2`, stable block), `z` the relative response
+`(jωI − A₀) z = v̂ b_V − jωθ̂ e`, `Re λ₁ < 0` and `|g/2| < |λ₁|` with
+`g = u [D_x(∂ₓG) z + v̂ D_V(∂ₓG)] r̄`, the forced orbit exists for all small `ε > 0` and every
+Floquet multiplier lies inside the unit circle. -/
+@[tmio T, powerlib_foundation] theorem orbit_phasor_port_stable {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {G : (X → ℝ) × ℝ → X → ℝ} {x0 : X → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : X → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX G (x0, u0) * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - (((ω : ℂ) * I) * θ) • ofv e)
+    (A0' : Matrix X X ℝ)
+    (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
+    (hg : ‖physLeft Q ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ)) *ᵥ
+        star (physRight P)) / 2‖ ^ 2 <
+      ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ,
+        (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+          ∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → X → ℝ, (∀ t, y (t + 2 * Real.pi / ω) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+          (∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) →
+        ∀ (μ : ℂ) (u : X → ℂ), u ≠ 0 →
+          (Periodic.monodromy (fun t => smJV (reparam (phasor G e) Φ) (x0, 0) w ω A0' ε t (y t))
+            (2 * Real.pi / ω) 0).map (algebraMap ℝ ℂ) *ᵥ u = μ • u → ‖μ‖ < 1 := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := phasor_port_data hG hG0 e hΦ hΦ0 hvθ hz
+  exact smooth_orbit_floquet_stable_vec hF hF0 hω hPQ hQP As (by rw [hm]; exact hA0) hsr hzF A0'
+    hs (by rw [hA1]; exact hg)
+
+/-- End-to-end, parametric instability, for every grid-synchronized model and every chart:
+`|λ₁| < |g/2|`. -/
+@[tmio T, powerlib_foundation] theorem orbit_phasor_port_unstable {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {G : (X → ℝ) × ℝ → X → ℝ} {x0 : X → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : X → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX G (x0, u0) * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - (((ω : ℂ) * I) * θ) • ofv e)
+    (A0' : Matrix X X ℝ)
+    (hg : ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2 <
+      ‖physLeft Q ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ)) *ᵥ
+        star (physRight P)) / 2‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ,
+        (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+          ∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → X → ℝ, (∀ t, y (t + 2 * Real.pi / ω) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+          (∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) →
+        Periodic.FloquetUnstable
+          (fun t => smJV (reparam (phasor G e) Φ) (x0, 0) w ω A0' ε t (y t))
+          (2 * Real.pi / ω) := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := phasor_port_data hG hG0 e hΦ hΦ0 hvθ hz
+  exact smooth_orbit_floquet_unstable_vec hF hF0 hω hPQ hQP As (by rw [hm]; exact hA0) hsr hzF A0'
+    (by rw [hA1]; exact hg)
+
+/-- End-to-end with orbital stability for every grid-synchronized model and every chart: in the
+stable case the forced orbit is locally exponentially stable. -/
+@[tmio T, powerlib_foundation] theorem orbit_phasor_port_exp_stable {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {G : (X → ℝ) × ℝ → X → ℝ} {x0 : X → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : X → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX G (x0, u0) * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - (((ω : ℂ) * I) * θ) • ofv e)
+    (A0' : Matrix X X ℝ)
+    (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
+    (hg : ‖physLeft Q ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ)) *ᵥ
+        star (physRight P)) / 2‖ ^ 2 <
+      ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ,
+      (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+      (∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+        (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → X → ℝ),
+        IsIntegralCurveOn x (fun t a => reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + a,
+          (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ a)) (Set.Ici s) →
+        ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+          ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖ := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := phasor_port_data hG hG0 e hΦ hΦ0 hvθ hz
+  exact smooth_orbit_exp_stable_vec hF hF0 hω hPQ hQP As (by rw [hm]; exact hA0) hsr hzF A0'
+    hs (by rw [hA1]; exact hg)
+
+/-- Three-state models from their eigen-data (pair `±jΩ`, real pole `λ₃ < 0`, drive at `2Ω`),
+stability, for every chart. -/
+@[tmio T, powerlib_foundation] theorem orbit_phasor_port_three_stable
+    {G : (Fin 3 → ℝ) × ℝ → Fin 3 → ℝ} {x0 : Fin 3 → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : Fin 3 → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {Ω : ℝ} (hΩ : 0 < Ω)
+    {l3 : ℝ} (hl3 : l3 < 0) {r u : Fin 3 → ℂ} {r3 u3 : Fin 3 → ℝ}
+    (hr : (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ r = ((Ω : ℂ) * I) • r)
+    (hu : u ᵥ* (matX G (x0, u0)).map (algebraMap ℝ ℂ) = ((Ω : ℂ) * I) • u) (hur : u ⬝ᵥ r = 1)
+    (hr3 : matX G (x0, u0) *ᵥ r3 = l3 • r3) (hu3 : u3 ᵥ* matX G (x0, u0) = l3 • u3)
+    (hur3 : u3 ⬝ᵥ r3 = 1) {z : Fin 3 → ℂ}
+    (hz : (((2 * Ω : ℝ) : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - ((((2 * Ω : ℝ) : ℂ) * I) * θ) • ofv e)
+    (A0' : Matrix (Fin 3) (Fin 3) ℝ)
+    (hs : (u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)).re < 0)
+    (hg : ‖u ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ)) *ᵥ
+        star r) / 2‖ ^ 2 < ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 3 → ℝ,
+        (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+          ∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → Fin 3 → ℝ, (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+          (∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) →
+        ∀ (μ : ℂ) (a : Fin 3 → ℂ), a ≠ 0 →
+          (Periodic.monodromy (fun t => smJV (reparam (phasor G e) Φ) (x0, 0) w (2 * Ω) A0' ε t
+            (y t)) (2 * Real.pi / (2 * Ω)) 0).map (algebraMap ℝ ℂ) *ᵥ a = μ • a → ‖μ‖ < 1 := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := phasor_port_data hG hG0 e hΦ hΦ0 hvθ hz
+  rw [← hm] at hr hu hr3 hu3
+  exact smooth_orbit_floquet_three_stable_vec hF hF0 hΩ hl3 hr hu hur hr3 hu3 hur3 hzF A0' hs
+    (by rw [hA1]; exact hg)
+
+/-- Three-state models from their eigen-data, parametric instability, for every chart. -/
+@[tmio T, powerlib_foundation] theorem orbit_phasor_port_three_unstable
+    {G : (Fin 3 → ℝ) × ℝ → Fin 3 → ℝ} {x0 : Fin 3 → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : Fin 3 → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {Ω : ℝ} (hΩ : 0 < Ω)
+    {l3 : ℝ} (hl3 : l3 < 0) {r u : Fin 3 → ℂ} {r3 u3 : Fin 3 → ℝ}
+    (hr : (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ r = ((Ω : ℂ) * I) • r)
+    (hu : u ᵥ* (matX G (x0, u0)).map (algebraMap ℝ ℂ) = ((Ω : ℂ) * I) • u) (hur : u ⬝ᵥ r = 1)
+    (hr3 : matX G (x0, u0) *ᵥ r3 = l3 • r3) (hu3 : u3 ᵥ* matX G (x0, u0) = l3 • u3)
+    (hur3 : u3 ⬝ᵥ r3 = 1) {z : Fin 3 → ℂ}
+    (hz : (((2 * Ω : ℝ) : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - ((((2 * Ω : ℝ) : ℂ) * I) * θ) • ofv e)
+    (A0' : Matrix (Fin 3) (Fin 3) ℝ)
+    (hg : ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2 <
+      ‖u ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ)) *ᵥ
+        star r) / 2‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 3 → ℝ,
+        (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+          ∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → Fin 3 → ℝ, (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+          (∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) →
+        Periodic.FloquetUnstable
+          (fun t => smJV (reparam (phasor G e) Φ) (x0, 0) w (2 * Ω) A0' ε t (y t))
+          (2 * Real.pi / (2 * Ω)) := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := phasor_port_data hG hG0 e hΦ hΦ0 hvθ hz
+  rw [← hm] at hr hu hr3 hu3
+  exact smooth_orbit_floquet_three_unstable_vec hF hF0 hΩ hl3 hr hu hur hr3 hu3 hur3 hzF A0'
+    (by rw [hA1]; exact hg)
+
+/-- Three-state models from their eigen-data, end-to-end with orbital stability, for every
+chart. -/
+@[tmio T, powerlib_foundation] theorem orbit_phasor_port_three_exp_stable
+    {G : (Fin 3 → ℝ) × ℝ → Fin 3 → ℝ} {x0 : Fin 3 → ℝ} {u0 : ℝ}
+    (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0) (e : Fin 3 → ℝ)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {Ω : ℝ} (hΩ : 0 < Ω)
+    {l3 : ℝ} (hl3 : l3 < 0) {r u : Fin 3 → ℂ} {r3 u3 : Fin 3 → ℝ}
+    (hr : (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ r = ((Ω : ℂ) * I) • r)
+    (hu : u ᵥ* (matX G (x0, u0)).map (algebraMap ℝ ℂ) = ((Ω : ℂ) * I) • u) (hur : u ⬝ᵥ r = 1)
+    (hr3 : matX G (x0, u0) *ᵥ r3 = l3 • r3) (hu3 : u3 ᵥ* matX G (x0, u0) = l3 • u3)
+    (hur3 : u3 ⬝ᵥ r3 = 1) {z : Fin 3 → ℂ}
+    (hz : (((2 * Ω : ℝ) : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) - ((((2 * Ω : ℝ) : ℂ) * I) * θ) • ofv e)
+    (A0' : Matrix (Fin 3) (Fin 3) ℝ)
+    (hs : (u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)).re < 0)
+    (hg : ‖u ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ)) *ᵥ
+        star r) / 2‖ ^ 2 < ‖u ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ r)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 3 → ℝ,
+      (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+      (∀ t, HasDerivAt y (reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + y t,
+        (x0, (0 : W → ℝ)).2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → Fin 3 → ℝ),
+        IsIntegralCurveOn x (fun t a => reparam (phasor G e) Φ ((x0, (0 : W → ℝ)).1 + a,
+          (x0, (0 : W → ℝ)).2 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ a)) (Set.Ici s) →
+        ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+          ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖ := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := phasor_port_data hG hG0 e hΦ hΦ0 hvθ hz
+  rw [← hm] at hr hu hr3 hu3
+  exact smooth_orbit_exp_three_stable_vec hF hF0 hΩ hl3 hr hu hur hr3 hu3 hur3 hzF A0' hs
+    (by rw [hA1]; exact hg)
+
+end EndToEnd
+
+/-! ### Absolute-frame models agreeing with a scalar-voltage model at `θ_g = 0`
+
+A converter model written in a fixed frame with the grid phasor `V∠θ_g` as input (for instance
+with network currents in that frame) need not be invariant under the joint rotation; it suffices
+that it agrees with the scalar-voltage model at `θ_g = 0`. Then the Jacobian, `b_V`, `D_x(∂ₓ·)`
+and `D_V(∂ₓ·)` are those of the scalar model, and the angle channel enters through
+`b_θ = ∂_θH` and `D_θ(∂ₓH)`. -/
+
+section Slice
+
+open ForcedOrbit
+open TwoToOne (base)
+open BlockAveraging (expS physLeft physRight)
+open scoped Matrix.Norms.Operator
+
+variable {X : Type*} [Fintype X] [DecidableEq X] {W : Type*} [Fintype W]
+
+@[tmio T, powerlib_foundation] theorem matXV_slice {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
+    {G : (X → ℝ) × ℝ → X → ℝ} (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x : X → ℝ} {V : ℝ}
+    (hH : DifferentiableAt ℝ H (x, ![V, 0])) (hG : DifferentiableAt ℝ G (x, V)) :
+    matXV H (x, ![V, 0]) = matX G (x, V) := by
+  refine matXV_of_line hH fun y => ?_
+  have hl := hG.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) (hasDerivAt_line (x, V) (y, 0)) (by simp)
+  rw [← matX_mulVec] at hl
+  refine hl.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => ?_)
+  simp only [Function.comp_def, hHG]
+  congr 1
+  ext <;> simp
+
+omit [DecidableEq X] in
+@[tmio T, powerlib_foundation] theorem fderivW_slice {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
+    {G : (X → ℝ) × ℝ → X → ℝ} (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : DifferentiableAt ℝ H (x0, ![u0, 0])) (hG : DifferentiableAt ℝ G (x0, u0)) :
+    fderiv ℝ H (x0, ![u0, 0]) (0, uMag) = fderiv ℝ G (x0, u0) (0, 1) := by
+  refine fderivW_of_lineV hH uMag ?_
+  have hl := hG.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) (hasDerivAt_line (x0, u0) (0, 1))
+    (by simp)
+  refine hl.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => ?_)
+  have e : ![u0, 0] + s • uMag = ![u0 + s, 0] := by
+    funext k; fin_cases k <;> simp [uMag]
+  simp only [Function.comp_def, e, hHG]
+  congr 1
+  ext <;> simp
+
+omit [DecidableEq X] in
+@[tmio T, powerlib_foundation] private theorem eventually_diff_curve
+    {F : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
+    {q : (X → ℝ) × (Fin 2 → ℝ)} (hF : ContDiffAt ℝ 2 F q) (c : ℝ → (X → ℝ) × (Fin 2 → ℝ))
+    (hc : Continuous c) (hc0 : c 0 = q) : ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ F (c t) := by
+  have h1 : ∀ᶠ p in 𝓝 q, ContDiffAt ℝ 2 F p := hF.eventually (by simp)
+  have h2 := hc.tendsto 0
+  rw [hc0] at h2
+  exact (h2.eventually h1).mono fun t ht => ht.differentiableAt (by norm_num)
+
+omit [DecidableEq X] in
+@[tmio T, powerlib_foundation] private theorem eventually_diff_curveG
+    {G : (X → ℝ) × ℝ → X → ℝ} {g : (X → ℝ) × ℝ}
+    (hG : ContDiffAt ℝ 2 G g) (c : ℝ → (X → ℝ) × ℝ) (hc : Continuous c) (hc0 : c 0 = g) :
+    ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ G (c t) := by
+  have h1 : ∀ᶠ p in 𝓝 g, ContDiffAt ℝ 2 G p := hG.eventually (by simp)
+  have h2 := hc.tendsto 0
+  rw [hc0] at h2
+  exact (h2.eventually h1).mono fun t ht => ht.differentiableAt (by norm_num)
+
+@[tmio T, powerlib_foundation] theorem smDxV_slice {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
+    {G : (X → ℝ) × ℝ → X → ℝ} (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : ContDiffAt ℝ 2 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 2 G (x0, u0)) (y : X → ℝ) :
+    smDxV H (x0, ![u0, 0]) y = smDx G (x0, u0) y := by
+  refine smDxV_eq_smDx hH hG y ?_
+  filter_upwards [eventually_diff_curve hH (fun t => (x0 + t • y, ![u0, 0])) (by fun_prop)
+    (by simp), eventually_diff_curveG hG (fun t => (x0 + t • y, u0)) (by fun_prop) (by simp)]
+    with t h1 h2
+  exact matXV_slice hHG h1 h2
+
+@[tmio T, powerlib_foundation] theorem smMwV_slice {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
+    {G : (X → ℝ) × ℝ → X → ℝ} (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : ContDiffAt ℝ 2 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 2 G (x0, u0)) :
+    smMwV H (x0, ![u0, 0]) uMag = smM1 G (x0, u0) := by
+  have e : ∀ t : ℝ, ![u0, 0] + t • uMag = ![u0 + t, 0] := fun t => by
+    funext k; fin_cases k <;> simp [uMag]
+  refine smMwV_eq_smM1 hH hG uMag ?_
+  filter_upwards [eventually_diff_curve hH (fun t => (x0, ![u0, 0] + t • uMag)) (by fun_prop)
+    (by simp), eventually_diff_curveG hG (fun t => (x0, u0 + t)) (by fun_prop) (by simp)]
+    with t h1 h2
+  rw [e] at h1 ⊢
+  exact matXV_slice hHG h1 h2
+
+/-- The data of the end-to-end statements for an absolute-frame model `H` with slice `G` and a
+chart `Φ`: the response `z` of the absolute frame solves `(jωI − A₀) z = v̂ b_V + θ̂ b_θ`, and
+`A₁ = D_x(∂ₓG) z + v̂ D_V(∂ₓG) + θ̂ D_θ(∂ₓH)`. -/
+@[tmio T, powerlib_foundation] theorem slice_port_data {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
+    {G : (X → ℝ) × ℝ → X → ℝ} (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : ContDiffAt ℝ 3 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) + θ • ofv (fderiv ℝ H (x0, ![u0, 0]) (0, uAng))) :
+    ContDiffAt ℝ 3 (reparam H Φ) (x0, 0) ∧ reparam H Φ (x0, 0) = 0 ∧
+      matXV (reparam H Φ) (x0, 0) = matX G (x0, u0) ∧
+      ((ω : ℂ) * I) • z - (matXV (reparam H Φ) (x0, 0)).map (algebraMap ℝ ℂ) *ᵥ z =
+        fderivWC (reparam H Φ) (x0, 0) w ∧
+      smA1V (reparam H Φ) (x0, 0) w z =
+        DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ) +
+          θ • (smMwV H (x0, ![u0, 0]) uAng).map (algebraMap ℝ ℂ) := by
+  have hH' : ContDiffAt ℝ 3 H ((x0, (0 : W → ℝ)).1, Φ (x0, (0 : W → ℝ)).2) := by
+    simp only [hΦ0]; exact hH
+  have hΦd : HasFDerivAt Φ (fderiv ℝ Φ 0) 0 := (hΦ.differentiableAt (by norm_num)).hasFDerivAt
+  have hm : matXV (reparam H Φ) (x0, 0) = matX G (x0, u0) := by
+    rw [matXV_reparam (hH'.differentiableAt (by norm_num)) (hΦ.differentiableAt (by norm_num))]
+    simp only [hΦ0]
+    exact matXV_slice hHG (hH.differentiableAt (by norm_num)) (hG.differentiableAt (by norm_num))
+  have hsrc : ∀ a b : ℂ, gridSrc a b = a • ofv uMag + b • ofv uAng := fun a b => rfl
+  refine ⟨contDiffAt_reparam hH' hΦ, ?_, hm, ?_, ?_⟩
+  · simp only [reparam, hΦ0, hHG]; exact hG0
+  · rw [hm, fderivWC_reparam (hH'.differentiableAt (by norm_num)) hΦd, hvθ]
+    simp only [hΦ0]
+    have h1 : fderivWC H (x0, ![u0, 0]) (gridSrc v θ) =
+        v • ofv (fderiv ℝ G (x0, u0) (0, 1)) + θ • ofv (fderiv ℝ H (x0, ![u0, 0]) (0, uAng)) := by
+      rw [← fderivW_slice hHG (hH.differentiableAt (by norm_num)) (hG.differentiableAt
+        (by norm_num))]
+      funext i
+      simp only [fderivWC, hsrc]
+      have e1 : (fun k => ((v • ofv uMag + θ • ofv uAng) k).re) = v.re • uMag + θ.re • uAng := by
+        funext k; simp [ofv]
+      have e2 : (fun k => ((v • ofv uMag + θ • ofv uAng) k).im) = v.im • uMag + θ.im • uAng := by
+        funext k; simp [ofv]
+      have e3 : ∀ a b : ℝ, (((0 : X → ℝ), a • uMag + b • uAng) : (X → ℝ) × (Fin 2 → ℝ)) =
+          a • ((0 : X → ℝ), uMag) + b • ((0 : X → ℝ), uAng) := fun a b => by ext <;> simp
+      rw [e1, e2, e3, e3, map_add, map_add, map_smul, map_smul, map_smul, map_smul]
+      apply Complex.ext <;> simp [ofv]
+    rw [h1]; exact hz
+  · rw [smA1V_reparam (hH'.of_le (by norm_num)) (hΦ.of_le (by norm_num)) hΦd, hvθ]
+    simp only [hΦ0]
+    have hD : smDxV H (x0, ![u0, 0]) = smDx G (x0, u0) :=
+      LinearMap.ext fun y => smDxV_slice hHG (hH.of_le (by norm_num)) (hG.of_le (by norm_num)) y
+    have hM := smMwV_slice hHG (hH.of_le (by norm_num)) (hG.of_le (by norm_num))
+    have e1 : (fun k => ((gridSrc v θ) k).re) = v.re • uMag + θ.re • uAng := by
+      funext k; simp [gridSrc, ofv]
+    have e2 : (fun k => ((gridSrc v θ) k).im) = v.im • uMag + θ.im • uAng := by
+      funext k; simp [gridSrc, ofv]
+    ext i j
+    simp only [smA1V, hD, Matrix.add_apply, linC, e1, e2, map_add, map_smul, hM,
+      Matrix.smul_apply, Matrix.map_apply]
+    apply Complex.ext <;> simp <;> ring
+
+/-- End-to-end, stability, for every absolute-frame model `H` agreeing with a scalar-voltage model
+`G` at `θ_g = 0`, and every chart `Φ`. -/
+@[tmio T, powerlib_foundation] theorem orbit_slice_port_stable {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ} {G : (X → ℝ) × ℝ → X → ℝ}
+    (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : ContDiffAt ℝ 3 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX G (x0, u0) * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) + θ • ofv (fderiv ℝ H (x0, ![u0, 0]) (0, uAng)))
+    (A0' : Matrix X X ℝ)
+    (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
+    (hg : ‖physLeft Q ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ) +
+        θ • (smMwV H (x0, ![u0, 0]) uAng).map (algebraMap ℝ ℂ)) *ᵥ star (physRight P)) / 2‖ ^ 2 <
+      ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ,
+        (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+          ∀ t, HasDerivAt y (reparam H Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → X → ℝ, (∀ t, y (t + 2 * Real.pi / ω) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+          (∀ t, HasDerivAt y (reparam H Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) →
+        ∀ (μ : ℂ) (u : X → ℂ), u ≠ 0 →
+          (Periodic.monodromy (fun t => smJV (reparam H Φ) (x0, 0) w ω A0' ε t (y t))
+            (2 * Real.pi / ω) 0).map (algebraMap ℝ ℂ) *ᵥ u = μ • u → ‖μ‖ < 1 := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := slice_port_data hHG hH hG hG0 hΦ hΦ0 hvθ hz
+  exact smooth_orbit_floquet_stable_vec hF hF0 hω hPQ hQP As (by rw [hm]; exact hA0) hsr hzF A0'
+    hs (by rw [hA1]; exact hg)
+
+/-- End-to-end, parametric instability, for absolute-frame models: `|λ₁| < |g/2|`. -/
+@[tmio T, powerlib_foundation] theorem orbit_slice_port_unstable {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ} {G : (X → ℝ) × ℝ → X → ℝ}
+    (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : ContDiffAt ℝ 3 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX G (x0, u0) * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) + θ • ofv (fderiv ℝ H (x0, ![u0, 0]) (0, uAng)))
+    (A0' : Matrix X X ℝ)
+    (hg : ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2 <
+      ‖physLeft Q ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ) +
+        θ • (smMwV H (x0, ![u0, 0]) uAng).map (algebraMap ℝ ℂ)) *ᵥ star (physRight P)) / 2‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ (∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ,
+        (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+          ∀ t, HasDerivAt y (reparam H Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ y : ℝ → X → ℝ, (∀ t, y (t + 2 * Real.pi / ω) = y t) →
+        (∀ t, ‖y t‖ ≤ c * ε) →
+          (∀ t, HasDerivAt y (reparam H Φ ((x0, (0 : W → ℝ)).1 + y t,
+            (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) →
+        Periodic.FloquetUnstable (fun t => smJV (reparam H Φ) (x0, 0) w ω A0' ε t (y t))
+          (2 * Real.pi / ω) := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := slice_port_data hHG hH hG hG0 hΦ hΦ0 hvθ hz
+  exact smooth_orbit_floquet_unstable_vec hF hF0 hω hPQ hQP As (by rw [hm]; exact hA0) hsr hzF A0'
+    (by rw [hA1]; exact hg)
+
+/-- End-to-end with orbital stability for absolute-frame models. -/
+@[tmio T, powerlib_foundation] theorem orbit_slice_port_exp_stable {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ} {G : (X → ℝ) × ℝ → X → ℝ}
+    (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
+    (hH : ContDiffAt ℝ 3 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 3 G (x0, u0)) (hG0 : G (x0, u0) = 0)
+    {Φ : (W → ℝ) → Fin 2 → ℝ} (hΦ : ContDiffAt ℝ 3 Φ 0) (hΦ0 : Φ 0 = ![u0, 0])
+    {w : W → ℂ} {v θ : ℂ} (hvθ : linCV (fderiv ℝ Φ 0) w = gridSrc v θ) {ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX G (x0, u0) * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z : X → ℂ}
+    (hz : ((ω : ℂ) * I) • z - (matX G (x0, u0)).map (algebraMap ℝ ℂ) *ᵥ z =
+      v • ofv (fderiv ℝ G (x0, u0) (0, 1)) + θ • ofv (fderiv ℝ H (x0, ![u0, 0]) (0, uAng)))
+    (A0' : Matrix X X ℝ)
+    (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
+    (hg : ‖physLeft Q ⬝ᵥ ((DxC (smDx G (x0, u0)) z + v • (smM1 G (x0, u0)).map (algebraMap ℝ ℂ) +
+        θ • (smMwV H (x0, ![u0, 0]) uAng).map (algebraMap ℝ ℂ)) *ᵥ star (physRight P)) / 2‖ ^ 2 <
+      ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2) :
+    ∃ c, 0 ≤ c ∧ ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ,
+      (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧ (∀ t, ‖y t‖ ≤ c * ε) ∧
+      (∀ t, HasDerivAt y (reparam H Φ ((x0, (0 : W → ℝ)).1 + y t,
+        (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → X → ℝ),
+        IsIntegralCurveOn x (fun t a => reparam H Φ ((x0, (0 : W → ℝ)).1 + a,
+          (x0, (0 : W → ℝ)).2 + ε • harm w ω t) + ε • (A0' *ᵥ a)) (Set.Ici s) →
+        ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+          ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖ := by
+  obtain ⟨hF, hF0, hm, hzF, hA1⟩ := slice_port_data hHG hH hG hG0 hΦ hΦ0 hvθ hz
+  exact smooth_orbit_exp_stable_vec hF hF0 hω hPQ hQP As (by rw [hm]; exact hA0) hsr hzF A0'
+    hs (by rw [hA1]; exact hg)
+
+end Slice
 
 end PortDisturbance
 
