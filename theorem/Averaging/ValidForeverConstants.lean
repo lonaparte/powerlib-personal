@@ -126,7 +126,8 @@ def validForeverBound (p₁ p₂ q₁ A σ : ℝ) : ℝ :=
 
 /-- `validForeverBound` is positively homogeneous in `(A, σ)`. -/
 @[tmio T, powerlib_foundation] theorem validForeverBound_smul (p₁ p₂ q₁ A σ : ℝ) {c : ℝ}
-    (hc : 0 ≤ c) : validForeverBound p₁ p₂ q₁ (c * A) (c * σ) = c * validForeverBound p₁ p₂ q₁ A σ := by
+    (hc : 0 ≤ c) :
+    validForeverBound p₁ p₂ q₁ (c * A) (c * σ) = c * validForeverBound p₁ p₂ q₁ A σ := by
   rw [validForeverBound, validForeverBound,
     show (p₂ * (c * A) ^ 2 + 96 * p₂ ^ 3 * (c * σ) ^ 2 / q₁ ^ 2) / p₁ =
       c ^ 2 * ((p₂ * A ^ 2 + 96 * p₂ ^ 3 * σ ^ 2 / q₁ ^ 2) / p₁) by ring,

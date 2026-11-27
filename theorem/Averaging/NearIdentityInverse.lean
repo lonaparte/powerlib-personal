@@ -7,8 +7,8 @@ import theorem.Averaging.NearIdentity
 equation `(I + ε D_y u) ẏ = ε f̄(y) + ε (f(y + εu, t) − f(y, t))` for a differentiable curve `y`
 whose transform solves `ẋ = ε f(x, t)` (`Averaging.transformed_eq`, `Averaging.transformed_le`).
 Here that curve is constructed for every solution, and the transformed equation is written as a
-field. For `2εℓT < 1` the map `y ↦ y + ε u(y, t)` is a bi-Lipschitz bijection of `E`: `y ↦ x − εu(y, t)`
-is a contraction with constant `2εℓT` (`Averaging.norm_strobGen_sub_le`; Banach's fixed point
+field. For `2εℓT < 1` the map `y ↦ y + ε u(y, t)` is a bi-Lipschitz bijection of `E`:
+`y ↦ x − εu(y, t)` is a contraction with constant `2εℓT` (`Averaging.norm_strobGen_sub_le`; Banach's fixed point
 theorem, Mathlib `ContractingWith.fixedPoint`), so every curve `x` has exactly one transformed
 curve `y` with `x(t) = y(t) + ε u(y(t), t)`. It is continuous where `x` is, with
 `(1 − 2εℓT)‖y(s) − y(t)‖ ≤ ‖x(s) − x(t)‖ + 2εM|s − t|` (`u` is `2M`-Lipschitz in time), and
@@ -59,6 +59,11 @@ Results.
 * `norm_strobGenD_sub_le` — `D_y u` is `2L₂T`-Lipschitz in the state.
 * `norm_nearIdRemainder_sub_le` — `R` is Lipschitz in `y` with the constant
   `4T(L₂M(1 + εℓT) + ℓ²)/(1 − 2εℓT) + 8εℓL₂MT²/(1 − 2εℓT)²`.
+* `continuous_uncurry_strobGenD`, `nearIdRemainder_periodic`,
+  `continuous_uncurry_nearIdRemainder` — continuity and periodicity.
+* `nearIdRemainder_field` — `R` satisfies the hypotheses on the remainder `r` of
+  `Averaging.exists_periodic_orbit` (continuous, `T`-periodic, Lipschitz, bounded), so the
+  transformed equation is of the form `ẏ = ε g(y, t) + ε² r(y, t)` with `g = f̄`.
 -/
 
 noncomputable section
@@ -169,6 +174,16 @@ if `x(t) = y(t) + εu(y(t), t)` for all `t`, `ε ≥ 0`, then
 
 variable {Df : E → ℝ → E →L[ℝ] E}
 
+omit [CompleteSpace E] in
+/-- The state derivative `D_y u` of the generator is jointly continuous in `(y, t)`. -/
+@[tmio T, powerlib_foundation] theorem continuous_uncurry_strobGenD
+    (hDc : Continuous (Function.uncurry Df)) : Continuous (Function.uncurry (strobGenD Df T)) := by
+  have h1 : Continuous fun p : E × ℝ => ∫ s in (0 : ℝ)..p.2, Df p.1 s :=
+    continuous_parametric_primitive_of_continuous hDc
+  have h2 : Continuous fun p : E × ℝ => ∫ s in (0 : ℝ)..T, Df p.1 s :=
+    continuous_parametric_intervalIntegral_of_continuous' hDc 0 T |>.comp continuous_fst
+  exact h1.sub ((continuous_snd.div_const T).smul h2)
+
 /-- **The generator is jointly strictly differentiable** (continuous partial derivatives,
 Mathlib `hasStrictFDerivAt_uncurry_coprod`): the derivative of `(y, t) ↦ u(y, t)` at `(y, t)` is
 `(v, τ) ↦ D_y u(y, t) v + τ (f(y, t) − f̄(y))`. -/
@@ -182,12 +197,7 @@ Mathlib `hasStrictFDerivAt_uncurry_coprod`): the derivative of `(y, t) ↦ u(y, 
         (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (f y t - fieldAverage f T y))) (y, t) := by
   set f₂ : E → ℝ → ℝ →L[ℝ] E := fun x s =>
     ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (f x s - fieldAverage f T x) with hf₂
-  have hcD : Continuous (Function.uncurry (strobGenD Df T)) := by
-    have h1 : Continuous fun p : E × ℝ => ∫ s in (0 : ℝ)..p.2, Df p.1 s :=
-      continuous_parametric_primitive_of_continuous hDc
-    have h2 : Continuous fun p : E × ℝ => ∫ s in (0 : ℝ)..T, Df p.1 s :=
-      continuous_parametric_intervalIntegral_of_continuous' hDc 0 T |>.comp continuous_fst
-    exact h1.sub ((continuous_snd.div_const T).smul h2)
+  have hcD : Continuous (Function.uncurry (strobGenD Df T)) := continuous_uncurry_strobGenD hDc
   have hcf : Continuous fun p : E × ℝ => f p.1 p.2 - fieldAverage f T p.1 :=
     hf.2.2.1.sub ((fieldAverage_continuous hf).comp continuous_fst)
   have hc₂ : Continuous (Function.uncurry f₂) :=
@@ -247,25 +257,23 @@ function theorem, Mathlib `HasFDerivAt.of_comp_of_leftInverse`, for
       (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (ε • w)) ∘L
         ContinuousLinearMap.snd ℝ E ℝ)).prod (ContinuousLinearMap.snd ℝ E ℝ) with hΦ
   have hAinv : ∀ v, Ring.inverse (1 + ε • D) ((1 + ε • D) v) = v := fun v => by
-    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hu,
-      one_apply_eq_self]
+    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hu, one_apply_eq_self]
   have hinv : Function.LeftInverse Φ Ψ' := by
     rintro ⟨v, τ⟩
     have e1 : v + ε • (D v + τ • w) - τ • (ε • w) = (1 + ε • D) v := by
-      rw [add_apply, one_apply_eq_self,
-        smul_apply, smul_add, smul_comm ε τ w]
+      rw [add_apply, one_apply_eq_self, smul_apply, smul_add, smul_comm ε τ w]
       abel
     simp only [hΦ, hΨ', ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_comp,
       Function.comp_apply, sub_apply, ContinuousLinearMap.coe_fst',
       ContinuousLinearMap.coe_snd', ContinuousLinearMap.smulRight_apply,
-      one_apply_eq_self, add_apply,
-      FunLike.coe_smul, Pi.smul_apply, ContinuousLinearMap.coprod_apply]
+      one_apply_eq_self, add_apply, FunLike.coe_smul, Pi.smul_apply,
+      ContinuousLinearMap.coprod_apply]
     rw [e1, hAinv]
   have hh : HasFDerivAt (fun s => (x s, s)) ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
       x').prod (ContinuousLinearMap.id ℝ ℝ)) t :=
     hx.hasFDerivAt.prodMk (hasFDerivAt_id t)
-  have hcomp : (fun p : E × ℝ => (p.1 + ε • strobGen f T p.1 p.2, p.2)) ∘ (fun s => (y s, s)) =ᶠ[𝓝 t]
-      fun s => (x s, s) :=
+  have hcomp : (fun p : E × ℝ => (p.1 + ε • strobGen f T p.1 p.2, p.2)) ∘ (fun s => (y s, s))
+      =ᶠ[𝓝 t] fun s => (x s, s) :=
     Eventually.of_forall fun s => by simp only [Function.comp_apply, hxy s]
   have hg := HasFDerivAt.of_comp_of_leftInverse (g := fun s => (y s, s))
     (hyc.prodMk continuousAt_id) hΨ hh hcomp hinv
@@ -330,8 +338,7 @@ of `ẋ = ε f(x, t)` and its transformed curve `y` (`x = y + εu(y, t)`),
   set D := strobGenD Df T (y t) t with hDdef
   have hu : IsUnit (1 + ε • D) := isUnit_one_add_strobGenD hf hD hDc hε.le hεℓ (y t) t
   have hAinv : ∀ v, Ring.inverse (1 + ε • D) ((1 + ε • D) v) = v := fun v => by
-    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hu,
-      one_apply_eq_self]
+    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hu, one_apply_eq_self]
   set fb := fieldAverage f T (y t) with hfb
   set Δ := f (y t + ε • strobGen f T (y t) t) t - f (y t) t with hΔ
   have e0 : ε ^ 2 • (ε⁻¹ • Δ) = ε • Δ := by
@@ -438,8 +445,8 @@ omit [CompleteSpace E] in
   rw [hxt]
   have hcy : Continuous (Df y) := hDc.comp (continuous_const.prodMk continuous_id)
   have hcz : Continuous (Df z) := hDc.comp (continuous_const.prodMk continuous_id)
-  have e : strobGenD Df T y t' - strobGenD Df T z t' =
-      (∫ s in (0 : ℝ)..t', (Df y s - Df z s)) - (t' / T) • ∫ s in (0 : ℝ)..T, (Df y s - Df z s) := by
+  have e : strobGenD Df T y t' - strobGenD Df T z t' = (∫ s in (0 : ℝ)..t', (Df y s - Df z s)) -
+      (t' / T) • ∫ s in (0 : ℝ)..T, (Df y s - Df z s) := by
     rw [strobGenD, strobGenD, intervalIntegral.integral_sub (hcy.intervalIntegrable _ _)
       (hcz.intervalIntegrable _ _), intervalIntegral.integral_sub (hcy.intervalIntegrable _ _)
       (hcz.intervalIntegrable _ _), smul_sub]
@@ -598,5 +605,85 @@ on `E` (uniformly in `t`), then for `0 < ε`, `2εℓT < 1`:
   rw [hqdef]
   field_simp
   ring
+
+/-! ## The remainder is a periodic field of the averaging class -/
+
+/-- The remainder field is `T`-periodic in time. -/
+@[tmio T, powerlib_foundation] theorem nearIdRemainder_periodic
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M)
+    (hD : ∀ x t, HasFDerivAt (fun y => f y t) (Df x t) x) (hDc : Continuous (Function.uncurry Df))
+    (ε : ℝ) (y : E) (t : ℝ) :
+    nearIdRemainder f Df T ε y (t + T) = nearIdRemainder f Df T ε y t := by
+  simp only [nearIdRemainder, strobGen_periodic hf, strobGenD_periodic hf hD hDc, hf.2.2.2.1]
+
+/-- The remainder field is jointly continuous in `(y, t)` (`Ring.inverse` is continuous at units,
+Mathlib `NormedRing.inverse_continuousAt`). -/
+@[tmio T, powerlib_foundation] theorem continuous_uncurry_nearIdRemainder
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M)
+    (hD : ∀ x t, HasFDerivAt (fun y => f y t) (Df x t) x) (hDc : Continuous (Function.uncurry Df))
+    {ε : ℝ} (hε : 0 ≤ ε) (hεℓ : 2 * ε * ℓ * T < 1) :
+    Continuous (Function.uncurry (nearIdRemainder f Df T ε)) := by
+  have hu : Continuous (Function.uncurry (strobGen f T)) := continuous_iff_continuousAt.mpr
+    fun p => (hasStrictFDerivAt_uncurry_strobGen hf hD hDc p.1 p.2).continuousAt
+  have hcD : Continuous (Function.uncurry (strobGenD Df T)) := continuous_uncurry_strobGenD hDc
+  have hA : Continuous fun p : E × ℝ => (1 : E →L[ℝ] E) + ε • strobGenD Df T p.1 p.2 :=
+    continuous_const.add (hcD.const_smul ε)
+  have hinv : Continuous fun p : E × ℝ =>
+      Ring.inverse ((1 : E →L[ℝ] E) + ε • strobGenD Df T p.1 p.2) := by
+    refine continuous_iff_continuousAt.mpr fun p => ?_
+    obtain ⟨v, hv⟩ := isUnit_one_add_strobGenD hf hD hDc hε hεℓ p.1 p.2
+    have h := NormedRing.inverse_continuousAt v
+    rw [hv] at h
+    have h2 : ContinuousAt (Ring.inverse ∘
+        fun p : E × ℝ => (1 : E →L[ℝ] E) + ε • strobGenD Df T p.1 p.2) p :=
+      ContinuousAt.comp (f := fun p : E × ℝ => (1 : E →L[ℝ] E) + ε • strobGenD Df T p.1 p.2) h
+        hA.continuousAt
+    exact h2
+  have hg : Continuous fun p : E × ℝ => f (p.1 + ε • strobGen f T p.1 p.2) p.2 :=
+    hf.2.2.1.comp ((continuous_fst.add (hu.const_smul ε)).prodMk continuous_snd)
+  have hN : Continuous fun p : E × ℝ => ε⁻¹ • (f (p.1 + ε • strobGen f T p.1 p.2) p.2 - f p.1 p.2) -
+      strobGenD Df T p.1 p.2 (fieldAverage f T p.1) :=
+    ((hg.sub hf.2.2.1).const_smul ε⁻¹).sub
+      (hcD.clm_apply ((fieldAverage_continuous hf).comp continuous_fst))
+  exact hinv.clm_apply hN
+
+/-- **The remainder is a field of the class of `Averaging.kbm_first_order`**: for `0 < ε`,
+`2εℓT < 1` and `Df(·, t)` `L₂`-Lipschitz, `R = nearIdRemainder f Df T ε` is continuous,
+`T`-periodic, `L_R`-Lipschitz in the state with
+`L_R = 4T(L₂M(1 + εℓT) + ℓ²)/(1 − 2εℓT) + 8εℓL₂MT²/(1 − 2εℓT)²` and bounded by
+`4ℓMT/(1 − 2εℓT)` — the hypotheses on the remainder `r` of `Averaging.exists_periodic_orbit`,
+`Averaging.exp_stable_of_lyapunov` and `Averaging.averaging_valid_forever`, so that the
+transformed equation `ẏ = ε f̄(y) + ε² R(y, t)` (`hasDerivAt_transformed_solution`) is of their
+form (the averaged field `f̄`, autonomous, is continuous, `ℓ`-Lipschitz and bounded by `M`:
+`Averaging.fieldAverage_continuous`, `Averaging.fieldAverage_lipschitz`,
+`Averaging.norm_fieldAverage_le`). -/
+@[tmio T, powerlib_foundation] theorem nearIdRemainder_field
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M)
+    (hD : ∀ x t, HasFDerivAt (fun y => f y t) (Df x t) x) (hDc : Continuous (Function.uncurry Df))
+    {L₂ : ℝ} (hL₂ : 0 ≤ L₂) (hDl : ∀ x y t, ‖Df x t - Df y t‖ ≤ L₂ * ‖x - y‖)
+    {ε : ℝ} (hε : 0 < ε) (hεℓ : 2 * ε * ℓ * T < 1) :
+    0 < T ∧ 0 ≤ 4 * T * (L₂ * M * (1 + ε * ℓ * T) + ℓ ^ 2) / (1 - 2 * ε * ℓ * T) +
+        8 * ε * ℓ * L₂ * M * T ^ 2 / (1 - 2 * ε * ℓ * T) ^ 2 ∧
+      Continuous (Function.uncurry (nearIdRemainder f Df T ε)) ∧
+      (∀ y t, nearIdRemainder f Df T ε y (t + T) = nearIdRemainder f Df T ε y t) ∧
+      (∀ y z t, ‖nearIdRemainder f Df T ε y t - nearIdRemainder f Df T ε z t‖ ≤
+        (4 * T * (L₂ * M * (1 + ε * ℓ * T) + ℓ ^ 2) / (1 - 2 * ε * ℓ * T) +
+          8 * ε * ℓ * L₂ * M * T ^ 2 / (1 - 2 * ε * ℓ * T) ^ 2) * ‖y - z‖) ∧
+      ∀ y t, ‖nearIdRemainder f Df T ε y t‖ ≤ 4 * ℓ * M * T / (1 - 2 * ε * ℓ * T) := by
+  have hT := hf.1
+  have hℓ := hf.2.1
+  have hq : 0 < 1 - 2 * ε * ℓ * T := by linarith
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hf.2.2.2.2.2 (0 : E) 0)
+  refine ⟨hT, ?_, continuous_uncurry_nearIdRemainder hf hD hDc hε.le hεℓ,
+    nearIdRemainder_periodic hf hD hDc ε, norm_nearIdRemainder_sub_le hf hD hDc hL₂ hDl hε hεℓ,
+    norm_nearIdRemainder_le hf hD hDc hε hεℓ⟩
+  have h1 : 0 ≤ 4 * T * (L₂ * M * (1 + ε * ℓ * T) + ℓ ^ 2) / (1 - 2 * ε * ℓ * T) :=
+    div_nonneg (by positivity) hq.le
+  have h2 : 0 ≤ 8 * ε * ℓ * L₂ * M * T ^ 2 / (1 - 2 * ε * ℓ * T) ^ 2 :=
+    div_nonneg (by positivity) (sq_nonneg _)
+  linarith
 
 end powerlib.Averaging
