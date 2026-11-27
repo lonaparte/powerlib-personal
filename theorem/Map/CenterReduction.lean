@@ -67,6 +67,12 @@ Results.
   κ)`), `isBigO_sub_of_defect` (local form, for a candidate with strict derivative `0` at `0`
   and a defect `O(‖x‖^q)` near `0`, `q ≥ 1`), `isBigO_centreGraph` (tangency: `h = O(‖x‖^q)` when
   `g(x, 0) = O(‖x‖^q)`).
+
+Corrections.
+None: an extension (the reduction principle and the approximation theorem for maps).
+
+Family and connection conclusions.
+None: static evidence on maps (stability in the map semantics).
 -/
 
 noncomputable section

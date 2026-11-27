@@ -58,8 +58,9 @@ Results.
   `reducedMap_surjective`, `reducedMap_bijective`, `reducedMap_zero`, `norm_reducedMap_le`.
 * The transform: `graphTransform_reducedMap` (`(Γ h)(r x) = B h(x) + g(x, h(x))`),
   `graphTransform_zero`, `lipschitzWith_graphTransform`, `norm_graphTransform_sub_le` (the
-  weighted contraction by `κ`), `contraction_lt_one` (`0 ≤ κ < 1` from `b + 3ε < a`), `graphTransform_eq_self_iff` (fixed points of `Γ` are the
-  invariant graphs), `graphTransform_mem` (values in a submodule invariant under `B` and `g`).
+  weighted contraction by `κ`), `contraction_lt_one` (`0 ≤ κ < 1` from `b + 3ε < a`),
+  `graphTransform_eq_self_iff` (fixed points of `Γ` are the invariant graphs),
+  `graphTransform_mem` (values in a submodule invariant under `B` and `g`).
 * **The theorem** `exists_unique_invariantGraph`: one and only one `1`-Lipschitz `h` with
   `h(0) = 0` and `h(A x + f(x, h x)) = B h(x) + g(x, h(x))`; `centreGraph_spec` (it is
   `centreGraph`), `centreGraph_mem` (it takes values in every closed submodule invariant under
@@ -73,6 +74,13 @@ Results.
   `0` and every `ε > 0` with `b + 3ε < a`, a radius `ρ`, cut-offs `f`, `g` equal to `f₀`, `g₀` on
   `‖p‖ ≤ ρ`, and their invariant graph `h`; orbits of the original map that stay in that ball
   approach the graph at the rate `(b + 2ε)^k`, and the graph is invariant there.
+
+Corrections.
+None: an extension (the centre manifold of a fixed point of a map, which the critical-multiplier
+analysis of `theorem/Periodic/CriticalMultiplier.lean` left out).
+
+Family and connection conclusions.
+None: static evidence on maps of normed spaces.
 -/
 
 noncomputable section
