@@ -28,7 +28,7 @@ with `n₃ = curveCoeff₃ P₂ P₃ vm k₂`, `n₄ = curveCoeff₄ P₂ P₃ P
 `c₂ = wm ⬝ P₂(vm, vm)` and `cⱼ = wm ⬝ nⱼ`, give the coefficients
 of the period map restricted to a centre manifold, `r(x) = −x + c₂x² + c₃x³ + c₄x⁴ + c₅x⁵ +
 O(x⁶)`; `c₂` and `c₃` are the coefficients `a` and `b` of the flip coefficient `a² + b` of
-`theorem/Periodic/FlipOrbit.lean`. If `a² + b = 0` and `c₅ + 3c₂c₄ − 2c₂⁴ > 0`, the period map is
+`theorem/Periodic/FlipOrbit.lean` (`JetVariation.flipCoeff_jet_eq`). If `a² + b = 0` and `c₅ + 3c₂c₄ − 2c₂⁴ > 0`, the period map is
 locally asymptotically, not exponentially, stable at `x_*(0)` and `x_*` is uniformly Lyapunov
 stable and uniformly attracting from every initial time; if `c₅ + 3c₂c₄ − 2c₂⁴ < 0`, both are
 unstable, with one escape radius for every initial time; the same holds for fields that are only

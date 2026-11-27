@@ -48,9 +48,11 @@ Model boundary.
   `K₃T'_{d0} > 0`; Floquet statements for the periodic state matrix `(machine ε t).stateMatrix`,
   period `2π/(2ν)`, for all sufficiently small `ε > 0`; linearization about the equilibrium of
   the unpumped machine (the variational equation is exact for the linear model).
-* Not covered: the converse limit `K₂` fixed, `K₄ = εK̂₄` (the pump then reaches the pair through
-  the field's left eigenvector as a modulated coupling `A₁₂`); `fieldMixed = 0`, `d' = 0` (next
-  order).
+* Not covered here: the converse limit `K₂` fixed, `K₄ = εK̂₄` (the pump then reaches the pair as
+  a modulated coupling `A₁₂` through the angle component of the field mode's right eigenvector;
+  the field's left eigenvector is `e₃ᵀ` there) — it is
+  `theorem/PowerSystem/Synchronous/FluxDecayConverse.lean`, with the same boundary verdict
+  (the sign of `−d'`); `fieldMixed = 0`, `d' = 0` (next order).
 * The machine is a data model (as `ParametricSwing`'s `Params`), not a model family: no
   connection between families or representations is stated, so no scaffold is involved.
 

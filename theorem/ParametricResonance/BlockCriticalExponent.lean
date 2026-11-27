@@ -50,8 +50,10 @@ Scope.
   clusters are); the localization of the remaining multipliers is pseudospectral, not
   `dist(μ, σ(E)) = O(ε)`, which is false for a non-diagonalizable `E` (the eigenvalues of
   `E + O(ε)` are in general only `O(ε^{1/k})`-close, `k` the size of a Jordan block); the forced
-  orbits of `theorem/ParametricResonance/SmoothForcedOrbitSecond.lean` are not instantiated (their
-  block expansions are internal to `ForcedOrbitSecond.orbit_boundary_floquet`).
+  orbits of `theorem/ParametricResonance/SmoothForcedOrbitSecond.lean` are not instantiated here
+  (their block expansions are internal to `ForcedOrbitSecond.orbit_boundary_floquet`); they are in
+  `theorem/ParametricResonance/ForcedOrbitCriticalMultipliers.lean`
+  (`smooth_orbit_boundary_multipliers`).
 * Generic mathematics; no model family.
 
 Source: the wave-7 question of this library (the `n`-state critical multiplier left open in

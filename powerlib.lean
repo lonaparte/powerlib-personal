@@ -393,6 +393,7 @@ import theorem.ParametricResonance.FirstOrderFailsExistence
 import theorem.ParametricResonance.BlockCoreClosedForm
 import theorem.ParametricResonance.ThirdOrderClosedForm
 import theorem.ParametricResonance.BlockCriticalExponent
+import theorem.ParametricResonance.ForcedOrbitCriticalMultipliers
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -428,6 +429,7 @@ import theorem.Periodic.FlipOrbitUniform
 import theorem.Periodic.LocalField
 import theorem.Periodic.PeriodMapJet
 import theorem.Periodic.DegenerateFlipOrbit
+import theorem.Periodic.JetVariation
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
@@ -526,6 +528,7 @@ import theorem.PowerSystem.Synchronous.LoadedSwingConstantPowerAveraging
 import theorem.PowerSystem.Synchronous.FluxDecayParametric
 import theorem.PowerSystem.Synchronous.LoadedSubharmonicOrbit
 import theorem.PowerSystem.Synchronous.SubharmonicOrbitUnique
+import theorem.PowerSystem.Synchronous.FluxDecayConverse
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance
