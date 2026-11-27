@@ -43,9 +43,12 @@ Results.
   radius `ρ' ≤ ρ` (`Df̄(y*)` is the period average of `Df(y*, ·)`).
 * `period_step_sub_le` — the `O(ε²)` part of the period map is `ε² L_S`-Lipschitz
   (`stroboLip`), for two solutions starting in a ball of radius `r₁`, `r₁ + ε(M + M_r)T ≤ ρ`.
+* `full_field_continuous`, `full_solution_unique` — the field `ε f + ε² r` is jointly continuous;
+  global solutions are unique.
 * `exists_periodic_orbit` — **Bogoliubov's second theorem**: under explicit smallness conditions
   on `ε` and `r₀`, a `T`-periodic solution with `‖x_ε(t) − y*‖ ≤ ε(2‖B‖C_S/T + (M + M_r)T)` for all
-  `t`, unique among solutions with `x(T) = x(0)`, `‖x(0) − y*‖ ≤ r₀`.
+  `t`, unique among solutions with `x(T) = x(0)`, `‖x(0) − y*‖ ≤ r₀`. Its stability and the
+  validity of averaging on `[0, ∞)` are in `theorem/Averaging/PeriodicOrbitStability.lean`.
 -/
 
 noncomputable section
@@ -496,7 +499,7 @@ section Orbit
 variable {Df : E → ℝ → E →L[ℝ] E} {ystar : E} {ρ L₂ : ℝ}
 
 /-- The field `ε f + ε² r` of the full system is continuous and `T`-periodic in `t`. -/
-@[tmio T, powerlib_foundation] private theorem full_field_continuous
+@[tmio T, powerlib_foundation] theorem full_field_continuous
     (hfc : Continuous (Function.uncurry f)) (hrc : Continuous (Function.uncurry r)) (ε : ℝ) :
     Continuous (Function.uncurry fun (t : ℝ) (y : E) => ε • f y t + ε ^ 2 • r y t) := by
   have h1 : Continuous fun q : ℝ × E => f q.2 q.1 := hfc.comp (continuous_snd.prodMk continuous_fst)
@@ -504,7 +507,7 @@ variable {Df : E → ℝ → E →L[ℝ] E} {ystar : E} {ρ L₂ : ℝ}
   exact (h1.const_smul ε).add (h2.const_smul (ε ^ 2))
 
 /-- Global solutions of the full system are unique. -/
-@[tmio T, powerlib_foundation] private theorem full_solution_unique
+@[tmio T, powerlib_foundation] theorem full_solution_unique
     (hfl : ∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖)
     (hrl : ∀ x y t, ‖r x t - r y t‖ ≤ ℓr * ‖x - y‖) (hℓ : 0 ≤ ℓ) (hℓr : 0 ≤ ℓr) {ε : ℝ}
     (hε : 0 ≤ ε) {x z : ℝ → E} (hx : ∀ t, HasDerivAt x (ε • f (x t) t + ε ^ 2 • r (x t) t) t)
