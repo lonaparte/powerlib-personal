@@ -46,7 +46,9 @@ Not formalized.
   `ParametricResonance.QuadraticCubic.second_order_averaging`. Periodic orbits near hyperbolic
   equilibria of the averaged field (Bogoliubov's second theorem), their stability and validity on
   `[0, ∞)` in the attraction case are `theorem/Averaging/PeriodicOrbits.lean` and
-  `theorem/Averaging/PeriodicOrbitStability.lean`.
+  `theorem/Averaging/PeriodicOrbitStability.lean` (fractional perturbations, explicit constants and
+  the near-identity transformation: `PerturbedPeriodicOrbits`, `PeriodicOrbitConstants`,
+  `NearIdentity`).
 -/
 
 noncomputable section

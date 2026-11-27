@@ -36,7 +36,9 @@ Model boundary.
   averaging step is rigorous in the weakly nonlinear scaling (`loaded_second_order`: damping and
   detuning of the order of the depth `0 < ε ≤ 1`, amplitude of order `√ε`, averaged solutions in
   a disc, time scale `1/ε`, relative error `O(√ε)`, the remainder included); amplitudes and
-  stability of the locked states are statements about the averaged equation.
+  stability of the locked states are statements about the averaged equation here; that they are
+  genuine periodic solutions of the loaded swing, stable or unstable as the averaged Jacobian, is
+  `theorem/PowerSystem/Synchronous/LoadedSubharmonicOrbit.lean`.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11)
 (swing model at an operating point); the classical power-angle curve of `Params.toSwing` and the

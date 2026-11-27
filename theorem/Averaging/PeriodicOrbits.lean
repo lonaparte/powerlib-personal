@@ -9,8 +9,10 @@ original system `ẋ = ε f(x, t) + ε² r(x, t)` for all small `ε > 0`, `O(ε)
 `t ∈ ℝ` and unique near `y*`. The proof uses only Lipschitz (Grönwall) estimates and no
 differentiability of the flow: the period map is one Euler step of the averaged field plus a
 remainder of order `ε²` with an `ε`-independent Lipschitz constant (the stroboscopic form of the
-near-identity averaging transformation), and its fixed point is found by the Newton-type
-contraction `y ↦ y − (εT Df̄(y*))⁻¹ (P(y) − y)`.
+near-identity averaging transformation, formalized in `theorem/Averaging/NearIdentity.lean`:
+`strobGen_sample`, `transformed_le`), and its fixed point is found by the Newton-type
+contraction `y ↦ y − (εT Df̄(y*))⁻¹ (P(y) − y)`. Perturbations of order `ε^{1+κ}` are
+`theorem/Averaging/PerturbedPeriodicOrbits.lean`.
 
 Scope.
 * `ẋ = ε f(x, t) + ε² r(x, t)` on a real Banach space `E`, `0 < ε ≤ 1`. Both `f` and `r` satisfy

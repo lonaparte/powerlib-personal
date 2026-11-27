@@ -90,6 +90,7 @@ Results.
 * `subharmonic_orbit_unstable`, `subharmonic_orbit_saddle` — a characteristic root `Re μ > 0` of
   the averaged Jacobian (e.g. `det < 0`, the saddle branch): the subharmonic orbit is unstable,
   swing solutions starting within `√ε η` (any `η > 0`) reach the distance `√ε δ₀`.
+  (Uniqueness of the orbit in its tube: `SubharmonicOrbitUnique.subharmonic_orbit_unique`.)
 -/
 
 noncomputable section

@@ -29,6 +29,9 @@ Scope.
   or from the instability certificate
   (`LinearSystems.exists_instability_quadratic_certificate_of_complex_eigenvalue_re_pos`) and
   depend only on `T, ℓ, M, ℓ_r, M_r, ρ, L₂` and `J` — not on `ε`, not on the remainder `r`.
+  Explicit constants from a given Lyapunov or Chetaev certificate (stability and instability):
+  `theorem/Averaging/PeriodicOrbitConstants.lean` (`exp_stable_of_lyapunov`,
+  `unstable_of_chetaev`).
 * Generic mathematics, no model family.
 
 Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*
