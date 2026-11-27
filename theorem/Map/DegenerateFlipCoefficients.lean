@@ -70,7 +70,7 @@ Results.
   `linearDeriv_diag_smul`, `trilin_diag_add` (`f(a + b) = f(a) + f'(a) b + f'(b) a + f(b)` for
   three slots), `isBigO_diag`.
 * The candidate and its coefficients: `graphJet` (`η`), `curveCoeff₃`, `curveCoeff₄`,
-  `curveCoeff₅` (`n₃`, `n₄`, `n₅`); `isBigO_pow_of_le`, `isBigO_pow_of_tendsto`;
+  `curveCoeff₅` (`n₃`, `n₄`, `n₅`); `isBigO_pow_of_le`;
   `isBigO_taylor_five` (the remainder along a curve), `isBigO_sub_of_taylor_five` (`N(α) − N(β) =
   O(g⁶)` for `α − β = O(g⁵)`), **`curve_expansion`** (`N(t v + η(t)) = Σⱼ tʲ nⱼ + O(t⁶)`),
   `powers_expansion` (the powers of `s(t)`).
@@ -279,22 +279,8 @@ def curveCoeff₅ (P₂ : E →L[ℝ] E →L[ℝ] E) (P₃ : ContinuousMultiline
 
 /-- Near `0`, `tʲ = O(tⁱ)` for `i ≤ j`. -/
 @[tmio T, powerlib_foundation] theorem isBigO_pow_of_le {i j : ℕ} (hij : i ≤ j) :
-    (fun t : ℝ => t ^ j) =O[𝓝 0] fun t => t ^ i := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [Metric.closedBall_mem_nhds (0 : ℝ) one_pos] with t ht
-  rw [Metric.mem_closedBall, dist_zero_right] at ht
-  rw [one_mul, norm_pow, norm_pow]
-  exact pow_le_pow_of_le_one (norm_nonneg _) ht hij
-
-/-- Powers of a function tending to `0`: `gᵐ = O(gᵏ)` for `k ≤ m`. -/
-@[tmio T, powerlib_foundation] theorem isBigO_pow_of_tendsto {Z : Type*} {l : Filter Z}
-    {g : Z → ℝ} (hg : Tendsto g l (𝓝 0)) {k m : ℕ} (hkm : k ≤ m) :
-    (fun z => g z ^ m) =O[l] fun z => g z ^ k := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [hg.eventually (Metric.closedBall_mem_nhds 0 one_pos)] with z hz
-  rw [dist_zero_right] at hz
-  rw [one_mul, norm_pow, norm_pow]
-  exact pow_le_pow_of_le_one (norm_nonneg _) hz hkm
+    (fun t : ℝ => t ^ j) =O[𝓝 0] fun t => t ^ i :=
+  Dynamics.isBigO_pow_of_tendsto (s := fun t : ℝ => t) tendsto_id hij
 
 /-- The Taylor remainder of order six along a function of order one: if
 `N e − P₂(e, e) − P₃(e³) − P₄(e⁴) − P₅(e⁵)` is bounded by `K ‖e‖⁶` near `0`, `α = O(g)` and
@@ -331,7 +317,7 @@ def curveCoeff₅ (P₂ : E →L[ℝ] E →L[ℝ] E) (P₃ : ContinuousMultiline
     (hα : α =O[l] g) (hβ : β =O[l] g) (hαβ : (fun z => α z - β z) =O[l] fun z => g z ^ 5) :
     (fun z => N (α z) - N (β z)) =O[l] fun z => g z ^ 6 := by
   have hc : ∀ c : ℕ, 2 ≤ c → (fun z => g z ^ (c - 1) * g z ^ 5) =O[l] fun z => g z ^ 6 :=
-    fun c hc => (isBigO_pow_of_tendsto hg (by omega : 6 ≤ c - 1 + 5)).congr_left
+    fun c hc => (Dynamics.isBigO_pow_of_tendsto hg (by omega : 6 ≤ c - 1 + 5)).congr_left
       fun z => by rw [pow_add]
   have hαβ' : (fun z => (fun _ : Fin 3 => α z) - fun _ => β z) =O[l] fun z => g z ^ 5 :=
     (isBigO_diag hαβ).congr_left fun z => by funext i; simp
