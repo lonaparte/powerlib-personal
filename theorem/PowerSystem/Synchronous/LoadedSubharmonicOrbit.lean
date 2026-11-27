@@ -1559,10 +1559,13 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
 `transRemL` is bounded by `ε√ε M_q` and `ε√ε L_q`-Lipschitz within `3/2` of `w*`. -/
 @[tmio M, powerlib_domain] private theorem loaded_core {b d ν δ₀ : ℝ} (hν : 0 < ν)
     (hc : 0 < Real.cos δ₀) (wstar : ℂ) :
-    ∃ ε₁ Mq Lq : ℝ, 0 < ε₁ ∧ ε₁ ≤ 1 ∧ 0 ≤ Mq ∧ 0 ≤ Lq ∧ ∀ ε, 0 < ε → ε ≤ ε₁ →
+    ∃ ε₁ Mq Lq Dc : ℝ, 0 < ε₁ ∧ ε₁ ≤ 1 ∧ 0 ≤ Mq ∧ 0 ≤ Lq ∧ 0 ≤ Dc ∧ ∀ ε, 0 < ε → ε ≤ ε₁ →
       ∀ p : Params, p.Pos → p.D / p.M = ε * b → loadedFreqSq p δ₀ = ν ^ 2 - ε * d →
       (∀ w w' t, ‖w - w'‖ ≤ 2 * ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t -
         Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w' t‖) ∧
+      (∀ w w' t, ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t -
+        Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w' t‖ ≤ 3 / 2 * ‖w - w'‖) ∧
+      (∀ w t, ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t - w‖ ≤ √ε * Dc) ∧
       (∀ W t, ∃ w, Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t = W) ∧
       (∀ w t, ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t - w‖ ≤ 1 / 2) ∧
       (∀ w : ℝ → ℂ, (∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t) →
@@ -1605,7 +1608,7 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
     with hσ
   have hσ0 : 0 < σ := by
     refine lt_min (by positivity) (lt_min (by positivity) (by positivity))
-  refine ⟨min 1 (σ ^ 2), Mq, Lq, by positivity, min_le_left _ _, hMq, hLq, ?_⟩
+  refine ⟨min 1 (σ ^ 2), Mq, Lq, D₁, by positivity, min_le_left _ _, hMq, hLq, hD₁0, ?_⟩
   intro ε hε hεε₁ p hp hb hd
   have hε1 : ε ≤ 1 := hεε₁.trans (min_le_left _ _)
   have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
@@ -1684,7 +1687,13 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
     intro w hw
     have := norm_le_norm_add_norm_sub' w wstar
     rw [hr]; linarith
+  have hsmD : ∀ w t, ‖Wmap (alpha2 p δ₀) ν ε ρc w t - w‖ ≤ √ε * D₁ := by
+    intro w t
+    refine (norm_Wmap_sub_le hν hρc0 w t).trans ?_
+    rw [hD₁]
+    gcongr
   refine ⟨fun w w' t => (Wmap_bilipschitz hν hρc0 hsm1 w w' t).1,
+    fun w w' t => (Wmap_bilipschitz hν hρc0 hsm1 w w' t).2, hsmD,
     fun W t => exists_Wmap_eq hν hρc0 hsm1 W t, hsm2, ?_,
     fun w w' t hw hw' => hTRε w w' t (hdisc w hw) (hdisc w' hw')⟩
   intro w hw s hs t ht
@@ -1767,7 +1776,7 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
       ∃ w : ℝ → ℂ, (∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t) ∧
         (∀ t, w (t + 2 * Real.pi / ν) = w t) ∧ (∀ t, ‖w t - wstar‖ ≤ 3 / 2) ∧
         ∀ t, ‖w t - wstar‖ ≤ √ε * C := by
-  obtain ⟨ε₁, Mq, Lq, hε₁, hε₁1, hMq, hLq, hcore⟩ := loaded_core (b := b) (d := d) hν hc wstar
+  obtain ⟨ε₁, Mq, Lq, Dc, hε₁, hε₁1, hMq, hLq, -, hcore⟩ := loaded_core (b := b) (d := d) hν hc wstar
   set ρc := ‖wstar‖ + 3 with hρc
   have hρc0 : 0 ≤ ρc := by positivity
   set T := 2 * Real.pi / ν with hT
@@ -1822,7 +1831,7 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
     have : ε ≤ σ ^ 2 := hεε₀.trans (min_le_right _ _)
     calc √ε ≤ √(σ ^ 2) := Real.sqrt_le_sqrt this
       _ = σ := Real.sqrt_sq hσ0.le
-  obtain ⟨hbil, hsurj, -, hbund, hTR⟩ := hcore ε hε hεε₁ p hp hb hd
+  obtain ⟨hbil, -, -, hsurj, -, hbund, hTR⟩ := hcore ε hε hεε₁ p hp hb hd
   obtain ⟨-, h2, -, hω, hωle⟩ := machine_bounds hp hc hε hε1 hd
   -- the family of transformed amplitudes
   choose w₀ hw₀ using fun y : ℝ² => hsurj (toReal.symm y) 0
@@ -1967,17 +1976,26 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
       _ = √ε * C := by rw [hC]; ring
   exact ⟨w, hW yε, hwper, fun t => (hwin t).1, fun t => (hwin t).2⟩
 
-/-- The swing solution carried by a periodic clamped solution that stays within `3/2` of `w*`. -/
+/-- The swing solution `δ = δ₀ + Re(√ε w e^{jνt})`, `δ̇ = vel ν (√ε w) t` carried by a periodic
+clamped solution `w` that stays within `3/2` of `w*`, with `|δ − δ₀ − √ε Re(w* e^{jνt})| ≤ Cε`
+when `‖w − w*‖ ≤ √ε C`. -/
 @[tmio M, powerlib_domain] theorem loaded_swing_of_orbit (hp : p.Pos) {δ₀ b d ν ε C : ℝ}
     (hν : 0 < ν) (hε : 0 < ε) (hb : p.D / p.M = ε * b) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d)
     {wstar : ℂ} {w : ℝ → ℂ}
     (hW : ∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t)
     (hwper : ∀ t, w (t + 2 * Real.pi / ν) = w t) (hw32 : ∀ t, ‖w t - wstar‖ ≤ 3 / 2)
     (hwC : ∀ t, ‖w t - wstar‖ ≤ √ε * C) :
-    ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
-      (∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t) ∧
-      (∀ t, δ (t + 2 * Real.pi / ν) = δ t ∧ δ' (t + 2 * Real.pi / ν) = δ' t) ∧
-      ∀ t, |δ t - δ₀ - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε := by
+    (∀ t, HasDerivAt (fun t => δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t)
+      (vel ν (((√ε : ℝ) : ℂ) * w t) t) t) ∧
+    (∀ t, HasDerivAt (fun t => vel ν (((√ε : ℝ) : ℂ) * w t) t)
+      ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t)
+        (vel ν (((√ε : ℝ) : ℂ) * w t) t)) t) ∧
+    (∀ t, δ₀ + pos ν (((√ε : ℝ) : ℂ) * w (t + 2 * Real.pi / ν)) (t + 2 * Real.pi / ν) =
+        δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t ∧
+      vel ν (((√ε : ℝ) : ℂ) * w (t + 2 * Real.pi / ν)) (t + 2 * Real.pi / ν) =
+        vel ν (((√ε : ℝ) : ℂ) * w t) t) ∧
+    ∀ t, |δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t - δ₀ -
+      √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε := by
   set ρc := ‖wstar‖ + 3 with hρc
   set T := 2 * Real.pi / ν with hT
   have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
@@ -1990,12 +2008,9 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
     rw [hρc]; linarith
   -- the swing solution
   have hsw := fun t => swing_of_clamped hp hν hε hb hd (hW t) (hwn t)
-  refine ⟨fun t => δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t, fun t => vel ν (((√ε : ℝ) : ℂ) * w t) t,
-    fun t => (hsw t).1, fun t => (hsw t).2, fun t => ⟨?_, ?_⟩, fun t => ?_⟩
-  · show δ₀ + pos ν (((√ε : ℝ) : ℂ) * w (t + T)) (t + T) = δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t
-    rw [hwper']; exact congrArg (fun x => δ₀ + x) (pos_period₂ hν _ t)
-  · show vel ν (((√ε : ℝ) : ℂ) * w (t + T)) (t + T) = vel ν (((√ε : ℝ) : ℂ) * w t) t
-    rw [hwper']; exact vel_period₂ hν _ t
+  refine ⟨fun t => (hsw t).1, fun t => (hsw t).2, fun t => ⟨?_, ?_⟩, fun t => ?_⟩
+  · rw [hwper]; exact congrArg (fun x => δ₀ + x) (pos_period₂ hν _ t)
+  · rw [hwper]; exact vel_period₂ hν _ t
   · have e1 : pos ν (((√ε : ℝ) : ℂ) * w t) t = √ε * pos ν (w t) t := pos_ofReal_mul₂ ν √ε (w t) t
     have e2 : (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re = pos ν wstar t := rfl
     have e3 : pos ν (w t - wstar) t = pos ν (w t) t - pos ν wstar t := by
@@ -2033,6 +2048,305 @@ stiffness `α₂` included through the second-order transformation
   obtain ⟨ε₀, C, hε₀, hC, horb⟩ := loaded_orbit_core hν hc hw0 hdet
   refine ⟨ε₀, C, hε₀, hC, fun ε hε hεε₀ p hp hb hd => ?_⟩
   obtain ⟨w, hw, hwper, hw32, hwC⟩ := horb ε hε hεε₀ p hp hb hd
-  exact loaded_swing_of_orbit hp hν hε hb hd hw hwper hw32 hwC
+  obtain ⟨h1, h2, h3, h4⟩ := loaded_swing_of_orbit hp hν hε hb hd hw hwper hw32 hwC
+  exact ⟨_, _, h1, h2, h3, h4⟩
+
+/-! ## Stability of the loaded subharmonic orbit -/
+
+@[tmio M, powerlib_foundation] private theorem vdp_pos_vel₂ {ν : ℝ} (hν : ν ≠ 0) (z : ℂ) (t : ℝ) :
+    vdp ν t (pos ν z t) (vel ν z t) = z := by
+  have h1 : (((pos ν z t : ℝ) : ℂ) - (((vel ν z t) / ν : ℝ) : ℂ) * I) =
+      z * Complex.exp (((ν * t : ℝ) : ℂ) * I) := by
+    apply Complex.ext
+    · simp [pos]
+    · simp [vel]; field_simp
+  rw [vdp, h1, ← mul_assoc, mul_comm _ z, mul_assoc, ← Complex.exp_add, neg_add_cancel,
+    Complex.exp_zero, mul_one]
+
+@[tmio M, powerlib_foundation] private theorem vdp_sub₂ (ν t x x' y y' : ℝ) :
+    vdp ν t (x - y) (x' - y') = vdp ν t x x' - vdp ν t y y' := by
+  simp only [vdp]; push_cast; ring
+
+/-- The phase-plane deviation from the swing solution carried by a clamped solution `w` is `√ε`
+times the deviation of the scaled amplitudes. -/
+@[tmio M, powerlib_domain] private theorem vdp_dev {ν ε δ₀ : ℝ} (hν : ν ≠ 0) (hε : 0 < ε)
+    (δ δ' : ℝ) (w : ℂ) (t : ℝ) :
+    vdp ν t (δ - (δ₀ + pos ν (((√ε : ℝ) : ℂ) * w) t)) (δ' - vel ν (((√ε : ℝ) : ℂ) * w) t) =
+      ((√ε : ℝ) : ℂ) * (((√ε : ℝ) : ℂ)⁻¹ * vdp ν t (δ - δ₀) δ' - w) := by
+  have hs0 : ((√ε : ℝ) : ℂ) ≠ 0 := by exact_mod_cast (Real.sqrt_pos.mpr hε).ne'
+  rw [show δ - (δ₀ + pos ν (((√ε : ℝ) : ℂ) * w) t) = (δ - δ₀) - pos ν (((√ε : ℝ) : ℂ) * w) t by
+    ring, vdp_sub₂, vdp_pos_vel₂ hν, mul_sub, ← mul_assoc, mul_inv_cancel₀ hs0, one_mul]
+
+set_option maxHeartbeats 1000000 in
+/-- **The loaded subharmonic orbit of a Hurwitz locked state is exponentially stable in the
+loaded swing model.** If the Jacobian `loadedJac b d ν δ₀ w*` of the averaged limit field at the
+locked state `w*` is Hurwitz (`cos δ₀ > 0`), there are `ε₀, ρ_s, K, β > 0` and `C ≥ 0` such that
+for every `0 < ε ≤ ε₀` and every machine of the scaling `D/M = εb`, `ω_L² = ν² − εd` the loaded
+swing model has a `2π/ν`-periodic solution `(δ_ε, δ̇_ε)` with
+`|δ_ε − δ₀ − √ε Re(w* e^{jνt})| ≤ Cε`, and every solution `(δ, δ̇)` whose phase-plane deviation
+`‖vdp ν τ (δ − δ_ε) (δ̇ − δ̇_ε)‖` at a time `τ` is at most `√ε ρ_s` converges to it:
+`‖vdp ν t (δ − δ_ε) (δ̇ − δ̇_ε)‖ ≤ K e^{−βε(t − τ)} ‖vdp ν τ (δ − δ_ε) (δ̇ − δ̇_ε)‖` for `t ≥ τ`
+(`Averaging.exp_stable_perturbed` with the Lyapunov matrix of the averaged Jacobian, the
+transformed amplitude, `loaded_unique_Icc`). -/
+@[tmio M, powerlib_domain] theorem loaded_orbit_stable {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (hc : 0 < Real.cos δ₀) {wstar : ℂ} (hw0 : loadedAmp b d ν δ₀ wstar = 0)
+    (hJ : LinearSystems.IsHurwitz (loadedJac b d ν δ₀ wstar)) :
+    ∃ ε₀ C ρs K β : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ 0 < ρs ∧ 0 < K ∧ 0 < β ∧
+      ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ p : Params, p.Pos →
+      p.D / p.M = ε * b → loadedFreqSq p δ₀ = ν ^ 2 - ε * d →
+      ∃ δε δε' : ℝ → ℝ, (∀ t, HasDerivAt δε (δε' t) t) ∧
+        (∀ t, HasDerivAt δε' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δε t) (δε' t)) t) ∧
+        (∀ t, δε (t + 2 * Real.pi / ν) = δε t ∧ δε' (t + 2 * Real.pi / ν) = δε' t) ∧
+        (∀ t, |δε t - δ₀ - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε) ∧
+        ∀ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) →
+          (∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t) →
+          ∀ τ, ‖vdp ν τ (δ τ - δε τ) (δ' τ - δε' τ)‖ ≤ √ε * ρs →
+          ∀ t, τ ≤ t → ‖vdp ν t (δ t - δε t) (δ' t - δε' t)‖ ≤
+            K * Real.exp (-(β * ε * (t - τ))) * ‖vdp ν τ (δ τ - δε τ) (δ' τ - δε' τ)‖ := by
+  have hdet : (loadedJac b d ν δ₀ wstar).det ≠ 0 := (Criteria.isUnit_det_of_isHurwitz hJ).ne_zero
+  obtain ⟨ε₁, Mq, Lq, Dc, hε₁, hε₁1, hMq, hLq, hDc0, hcore⟩ :=
+    loaded_core (b := b) (d := d) hν hc wstar
+  obtain ⟨ε₂, C, hε₂, hC, horb⟩ := loaded_orbit_core hν hc hw0 hdet
+  set ρc := ‖wstar‖ + 3 with hρc
+  have hρc0 : 0 ≤ ρc := by positivity
+  set T := 2 * Real.pi / ν with hT
+  have hT0 : 0 < T := by positivity
+  have hfh := SubharmonicOrbit.realField_hyp (QuadraticCubic.cutSecond_hyp (b := b)
+    (k₀ := ν ^ 2 - d) (k₁ := ν ^ 2) (α₂ := -(ν ^ 2 * Real.tan δ₀) / 2) (α₃ := -(ν ^ 2) / 6) hν
+    hρc0)
+  set ℓ := QuadraticCubic.lipSecond b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2)
+    (-(ν ^ 2) / 6) ν (2 * ρc) with hℓ
+  set M := ℓ * (2 * ρc) with hM
+  have hℓ0 : 0 ≤ ℓ := hfh.2.1
+  have hM0 : 0 ≤ M := by positivity
+  obtain ⟨hD, hDl, hDc, -, hA⟩ := limit_hyp (ρc := ρc) hν hw0 (by linarith)
+  set L₂ := (6 * |-(ν ^ 2) / 6| / ν + 5 * (-(ν ^ 2 * Real.tan δ₀) / 2) ^ 2 / ν ^ 3) *
+    (‖wstar‖ + 1) with hL₂
+  have hL₂0 : 0 ≤ L₂ := by positivity
+  set J := loadedJac b d ν δ₀ wstar with hJdef
+  -- the Lyapunov certificate
+  obtain ⟨P, hPd, hEq, -⟩ := hJ.exists_posDef_unique_solution_continuous_lyapunov 1
+    Matrix.PosDef.one
+  obtain ⟨p₁, hp₁, hlow⟩ := MatrixAlgebra.exists_pos_mul_norm_sq_le_quadraticForm P hPd
+  set p₂ := ‖Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) P‖ + 1 with hp₂
+  have hp₂0 : 0 < p₂ := by positivity
+  have hbd : ∀ e : ℝ², p₁ * ‖e‖ ^ 2 ≤ MatrixAlgebra.quadraticForm P e ∧
+      MatrixAlgebra.quadraticForm P e ≤ p₂ * ‖e‖ ^ 2 := fun e =>
+    ⟨hlow e, (MatrixAlgebra.quadraticForm_le_opNorm_mul_norm_sq P e).trans
+      (mul_le_mul_of_nonneg_right (by linarith) (sq_nonneg _))⟩
+  have hQ1 : ∀ e : ℝ², 1 * ‖e‖ ^ 2 ≤ MatrixAlgebra.quadraticForm 1 e := fun e => by
+    simp [MatrixAlgebra.quadraticForm, real_inner_self_eq_norm_sq]
+  set a := ‖Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J‖ with ha
+  set κ := min 1 (p₁ / (96 * p₂ ^ 3)) with hκ
+  have hκ0 : 0 < κ := lt_min one_pos (by positivity)
+  have hκc : 96 * p₂ ^ 3 * κ ^ 2 ≤ 1 ^ 2 * p₁ := by
+    have h1 : κ ≤ 1 := min_le_left _ _
+    have h2 : κ ≤ p₁ / (96 * p₂ ^ 3) := min_le_right _ _
+    have h3 : κ ^ 2 ≤ κ := by nlinarith
+    rw [le_div_iff₀ (by positivity)] at h2
+    nlinarith [mul_le_mul_of_nonneg_left h3 (by positivity : (0 : ℝ) ≤ 96 * p₂ ^ 3)]
+  set r₁ := min (1 / 2) (κ / (2 * (L₂ + 1))) with hr₁
+  have hr₁0 : 0 < r₁ := lt_min (by norm_num) (by positivity)
+  have hr₁h : r₁ ≤ 1 / 2 := min_le_left _ _
+  have hr₁ρ : 2 * r₁ ≤ 1 := by linarith
+  have hr₁κ : 2 * L₂ * r₁ ≤ κ := by
+    have h1 : r₁ ≤ κ / (2 * (L₂ + 1)) := min_le_right _ _
+    rw [le_div_iff₀ (by positivity)] at h1
+    nlinarith
+  set δa := r₁ * p₁ / (2 * p₂) with hδa
+  have hδa0 : 0 < δa := by positivity
+  set G := Real.exp ((ℓ + 2 * Lq) * T) with hG
+  set K₀ := Real.sqrt (G ^ 2 * (p₂ / p₁) * Real.exp (1 / (8 * p₂) * T)) with hK₀
+  have hK₀0 : 0 < K₀ := Real.sqrt_pos.mpr (by positivity)
+  set ρs := min (2 / 3 * δa) (1 / (3 * K₀)) with hρs
+  have hρs0 : 0 < ρs := lt_min (by positivity) (by positivity)
+  set LS := Averaging.stroboLip ℓ (2 * Lq) L₂ M Mq T with hLS
+  have hLS0 : 0 ≤ LS := by
+    rw [hLS, Averaging.stroboLip]
+    refine mul_nonneg (Real.exp_pos _).le (add_nonneg (mul_nonneg (sq_nonneg T) (add_nonneg
+      (mul_nonneg hL₂0 (add_nonneg hM0 hMq)) (mul_nonneg hℓ0 (by linarith)))) (mul_nonneg hT0.le
+      (by linarith)))
+  set σ := min (κ * T / (2 * LS + 1)) (min (δa / (Dc + C + 1)) (1 / (2 * (C + 1)))) with hσ
+  have hσ0 : 0 < σ := lt_min (by positivity) (lt_min (by positivity) (by positivity))
+  set ε₀ := min (min (min ε₁ ε₂) (min (1 / (2 * T * p₂ * a ^ 2 + 1)) (p₂ / T)))
+    (min (1 / (2 * (M + Mq) * T + 1)) (σ ^ 2)) with hε₀
+  refine ⟨ε₀, C, ρs, 3 * K₀, 1 / (16 * p₂), by positivity, hC, hρs0, by positivity,
+    by positivity, ?_⟩
+  intro ε hε hεε₀ p hp hb hd
+  have hεε₁ : ε ≤ ε₁ := hεε₀.trans ((min_le_left _ _).trans ((min_le_left _ _).trans
+    (min_le_left _ _)))
+  have hεε₂ : ε ≤ ε₂ := hεε₀.trans ((min_le_left _ _).trans ((min_le_left _ _).trans
+    (min_le_right _ _)))
+  have hε1 : ε ≤ 1 := hεε₁.trans hε₁1
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hs1 : √ε ≤ 1 := Real.sqrt_le_one.mpr hε1
+  have hss : √ε * √ε = ε := Real.mul_self_sqrt hε.le
+  have hεs : ε ≤ √ε := by
+    calc ε = √ε * √ε := hss.symm
+      _ ≤ √ε * 1 := mul_le_mul_of_nonneg_left hs1 hs0.le
+      _ = √ε := mul_one _
+  have hsσ : √ε ≤ σ := by
+    have : ε ≤ σ ^ 2 := hεε₀.trans ((min_le_right _ _).trans (min_le_right _ _))
+    calc √ε ≤ √(σ ^ 2) := Real.sqrt_le_sqrt this
+      _ = σ := Real.sqrt_sq hσ0.le
+  obtain ⟨hbil, hbil', hWD, -, -, hbund, hTR⟩ := hcore ε hε hεε₁ p hp hb hd
+  obtain ⟨w, hw, hwper, hw32, hwC⟩ := horb ε hε hεε₂ p hp hb hd
+  obtain ⟨h1, h2, h3, h4⟩ := loaded_swing_of_orbit hp hν hε hb hd hw hwper hw32 hwC
+  refine ⟨_, _, h1, h2, h3, h4, ?_⟩
+  intro δ δ' hδ hδ' τ hτ t hτt
+  -- the order conditions of the attraction estimate
+  have hηε : ε * √ε ≤ ε := mul_le_of_le_one_right hε.le hs1
+  have hεη : ε ^ 2 ≤ ε * √ε := by rw [sq]; exact mul_le_mul_of_nonneg_left hεs hε.le
+  have hεa : 2 * (ε * T) * p₂ * a ^ 2 ≤ 1 := by
+    have h5 : ε ≤ 1 / (2 * T * p₂ * a ^ 2 + 1) := hεε₀.trans ((min_le_left _ _).trans
+      ((min_le_right _ _).trans (min_le_left _ _)))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : ε * (2 * T * p₂ * a ^ 2 + 1) = 2 * (ε * T) * p₂ * a ^ 2 + ε := by ring
+    linarith only [h5, e, hε]
+  have hεq : ε * T * 1 ≤ p₂ := by
+    have h5 : ε ≤ p₂ / T := hεε₀.trans ((min_le_left _ _).trans ((min_le_right _ _).trans
+      (min_le_right _ _)))
+    rw [le_div_iff₀ hT0] at h5
+    linarith only [h5]
+  have hερ : 2 * ε * (M + Mq) * T ≤ 1 := by
+    have h5 : ε ≤ 1 / (2 * (M + Mq) * T + 1) := hεε₀.trans ((min_le_right _ _).trans
+      (min_le_left _ _))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : ε * (2 * (M + Mq) * T + 1) = 2 * ε * (M + Mq) * T + ε := by ring
+    linarith only [h5, e, hε]
+  have hηκ : 2 * (ε * √ε) * LS ≤ κ * (ε * T) := by
+    have h5 : √ε ≤ κ * T / (2 * LS + 1) := hsσ.trans (min_le_left _ _)
+    rw [le_div_iff₀ (by positivity)] at h5
+    have h6 : 2 * √ε * LS ≤ κ * T := by
+      have e : √ε * (2 * LS + 1) = 2 * √ε * LS + √ε := by ring
+      linarith only [h5, e, hs0]
+    calc 2 * (ε * √ε) * LS = ε * (2 * √ε * LS) := by ring
+      _ ≤ ε * (κ * T) := mul_le_mul_of_nonneg_left h6 hε.le
+      _ = κ * (ε * T) := by ring
+  have hsC : √ε * C ≤ 1 / 2 := by
+    have h5 : √ε ≤ 1 / (2 * (C + 1)) := hsσ.trans ((min_le_right _ _).trans (min_le_right _ _))
+    calc √ε * C ≤ 1 / (2 * (C + 1)) * C := mul_le_mul_of_nonneg_right h5 hC
+      _ ≤ 1 / 2 := half_bound hC
+  have hsDC : √ε * (Dc + C) ≤ δa := by
+    have h5 : √ε ≤ δa / (Dc + C + 1) := hsσ.trans ((min_le_right _ _).trans (min_le_left _ _))
+    rw [le_div_iff₀ (by positivity)] at h5
+    have e : √ε * (Dc + C + 1) = √ε * (Dc + C) + √ε := by ring
+    linarith only [h5, e, hs0]
+  -- the clamped solution through the scaled amplitude of `(δ, δ̇)` at `τ`
+  set wδ : ℝ → ℂ := fun s => ((√ε : ℝ) : ℂ)⁻¹ * vdp ν s (δ s - δ₀) (δ' s) with hwδ
+  obtain ⟨x, hxτ, hx⟩ := exists_clamped_solution (b := b) hp hν hc hε hε1 hd hρc0 τ (wδ τ)
+  have hdev : ∀ s, ‖vdp ν s (δ s - (δ₀ + pos ν (((√ε : ℝ) : ℂ) * w s) s))
+      (δ' s - vel ν (((√ε : ℝ) : ℂ) * w s) s)‖ = √ε * ‖wδ s - w s‖ := fun s => by
+    rw [vdp_dev hν.ne' hε, norm_mul, Complex.norm_real, Real.norm_of_nonneg hs0.le]
+  have hs0' : ((√ε : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hs0.ne'
+  have hτ' : ‖x τ - w τ‖ ≤ ρs := by
+    have h5 : √ε * ‖wδ τ - w τ‖ ≤ √ε * ρs := (hdev τ).symm.le.trans hτ
+    rw [hxτ]
+    exact le_of_mul_le_mul_left h5 hs0
+  -- the transformed amplitudes in real coordinates
+  set X : ℝ → ℝ² := fun s => toReal (Wmap (alpha2 p δ₀) ν ε ρc (x s) s) with hX
+  set Z : ℝ → ℝ² := fun s => toReal (Wmap (alpha2 p δ₀) ν ε ρc (w s) s) with hZ
+  have hXZ : ∀ s, ‖X s - Z s‖ = ‖Wmap (alpha2 p δ₀) ν ε ρc (x s) s -
+      Wmap (alpha2 p δ₀) ν ε ρc (w s) s‖ := fun s => by
+    simp only [hX, hZ, ← map_sub, Saturation.norm_toReal]
+  have hpt : ∀ s, ‖X s - toReal wstar‖ ≤ 1 / 2 →
+      ‖Wmap (alpha2 p δ₀) ν ε ρc (x s) s - wstar‖ ≤ 1 / 2 := fun s hs => by
+    simpa only [hX, ← map_sub, Saturation.norm_toReal] using hs
+  have hpz : ∀ s, ‖Z s - toReal wstar‖ ≤ 1 / 2 →
+      ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar‖ ≤ 1 / 2 := fun s hs => by
+    simpa only [hZ, ← map_sub, Saturation.norm_toReal] using hs
+  have hzb : ∀ s, ‖Z s - toReal wstar‖ ≤ r₁ * p₁ / (2 * 1 * p₂) * 1 := fun s => by
+    simp only [hZ, ← map_sub, Saturation.norm_toReal]
+    calc ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar‖ ≤
+        ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - w s‖ + ‖w s - wstar‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ √ε * Dc + √ε * C := add_le_add (hWD _ _) (hwC s)
+      _ = √ε * (Dc + C) := by ring
+      _ ≤ δa := hsDC
+      _ = r₁ * p₁ / (2 * 1 * p₂) * 1 := by rw [hδa]; ring
+  have hstab := Averaging.exp_stable_perturbed hfh one_pos hL₂0 hD hDl hDc hA hPd hEq hp₁
+    one_pos hbd hQ1 (le_refl a) hr₁0 hr₁ρ hκc hr₁κ hε hε1 hηε hεη (by positivity) hMq hεa hεq hερ
+    hηκ (x := X) (z := Z) (qx := fun s => toReal (transRemL p δ₀ b d ν ε (x s) s))
+    (qz := fun s => toReal (transRemL p δ₀ b d ν ε (w s) s))
+    (fun s hxs hzs u hu => by
+      have hx' := hbund x hx s (hpt s (hxs.trans hr₁h)) u hu
+      have hz' := hbund w hw s (hpz s (hzs.trans hr₁h)) u hu
+      refine ⟨hx'.2, hz'.2, ?_, ?_, ?_⟩
+      · rw [Saturation.norm_toReal]; exact (hTR _ _ u hx'.1 hx'.1).1
+      · rw [Saturation.norm_toReal]; exact (hTR _ _ u hz'.1 hz'.1).1
+      · rw [← map_sub, Saturation.norm_toReal, hXZ]
+        calc _ ≤ ε * √ε * Lq * ‖x u - w u‖ := (hTR _ _ u hx'.1 hz'.1).2
+          _ ≤ ε * √ε * Lq * (2 * ‖Wmap (alpha2 p δ₀) ν ε ρc (x u) u -
+              Wmap (alpha2 p δ₀) ν ε ρc (w u) u‖) :=
+              mul_le_mul_of_nonneg_left (hbil _ _ u) (by positivity)
+          _ = ε * √ε * (2 * Lq) * ‖Wmap (alpha2 p δ₀) ν ε ρc (x u) u -
+              Wmap (alpha2 p δ₀) ν ε ρc (w u) u‖ := by ring)
+    (fun s => by simpa using hzb s)
+    (τ := τ) (by
+      rw [hXZ]
+      calc _ ≤ 3 / 2 * ‖x τ - w τ‖ := hbil' _ _ τ
+        _ ≤ 3 / 2 * ρs := by gcongr
+        _ ≤ 3 / 2 * (2 / 3 * δa) := by gcongr; exact min_le_left _ _
+        _ = r₁ * p₁ / (2 * p₂) := by rw [hδa]; ring)
+  -- the clamped solution stays inside the clamp after `τ`
+  have hxw : ∀ s, τ ≤ s → ‖x s - w s‖ ≤
+      3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) * ‖x τ - w τ‖ := by
+    intro s hs
+    have h5 := hstab s hs
+    rw [hXZ, hXZ] at h5
+    have h6 := hbil (x s) (w s) s
+    have h7 := hbil' (x τ) (w τ) τ
+    have hE : 0 ≤ Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) := (Real.exp_pos _).le
+    calc ‖x s - w s‖ ≤ 2 * ‖Wmap (alpha2 p δ₀) ν ε ρc (x s) s -
+          Wmap (alpha2 p δ₀) ν ε ρc (w s) s‖ := h6
+      _ ≤ 2 * (K₀ * Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) *
+          ‖Wmap (alpha2 p δ₀) ν ε ρc (x τ) τ - Wmap (alpha2 p δ₀) ν ε ρc (w τ) τ‖) :=
+          mul_le_mul_of_nonneg_left h5 (by norm_num)
+      _ ≤ 2 * (K₀ * Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) * (3 / 2 * ‖x τ - w τ‖)) := by
+          gcongr
+      _ = 3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) * ‖x τ - w τ‖ := by ring
+  have hxin : ∀ s, τ ≤ s → ‖x s‖ < ρc := by
+    intro s hs
+    have h5 := hxw s hs
+    have hE : Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) ≤ 1 :=
+      Real.exp_le_one_iff.mpr (by
+        have : 0 ≤ 1 / (16 * p₂) * ε * (s - τ) := by
+          have := sub_nonneg.mpr hs; positivity
+        linarith)
+    have h6 : ‖x s - w s‖ ≤ 1 := by
+      calc ‖x s - w s‖ ≤ 3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (s - τ))) * ‖x τ - w τ‖ := h5
+        _ ≤ 3 * K₀ * 1 * ρs := by gcongr
+        _ ≤ 3 * K₀ * 1 * (1 / (3 * K₀)) := by gcongr; exact min_le_right _ _
+        _ = 1 := by field_simp
+    have h7 := hwC s
+    have h8 := norm_le_norm_add_norm_sub' (x s) wstar
+    have h9 : ‖x s - wstar‖ ≤ ‖x s - w s‖ + ‖w s - wstar‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+    rw [hρc]; linarith
+  -- the swing solution through `x` agrees with `(δ, δ̇)` after `τ`
+  have hsw := fun s (hs : τ ≤ s) => swing_of_clamped hp hν hε hb hd (hx s) (hxin s hs)
+  have hpos0 : δ₀ + pos ν (((√ε : ℝ) : ℂ) * x τ) τ = δ τ := by
+    rw [hxτ, hwδ]
+    simp only
+    rw [show ((√ε : ℝ) : ℂ) * (((√ε : ℝ) : ℂ)⁻¹ * vdp ν τ (δ τ - δ₀) (δ' τ)) =
+      vdp ν τ (δ τ - δ₀) (δ' τ) by field_simp, DuffingMathieu.pos_vdp]
+    ring
+  have hvel0 : vel ν (((√ε : ℝ) : ℂ) * x τ) τ = δ' τ := by
+    rw [hxτ, hwδ]
+    simp only
+    rw [show ((√ε : ℝ) : ℂ) * (((√ε : ℝ) : ℂ)⁻¹ * vdp ν τ (δ τ - δ₀) (δ' τ)) =
+      vdp ν τ (δ τ - δ₀) (δ' τ) by field_simp, DuffingMathieu.vel_vdp hν.ne']
+  have huniq := loaded_unique_Icc hp (T₁ := t) (fun s hs => (hsw s hs.1).1)
+    (fun s hs => (hsw s hs.1).2) (fun s _ => hδ s) (fun s _ => hδ' s) hpos0 hvel0 t
+    ⟨hτt, le_rfl⟩
+  have hwt : wδ t = x t := by
+    simp only [hwδ]
+    rw [← huniq.1, ← huniq.2, show δ₀ + pos ν (((√ε : ℝ) : ℂ) * x t) t - δ₀ =
+      pos ν (((√ε : ℝ) : ℂ) * x t) t by ring, vdp_pos_vel₂ hν.ne']
+    field_simp
+  have hwτ : wδ τ = x τ := hxτ.symm
+  rw [hdev t, hdev τ, hwt, hwτ]
+  have := hxw t hτt
+  calc √ε * ‖x t - w t‖ ≤ √ε * (3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (t - τ))) *
+      ‖x τ - w τ‖) := mul_le_mul_of_nonneg_left this hs0.le
+    _ = 3 * K₀ * Real.exp (-(1 / (16 * p₂) * ε * (t - τ))) * (√ε * ‖x τ - w τ‖) := by ring
 
 end powerlib.Synchronous.LoadedSubharmonicOrbit
