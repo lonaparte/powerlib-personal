@@ -51,6 +51,8 @@ import theorem.LTI.ExactSampling
 import theorem.Map.Basic
 import theorem.Map.Linearization
 import theorem.Map.LinearReading
+import theorem.Map.CenterManifold
+import theorem.Map.CenterReduction
 import theorem.LTI.Oscillator2
 import theorem.LTI.SecondOrderResonance
 import theorem.LTI.BoundedForcing
@@ -386,6 +388,7 @@ import theorem.Periodic.CriticalMultiplier
 import theorem.Periodic.UniformRoughness
 import theorem.Periodic.LyapunovNorm
 import theorem.Periodic.CombinationFrequencies
+import theorem.Periodic.FlipReduction
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative

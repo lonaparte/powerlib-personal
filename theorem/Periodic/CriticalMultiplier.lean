@@ -46,7 +46,10 @@ Scope.
   `T = 2π/ω` has the monodromy `−I` (multiplier `−1`, through
   `ParametricResonance.NormalForm.monodromy_nf`).
 * A genuinely nonconstant periodic orbit with a simple critical multiplier and a stable
-  complement is not treated (it needs the centre-manifold reduction).
+  complement is not treated here; for the multiplier `−1` it is reduced to the scalar flip map by
+  the centre manifold of the period map in `theorem/Periodic/FlipReduction.lean`
+  (`localAsymptoticStable_of_flipCoeff_pos`, `unstable_of_flipCoeff_neg`; the regularity of the
+  period map and `DP = monodromy` are hypotheses there).
 
 Source: the wave-4 question of this library (the boundary cases that the assumption levels L0–L3
 leave undecided: critical Floquet multipliers at the step L1 → L0); Kuznetsov, *Elements of
