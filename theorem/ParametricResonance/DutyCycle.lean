@@ -32,9 +32,12 @@ Scope.
   `ω = 2π/T`, its characteristic roots and `LinearSystems.IsHurwitz`. L3: the frozen matrices.
 * Both normalizations: arbitrary `ε`, `ε'` (the mean enters the L2 detuning) and the zero-mean
   case `δε = (1 − δ)ε'` (`averaged_centre_threshold`). The first-order agreement of L1 and L2 is
-  proved at the exact centre of the principal tongue for fixed `δ ∈ (0, 1)` in cone form; the
-  passage L2 → L1 in a distinguished scaling (the time change of `SquareWave.twoPiece` split at
-  `δT`) is not formalized here.
+  proved at the exact centre of the principal tongue for fixed `δ ∈ (0, 1)` in cone form, and
+  the L2 verdict is transferred to L1 for all small modulations in the distinguished scaling
+  (damping `μs`, levels `ω²/4 + μa_i`) through the time change of `SquareWave.twoPiece`
+  generalized to a switching instant at `δT` (`twoPieceDuty`).
+* The generic two-piece averaging theorems concern continuous bounded `G₁`, `G₂` on `[0, δT]` and
+  `[δT, T]` (`Periodic.transition`), `δ ∈ (0, 1)`, stated for `ε → 0⁺`.
 * Generic mathematics; no model family.
 
 Source: the mechanism of the Meissner equation (Meissner 1918; Richards, *Analysis of
@@ -73,6 +76,18 @@ Results.
 * `levels_agree_of_universal` — in the universal region the frozen matrices are Hurwitz, the
   monodromy is Schur stable for every period, and the L2 matrix is Hurwitz for
   `4ω₀√(1 − η) ≤ πω`.
+* `warp`, `reparamOn`, `reparamOnDeriv`, `twoPieceDuty`, `hasDerivAt_reparamOn`,
+  `continuous_reparamOn`, `continuous_reparamOnDeriv`, `reparamOn_left`, `reparamOn_right`,
+  `reparamOnDeriv_left`, `reparamOnDeriv_right`, `abs_reparamOnDeriv_le`,
+  `continuous_twoPieceDuty`, `norm_twoPieceDuty_le`, `integral_twoPieceDuty`,
+  `transition_twoPieceDuty` — the time change of each piece onto itself with zero speed at its
+  ends: a continuous field with the same average whose transition over `[0, T]` is
+  `Φ_{G₂}(T, δT) Φ_{G₁}(δT, 0)`; `twoPieceDuty_averaging` — first-order averaging across a
+  switching instant at `δT` (stability and instability).
+* `integral_pieces`, `dutyMonodromy_mul_scale` — the average of two frozen levels split at `δT`
+  is a 2:1 slow flow; `M D = −D Φ₂(T, δT) Φ₁(δT, 0)` in the rotating frame.
+* `averaging_transfer` — in the distinguished scaling the L2 verdict (Hurwitz, or an exponent with
+  positive real part) holds for the exact duty-`δ` monodromy for all small `μ > 0`.
 -/
 
 noncomputable section
@@ -838,5 +853,442 @@ The exact threshold on the jump `ε + ε'` is `2πξ/sin(πδ) (1 + o(1))`, the 
       _ < Real.pi * ξ * F₃ q := mul_lt_mul_of_pos_left b₃ (by positivity)
 
 end Cone
+
+/-! ## Averaging across a switching instant at `δT`: the L2 verdict predicts L1 -/
+
+section TwoPiece
+
+/-- The warp `φ(s) = s − sin(2πs)/(2π)` of `[0, 1]`: `φ(0) = 0`, `φ(1) = 1`, `φ' = 1 − cos(2πs)`
+vanishes at both ends. -/
+def warp (s : ℝ) : ℝ := s - Real.sin (2 * Real.pi * s) / (2 * Real.pi)
+
+/-- The time change of the piece `[a, a + L]`: `τ(t) = a + L φ((t − a)/L)`, with
+`τ(a) = a`, `τ(a + L) = a + L` and `τ'(a) = τ'(a + L) = 0`. -/
+def reparamOn (a L t : ℝ) : ℝ := a + L * warp ((t - a) / L)
+
+/-- `τ'(t) = 1 − cos(2π(t − a)/L)`. -/
+def reparamOnDeriv (a L t : ℝ) : ℝ := 1 - Real.cos (2 * Real.pi * ((t - a) / L))
+
+/-- The two-piece field with the switching instant at `δT`, run with the time changes of the two
+pieces: `τ₁'(t) G₁(τ₁(t))` on `[0, δT]`, `τ₂'(t) G₂(τ₂(t))` after; continuous because both
+`τ'` vanish at `δT`. For `δ = 1/2` this is the construction of `SquareWave.twoPiece`. -/
+def twoPieceDuty (G₁ G₂ : ℝ → Matrix (Fin 2) (Fin 2) ℝ) (δ T t : ℝ) :
+    Matrix (Fin 2) (Fin 2) ℝ :=
+  if t ≤ δ * T then reparamOnDeriv 0 (δ * T) t • G₁ (reparamOn 0 (δ * T) t)
+  else reparamOnDeriv (δ * T) ((1 - δ) * T) t • G₂ (reparamOn (δ * T) ((1 - δ) * T) t)
+
+section Reparam
+
+variable {a L : ℝ}
+
+@[tmio T, powerlib_foundation] theorem hasDerivAt_reparamOn (hL : 0 < L) (t : ℝ) :
+    HasDerivAt (reparamOn a L) (reparamOnDeriv a L t) t := by
+  have hπ := Real.pi_pos
+  have h1 : HasDerivAt (fun t => 2 * Real.pi * ((t - a) / L)) (2 * Real.pi / L) t := by
+    have := (((hasDerivAt_id t).sub_const a).div_const L).const_mul (2 * Real.pi)
+    convert this using 1
+    · funext s; simp
+    · ring
+  have h2 : HasDerivAt (fun t => (t - a) / L) (1 / L) t := by
+    simpa using ((hasDerivAt_id t).sub_const a).div_const L
+  have h3 := (h2.sub ((Real.hasDerivAt_sin _).comp t h1 |>.div_const (2 * Real.pi))).const_mul L
+  have h4 := h3.const_add a
+  convert h4 using 1
+  · funext s; simp [reparamOn, warp]
+  · simp only [reparamOnDeriv]; field_simp
+
+@[tmio T, powerlib_foundation] theorem continuous_reparamOn : Continuous (reparamOn a L) := by
+  unfold reparamOn warp; fun_prop
+
+@[tmio T, powerlib_foundation] theorem continuous_reparamOnDeriv :
+    Continuous (reparamOnDeriv a L) := by
+  unfold reparamOnDeriv; fun_prop
+
+@[tmio T, powerlib_foundation] theorem reparamOn_left : reparamOn a L a = a := by
+  simp [reparamOn, warp]
+
+@[tmio T, powerlib_foundation] theorem reparamOn_right (hL : 0 < L) :
+    reparamOn a L (a + L) = a + L := by
+  rw [reparamOn, warp, add_sub_cancel_left, div_self hL.ne']
+  simp
+
+@[tmio T, powerlib_foundation] theorem reparamOnDeriv_left : reparamOnDeriv a L a = 0 := by
+  simp [reparamOnDeriv]
+
+@[tmio T, powerlib_foundation] theorem reparamOnDeriv_right (hL : 0 < L) :
+    reparamOnDeriv a L (a + L) = 0 := by
+  rw [reparamOnDeriv, add_sub_cancel_left, div_self hL.ne']
+  simp
+
+@[tmio T, powerlib_foundation] theorem abs_reparamOnDeriv_le (t : ℝ) :
+    |reparamOnDeriv a L t| ≤ 2 := by
+  have := Real.neg_one_le_cos (2 * Real.pi * ((t - a) / L))
+  have := Real.cos_le_one (2 * Real.pi * ((t - a) / L))
+  unfold reparamOnDeriv
+  rw [abs_le]; constructor <;> linarith
+
+end Reparam
+
+variable {δ T : ℝ} {G₁ G₂ : ℝ → Matrix (Fin 2) (Fin 2) ℝ}
+
+@[tmio T, powerlib_foundation] private theorem pieces (hδ0 : 0 < δ) (hδ1 : δ < 1) (hT : 0 < T) :
+    0 < δ * T ∧ 0 < (1 - δ) * T ∧ δ * T + (1 - δ) * T = T ∧ (0 : ℝ) + δ * T = δ * T := by
+  refine ⟨by positivity, mul_pos (by linarith) hT, by ring, by ring⟩
+
+@[tmio T, powerlib_foundation] theorem continuous_twoPieceDuty (hδ0 : 0 < δ) (hδ1 : δ < 1)
+    (hT : 0 < T) (h₁ : Continuous G₁) (h₂ : Continuous G₂) :
+    Continuous (twoPieceDuty G₁ G₂ δ T) := by
+  obtain ⟨hp, hq, _, h0⟩ := pieces hδ0 hδ1 hT
+  refine Continuous.if_le (continuous_reparamOnDeriv.smul (h₁.comp continuous_reparamOn))
+    (continuous_reparamOnDeriv.smul (h₂.comp continuous_reparamOn)) continuous_id continuous_const
+    ?_
+  intro t ht
+  have ht' : t = δ * T := ht
+  have e1 : reparamOnDeriv 0 (δ * T) t = 0 := by
+    rw [ht']; have := reparamOnDeriv_right (a := 0) hp; rwa [h0] at this
+  have e2 : reparamOnDeriv (δ * T) ((1 - δ) * T) t = 0 := by rw [ht']; exact reparamOnDeriv_left
+  rw [e1, e2, zero_smul, zero_smul]
+
+@[tmio T, powerlib_foundation] theorem norm_twoPieceDuty_le {M : ℝ} (hM₁ : ∀ t, ‖G₁ t‖ ≤ M)
+    (hM₂ : ∀ t, ‖G₂ t‖ ≤ M) (t : ℝ) : ‖twoPieceDuty G₁ G₂ δ T t‖ ≤ 2 * M := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hM₁ 0)
+  unfold twoPieceDuty
+  split_ifs
+  · rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul (abs_reparamOnDeriv_le t) (hM₁ _) (norm_nonneg _) (by norm_num)
+  · rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul (abs_reparamOnDeriv_le t) (hM₂ _) (norm_nonneg _) (by norm_num)
+
+/-- `∫₀ᵀ F = ∫₀^{δT} G₁ + ∫_{δT}^T G₂`: the time changes keep the averages of both pieces. -/
+@[tmio T, powerlib_foundation] theorem integral_twoPieceDuty (hδ0 : 0 < δ) (hδ1 : δ < 1)
+    (hT : 0 < T) (h₁ : Continuous G₁) (h₂ : Continuous G₂) :
+    ∫ t in (0 : ℝ)..T, twoPieceDuty G₁ G₂ δ T t =
+      (∫ t in (0 : ℝ)..δ * T, G₁ t) + ∫ t in δ * T..T, G₂ t := by
+  obtain ⟨hp, hq, hs, h0⟩ := pieces hδ0 hδ1 hT
+  have hc := continuous_twoPieceDuty hδ0 hδ1 hT h₁ h₂
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := δ * T) (hc.intervalIntegrable _ _)
+    (hc.intervalIntegrable _ _)]
+  have e1 : ∫ t in (0 : ℝ)..δ * T, twoPieceDuty G₁ G₂ δ T t =
+      ∫ t in (0 : ℝ)..δ * T, reparamOnDeriv 0 (δ * T) t • (G₁ ∘ reparamOn 0 (δ * T)) t := by
+    refine intervalIntegral.integral_congr fun t ht => ?_
+    rw [uIcc_of_le hp.le] at ht
+    simp only [twoPieceDuty, ht.2, ↓reduceIte, Function.comp]
+  have e2 : ∫ t in δ * T..T, twoPieceDuty G₁ G₂ δ T t =
+      ∫ t in δ * T..T, reparamOnDeriv (δ * T) ((1 - δ) * T) t •
+        (G₂ ∘ reparamOn (δ * T) ((1 - δ) * T)) t := by
+    refine intervalIntegral.integral_congr fun t ht => ?_
+    rw [uIcc_of_le (by linarith)] at ht
+    rcases ht.1.eq_or_lt with h | h
+    · subst h
+      have e : reparamOnDeriv 0 (δ * T) (δ * T) = 0 := by
+        have := reparamOnDeriv_right (a := 0) hp; rwa [h0] at this
+      simp only [twoPieceDuty, le_refl, ↓reduceIte, e, reparamOnDeriv_left, zero_smul]
+    · simp only [twoPieceDuty, not_le.mpr h, ↓reduceIte, Function.comp]
+  rw [e1, e2, intervalIntegral.integral_deriv_smul_comp (fun t _ => hasDerivAt_reparamOn hp t)
+      continuous_reparamOnDeriv.continuousOn h₁,
+    intervalIntegral.integral_deriv_smul_comp (fun t _ => hasDerivAt_reparamOn hq t)
+      continuous_reparamOnDeriv.continuousOn h₂, reparamOn_left, reparamOn_left]
+  have r1 : reparamOn 0 (δ * T) (δ * T) = δ * T := by
+    have := reparamOn_right (a := 0) hp; rwa [h0] at this
+  have r2 : reparamOn (δ * T) ((1 - δ) * T) T = T := by
+    have := reparamOn_right (a := δ * T) hq; rwa [hs] at this
+  rw [r1, r2]
+
+/-- **The time changes realize the switched transition at `δT`.** For continuous bounded `G₁`,
+`G₂` and `δ ∈ (0, 1)`: the transition matrix of the continuous field `twoPieceDuty G₁ G₂ δ T`
+over `[0, T]` is `Φ_{G₂}(T, δT) Φ_{G₁}(δT, 0)`. -/
+@[tmio T, powerlib_foundation] theorem transition_twoPieceDuty (hδ0 : 0 < δ) (hδ1 : δ < 1)
+    (hT : 0 < T) {M : ℝ} (h₁ : Continuous G₁) (h₂ : Continuous G₂) (hM₁ : ∀ t, ‖G₁ t‖ ≤ M)
+    (hM₂ : ∀ t, ‖G₂ t‖ ≤ M) :
+    Periodic.transition (twoPieceDuty G₁ G₂ δ T) T 0 =
+      Periodic.transition G₂ T (δ * T) * Periodic.transition G₁ (δ * T) 0 := by
+  obtain ⟨hp, hq, hs, h0⟩ := pieces hδ0 hδ1 hT
+  set a := δ * T with ha
+  set C := Periodic.transition G₁ a 0
+  set Y₁ : ℝ → Matrix (Fin 2) (Fin 2) ℝ := fun t => Periodic.transition G₁ (reparamOn 0 a t) 0
+  set Y₂ : ℝ → Matrix (Fin 2) (Fin 2) ℝ := fun t => Periodic.transition G₂ (reparamOn a ((1 - δ) * T) t) a * C
+  set Y : ℝ → Matrix (Fin 2) (Fin 2) ℝ := fun t => if t ≤ a then Y₁ t else Y₂ t
+  have r1 : reparamOn 0 a a = a := by have := reparamOn_right (a := 0) hp; rwa [h0] at this
+  have r2 : reparamOn a ((1 - δ) * T) a = a := reparamOn_left
+  have d1z : reparamOnDeriv 0 a a = 0 := by
+    have := reparamOnDeriv_right (a := 0) hp; rwa [h0] at this
+  have d2z : reparamOnDeriv a ((1 - δ) * T) a = 0 := reparamOnDeriv_left
+  have d₁ : ∀ t, HasDerivAt Y₁ (reparamOnDeriv 0 a t • (G₁ (reparamOn 0 a t) * Y₁ t)) t := fun t =>
+    (Dynamics.stm_hasDerivAt h₁ (reparamOn 0 a t) 0).scomp t (hasDerivAt_reparamOn hp t)
+  have d₂ : ∀ t, HasDerivAt Y₂ (reparamOnDeriv a ((1 - δ) * T) t • (G₂ (reparamOn a ((1 - δ) * T) t) * Y₂ t)) t :=
+    fun t => by
+      have h := ((Dynamics.stm_hasDerivAt h₂ (reparamOn a ((1 - δ) * T) t) a).scomp t
+        (hasDerivAt_reparamOn hq t)).mul_const C
+      have e : (reparamOnDeriv a ((1 - δ) * T) t • (G₂ (reparamOn a ((1 - δ) * T) t) *
+          LinearSystems.stateTransitionMatrix G₂ (reparamOn a ((1 - δ) * T) t) a)) * C =
+          reparamOnDeriv a ((1 - δ) * T) t • (G₂ (reparamOn a ((1 - δ) * T) t) * Y₂ t) := by
+        simp only [Y₂, smul_mul_assoc, Matrix.mul_assoc]
+      exact h.congr_deriv e
+  have hjoin : Y₁ a = Y₂ a := by
+    simp only [Y₁, Y₂, C, r1, r2, LinearSystems.stateTransitionMatrix_self, Matrix.one_mul]
+  have hd : ∀ t, HasDerivAt Y (twoPieceDuty G₁ G₂ δ T t * Y t) t := by
+    intro t
+    rcases lt_trichotomy t a with h | h | h
+    · have hev : Y =ᶠ[𝓝 t] Y₁ := by
+        filter_upwards [Iio_mem_nhds h] with u hu
+        simp only [Y, (mem_Iio.mp hu).le, ↓reduceIte]
+      have e : twoPieceDuty G₁ G₂ δ T t * Y t =
+          reparamOnDeriv 0 a t • (G₁ (reparamOn 0 a t) * Y₁ t) := by
+        simp only [twoPieceDuty, Y, ← ha, h.le, ↓reduceIte, smul_mul_assoc]
+      rw [e]
+      exact (d₁ t).congr_of_eventuallyEq hev
+    · subst h
+      have hz : twoPieceDuty G₁ G₂ δ T a * Y a = 0 := by
+        simp only [twoPieceDuty, ← ha, le_refl, ↓reduceIte, d1z, zero_smul, Matrix.zero_mul]
+      rw [hz]
+      have hl : HasDerivWithinAt Y 0 (Iic a) a := by
+        have h := (d₁ a).hasDerivWithinAt (s := Iic a)
+        rw [d1z, zero_smul] at h
+        exact h.congr (fun u hu => by simp only [Y, mem_Iic.mp hu, ↓reduceIte])
+          (by simp only [Y, le_refl, ↓reduceIte])
+      have hr : HasDerivWithinAt Y 0 (Ici a) a := by
+        have h := (d₂ a).hasDerivWithinAt (s := Ici a)
+        rw [d2z, zero_smul] at h
+        refine h.congr (fun u hu => ?_) (by simp only [Y, le_refl, ↓reduceIte, hjoin])
+        rcases (mem_Ici.mp hu).eq_or_lt with h' | h'
+        · subst h'; simp only [Y, le_refl, ↓reduceIte, hjoin]
+        · simp only [Y, not_le.mpr h', ↓reduceIte]
+      have := hl.union hr
+      rwa [Iic_union_Ici, hasDerivWithinAt_univ] at this
+    · have hev : Y =ᶠ[𝓝 t] Y₂ := by
+        filter_upwards [Ioi_mem_nhds h] with u hu
+        simp only [Y, not_le.mpr (mem_Ioi.mp hu), ↓reduceIte]
+      have e : twoPieceDuty G₁ G₂ δ T t * Y t =
+          reparamOnDeriv a ((1 - δ) * T) t • (G₂ (reparamOn a ((1 - δ) * T) t) * Y₂ t) := by
+        simp only [twoPieceDuty, Y, ← ha, not_le.mpr h, ↓reduceIte, smul_mul_assoc]
+      rw [e]
+      exact (d₂ t).congr_of_eventuallyEq hev
+  have hF := continuous_twoPieceDuty hδ0 hδ1 hT h₁ h₂
+  have hY : IsIntegralCurveOn Y (Periodic.matField (twoPieceDuty G₁ G₂ δ T)) (Ici 0) :=
+    fun t _ => (hd t).hasDerivWithinAt
+  have h := Periodic.transition_unique hF (norm_twoPieceDuty_le hM₁ hM₂) hY T hT.le
+  have hY0 : Y 0 = 1 := by
+    simp only [Y, Y₁, hp.le, ↓reduceIte, reparamOn_left,
+      LinearSystems.stateTransitionMatrix_self]
+  have hYT : Y T = Periodic.transition G₂ T a * C := by
+    have r3 : reparamOn a ((1 - δ) * T) T = T := by
+      have := reparamOn_right (a := a) hq; rwa [hs] at this
+    simp only [Y, Y₂, not_le.mpr (by linarith : a < T), ↓reduceIte, r3]
+  rw [hY0, Matrix.mul_one, hYT] at h
+  exact h.symm
+
+@[tmio T, powerlib_foundation] private theorem twoPieceDuty_smul (μ : ℝ) :
+    (fun t => μ • twoPieceDuty G₁ G₂ δ T t) =
+      twoPieceDuty (fun t => μ • G₁ t) (fun t => μ • G₂ t) δ T := by
+  funext t
+  simp only [twoPieceDuty]
+  split_ifs <;> rw [smul_comm]
+
+/-- **First-order averaging across a switching instant at `δT`.** For continuous bounded `G₁`,
+`G₂`, `δ ∈ (0, 1)`, `T > 0` and `Ḡ = (1/T)(∫₀^{δT} G₁ + ∫_{δT}^T G₂)`: if `tr Ḡ < 0 < det Ḡ`
+the switched period map `Φ_{εG₂}(T, δT) Φ_{εG₁}(δT, 0)` is Schur stable for all small `ε > 0`; if
+`tr Ḡ > 0` or `det Ḡ < 0` it has a multiplier outside the unit circle for all small `ε > 0`
+(`Averaging.averaging_schurStable`, `Averaging.averaging_floquetUnstable` applied to the
+continuous field `twoPieceDuty`). -/
+@[tmio T, powerlib_foundation] theorem twoPieceDuty_averaging (hδ0 : 0 < δ) (hδ1 : δ < 1)
+    (hT : 0 < T) {M : ℝ} (h₁ : Continuous G₁) (h₂ : Continuous G₂) (hM₁ : ∀ t, ‖G₁ t‖ ≤ M)
+    (hM₂ : ∀ t, ‖G₂ t‖ ≤ M) {Gbar : Matrix (Fin 2) (Fin 2) ℝ}
+    (havg : (∫ t in (0 : ℝ)..δ * T, G₁ t) + ∫ t in δ * T..T, G₂ t = T • Gbar) :
+    (Gbar.trace < 0 → 0 < Gbar.det → ∀ᶠ ε in 𝓝[>] (0 : ℝ), LTI.SchurStable
+      (Periodic.transition (fun t => ε • G₂ t) T (δ * T) *
+        Periodic.transition (fun t => ε • G₁ t) (δ * T) 0)) ∧
+    (0 < Gbar.trace ∨ Gbar.det < 0 → ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ ρ ∈ spectrum ℂ
+      ((Periodic.transition (fun t => ε • G₂ t) T (δ * T) *
+        Periodic.transition (fun t => ε • G₁ t) (δ * T) 0).map (algebraMap ℝ ℂ)), 1 < ‖ρ‖) := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM₁ 0)
+  have hav := (integral_twoPieceDuty hδ0 hδ1 hT h₁ h₂).trans havg
+  have hε₁ : ∀ ε : ℝ, ∀ t, ‖ε • G₁ t‖ ≤ |ε| * M := fun ε t => by
+    rw [norm_smul, Real.norm_eq_abs]; exact mul_le_mul_of_nonneg_left (hM₁ t) (abs_nonneg ε)
+  have hε₂ : ∀ ε : ℝ, ∀ t, ‖ε • G₂ t‖ ≤ |ε| * M := fun ε t => by
+    rw [norm_smul, Real.norm_eq_abs]; exact mul_le_mul_of_nonneg_left (hM₂ t) (abs_nonneg ε)
+  refine ⟨fun htr hdet => ?_, fun h => ?_⟩
+  · have hb := Averaging.averaging_schurStable (continuous_twoPieceDuty hδ0 hδ1 hT h₁ h₂)
+      (norm_twoPieceDuty_le hM₁ hM₂) (by positivity) hT hav htr hdet
+    filter_upwards [hb] with ε hε'
+    rw [Periodic.monodromy, zero_add, twoPieceDuty_smul] at hε'
+    have e := transition_twoPieceDuty hδ0 hδ1 hT (h₁.const_smul ε) (h₂.const_smul ε)
+      (hε₁ ε) (hε₂ ε)
+    exact e ▸ hε'
+  · have hb := Averaging.averaging_floquetUnstable (continuous_twoPieceDuty hδ0 hδ1 hT h₁ h₂)
+      (norm_twoPieceDuty_le hM₁ hM₂) (by positivity) hT hav h
+    filter_upwards [hb] with ε hε'
+    unfold Periodic.FloquetUnstable at hε'
+    rw [Periodic.monodromy, zero_add, twoPieceDuty_smul] at hε'
+    have e := transition_twoPieceDuty hδ0 hδ1 hT (h₁.const_smul ε) (h₂.const_smul ε)
+      (hε₁ ε) (hε₂ ε)
+    exact e ▸ hε'
+
+end TwoPiece
+
+/-! ## The duty-`δ` oscillator: the L2 verdict predicts L1 for small modulation -/
+
+section Transfer
+
+open SquareWave (frameField frame scale scaleInv)
+open powerlib.ParametricResonance.NormalForm (quarter)
+open powerlib.ParametricResonance.TwoToOne (refl1 refl2)
+
+@[tmio T, powerlib_foundation] private theorem integral_trig_duty {ω T δ : ℝ} (hω : 0 < ω)
+    (hT : T = 2 * Real.pi / ω) :
+    (∫ t in (0 : ℝ)..δ * T, Real.cos (ω * t)) = Real.sin (2 * Real.pi * δ) / ω ∧
+    (∫ t in (0 : ℝ)..δ * T, Real.sin (ω * t)) = (1 - Real.cos (2 * Real.pi * δ)) / ω ∧
+    (∫ t in δ * T..T, Real.cos (ω * t)) = -(Real.sin (2 * Real.pi * δ) / ω) ∧
+    (∫ t in δ * T..T, Real.sin (ω * t)) = -((1 - Real.cos (2 * Real.pi * δ)) / ω) := by
+  have e1 : ω * (δ * T) = 2 * Real.pi * δ := by rw [hT]; field_simp
+  have e2 : ω * T = 2 * Real.pi := by rw [hT]; field_simp
+  have hc := fun a b => intervalIntegral.integral_comp_mul_left (a := a) (b := b)
+    (fun x => Real.cos x) hω.ne'
+  have hs := fun a b => intervalIntegral.integral_comp_mul_left (a := a) (b := b)
+    (fun x => Real.sin x) hω.ne'
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [hc, integral_cos, mul_zero, e1]; simp [div_eq_inv_mul]
+  · rw [hs, integral_sin, mul_zero, e1]; simp [div_eq_inv_mul]
+  · rw [hc, integral_cos, e1, e2]; simp [div_eq_inv_mul]
+  · rw [hs, integral_sin, e1, e2]; simp [div_eq_inv_mul]; ring
+
+/-- **The average of two frozen levels split at `δT`.** For `T = 2π/ω`:
+`∫₀^{δT} G_{k₁} + ∫_{δT}^T G_{k₂} = T · slowFlowMatrix c Δ g`, `Δ = (ω²/4 − (δk₁ + (1 − δ)k₂))/ω`,
+`g = (k₁ − k₂)((1 − cos 2πδ) + j sin 2πδ)/(2πω)`; at `δ = 1/2` this is
+`SquareWave.integral_halves`. -/
+@[tmio T, powerlib_foundation] theorem integral_pieces (c k₁ k₂ : ℝ) {ω T δ : ℝ} (hω : 0 < ω)
+    (hT : T = 2 * Real.pi / ω) :
+    (∫ t in (0 : ℝ)..δ * T, frameField c ω (fun _ => k₁) t) +
+        ∫ t in δ * T..T, frameField c ω (fun _ => k₂) t =
+      T • slowFlowMatrix c ((ω ^ 2 / 4 - (δ * k₁ + (1 - δ) * k₂)) / ω)
+        ⟨(k₁ - k₂) * (1 - Real.cos (2 * Real.pi * δ)) / (2 * Real.pi * ω),
+          (k₁ - k₂) * Real.sin (2 * Real.pi * δ) / (2 * Real.pi * ω)⟩ := by
+  obtain ⟨c1, s1, c2, s2⟩ := integral_trig_duty (δ := δ) hω hT
+  rw [SquareWave.integral_frameField_const, SquareWave.integral_frameField_const, c1, s1, c2, s2]
+  have hπ := Real.pi_pos
+  subst hT
+  ext i j; fin_cases i <;> fin_cases j <;>
+    simp [slowFlowMatrix, quarter, refl1, refl2] <;> field_simp <;> ring
+
+/-- **The duty-`δ` monodromy in the rotating frame.** For `ω > 0`, `T = 2π/ω`, `δ ∈ [0, 1]`:
+`M D = −D Φ₂(T, δT) Φ₁(δT, 0)`, `D = scale ω`, `Φ_i` the transition matrices of the rotating-frame
+fields of the two levels (`SquareWave.exp_mul_frame`). -/
+@[tmio T, powerlib_foundation] theorem dutyMonodromy_mul_scale (c k₁ k₂ : ℝ) {ω T δ : ℝ}
+    (hω : 0 < ω) (hT : T = 2 * Real.pi / ω) (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) :
+    dutyMonodromy c k₁ k₂ δ T * scale ω =
+      -(scale ω * (Periodic.transition (frameField c ω (fun _ => k₂)) T (δ * T) *
+        Periodic.transition (frameField c ω (fun _ => k₁)) (δ * T) 0)) := by
+  have hT0 : 0 < T := by rw [hT]; positivity
+  have hf0 : frame ω 0 = scale ω := by simp [frame, NormalForm.rot]
+  have hfT : frame ω T = -scale ω := by
+    have : ω * T / 2 = Real.pi := by rw [hT]; field_simp
+    simp [frame, NormalForm.rot, this]
+  have e1 := SquareWave.exp_mul_frame (c := c) hω.ne' k₁ (a := 0) (t := δ * T) (by positivity)
+  have e2 := SquareWave.exp_mul_frame (c := c) hω.ne' k₂ (a := δ * T) (t := T) (by nlinarith)
+  rw [sub_zero] at e1
+  rw [show T - δ * T = (1 - δ) * T by ring] at e2
+  rw [dutyMonodromy_eq_exp]
+  conv_lhs => rw [← hf0, Matrix.mul_assoc, e1, ← Matrix.mul_assoc, e2, hfT]
+  rw [Matrix.mul_assoc, Matrix.neg_mul]
+
+@[tmio T, powerlib_foundation] private theorem frameField_scaled (μ s a ω : ℝ) (hω : 0 < ω) :
+    frameField (μ * s) ω (fun _ => ω ^ 2 / 4 + μ * a) =
+      fun t => μ • frameField s ω (fun _ => ω ^ 2 / 4 + a) t := by
+  have hres : SquareWave.residual (μ * s) (ω ^ 2 / 4 + μ * a) ω =
+      μ • SquareWave.residual s (ω ^ 2 / 4 + a) ω := by
+    ext i j; fin_cases i <;> fin_cases j <;> simp [SquareWave.residual]
+    all_goals (try field_simp)
+    all_goals ring
+  funext t
+  rw [frameField, frameField, hres, Matrix.mul_smul, Matrix.smul_mul]
+
+@[tmio T, powerlib_foundation] private theorem bound_pieces (ω s k₁ k₂ : ℝ) :
+    ∃ M, (∀ t, ‖frameField s ω (fun _ => k₁) t‖ ≤ M) ∧
+      ∀ t, ‖frameField s ω (fun _ => k₂) t‖ ≤ M := by
+  set R := ‖(1 : Matrix (Fin 2) (Fin 2) ℝ)‖ + ‖quarter‖
+  refine ⟨R * max ‖SquareWave.residual s k₁ ω‖ ‖SquareWave.residual s k₂ ω‖ * R,
+    fun t => ?_, fun t => ?_⟩
+  · refine (SquareWave.norm_frameField_const_le s ω k₁ t).trans ?_
+    gcongr; exact le_max_left _ _
+  · refine (SquareWave.norm_frameField_const_le s ω k₂ t).trans ?_
+    gcongr; exact le_max_right _ _
+
+/-- **The L2 verdict predicts L1 for the duty-`δ` square wave.** Pump frequency `ω > 0`,
+period `T = 2π/ω`, duty `δ ∈ (0, 1)`, and the distinguished scaling: damping `c = μs` and both
+stiffness levels within `O(μ)` of the 2:1 resonance, `k_i = ω²/4 + μ a_i`. The averaged model is
+`μ · slowFlowMatrix s Δ g`, `Δ = −(δa₁ + (1 − δ)a₂)/ω`,
+`|g| = |a₁ − a₂| |sin(πδ)|/(πω)` (`integral_pieces`). If it is Hurwitz
+(`s > 0`, `(a₁ − a₂)² sin²(πδ) < π²(s²ω² + (δa₁ + (1 − δ)a₂)²)`), the exact monodromy is Schur
+stable for all small `μ > 0`; if it has an exponent with positive real part (`s < 0`, or the
+reverse strict inequality), the exact system has a multiplier outside the unit circle for all
+small `μ > 0`, although the stiffness jumps at `δT` (time change `twoPieceDuty`). -/
+@[tmio T, powerlib_foundation] theorem averaging_transfer {ω s a₁ a₂ δ : ℝ} (hω : 0 < ω)
+    (hδ0 : 0 < δ) (hδ1 : δ < 1) :
+    (0 < s → (a₁ - a₂) ^ 2 * Real.sin (Real.pi * δ) ^ 2 <
+        Real.pi ^ 2 * (s ^ 2 * ω ^ 2 + (δ * a₁ + (1 - δ) * a₂) ^ 2) →
+      ∀ᶠ μ in 𝓝[>] (0 : ℝ), LTI.SchurStable (dutyMonodromy (μ * s) (ω ^ 2 / 4 + μ * a₁)
+        (ω ^ 2 / 4 + μ * a₂) δ (2 * Real.pi / ω))) ∧
+    (s < 0 ∨ Real.pi ^ 2 * (s ^ 2 * ω ^ 2 + (δ * a₁ + (1 - δ) * a₂) ^ 2) <
+        (a₁ - a₂) ^ 2 * Real.sin (Real.pi * δ) ^ 2 →
+      ∀ᶠ μ in 𝓝[>] (0 : ℝ), ∃ ρ ∈ spectrum ℂ ((dutyMonodromy (μ * s) (ω ^ 2 / 4 + μ * a₁)
+        (ω ^ 2 / 4 + μ * a₂) δ (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)), 1 < ‖ρ‖) := by
+  have hπ := Real.pi_pos
+  set T := 2 * Real.pi / ω with hTdef
+  have hT : 0 < T := by positivity
+  obtain ⟨M, hM₁, hM₂⟩ := bound_pieces ω s (ω ^ 2 / 4 + a₁) (ω ^ 2 / 4 + a₂)
+  have havg := integral_pieces s (ω ^ 2 / 4 + a₁) (ω ^ 2 / 4 + a₂) (δ := δ) hω hTdef
+  set g : ℂ := ⟨(ω ^ 2 / 4 + a₁ - (ω ^ 2 / 4 + a₂)) * (1 - Real.cos (2 * Real.pi * δ)) /
+      (2 * Real.pi * ω), (ω ^ 2 / 4 + a₁ - (ω ^ 2 / 4 + a₂)) * Real.sin (2 * Real.pi * δ) /
+      (2 * Real.pi * ω)⟩ with hg
+  set Δ := (ω ^ 2 / 4 - (δ * (ω ^ 2 / 4 + a₁) + (1 - δ) * (ω ^ 2 / 4 + a₂))) / ω with hΔ
+  obtain ⟨hS, hU⟩ := twoPieceDuty_averaging hδ0 hδ1 hT (SquareWave.continuous_frameField_const _ _ _)
+    (SquareWave.continuous_frameField_const _ _ _) hM₁ hM₂ havg
+  have hg2 : ‖g‖ ^ 2 = (a₁ - a₂) ^ 2 * Real.sin (Real.pi * δ) ^ 2 / (Real.pi ^ 2 * ω ^ 2) := by
+    have hsc := Real.sin_sq_add_cos_sq (2 * Real.pi * δ)
+    have hc : Real.cos (2 * Real.pi * δ) = 1 - 2 * Real.sin (Real.pi * δ) ^ 2 := by
+      rw [show 2 * Real.pi * δ = 2 * (Real.pi * δ) by ring, Real.cos_two_mul, Real.cos_sq']
+      ring
+    have h1 : (1 - Real.cos (2 * Real.pi * δ)) ^ 2 + Real.sin (2 * Real.pi * δ) ^ 2 =
+        4 * Real.sin (Real.pi * δ) ^ 2 := by linear_combination hsc - 2 * hc
+    rw [hg, Complex.sq_norm, Complex.normSq_mk]
+    have e : (ω ^ 2 / 4 + a₁ - (ω ^ 2 / 4 + a₂)) * (1 - Real.cos (2 * Real.pi * δ)) /
+          (2 * Real.pi * ω) * ((ω ^ 2 / 4 + a₁ - (ω ^ 2 / 4 + a₂)) *
+          (1 - Real.cos (2 * Real.pi * δ)) / (2 * Real.pi * ω)) +
+        (ω ^ 2 / 4 + a₁ - (ω ^ 2 / 4 + a₂)) * Real.sin (2 * Real.pi * δ) / (2 * Real.pi * ω) *
+          ((ω ^ 2 / 4 + a₁ - (ω ^ 2 / 4 + a₂)) * Real.sin (2 * Real.pi * δ) /
+          (2 * Real.pi * ω)) = ((a₁ - a₂) / (2 * Real.pi * ω)) ^ 2 *
+        ((1 - Real.cos (2 * Real.pi * δ)) ^ 2 + Real.sin (2 * Real.pi * δ) ^ 2) := by ring
+    rw [e, h1]
+    field_simp
+    ring
+  have hΔ2 : Δ ^ 2 = (δ * a₁ + (1 - δ) * a₂) ^ 2 / ω ^ 2 := by
+    rw [hΔ]; field_simp; ring
+  have hdet : (slowFlowMatrix s Δ g).det = (Real.pi ^ 2 * (s ^ 2 * ω ^ 2 +
+      (δ * a₁ + (1 - δ) * a₂) ^ 2) - (a₁ - a₂) ^ 2 * Real.sin (Real.pi * δ) ^ 2) /
+      (Real.pi ^ 2 * ω ^ 2) := by
+    rw [det_slowFlowMatrix, hg2, hΔ2]; field_simp
+  -- transfer through the rotating frame
+  have transfer : ∀ μ : ℝ,
+      dutyMonodromy (μ * s) (ω ^ 2 / 4 + μ * a₁) (ω ^ 2 / 4 + μ * a₂) δ T * scale ω =
+        -(scale ω * (Periodic.transition (fun t => μ • frameField s ω (fun _ => ω ^ 2 / 4 + a₂) t)
+          T (δ * T) * Periodic.transition (fun t => μ • frameField s ω
+            (fun _ => ω ^ 2 / 4 + a₁) t) (δ * T) 0)) := fun μ => by
+    rw [dutyMonodromy_mul_scale _ _ _ hω hTdef hδ0.le hδ1.le, frameField_scaled μ s a₁ ω hω,
+      frameField_scaled μ s a₂ ω hω]
+  refine ⟨fun hs h => ?_, fun h => ?_⟩
+  · have hb := hS (by rw [trace_slowFlowMatrix]; linarith)
+      (by rw [hdet]; exact div_pos (by linarith) (by positivity))
+    filter_upwards [hb] with μ hμ
+    exact ((SquareWave.schurStable_iff_of_mul_eq_neg (SquareWave.scaleInv_mul_scale hω.ne')
+      (SquareWave.scale_mul_scaleInv hω.ne') (transfer μ)).1).mpr hμ
+  · have hb := hU (by
+      rw [trace_slowFlowMatrix, hdet]
+      rcases h with h | h
+      · left; linarith
+      · right; exact div_neg_of_neg_of_pos (by linarith) (by positivity))
+    filter_upwards [hb] with μ hμ
+    exact (SquareWave.schurStable_iff_of_mul_eq_neg (SquareWave.scaleInv_mul_scale hω.ne')
+      (SquareWave.scale_mul_scaleInv hω.ne') (transfer μ)).2 hμ
+
+end Transfer
 
 end powerlib.ParametricResonance.DutyCycle
