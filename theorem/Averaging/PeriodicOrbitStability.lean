@@ -31,7 +31,8 @@ Scope.
   depend only on `T, ℓ, M, ℓ_r, M_r, ρ, L₂` and `J` — not on `ε`, not on the remainder `r`.
   Explicit constants from a given Lyapunov or Chetaev certificate (stability and instability):
   `theorem/Averaging/PeriodicOrbitConstants.lean` (`exp_stable_of_lyapunov`,
-  `unstable_of_chetaev`).
+  `unstable_of_chetaev`); for the validity on `[0, ∞)` (`κ₁`):
+  `theorem/Averaging/ValidForeverConstants.lean` (`averaging_valid_forever_of_lyapunov`).
 * Generic mathematics, no model family.
 
 Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*

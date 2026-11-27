@@ -27,7 +27,9 @@ Scope.
   jointly continuous.
 * The transformed equation is stated for a differentiable curve `y` whose transform
   `x = y + ε u(y, t)` solves `ẋ = ε f(x, t)`; the remainder is bounded, its Lipschitz constant in
-  `y` is not derived here.
+  `y` is not derived here. The transformed curve of every solution, its derivative, the
+  remainder field and its Lipschitz constant are `theorem/Averaging/NearIdentityInverse.lean`
+  (`transformed_solution`, `hasDerivAt_transformed_solution`, `norm_nearIdRemainder_sub_le`).
 * Generic mathematics, no model family.
 
 Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*

@@ -31,6 +31,8 @@ import theorem.Averaging.PeriodicOrbitStability
 import theorem.Averaging.PerturbedPeriodicOrbits
 import theorem.Averaging.PeriodicOrbitConstants
 import theorem.Averaging.NearIdentity
+import theorem.Averaging.ValidForeverConstants
+import theorem.Averaging.NearIdentityInverse
 import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
