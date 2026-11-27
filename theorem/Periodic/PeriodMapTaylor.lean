@@ -210,7 +210,8 @@ variable {Q₂ : ℝ → (X → ℝ) →L[ℝ] (X → ℝ) →L[ℝ] X → ℝ}
 
 @[tmio T, powerlib_foundation] theorem continuous_transition_mulVec (hA : Continuous A) (s : ℝ)
     (v : X → ℝ) : Continuous fun r => transition A r s *ᵥ v :=
-  continuous_iff_continuousAt.2 fun r => (FlowDerivative.hasDerivAt_transition_mulVec hA s v r).continuousAt
+  continuous_iff_continuousAt.2 fun r =>
+    (FlowDerivative.hasDerivAt_transition_mulVec hA s v r).continuousAt
 
 /-- The source of the second variational equation, `Q₂(r)(Φ(r, s) e, Φ(r, s) f)`. -/
 def secondSource (A : ℝ → Matrix X X ℝ) (Q₂ : ℝ → (X → ℝ) →L[ℝ] (X → ℝ) →L[ℝ] X → ℝ) (s : ℝ)
@@ -289,8 +290,8 @@ def thirdSource (A : ℝ → Matrix X X ℝ) (Q₂ : ℝ → (X → ℝ) →L[�
     ((hQ₂.clm_apply (hP _ _)).clm_apply (hΦ (m 2)))).add h3
 
 omit [DecidableEq X] in
-@[tmio T, powerlib_foundation] private theorem mulVec_update (M : Matrix X X ℝ) (m : Fin 3 → X → ℝ) (i : Fin 3)
-    (z : X → ℝ) :
+@[tmio T, powerlib_foundation] private theorem mulVec_update (M : Matrix X X ℝ)
+    (m : Fin 3 → X → ℝ) (i : Fin 3) (z : X → ℝ) :
     (fun l => M *ᵥ update m i z l) = update (fun l => M *ᵥ m l) i (M *ᵥ z) := by
   funext l
   by_cases h : l = i

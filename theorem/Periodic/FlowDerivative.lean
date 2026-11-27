@@ -22,8 +22,9 @@ Scope.
 * `ẋ = G(t, x)` on `ℝ^X` (`X → ℝ`, finite `X`, sup norm, operator `L∞` norm on matrices, as in
   `theorem/Periodic/Transition.lean`), continuous time, forward solutions on segments `[s, t]`
   (Mathlib `IsIntegralCurveOn`). `G(t, ·)` is differentiable with `D_xG` (`fderiv ℝ (G t)`) jointly
-  continuous in `(t, x)` and `G(t, ·)` is `K`-Lipschitz uniformly in `t` (global form; a local
-  field is reduced to it by a cut-off, e.g. `Periodic.clampField`, before the theorems apply).
+  continuous in `(t, x)` and `G(t, ·)` is `K`-Lipschitz uniformly in `t` (global form; a field
+  that is only locally Lipschitz is first multiplied by a smooth cut-off equal to `1` near the
+  trajectory, which is not done here).
 * The derivative is stated for any continuous matrix function `A` that equals `D_xG` along the
   reference solution on `[s, t]` (`A r *ᵥ v = D_xG(r, x₀ r) v`); along a continuous curve the
   canonical choice is `jacobianAlong G x`, which for an autonomous field is the
@@ -48,6 +49,7 @@ Results.
   `‖w(r)‖ ≤ (δ + ε (t − s)) e^{K(t − s)}` on `[s, t]`.
 * `jacobianAlong`, `jacobianAlong_mulVec`, `jacobianAlong_const`, `continuous_jacobianAlong` —
   the matrix `A(t) = D_xG(t, x(t))`.
+* `hasDerivAt_transition_mulVec` — `t ↦ Φ(t, s) v` solves `ẏ = A(t) y` on `ℝ` (any `s`).
 * `norm_sub_sub_transition_le` — the two-point first-variation estimate
   `‖x₁(t) − x₂(t) − Φ(t, s)(x₁(s) − x₂(s))‖ ≤ η (t − s) e^{2K(t − s)} ‖x₁(s) − x₂(s)‖`.
 * `exists_radius_fderiv_le` — the modulus of continuity of `D_xG` along a compact trajectory.

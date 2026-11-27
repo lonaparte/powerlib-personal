@@ -13,10 +13,10 @@ derived from the field: `P(x_*(0)) = x_*(0)` (`FlowDerivative.periodMap_fixed`),
 `P(p + e) = p + Φ(T, 0) e + P₂(e, e) + P₃(e, e, e) + O(‖e‖⁴)` with the second and third
 variations `P₂, P₃` of `theorem/Periodic/PeriodMapTaylor.lean` (`periodMap_taylor`). The flip
 coefficient is therefore expressed in the variational data of the orbit:
-`a = wᵀ P₂(v, v)`, `b = wᵀ P₃(v, v, v) + wᵀ (P₂(v, k) + P₂(k, v))`, `(I − M) k = P₂(v, v) − (wᵀ P₂(v, v)) v`,
-with `M v = −v`, `wᵀ M = −wᵀ`, `wᵀ v = 1`. A positive flip coefficient makes the period map locally
-asymptotically (not exponentially) stable and the periodic solution Lyapunov stable and
-attracting; a negative one makes both unstable.
+`a = wᵀ P₂(v, v)`, `b = wᵀ P₃(v, v, v) + wᵀ (P₂(v, k) + P₂(k, v))`,
+`(I − M) k = P₂(v, v) − (wᵀ P₂(v, v)) v`, with `M v = −v`, `wᵀ M = −wᵀ`, `wᵀ v = 1`. A positive
+flip coefficient makes the period map locally asymptotically (not exponentially) stable and the
+periodic solution Lyapunov stable and attracting; a negative one makes both unstable.
 
 The step from the period map to the solutions: for a `T`-periodic field every solution on
 `[0, ∞)` satisfies `x(kT) = Pᵏ(x(0))` (uniqueness of solutions and periodicity of `G`), and on each
@@ -28,8 +28,9 @@ Scope.
   `ℝⁿ = EuclideanSpace ℝ (Fin n)`, and a map of `Fin n → ℝ` is read there through the coordinate
   isomorphism `EuclideanSpace.equiv` (`euclidMap`); the conversions only use its operator norms.
 * `G` is `T`-periodic in `t` (`Function.Periodic G T`, `T > 0`), continuous, differentiable in `x`
-  with `D_xG` jointly continuous, and globally `K`-Lipschitz in `x` (a local field is first cut
-  off, e.g. `Periodic.clampField`). `x_*` is a global solution with `x_*(T) = x_*(0)`.
+  with `D_xG` jointly continuous, and globally `K`-Lipschitz in `x` (a field that is only locally
+  Lipschitz is first multiplied by a smooth cut-off equal to `1` near the orbit, which is not done
+  here). `x_*` is a global solution with `x_*(T) = x_*(0)`.
 * Along `x_*` on `[0, T]` the field has the cubic Taylor expansion with continuous coefficients
   `D_xG(r, x_*(r))`, `Q₂(r)`, `Q₃(r)` and a remainder `c₄ ‖u‖⁴` for `‖u‖ ≤ ρ`
   (`PeriodMapTaylor`); for a field of class `C⁴` in `x` with `D_x²G`, `D_x³G` continuous along
@@ -219,8 +220,8 @@ def dotCLM (w : Fin n → ℝ) : (Fin n → ℝ) →L[ℝ] ℝ :=
 multiplier `−1` with Schur stable deflation `Mm + vm wmᵀ` (`FlipReduction.multipliers_of_deflate`),
 the cubic expansion `‖F(p + e) − p − Mm e − P₂(e, e) − P₃(e, e, e)‖ ≤ C ‖e‖⁴` on `‖e‖ ≤ ρ₀` and a
 solution `k` of `k − Mm k = P₂(vm, vm) − (wm ⬝ P₂(vm, vm)) vm`: if the flip coefficient
-`a² + b`, `a = wm ⬝ P₂(vm, vm)`, `b = wm ⬝ P₃(vm, vm, vm) + wm ⬝ (P₂(vm, k) + P₂(k, vm))`, is positive,
-then `F` read on `ℝⁿ` is locally asymptotically, not exponentially, stable at `p`. -/
+`a² + b`, `a = wm ⬝ P₂(vm, vm)`, `b = wm ⬝ P₃(vm, vm, vm) + wm ⬝ (P₂(vm, k) + P₂(k, vm))`, is
+positive, then `F` read on `ℝⁿ` is locally asymptotically, not exponentially, stable at `p`. -/
 @[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_flipCoeff_pos_coord
     {F : (Fin n → ℝ) → Fin n → ℝ} {p : Fin n → ℝ} {Mm : Matrix (Fin n) (Fin n) ℝ}
     (hF : HasStrictFDerivAt F (Matrix.toLin' Mm).toContinuousLinearMap p) (hFp : F p = p)
