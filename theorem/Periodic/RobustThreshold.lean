@@ -38,7 +38,9 @@ the comparison holds in every region, `m + 2D > 4K̄` included (it is the univer
 evaluated at `D/(m + K̄)` instead of `ξ = D/(2√(mK̄))`, equal exactly when `K̄ = m`), and the
 uniform-in-period instability under small perturbations is
 `theorem/Periodic/UniformRoughness.lean`; see
-`theorem/ParametricResonance/RobustVsUniversal.lean`.
+`theorem/ParametricResonance/RobustVsUniversal.lean`. For the exponential-bound form itself the
+comparison also holds in every region (`theorem/Periodic/ExponentialRobustComparison.lean`,
+`secondOrder_robust_imp_universal`).
 
 Scope.
 * `ẋ = (A₀ + B(t)) x` on `ℝ^X` (finite `X`; `Fin n` where Hurwitz or Schur stability is used),

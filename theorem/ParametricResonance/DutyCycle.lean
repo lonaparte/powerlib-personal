@@ -35,7 +35,9 @@ Scope.
   proved at the exact centre of the principal tongue for fixed `δ ∈ (0, 1)` in cone form, and
   the L2 verdict is transferred to L1 for all small modulations in the distinguished scaling
   (damping `μs`, levels `ω²/4 + μa_i`) through the time change of `SquareWave.twoPiece`
-  generalized to a switching instant at `δT` (`twoPieceDuty`).
+  generalized to a switching instant at `δT` (`twoPieceDuty`). The agreement of L1 and L2 at the
+  same pump frequency outside a cone, and the threshold function `ε_c(ξ; δ)`, are
+  `theorem/ParametricResonance/DutyCycleLevels.lean`.
 * The generic two-piece averaging theorems concern continuous bounded `G₁`, `G₂` on `[0, δT]` and
   `[δT, T]` (`Periodic.transition`), `δ ∈ (0, 1)`, stated for `ε → 0⁺`.
 * Generic mathematics; no model family.

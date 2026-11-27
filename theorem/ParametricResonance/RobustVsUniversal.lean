@@ -35,7 +35,10 @@ comparison concerns stiffness modulation only.
 Not decided here: the exponential-bound form `K_c εK̄/m < α` of
 `Periodic.Robust.secondOrder_robust_le_universal` (sup norm, `‖e^{τA₀}‖ ≤ K_c e^{−ατ}`) for
 `m + 2D > 4K̄`; its best constant `K_c(α)` (the transient growth of `e^{τA₀}` in the sup norm) has
-no closed form, and only `K_c ≥ 1`, `2α ≤ d` are used there.
+no closed form, and only `K_c ≥ 1`, `2α ≤ d` are used there. It is decided, for every exponential
+bound and in every region, in `theorem/Periodic/ExponentialRobustComparison.lean`
+(`ExponentialRobust.secondOrder_robust_imp_universal`: robust `⇒` universal), without the best
+constant: the impulse response bounds `α/K_c` by the universal radius.
 
 Scope.
 * The scalar real equation `m δ̈ + D δ̇ + K(t) δ = 0` in the state `(δ, δ̇)` with the state matrix

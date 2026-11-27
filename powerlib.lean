@@ -373,6 +373,7 @@ import theorem.ParametricResonance.BlockBoundary
 import theorem.ParametricResonance.ThirdOrderBoundary
 import theorem.ParametricResonance.CriticalExponent
 import theorem.ParametricResonance.PhysicalBoundary
+import theorem.ParametricResonance.DutyCycleLevels
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -398,6 +399,7 @@ import theorem.Periodic.LyapunovNorm
 import theorem.Periodic.CombinationFrequencies
 import theorem.Periodic.FlipReduction
 import theorem.Periodic.DegenerateFlipReduction
+import theorem.Periodic.ExponentialRobustComparison
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
