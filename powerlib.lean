@@ -388,6 +388,8 @@ import theorem.ParametricResonance.DutyCycleThreshold
 import theorem.ParametricResonance.ComplexPumpAveraging
 import theorem.ParametricResonance.FirstOrderFailsExistence
 import theorem.ParametricResonance.BlockCoreClosedForm
+import theorem.ParametricResonance.ThirdOrderClosedForm
+import theorem.ParametricResonance.BlockCriticalExponent
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability

@@ -32,10 +32,11 @@ Scope.
   `b = βε³ + O(ε⁴)`, `α < 0`; statements for all sufficiently small `ε > 0`, constants existential.
 * Two-state system: `TwoToOne.full s d ω A ε`, `s > 0`, `ω > 0`, `T = 2π/ω`, arbitrary complex
   modulation `A`, on the first-order boundary.
-* Not covered: the `n`-state Schur complement (`BlockBoundary`): there the same expansion with
-  `N_eff = N + Q₁(I + E)⁻¹R₁` is not derived (the resolvent bounds of
-  `BlockBoundary.stable_block_resolvent` hold for `|μ| ≥ 1` only, which suffices for the sign
-  decisions but not for locating a multiplier inside the unit circle).
+* Not covered here: the `n`-state Schur complement (`BlockBoundary`): there the same expansion
+  with `N_eff = N + Q₁(I + E)⁻¹R₁` needs resolvent bounds inside the unit circle (those of
+  `BlockBoundary.stable_block_resolvent` hold for `|μ| ≥ 1` only); it is
+  `theorem/ParametricResonance/BlockCriticalExponent.lean` (`block_boundary_multipliers`,
+  `block_critical_localization`, `averagingN_multipliers`, `averagingB_multipliers`).
 * Generic mathematics; no model family.
 
 Source: the wave-6 question of this library (the critical exponent left as a reading in

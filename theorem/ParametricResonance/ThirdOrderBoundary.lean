@@ -37,7 +37,8 @@ decides them.
   `b = 1` and `b = 0` give opposite verdicts (`antiFree_undecided`).
 * `s > 0, d = 0, g' ≠ 0`: decided by the sign of `K` (`full_boundary_third_order`); the closed
   form of `K` there (the second harmonic interacts with the fundamental through triple products)
-  is not derived in this file.
+  is not derived in this file; it is `theorem/ParametricResonance/ThirdOrderClosedForm.lean`
+  (`undetuned_coefficient`, `undetuned_boundary`, `undetuned_dependence`).
 
 Scope.
 * Generic: `ẏ = εF(t) y` on `ℝ^X` (finite `X`), `F` continuous and bounded (operator `L∞` norm),
