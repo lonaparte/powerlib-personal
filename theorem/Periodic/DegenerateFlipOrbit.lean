@@ -1,5 +1,5 @@
 import theorem.Periodic.PeriodMapJet
-import theorem.Periodic.FlipOrbitUniform
+import theorem.Periodic.LocalField
 import theorem.Map.DegenerateFlipCoefficients
 
 /-! # The degenerate flip of a periodic solution, decided from the field
@@ -23,24 +23,27 @@ homological equations
 * `(I − M) k₄ = Q n₄ − (c₂² − 2c₃) k₂ − 3c₂ k₃`,
 
 with `n₃ = curveCoeff₃ P₂ P₃ vm k₂`, `n₄ = curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃`,
-`n₅ = curveCoeff₅ P₂ P₃ P₄ P₅ vm k₂ k₃ k₄` (`P₂(v, k₂) + P₂(k₂, v) + P₃(v³)`, … as in
-`DegenerateFlipCoefficients`), `c₂ = wm ⬝ P₂(vm, vm)` and `cⱼ = wm ⬝ nⱼ`, give the coefficients
+`n₅ = curveCoeff₅ P₂ P₃ P₄ P₅ vm k₂ k₃ k₄` (the coefficients of `tʲ` in
+`P(p + t vm + t² k₂ + t³ k₃ + t⁴ k₄) − p − M(…)`, e.g. `n₃ = P₃(vm³) + P₂(vm, k₂) + P₂(k₂, vm)`),
+`c₂ = wm ⬝ P₂(vm, vm)` and `cⱼ = wm ⬝ nⱼ`, give the coefficients
 of the period map restricted to a centre manifold, `r(x) = −x + c₂x² + c₃x³ + c₄x⁴ + c₅x⁵ +
 O(x⁶)`; `c₂` and `c₃` are the coefficients `a` and `b` of the flip coefficient `a² + b` of
 `theorem/Periodic/FlipOrbit.lean`. If `a² + b = 0` and `c₅ + 3c₂c₄ − 2c₂⁴ > 0`, the period map is
 locally asymptotically, not exponentially, stable at `x_*(0)` and `x_*` is uniformly Lyapunov
 stable and uniformly attracting from every initial time; if `c₅ + 3c₂c₄ − 2c₂⁴ < 0`, both are
-unstable, with one escape radius for every initial time. The map statements are read on
-`ℝⁿ = EuclideanSpace ℝ (Fin n)` through `FlipOrbit.euclidMap`; the coordinate change commutes with
-the closed forms (`localAsymptoticStable_of_degenerateFlip_coord`), and the step from the period
-map to the solutions is `FlipOrbitUniform.uniformlyStable_of_map` and
-`FlipOrbitUniform.uniformlyUnstable_of_map`.
+unstable, with one escape radius for every initial time; the same holds for fields that are only
+locally Lipschitz (the `_local` theorems, through `theorem/Periodic/LocalField.lean`). The map
+statements are read on `ℝⁿ = EuclideanSpace ℝ (Fin n)` through `FlipOrbit.euclidMap`; the
+coordinate change commutes with the closed forms (`localAsymptoticStable_of_degenerateFlip_coord`),
+and the step from the period map to the solutions is `FlipOrbitUniform.uniformlyStable_of_map`
+and `FlipOrbitUniform.uniformlyUnstable_of_map`.
 
 Scope.
 * As in `theorem/Periodic/FlipOrbit.lean`: solutions in `ℝ^{Fin n}` with the sup norm, the map
   semantics on `ℝⁿ` through `FlipOrbit.euclidMap`; `G` is `T`-periodic in `t` (`T > 0`),
   continuous, differentiable in `x` with `D_xG` jointly continuous, and globally `K`-Lipschitz in
-  `x`; `x_*` is a global solution with `x_*(T) = x_*(0)`.
+  `x` (without the Lipschitz bound: the `_local` theorems below); `x_*` is a global solution with
+  `x_*(T) = x_*(0)`.
 * The regularity enters as the expansion of `PeriodMapJet.periodMap_jet` with `N = 5` along `x_*`
   on `[0, T]`: `G(r, x_* + u) = G(r, x_*) + D_xG u + ∑_{2 ≤ k ≤ 5} Q_k(r)(u, …, u) + O(‖u‖⁶)`
   with continuous coefficients `Q_k` (multilinear on `Fin k`, not assumed symmetric) and
@@ -56,8 +59,15 @@ Scope.
   equations; they exist and are unique, `k₃` in `ker wm` (`exists_homological_coord`), so
   `c₄`, `c₅` are determined by the jet of the period map, `vm` and `wm`.
 * The solution statements hold from every initial time `τ` with constants independent of `τ`
-  (as in `theorem/Periodic/FlipOrbitUniform.lean`). Fields that are only locally Lipschitz
-  (`theorem/Periodic/LocalField.lean` for the non-degenerate flip) are not treated here.
+  (as in `theorem/Periodic/FlipOrbitUniform.lean`).
+* Fields that are only locally Lipschitz (the `_local` theorems): `G` is localized by the smooth
+  cut-off of `theorem/Periodic/LocalField.lean` (`LocalField.localField`) with a radius beyond the
+  orbit and the tube of the expansion; the localized field has the same solution, Jacobian, jet
+  and verdict, and its period map is the period map of `G` near `x_*(0)`
+  (`periodMap_localField`). The transfer of the verdicts back to `G`
+  (`uniformlyStable_local_of_map`, `uniformlyUnstable_local_of_map`) is the argument of the two
+  theorems of `LocalField`, stated here once for any verdict of the localized period map; the
+  escaping solutions of the unstable side are solutions on segments `[τ, t]`.
 * `c₅ + 3c₂c₄ − 2c₂⁴ = 0` is not decided (the next odd order is needed, and no finite order
   suffices in general: `Map.flat_jet_undecided`).
 * Generic mathematics; no model family.
@@ -88,6 +98,13 @@ Results.
   (`< 0`: the period map and `x_*` are unstable, one escape radius for every initial time);
   `orbit_stable_of_degenerateFlip_of_contDiff`, `orbit_unstable_of_degenerateFlip_of_contDiff` —
   the same for a field of class `C⁶` in `x`, with `Q_k = D_x^kG/k!` along `x_*`.
+* Locally Lipschitz fields: `periodMap_localField` (the period map of the localized field is the
+  local period map of `G`), `uniformlyStable_local_of_map`, `uniformlyUnstable_local_of_map`
+  (the verdicts of the localized period map for the solutions of `G`);
+  `orbit_stable_of_degenerateFlip_local`, `orbit_unstable_of_degenerateFlip_local`,
+  `orbit_stable_of_degenerateFlip_of_contDiff_local`,
+  `orbit_unstable_of_degenerateFlip_of_contDiff_local` — the degenerate flip for fields without
+  a global Lipschitz bound.
 
 Corrections.
 None: an extension (the degenerate flip of `DegenerateFlipCoefficients` for the period map of a
@@ -102,7 +119,7 @@ noncomputable section
 namespace powerlib.Periodic.DegenerateFlipOrbit
 
 open Set Matrix Function Filter Topology
-open scoped Matrix.Norms.Operator Nat
+open scoped Matrix.Norms.Operator
 open FlowDerivative PeriodMapTaylor PeriodMapJet FlipOrbit FlipOrbitUniform FlipReduction
 
 variable {n : ℕ}
@@ -649,7 +666,7 @@ are `Q_k = D_x^kG/k!` along `x_*` (`PeriodMapJet.taylorSeries G x_*`, remainder 
     ∃ δ, 0 < δ ∧ ∀ ε, 0 < ε → ∃ S, 0 ≤ S ∧ ∀ (τ : ℝ) (x : ℝ → Fin n → ℝ),
       IsIntegralCurveOn x G (Ici τ) → ‖x τ - xs τ‖ < δ → ∀ t, τ + S ≤ t → ‖x t - xs t‖ < ε :=
   orbit_stable_of_degenerateFlip hGc (fun t => (hG6 t).differentiable (by norm_num)) hD hK hT
-    hGper hxs hfix (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k ! : ℝ)⁻¹)) hρ
+    hGper hxs hfix (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k.factorial : ℝ)⁻¹)) hρ
     (taylor_along_of_contDiff_order (by norm_num) (fun r _ y _ => (hG6 r).contDiffAt) hB)
     hv hw hwv hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hwk₃ hk₄ hdeg hκ
 
@@ -693,10 +710,440 @@ are `Q_k = D_x^kG/k!` along `x_*` (`PeriodMapJet.taylorSeries G x_*`, remainder 
     ∃ ε, 0 < ε ∧ ∀ δ, 0 < δ → ∀ τ : ℝ, ∃ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Ici τ) ∧
       ‖x τ - xs τ‖ < δ ∧ ∃ t, τ ≤ t ∧ ε ≤ ‖x t - xs t‖ :=
   orbit_unstable_of_degenerateFlip hGc (fun t => (hG6 t).differentiable (by norm_num)) hD hK hT
-    hGper hxs hfix (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k ! : ℝ)⁻¹)) hρ
+    hGper hxs hfix (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k.factorial : ℝ)⁻¹)) hρ
     (taylor_along_of_contDiff_order (by norm_num) (fun r _ y _ => (hG6 r).contDiffAt) hB)
     hv hw hwv hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hwk₃ hk₄ hdeg hκ
 
 end Orbit
+
+/-! ## Fields without a global Lipschitz bound -/
+
+section Local
+
+open LocalField
+
+variable {G : ℝ → (Fin n → ℝ) → Fin n → ℝ}
+
+/-- **The period map of the localized field is the local period map of `G`.** For a field `G`
+differentiable in `x` with `D_xG` jointly continuous, a solution `x_*` of `G` and a radius `R`
+with `‖y‖ ≤ R` whenever `‖y − x_*(t)‖ ≤ 1`, let `G̃ = localField G R` (`LocalField.localField`)
+be `K`-Lipschitz. From within `r = e^{−KT}` of `x_*(0)` a solution of `G` on `[0, T]` exists,
+and every such solution ends at `P̃(x(0))`, `P̃` the period map of `G̃`: the flow of `G̃` from
+there stays within `1` of `x_*` (Grönwall), so it solves `G`, and solutions of `G` are unique
+(`LocalField.eqOn_of_isIntegralCurveOn_Icc_of_fderiv`). -/
+@[tmio T, powerlib_foundation] theorem periodMap_localField
+    (hGd : ∀ t x, DifferentiableAt ℝ (G t) x)
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2) {R : ℝ} {K : NNReal}
+    (hGlc : Continuous (uncurry (localField G R))) (hK : ∀ t, LipschitzWith K (localField G R t))
+    {T : ℝ} (hT : 0 ≤ T) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t)
+    (hRnear : ∀ t (y : Fin n → ℝ), ‖y - xs t‖ ≤ 1 → ‖y‖ ≤ R) :
+    ∃ r, 0 < r ∧ (∀ ξ, ‖ξ - xs 0‖ < r →
+        ∃ x : ℝ → Fin n → ℝ, x 0 = ξ ∧ IsIntegralCurveOn x G (Icc 0 T)) ∧
+      ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Icc 0 T) → ‖x 0 - xs 0‖ < r →
+        x T = periodMap hGlc hK T (x 0) := by
+  have hxsl : ∀ t, HasDerivAt xs (localField G R t (xs t)) t := fun t => by
+    rw [localField_eq (hRnear t (xs t) (by simp))]; exact hxs t
+  have hC0 : 0 < Real.exp (K * T) := Real.exp_pos _
+  have hsol : ∀ ξ, ‖ξ - xs 0‖ < 1 / Real.exp (K * T) →
+      IsIntegralCurveOn (flow hGlc hK 0 ξ) G (Icc 0 T) := by
+    intro ξ hξ
+    refine isIntegralCurveOn_of_localField
+      ((flow_solution hGlc hK 0 ξ).mono Icc_subset_Ici_self) fun u hu => hRnear u _ ?_
+    have h := dist_le_of_isIntegralCurveOn_Icc hK
+      ((flow_solution hGlc hK 0 ξ).mono Icc_subset_Ici_self)
+      (fun r _ => (hxsl r).hasDerivWithinAt) u hu
+    rw [dist_eq_norm, dist_eq_norm, flow_start, sub_zero] at h
+    have he : Real.exp (K * u) ≤ Real.exp (K * T) :=
+      Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hu.2 K.2)
+    rw [lt_div_iff₀ hC0] at hξ
+    calc ‖flow hGlc hK 0 ξ u - xs u‖ ≤ ‖ξ - xs 0‖ * Real.exp (K * u) := h
+      _ ≤ ‖ξ - xs 0‖ * Real.exp (K * T) := mul_le_mul_of_nonneg_left he (norm_nonneg _)
+      _ ≤ 1 := hξ.le
+  refine ⟨1 / Real.exp (K * T), by positivity,
+    fun ξ hξ => ⟨flow hGlc hK 0 ξ, flow_start hGlc hK 0 ξ, hsol ξ hξ⟩, fun x hx hx0 => ?_⟩
+  exact eqOn_of_isIntegralCurveOn_Icc_of_fderiv hGd hD hx (hsol (x 0) hx0)
+    (flow_start hGlc hK 0 (x 0)).symm ⟨hT, le_rfl⟩
+
+/-- **From the localized period map to the solutions of `G`: stability.** In the setting of
+`periodMap_localField`, with `G` `T`-periodic and `x_*(T) = x_*(0)`: if the period map of the
+localized field `G̃ = localField G R` (read on `ℝⁿ`) is locally asymptotically stable at
+`x_*(0)`, then `x_*` is uniformly Lyapunov stable as a solution of `G` (for every `ε` one `δ`
+serves every initial time `τ` and every solution on a segment `[τ, t]`), the solutions of `G`
+starting within some `δ` of `x_*(τ)` exist on `[τ, ∞)`, and they are uniformly attracted. The
+verdict for `G̃` is `FlipOrbitUniform.uniformlyStable_of_map`; a solution of `G̃` within `1` of
+`x_*` solves `G`, and conversely by uniqueness. -/
+@[tmio T, powerlib_foundation] theorem uniformlyStable_local_of_map
+    (hGd : ∀ t x, DifferentiableAt ℝ (G t) x)
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2) {R : ℝ} {K : NNReal}
+    (hGlc : Continuous (uncurry (localField G R))) (hK : ∀ t, LipschitzWith K (localField G R t))
+    {T : ℝ} (hT : 0 < T) (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ}
+    (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t) (hfix : xs T = xs 0)
+    (hRnear : ∀ t (y : Fin n → ℝ), ‖y - xs t‖ ≤ 1 → ‖y‖ ≤ R)
+    (h : Map.LocalAsymptoticStable (euclidMap (periodMap hGlc hK T))
+      ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) :
+    (∀ ε, 0 < ε → ∃ δ, 0 < δ ∧ ∀ (τ t : ℝ) (x : ℝ → Fin n → ℝ), τ ≤ t →
+      IsIntegralCurveOn x G (Icc τ t) → ‖x τ - xs τ‖ < δ → ‖x t - xs t‖ < ε) ∧
+    ∃ δ, 0 < δ ∧ (∀ (τ : ℝ) (ξ : Fin n → ℝ), ‖ξ - xs τ‖ < δ →
+        ∃ x : ℝ → Fin n → ℝ, x τ = ξ ∧ IsIntegralCurveOn x G (Ici τ)) ∧
+      ∀ ε, 0 < ε → ∃ S, 0 ≤ S ∧ ∀ (τ t : ℝ) (x : ℝ → Fin n → ℝ), τ + S ≤ t →
+        IsIntegralCurveOn x G (Icc τ t) → ‖x τ - xs τ‖ < δ → ‖x t - xs t‖ < ε := by
+  have hxsl : ∀ t, HasDerivAt xs (localField G R t (xs t)) t := fun t => by
+    rw [localField_eq (hRnear t (xs t) (by simp))]; exact hxs t
+  obtain ⟨hstab, δa, hδa, hatt⟩ :=
+    uniformlyStable_of_map hGlc hK hT (periodic_localField hGper R) hxsl hfix h
+  -- a solution of `G` along which the localized flow stays within `1` of `x_*` is that flow
+  have heqOn : ∀ {τ t : ℝ} {x : ℝ → Fin n → ℝ}, IsIntegralCurveOn x G (Icc τ t) →
+      (∀ u ∈ Icc τ t, ‖flow hGlc hK τ (x τ) u - xs u‖ ≤ 1) →
+      EqOn x (flow hGlc hK τ (x τ)) (Icc τ t) := fun hx hnear =>
+    eqOn_of_isIntegralCurveOn_Icc_of_fderiv hGd hD hx
+      (isIntegralCurveOn_of_localField
+        ((flow_solution hGlc hK _ _).mono Icc_subset_Ici_self)
+        fun u hu => hRnear u _ (hnear u hu))
+      (flow_start hGlc hK _ _).symm
+  -- from within `δ₁` the localized flow stays within `1` of `x_*`
+  obtain ⟨δ₁, hδ₁, hb₁⟩ := hstab 1 one_pos
+  have hnear : ∀ τ (ξ : Fin n → ℝ), ‖ξ - xs τ‖ < δ₁ → ∀ u, τ ≤ u →
+      ‖flow hGlc hK τ ξ u - xs u‖ < 1 := fun τ ξ hξ u hu =>
+    hb₁ τ _ (flow_solution hGlc hK τ ξ) (by rwa [flow_start]) u hu
+  refine ⟨fun ε hε => ?_, min δa δ₁, lt_min hδa hδ₁, fun τ ξ hξ => ?_, fun ε hε => ?_⟩
+  · -- uniform Lyapunov stability
+    obtain ⟨δ, hδ, hb⟩ := hstab (min ε 1) (lt_min hε one_pos)
+    refine ⟨δ, hδ, fun τ t x hτt hx hx0 => ?_⟩
+    have hfl : ∀ u, τ ≤ u → ‖flow hGlc hK τ (x τ) u - xs u‖ < min ε 1 := fun u hu =>
+      hb τ _ (flow_solution hGlc hK τ (x τ)) (by rwa [flow_start]) u hu
+    rw [heqOn hx (fun u hu => ((hfl u hu.1).trans_le (min_le_right _ _)).le) ⟨hτt, le_rfl⟩]
+    exact (hfl t hτt).trans_le (min_le_left _ _)
+  · -- existence on `[τ, ∞)`
+    exact ⟨flow hGlc hK τ ξ, flow_start hGlc hK τ ξ,
+      isIntegralCurveOn_of_localField (flow_solution hGlc hK τ ξ) fun u hu =>
+        hRnear u _ (hnear τ ξ (hξ.trans_le (min_le_right _ _)) u hu).le⟩
+  · -- uniform attraction
+    obtain ⟨S, hS0, hS⟩ := hatt ε hε
+    refine ⟨S, hS0, fun τ t x hτt hx hx0 => ?_⟩
+    have hx0' : ‖flow hGlc hK τ (x τ) τ - xs τ‖ < δa := by
+      rw [flow_start]; exact hx0.trans_le (min_le_left _ _)
+    rw [heqOn hx (fun u hu => (hnear τ (x τ) (hx0.trans_le (min_le_right _ _)) u hu.1).le)
+      ⟨by linarith, le_rfl⟩]
+    exact hS τ _ (flow_solution hGlc hK τ (x τ)) hx0' t hτt
+
+/-- **From the localized period map to the solutions of `G`: instability.** For a `T`-periodic
+field `G`, a solution `x_*` with `x_*(T) = x_*(0)` and a radius `R` with `‖y‖ ≤ R` whenever
+`‖y − x_*(t)‖ ≤ 1`, with `G̃ = localField G R` continuous and `K`-Lipschitz (no regularity of
+`G` is needed here): if the period map of `G̃` (read on `ℝⁿ`) is unstable at `x_*(0)`, then
+`x_*` is an unstable solution of `G` with one escape radius for every initial time: there is
+`ε > 0` such that for every `τ` and every `δ > 0` a solution of `G` on a segment `[τ, t]` starts
+within `δ` of `x_*(τ)` and ends at the distance at least `ε` from `x_*(t)`
+(`FlipOrbitUniform.uniformlyUnstable_of_map` for `G̃`, cut at the first exit from the tube of
+radius `1`, inside which it solves `G`). -/
+@[tmio T, powerlib_foundation] theorem uniformlyUnstable_local_of_map
+    {R : ℝ} {K : NNReal}
+    (hGlc : Continuous (uncurry (localField G R))) (hK : ∀ t, LipschitzWith K (localField G R t))
+    {T : ℝ} (hT : 0 < T) (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ}
+    (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t) (hfix : xs T = xs 0)
+    (hRnear : ∀ t (y : Fin n → ℝ), ‖y - xs t‖ ≤ 1 → ‖y‖ ≤ R)
+    (h : Map.Unstable (euclidMap (periodMap hGlc hK T))
+      ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) :
+    ∃ ε, 0 < ε ∧ ∀ (τ δ : ℝ), 0 < δ → ∃ (x : ℝ → Fin n → ℝ) (t : ℝ), τ ≤ t ∧
+      IsIntegralCurveOn x G (Icc τ t) ∧ ‖x τ - xs τ‖ < δ ∧ ε ≤ ‖x t - xs t‖ := by
+  have hxsc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
+  have hxsl : ∀ t, HasDerivAt xs (localField G R t (xs t)) t := fun t => by
+    rw [localField_eq (hRnear t (xs t) (by simp))]; exact hxs t
+  obtain ⟨ε₀, hε₀, hesc⟩ :=
+    uniformlyUnstable_of_map hGlc hK hT (periodic_localField hGper R) hxsl hfix h
+  refine ⟨min ε₀ 1, lt_min hε₀ one_pos, fun τ δ hδ => ?_⟩
+  obtain ⟨y, hy, hy0, t₁, ht₁, hyt₁⟩ :=
+    hesc (min δ (min ε₀ 1)) (lt_min hδ (lt_min hε₀ one_pos)) τ
+  -- the first time the escaping solution reaches the distance `min ε₀ 1`; until then it is in
+  -- the tube of radius `1`, where it solves `G`
+  have hfirst : ∃ s ∈ Icc τ t₁, (∀ u ∈ Icc τ s, ‖y u - xs u‖ ≤ 1) ∧
+      min ε₀ 1 ≤ ‖y s - xs s‖ := by
+    by_contra hcon
+    push Not at hcon
+    have hc := Dynamics.forall_lt_of_first_exit (φ := fun u => y u - xs u) (Φ := norm)
+      (c := min ε₀ 1) continuous_norm
+      ((hy.continuousOn.mono Icc_subset_Ici_self).sub hxsc.continuousOn)
+      (hy0.trans_le (min_le_right _ _))
+      (fun s hs hle => hcon s hs fun u hu => (hle u hu).trans (min_le_right _ _)) t₁
+      ⟨ht₁, le_rfl⟩
+    exact absurd hyt₁ (not_le.2 (hc.trans_le (min_le_left _ _)))
+  obtain ⟨s, hs, hle, hesc'⟩ := hfirst
+  exact ⟨y, s, hs.1, isIntegralCurveOn_of_localField (hy.mono Icc_subset_Ici_self)
+    fun u hu => hRnear u _ (hle u hu), hy0.trans_le (min_le_left _ _), hesc'⟩
+
+/-- **The degenerate flip of a periodic solution of a locally Lipschitz field, stable side.**
+Let `G` be `T`-periodic in `t`, continuous, differentiable in `x` with `D_xG` jointly continuous
+(no Lipschitz bound), `x_*` a global solution with `x_*(T) = x_*(0)`, with the fifth-order
+expansion along `x_*` and the spectral, coefficient and homological data of
+`orbit_stable_of_degenerateFlip`. If `c₂² + c₃ = 0` and `c₅ + 3c₂c₄ − 2c₂⁴ > 0`, then:
+* the period map of `G` near `x_*(0)` — a map `P` with `x(T) = P(x(0))` for the solutions of `G`
+  on `[0, T]` starting within `r` of `x_*(0)`, which exist — is locally asymptotically, not
+  exponentially, stable at `x_*(0)` (read on `ℝⁿ`);
+* `x_*` is uniformly Lyapunov stable: for every `ε` one `δ` serves every initial time `τ` and
+  every solution on a segment `[τ, t]`;
+* from within some `δ` of `x_*(τ)` the solutions exist on `[τ, ∞)` and are uniformly attracted.
+The proof localizes `G` by `LocalField.localField` with a radius beyond the orbit and the tube of
+the expansion, where the jet, the monodromy and the verdict are those of `G`. -/
+@[tmio T, powerlib_foundation] theorem orbit_stable_of_degenerateFlip_local
+    (hGc : Continuous (uncurry G)) (hGd : ∀ t x, DifferentiableAt ℝ (G t) x)
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2) {T : ℝ} (hT : 0 < T)
+    (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t)
+    (hfix : xs T = xs 0) {Q : ℝ → FormalMultilinearSeries ℝ (Fin n → ℝ) (Fin n → ℝ)}
+    (hQ : ∀ k, 2 ≤ k → k ≤ 5 → Continuous fun r => Q r k) {c ρ : ℝ} (hρ : 0 < ρ)
+    (hTay : ∀ r ∈ Icc 0 T, ∀ u, ‖u‖ ≤ ρ → ‖G r (xs r + u) - G r (xs r) -
+      fderiv ℝ (G r) (xs r) u - ∑ k ∈ Finset.Icc 2 5, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ 6)
+    {vm wm : Fin n → ℝ} (hv : monodromy (jacobianAlong G xs) T 0 *ᵥ vm = -vm)
+    (hw : wm ᵥ* monodromy (jacobianAlong G xs) T 0 = -wm) (hwv : wm ⬝ᵥ vm = 1)
+    (hS : LTI.SchurStable (monodromy (jacobianAlong G xs) T 0 + vecMulVec vm wm))
+    {P₂ : (Fin n → ℝ) →L[ℝ] (Fin n → ℝ) →L[ℝ] Fin n → ℝ}
+    {P₃ : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₄ : ContinuousMultilinearMap ℝ (fun _ : Fin 4 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₅ : ContinuousMultilinearMap ℝ (fun _ : Fin 5 => Fin n → ℝ) (Fin n → ℝ)}
+    (hP₂ : P₂ = bilin (flowJet (jacobianAlong G xs) Q 0 T 2))
+    (hP₃ : P₃ = flowJet (jacobianAlong G xs) Q 0 T 3)
+    (hP₄ : P₄ = flowJet (jacobianAlong G xs) Q 0 T 4)
+    (hP₅ : P₅ = flowJet (jacobianAlong G xs) Q 0 T 5)
+    {k₂ k₃ k₄ : Fin n → ℝ}
+    (hk₂ : k₂ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₂ = P₂ vm vm - (wm ⬝ᵥ P₂ vm vm) • vm)
+    (hk₃ : -k₃ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₃ =
+      curveCoeff₃ P₂ P₃ vm k₂ - (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂) • vm +
+        (2 * (wm ⬝ᵥ P₂ vm vm)) • k₂)
+    (hwk₃ : wm ⬝ᵥ k₃ = 0)
+    (hk₄ : k₄ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₄ = curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃ -
+      (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) • vm -
+      ((wm ⬝ᵥ P₂ vm vm) ^ 2 - 2 * (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂)) • k₂ -
+      (3 * (wm ⬝ᵥ P₂ vm vm)) • k₃)
+    (hdeg : (wm ⬝ᵥ P₂ vm vm) ^ 2 + wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂ = 0)
+    (hκ : 0 < wm ⬝ᵥ curveCoeff₅ P₂ P₃ P₄ P₅ vm k₂ k₃ k₄ +
+      3 * (wm ⬝ᵥ P₂ vm vm) * (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) - 2 * (wm ⬝ᵥ P₂ vm vm) ^ 4) :
+    (∃ (P : (Fin n → ℝ) → Fin n → ℝ) (r : ℝ), 0 < r ∧
+      (∀ ξ, ‖ξ - xs 0‖ < r → ∃ x : ℝ → Fin n → ℝ, x 0 = ξ ∧ IsIntegralCurveOn x G (Icc 0 T)) ∧
+      (∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Icc 0 T) → ‖x 0 - xs 0‖ < r →
+        x T = P (x 0)) ∧
+      Map.LocalAsymptoticStable (euclidMap P) ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) ∧
+      ¬ Map.LocallyExponentiallyStable (euclidMap P)
+        ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) ∧
+    (∀ ε, 0 < ε → ∃ δ, 0 < δ ∧ ∀ (τ t : ℝ) (x : ℝ → Fin n → ℝ), τ ≤ t →
+      IsIntegralCurveOn x G (Icc τ t) → ‖x τ - xs τ‖ < δ → ‖x t - xs t‖ < ε) ∧
+    ∃ δ, 0 < δ ∧ (∀ (τ : ℝ) (ξ : Fin n → ℝ), ‖ξ - xs τ‖ < δ →
+        ∃ x : ℝ → Fin n → ℝ, x τ = ξ ∧ IsIntegralCurveOn x G (Ici τ)) ∧
+      ∀ ε, 0 < ε → ∃ S, 0 ≤ S ∧ ∀ (τ t : ℝ) (x : ℝ → Fin n → ℝ), τ + S ≤ t →
+        IsIntegralCurveOn x G (Icc τ t) → ‖x τ - xs τ‖ < δ → ‖x t - xs t‖ < ε := by
+  have hxsp := periodic_of_fixed_of_fderiv hGd hD hGper hxs hfix
+  have hxsc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
+  -- a ball of radius `R` containing the tube `‖u‖ ≤ ρ` (strictly) and the tube of radius `1`
+  obtain ⟨Bx, hBx⟩ := isBounded_iff_forall_norm_le.1
+    (hxsp.compact_of_continuous hT.ne' hxsc).isBounded
+  have hRtube : ∀ t (u : Fin n → ℝ), ‖u‖ ≤ ρ → ‖xs t + u‖ < Bx + ρ + 1 := fun t u hu => by
+    have := hBx (xs t) (mem_range_self t)
+    calc ‖xs t + u‖ ≤ ‖xs t‖ + ‖u‖ := norm_add_le _ _
+      _ < Bx + ρ + 1 := by linarith
+  have hRnear : ∀ t (y : Fin n → ℝ), ‖y - xs t‖ ≤ 1 → ‖y‖ ≤ Bx + ρ + 1 := fun t y hy => by
+    have := hBx (xs t) (mem_range_self t)
+    calc ‖y‖ = ‖xs t + (y - xs t)‖ := by rw [add_sub_cancel]
+      _ ≤ ‖xs t‖ + ‖y - xs t‖ := norm_add_le _ _
+      _ ≤ Bx + ρ + 1 := by linarith
+  set R := Bx + ρ + 1 with hR
+  have hRxs : ∀ t, ‖xs t‖ < R := fun t => by simpa using hRtube t 0 (by simp [hρ.le])
+  obtain ⟨K, hK⟩ := exists_lipschitzWith_localField hGd hD hT hGper R
+  have hGlc := continuous_localField hGc R
+  have hxsl : ∀ t, HasDerivAt xs (localField G R t (xs t)) t := fun t => by
+    rw [localField_eq (hRxs t).le]; exact hxs t
+  have hjac : jacobianAlong (localField G R) xs = jacobianAlong G xs := funext fun t => by
+    unfold jacobianAlong; rw [fderiv_localField_eq (hRxs t)]
+  have hTayl : ∀ r ∈ Icc 0 T, ∀ u, ‖u‖ ≤ ρ → ‖localField G R r (xs r + u) -
+      localField G R r (xs r) - fderiv ℝ (localField G R r) (xs r) u -
+        ∑ k ∈ Finset.Icc 2 5, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ 6 := fun r hr u hu => by
+    rw [localField_eq (hRtube r u hu).le, localField_eq (hRxs r).le,
+      fderiv_localField_eq (hRxs r)]
+    exact hTay r hr u hu
+  rw [← hjac] at hv hw hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hk₄
+  obtain ⟨r, hr, hex, hPl⟩ := periodMap_localField hGd hD hGlc hK hT.le hxs hRnear
+  obtain ⟨hmap, -⟩ := orbit_stable_of_degenerateFlip hGlc (differentiableAt_localField hGd R)
+    (continuous_fderiv_localField hGd hD R) hK hT (periodic_localField hGper R) hxsl hfix hQ hρ
+    hTayl hv hw hwv hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hwk₃ hk₄ hdeg hκ
+  exact ⟨⟨periodMap hGlc hK T, r, hr, hex, hPl, hmap⟩,
+    uniformlyStable_local_of_map hGd hD hGlc hK hT hGper hxs hfix hRnear hmap.1⟩
+
+/-- **The degenerate flip of a periodic solution of a locally Lipschitz field, unstable side.**
+Under the hypotheses of `orbit_stable_of_degenerateFlip_local`, if `c₂² + c₃ = 0` and
+`c₅ + 3c₂c₄ − 2c₂⁴ < 0`, the period map of `G` near `x_*(0)` is unstable and `x_*` is unstable
+with one escape radius for every initial time (escaping solutions on segments `[τ, t]`). -/
+@[tmio T, powerlib_foundation] theorem orbit_unstable_of_degenerateFlip_local
+    (hGc : Continuous (uncurry G)) (hGd : ∀ t x, DifferentiableAt ℝ (G t) x)
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2) {T : ℝ} (hT : 0 < T)
+    (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t)
+    (hfix : xs T = xs 0) {Q : ℝ → FormalMultilinearSeries ℝ (Fin n → ℝ) (Fin n → ℝ)}
+    (hQ : ∀ k, 2 ≤ k → k ≤ 5 → Continuous fun r => Q r k) {c ρ : ℝ} (hρ : 0 < ρ)
+    (hTay : ∀ r ∈ Icc 0 T, ∀ u, ‖u‖ ≤ ρ → ‖G r (xs r + u) - G r (xs r) -
+      fderiv ℝ (G r) (xs r) u - ∑ k ∈ Finset.Icc 2 5, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ 6)
+    {vm wm : Fin n → ℝ} (hv : monodromy (jacobianAlong G xs) T 0 *ᵥ vm = -vm)
+    (hw : wm ᵥ* monodromy (jacobianAlong G xs) T 0 = -wm) (hwv : wm ⬝ᵥ vm = 1)
+    (hS : LTI.SchurStable (monodromy (jacobianAlong G xs) T 0 + vecMulVec vm wm))
+    {P₂ : (Fin n → ℝ) →L[ℝ] (Fin n → ℝ) →L[ℝ] Fin n → ℝ}
+    {P₃ : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₄ : ContinuousMultilinearMap ℝ (fun _ : Fin 4 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₅ : ContinuousMultilinearMap ℝ (fun _ : Fin 5 => Fin n → ℝ) (Fin n → ℝ)}
+    (hP₂ : P₂ = bilin (flowJet (jacobianAlong G xs) Q 0 T 2))
+    (hP₃ : P₃ = flowJet (jacobianAlong G xs) Q 0 T 3)
+    (hP₄ : P₄ = flowJet (jacobianAlong G xs) Q 0 T 4)
+    (hP₅ : P₅ = flowJet (jacobianAlong G xs) Q 0 T 5)
+    {k₂ k₃ k₄ : Fin n → ℝ}
+    (hk₂ : k₂ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₂ = P₂ vm vm - (wm ⬝ᵥ P₂ vm vm) • vm)
+    (hk₃ : -k₃ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₃ =
+      curveCoeff₃ P₂ P₃ vm k₂ - (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂) • vm +
+        (2 * (wm ⬝ᵥ P₂ vm vm)) • k₂)
+    (hwk₃ : wm ⬝ᵥ k₃ = 0)
+    (hk₄ : k₄ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₄ = curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃ -
+      (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) • vm -
+      ((wm ⬝ᵥ P₂ vm vm) ^ 2 - 2 * (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂)) • k₂ -
+      (3 * (wm ⬝ᵥ P₂ vm vm)) • k₃)
+    (hdeg : (wm ⬝ᵥ P₂ vm vm) ^ 2 + wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂ = 0)
+    (hκ : wm ⬝ᵥ curveCoeff₅ P₂ P₃ P₄ P₅ vm k₂ k₃ k₄ +
+      3 * (wm ⬝ᵥ P₂ vm vm) * (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) - 2 * (wm ⬝ᵥ P₂ vm vm) ^ 4 < 0) :
+    (∃ (P : (Fin n → ℝ) → Fin n → ℝ) (r : ℝ), 0 < r ∧
+      (∀ ξ, ‖ξ - xs 0‖ < r → ∃ x : ℝ → Fin n → ℝ, x 0 = ξ ∧ IsIntegralCurveOn x G (Icc 0 T)) ∧
+      (∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Icc 0 T) → ‖x 0 - xs 0‖ < r →
+        x T = P (x 0)) ∧
+      Map.Unstable (euclidMap P) ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) ∧
+    ∃ ε, 0 < ε ∧ ∀ (τ δ : ℝ), 0 < δ → ∃ (x : ℝ → Fin n → ℝ) (t : ℝ), τ ≤ t ∧
+      IsIntegralCurveOn x G (Icc τ t) ∧ ‖x τ - xs τ‖ < δ ∧ ε ≤ ‖x t - xs t‖ := by
+  have hxsp := periodic_of_fixed_of_fderiv hGd hD hGper hxs hfix
+  have hxsc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
+  -- a ball of radius `R` containing the tube `‖u‖ ≤ ρ` (strictly) and the tube of radius `1`
+  obtain ⟨Bx, hBx⟩ := isBounded_iff_forall_norm_le.1
+    (hxsp.compact_of_continuous hT.ne' hxsc).isBounded
+  have hRtube : ∀ t (u : Fin n → ℝ), ‖u‖ ≤ ρ → ‖xs t + u‖ < Bx + ρ + 1 := fun t u hu => by
+    have := hBx (xs t) (mem_range_self t)
+    calc ‖xs t + u‖ ≤ ‖xs t‖ + ‖u‖ := norm_add_le _ _
+      _ < Bx + ρ + 1 := by linarith
+  have hRnear : ∀ t (y : Fin n → ℝ), ‖y - xs t‖ ≤ 1 → ‖y‖ ≤ Bx + ρ + 1 := fun t y hy => by
+    have := hBx (xs t) (mem_range_self t)
+    calc ‖y‖ = ‖xs t + (y - xs t)‖ := by rw [add_sub_cancel]
+      _ ≤ ‖xs t‖ + ‖y - xs t‖ := norm_add_le _ _
+      _ ≤ Bx + ρ + 1 := by linarith
+  set R := Bx + ρ + 1 with hR
+  have hRxs : ∀ t, ‖xs t‖ < R := fun t => by simpa using hRtube t 0 (by simp [hρ.le])
+  obtain ⟨K, hK⟩ := exists_lipschitzWith_localField hGd hD hT hGper R
+  have hGlc := continuous_localField hGc R
+  have hxsl : ∀ t, HasDerivAt xs (localField G R t (xs t)) t := fun t => by
+    rw [localField_eq (hRxs t).le]; exact hxs t
+  have hjac : jacobianAlong (localField G R) xs = jacobianAlong G xs := funext fun t => by
+    unfold jacobianAlong; rw [fderiv_localField_eq (hRxs t)]
+  have hTayl : ∀ r ∈ Icc 0 T, ∀ u, ‖u‖ ≤ ρ → ‖localField G R r (xs r + u) -
+      localField G R r (xs r) - fderiv ℝ (localField G R r) (xs r) u -
+        ∑ k ∈ Finset.Icc 2 5, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ 6 := fun r hr u hu => by
+    rw [localField_eq (hRtube r u hu).le, localField_eq (hRxs r).le,
+      fderiv_localField_eq (hRxs r)]
+    exact hTay r hr u hu
+  rw [← hjac] at hv hw hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hk₄
+  obtain ⟨r, hr, hex, hPl⟩ := periodMap_localField hGd hD hGlc hK hT.le hxs hRnear
+  obtain ⟨hmap, -⟩ := orbit_unstable_of_degenerateFlip hGlc (differentiableAt_localField hGd R)
+    (continuous_fderiv_localField hGd hD R) hK hT (periodic_localField hGper R) hxsl hfix hQ hρ
+    hTayl hv hw hwv hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hwk₃ hk₄ hdeg hκ
+  exact ⟨⟨periodMap hGlc hK T, r, hr, hex, hPl, hmap⟩,
+    uniformlyUnstable_local_of_map hGlc hK hT hGper hxs hfix hRnear hmap⟩
+
+/-- **Fields of class `C⁶` without a global Lipschitz bound, stable side.**
+`orbit_stable_of_degenerateFlip_local` for a field with `G(t, ·)` of class `C⁶`, `D_x^kG`
+continuous along `x_*` for `2 ≤ k ≤ 5` and `‖D_x⁶G‖ ≤ B` on the tube of radius `ρ` about `x_*`,
+with `Q_k = D_x^kG/k!` along `x_*` (`PeriodMapJet.taylorSeries`). -/
+@[tmio T, powerlib_foundation] theorem orbit_stable_of_degenerateFlip_of_contDiff_local
+    (hGc : Continuous (uncurry G)) (hG6 : ∀ t, ContDiff ℝ 6 (G t))
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2) {T : ℝ} (hT : 0 < T)
+    (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t)
+    (hfix : xs T = xs 0)
+    (hDk : ∀ k, 2 ≤ k → k ≤ 5 → Continuous fun r => iteratedFDeriv ℝ k (G r) (xs r))
+    {ρ B : ℝ} (hρ : 0 < ρ)
+    (hB : ∀ r ∈ Icc 0 T, ∀ y ∈ Metric.closedBall (xs r) ρ, ‖iteratedFDeriv ℝ 6 (G r) y‖ ≤ B)
+    {vm wm : Fin n → ℝ} (hv : monodromy (jacobianAlong G xs) T 0 *ᵥ vm = -vm)
+    (hw : wm ᵥ* monodromy (jacobianAlong G xs) T 0 = -wm) (hwv : wm ⬝ᵥ vm = 1)
+    (hS : LTI.SchurStable (monodromy (jacobianAlong G xs) T 0 + vecMulVec vm wm))
+    {P₂ : (Fin n → ℝ) →L[ℝ] (Fin n → ℝ) →L[ℝ] Fin n → ℝ}
+    {P₃ : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₄ : ContinuousMultilinearMap ℝ (fun _ : Fin 4 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₅ : ContinuousMultilinearMap ℝ (fun _ : Fin 5 => Fin n → ℝ) (Fin n → ℝ)}
+    (hP₂ : P₂ = bilin (flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 2))
+    (hP₃ : P₃ = flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 3)
+    (hP₄ : P₄ = flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 4)
+    (hP₅ : P₅ = flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 5)
+    {k₂ k₃ k₄ : Fin n → ℝ}
+    (hk₂ : k₂ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₂ = P₂ vm vm - (wm ⬝ᵥ P₂ vm vm) • vm)
+    (hk₃ : -k₃ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₃ =
+      curveCoeff₃ P₂ P₃ vm k₂ - (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂) • vm +
+        (2 * (wm ⬝ᵥ P₂ vm vm)) • k₂)
+    (hwk₃ : wm ⬝ᵥ k₃ = 0)
+    (hk₄ : k₄ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₄ = curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃ -
+      (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) • vm -
+      ((wm ⬝ᵥ P₂ vm vm) ^ 2 - 2 * (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂)) • k₂ -
+      (3 * (wm ⬝ᵥ P₂ vm vm)) • k₃)
+    (hdeg : (wm ⬝ᵥ P₂ vm vm) ^ 2 + wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂ = 0)
+    (hκ : 0 < wm ⬝ᵥ curveCoeff₅ P₂ P₃ P₄ P₅ vm k₂ k₃ k₄ +
+      3 * (wm ⬝ᵥ P₂ vm vm) * (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) - 2 * (wm ⬝ᵥ P₂ vm vm) ^ 4) :
+    (∃ (P : (Fin n → ℝ) → Fin n → ℝ) (r : ℝ), 0 < r ∧
+      (∀ ξ, ‖ξ - xs 0‖ < r → ∃ x : ℝ → Fin n → ℝ, x 0 = ξ ∧ IsIntegralCurveOn x G (Icc 0 T)) ∧
+      (∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Icc 0 T) → ‖x 0 - xs 0‖ < r →
+        x T = P (x 0)) ∧
+      Map.LocalAsymptoticStable (euclidMap P) ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) ∧
+      ¬ Map.LocallyExponentiallyStable (euclidMap P)
+        ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) ∧
+    (∀ ε, 0 < ε → ∃ δ, 0 < δ ∧ ∀ (τ t : ℝ) (x : ℝ → Fin n → ℝ), τ ≤ t →
+      IsIntegralCurveOn x G (Icc τ t) → ‖x τ - xs τ‖ < δ → ‖x t - xs t‖ < ε) ∧
+    ∃ δ, 0 < δ ∧ (∀ (τ : ℝ) (ξ : Fin n → ℝ), ‖ξ - xs τ‖ < δ →
+        ∃ x : ℝ → Fin n → ℝ, x τ = ξ ∧ IsIntegralCurveOn x G (Ici τ)) ∧
+      ∀ ε, 0 < ε → ∃ S, 0 ≤ S ∧ ∀ (τ t : ℝ) (x : ℝ → Fin n → ℝ), τ + S ≤ t →
+        IsIntegralCurveOn x G (Icc τ t) → ‖x τ - xs τ‖ < δ → ‖x t - xs t‖ < ε :=
+  orbit_stable_of_degenerateFlip_local hGc (fun t => (hG6 t).differentiable (by norm_num)) hD hT
+    hGper hxs hfix (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k.factorial : ℝ)⁻¹)) hρ
+    (taylor_along_of_contDiff_order (by norm_num) (fun r _ y _ => (hG6 r).contDiffAt) hB)
+    hv hw hwv hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hwk₃ hk₄ hdeg hκ
+
+/-- **Fields of class `C⁶` without a global Lipschitz bound, unstable side.**
+`orbit_unstable_of_degenerateFlip_local` with `Q_k = D_x^kG/k!` along `x_*`, under the
+hypotheses of `orbit_stable_of_degenerateFlip_of_contDiff_local`. -/
+@[tmio T, powerlib_foundation] theorem orbit_unstable_of_degenerateFlip_of_contDiff_local
+    (hGc : Continuous (uncurry G)) (hG6 : ∀ t, ContDiff ℝ 6 (G t))
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2) {T : ℝ} (hT : 0 < T)
+    (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t)
+    (hfix : xs T = xs 0)
+    (hDk : ∀ k, 2 ≤ k → k ≤ 5 → Continuous fun r => iteratedFDeriv ℝ k (G r) (xs r))
+    {ρ B : ℝ} (hρ : 0 < ρ)
+    (hB : ∀ r ∈ Icc 0 T, ∀ y ∈ Metric.closedBall (xs r) ρ, ‖iteratedFDeriv ℝ 6 (G r) y‖ ≤ B)
+    {vm wm : Fin n → ℝ} (hv : monodromy (jacobianAlong G xs) T 0 *ᵥ vm = -vm)
+    (hw : wm ᵥ* monodromy (jacobianAlong G xs) T 0 = -wm) (hwv : wm ⬝ᵥ vm = 1)
+    (hS : LTI.SchurStable (monodromy (jacobianAlong G xs) T 0 + vecMulVec vm wm))
+    {P₂ : (Fin n → ℝ) →L[ℝ] (Fin n → ℝ) →L[ℝ] Fin n → ℝ}
+    {P₃ : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₄ : ContinuousMultilinearMap ℝ (fun _ : Fin 4 => Fin n → ℝ) (Fin n → ℝ)}
+    {P₅ : ContinuousMultilinearMap ℝ (fun _ : Fin 5 => Fin n → ℝ) (Fin n → ℝ)}
+    (hP₂ : P₂ = bilin (flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 2))
+    (hP₃ : P₃ = flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 3)
+    (hP₄ : P₄ = flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 4)
+    (hP₅ : P₅ = flowJet (jacobianAlong G xs) (taylorSeries G xs) 0 T 5)
+    {k₂ k₃ k₄ : Fin n → ℝ}
+    (hk₂ : k₂ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₂ = P₂ vm vm - (wm ⬝ᵥ P₂ vm vm) • vm)
+    (hk₃ : -k₃ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₃ =
+      curveCoeff₃ P₂ P₃ vm k₂ - (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂) • vm +
+        (2 * (wm ⬝ᵥ P₂ vm vm)) • k₂)
+    (hwk₃ : wm ⬝ᵥ k₃ = 0)
+    (hk₄ : k₄ - monodromy (jacobianAlong G xs) T 0 *ᵥ k₄ = curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃ -
+      (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) • vm -
+      ((wm ⬝ᵥ P₂ vm vm) ^ 2 - 2 * (wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂)) • k₂ -
+      (3 * (wm ⬝ᵥ P₂ vm vm)) • k₃)
+    (hdeg : (wm ⬝ᵥ P₂ vm vm) ^ 2 + wm ⬝ᵥ curveCoeff₃ P₂ P₃ vm k₂ = 0)
+    (hκ : wm ⬝ᵥ curveCoeff₅ P₂ P₃ P₄ P₅ vm k₂ k₃ k₄ +
+      3 * (wm ⬝ᵥ P₂ vm vm) * (wm ⬝ᵥ curveCoeff₄ P₂ P₃ P₄ vm k₂ k₃) - 2 * (wm ⬝ᵥ P₂ vm vm) ^ 4 < 0) :
+    (∃ (P : (Fin n → ℝ) → Fin n → ℝ) (r : ℝ), 0 < r ∧
+      (∀ ξ, ‖ξ - xs 0‖ < r → ∃ x : ℝ → Fin n → ℝ, x 0 = ξ ∧ IsIntegralCurveOn x G (Icc 0 T)) ∧
+      (∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Icc 0 T) → ‖x 0 - xs 0‖ < r →
+        x T = P (x 0)) ∧
+      Map.Unstable (euclidMap P) ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) ∧
+    ∃ ε, 0 < ε ∧ ∀ (τ δ : ℝ), 0 < δ → ∃ (x : ℝ → Fin n → ℝ) (t : ℝ), τ ≤ t ∧
+      IsIntegralCurveOn x G (Icc τ t) ∧ ‖x τ - xs τ‖ < δ ∧ ε ≤ ‖x t - xs t‖ :=
+  orbit_unstable_of_degenerateFlip_local hGc (fun t => (hG6 t).differentiable (by norm_num)) hD
+    hT hGper hxs hfix (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k.factorial : ℝ)⁻¹)) hρ
+    (taylor_along_of_contDiff_order (by norm_num) (fun r _ y _ => (hG6 r).contDiffAt) hB)
+    hv hw hwv hS hP₂ hP₃ hP₄ hP₅ hk₂ hk₃ hwk₃ hk₄ hdeg hκ
+
+end Local
 
 end powerlib.Periodic.DegenerateFlipOrbit
