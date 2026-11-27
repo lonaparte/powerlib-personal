@@ -1083,12 +1083,12 @@ omit [Fintype Y] [DecidableEq Y] in
 omit [Fintype Y] [DecidableEq Y] in
 @[tmio T, powerlib_foundation] private theorem mapC_sub' {a b : Type*} (A B : Matrix a b ℝ) :
     (A - B).map (algebraMap ℝ ℂ) = A.map (algebraMap ℝ ℂ) - B.map (algebraMap ℝ ℂ) :=
-  Matrix.map_sub _ (map_sub _) A B
+  Linear.complexify_sub A B
 
 omit [Fintype Y] [DecidableEq Y] in
 @[tmio T, powerlib_foundation] private theorem mapC_neg' {a b : Type*} (A : Matrix a b ℝ) :
     (-A).map (algebraMap ℝ ℂ) = -A.map (algebraMap ℝ ℂ) :=
-  Matrix.map_neg _ (map_neg _) A
+  Linear.complexify_neg A
 
 omit [Fintype Y] in
 @[tmio T, powerlib_foundation] private theorem mapC_one' :
