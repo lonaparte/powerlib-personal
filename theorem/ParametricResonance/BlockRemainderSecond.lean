@@ -35,9 +35,9 @@ Scope.
   `T = 2π/ω`; the clamped standard form `BlockAveraging.FzcB` and the frozen frame conjugate
   `frameConj` (equal to `Ψ⁻¹RΨ` on `[0, T]`). Physical coordinates: `BlockAveraging.physJR` with
   real modal coordinates `P`, `Q`.
-* Not covered: closed forms of `N_eff` (for a three-state core see
-  `theorem/ParametricResonance/ThreeStateCore.lean` if present); remainders that are not
-  expanded to `O(ε³)`.
+* Not covered: closed forms of `N_eff` (one for a three-state core is
+  `theorem/ParametricResonance/ThreeStateCore.lean`); remainders that are not expanded to
+  `O(ε³)`.
 * Generic mathematics; no model family.
 
 Source: the wave-6 question of this library (the boundary left open by
