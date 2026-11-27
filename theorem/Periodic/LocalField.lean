@@ -42,9 +42,10 @@ Scope.
 * The degenerate flip `a² + b = 0` is not decided (as in `FlipOrbit`).
 * Generic mathematics; no model family.
 
-Source: the localization of a locally Lipschitz field by a smooth cut-off (Hartman, *Ordinary
-Differential Equations*, Ch. V; Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.),
-§5.4, where the Poincaré map is defined near the orbit only); the open items of
+Source: the localization of a locally Lipschitz field by a smooth cut-off and the uniqueness of
+solutions of locally Lipschitz fields (standard; Mathlib `ODE_solution_unique_of_mem_Icc_right`);
+Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §5.4 (the Poincaré map of a
+periodic orbit is defined near the orbit only); the open items of
 `theorem/Periodic/FlipOrbit.lean` and `theorem/Periodic/FlowDerivative.lean` (Scope: "a field
 that is only locally Lipschitz is first multiplied by a smooth cut-off equal to `1` near the orbit,
 which is not done here").

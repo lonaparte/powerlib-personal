@@ -31,8 +31,8 @@ Scope.
 * The degenerate flip `a² + b = 0` is not decided (as in `FlipOrbit`).
 * Generic mathematics; no model family.
 
-Source: W. Hahn, *Stability of Motion* (1967), §§ 36–38 (for periodic right-hand sides stability
-and asymptotic stability are uniform in the initial time); the open item of
+Source: W. Hahn, *Stability of Motion* (1967): for periodic right-hand sides stability and
+asymptotic stability are uniform in the initial time; the open item of
 `theorem/Periodic/FlipOrbit.lean` (Scope: "the solution statements concern the initial time
 `0`").
 

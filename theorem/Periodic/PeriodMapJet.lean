@@ -42,9 +42,12 @@ Scope.
   class `C^{N+1}` in `x` it holds with `Q_k = D_x^kG/k!` and `c = B/(N + 1)!`, `B` a bound of
   `‖D_x^{N+1}G‖` on the tube (`taylor_along_of_contDiff_order`, Taylor's theorem with integral
   remainder).
-* The remainder constants are obtained by the induction on the order (existentially, from the
-  bounds of the coefficients on `[s, t]`), not as a closed formula as `taylorConst` of
-  `PeriodMapTaylor`; the expansion holds for `‖e‖ ≤ 1` with `e^{K(t − s)} ‖e‖ ≤ ρ`.
+* The remainder constant is explicit, `flowConst K L B c N`, defined by the recursion of the
+  proof (`remConst`, with the bound `jetBound` of the coefficients `P_j`) from `K`, the length
+  `L = t − s`, the bound `B ≥ ‖Q_k‖` and the field remainder `c`; the expansion holds for
+  `‖e‖ ≤ 1` with `e^{K(t − s)} ‖e‖ ≤ ρ`. For a field of class `C^{N+1}`
+  (`periodMap_jet_of_contDiff`) the bound `B` comes from the continuity of `D_x^kG` along `x_*`
+  and the constant is stated to exist.
 * The coefficients `P_j` are those of the hierarchy written with the multilinear coefficients
   `Q_k`; their identification with `secondVariation`, `thirdVariation` of `PeriodMapTaylor`
   (where `Q₂` is a bilinear map) is not stated.
@@ -66,11 +69,14 @@ Results.
   `∑_c Q_{|c|}(y_{c_1}, …, y_{c_{|c|}})`.
 * `multilinOfBasis_resp`, `continuous_varSource_apply`, `flowJet_spec`, `hasDerivAt_flowJet`,
   `flowJet_start` — the coefficients are continuous and solve the variational hierarchy.
-* `exists_bound_coeff`, `norm_transition_mulVec_le`, `exists_bound_flowJet` — bounds on `[s, t]`.
-* `exists_norm_sub_flowJet_le` — the expansion of the flow to order `N`,
-  `‖x(r) − x_*(r) − ∑_{1 ≤ j ≤ N} P_j(r)(e, …, e)‖ ≤ C ‖e‖^{N+1}` on `[s, t]`.
+* `exists_bound_coeff`, `norm_transition_mulVec_le`, `jetBound`, `jetBound_nonneg`,
+  `norm_flowJet_le` — bounds on `[s, t]`.
+* `remConst`, `remConst_nonneg`, `flowConst`, `flowConst_nonneg` — the remainder constants;
+  `norm_sub_flowJet_le` — the expansion of the flow to order `N`,
+  `‖x(r) − x_*(r) − ∑_{1 ≤ j ≤ N} P_j(r)(e, …, e)‖ ≤ flowConst K (t − s) B c N ‖e‖^{N+1}` on
+  `[s, t]`.
 * `sum_flowJet_eq`, `periodMap_jet` — the expansion of the period map,
-  `‖P(p + e) − p − M e − ∑_{2 ≤ j ≤ N} P_j(T)(e, …, e)‖ ≤ C ‖e‖^{N+1}`.
+  `‖P(p + e) − p − M e − ∑_{2 ≤ j ≤ N} P_j(T)(e, …, e)‖ ≤ flowConst K T B c N ‖e‖^{N+1}`.
 * `norm_taylor_le`, `taylorSeries`, `taylor_along_of_contDiff_order`,
   `periodMap_jet_of_contDiff` — Taylor's theorem to order `N` and the expansion of the period
   map of a field of class `C^{N+1}`.
@@ -166,17 +172,13 @@ variable {A : ℝ → Matrix X X ℝ} {Q : ℝ → FormalMultilinearSeries ℝ (
 
 /-! ## Compositions with at least two blocks -/
 
-/-- A composition of `j` into at least two blocks has every block smaller than `j`. -/
+/-- A composition of `j` into at least two blocks has every block smaller than `j` (Mathlib
+`Composition.ne_single_iff`: it is not the single block). -/
 @[tmio T, powerlib_foundation] theorem blocksFun_lt {j : ℕ} {c : Composition j}
     (hc : 2 ≤ c.length) (i : Fin c.length) : c.blocksFun i < j := by
-  obtain ⟨i', hi'⟩ : ∃ i' : Fin c.length, i' ≠ i := by
-    by_cases h : (i : ℕ) = 0
-    · exact ⟨⟨1, by omega⟩, fun h' => by rw [Fin.ext_iff] at h'; simp at h'; omega⟩
-    · exact ⟨⟨0, by omega⟩, fun h' => by rw [Fin.ext_iff] at h'; simp at h'; omega⟩
-  have h2 : c.blocksFun i + c.blocksFun i' ≤ j := by
-    have h := Finset.sum_le_sum_of_subset (f := c.blocksFun) (Finset.subset_univ {i, i'})
-    rwa [Finset.sum_pair hi'.symm, c.sum_blocksFun] at h
-  have := c.one_le_blocksFun i'
+  have hj : 0 < j := lt_of_lt_of_le (by omega) (hc.trans c.length_le)
+  refine (Composition.ne_single_iff hj).1 (fun h => ?_) i
+  have := (Composition.eq_single_iff_length hj).1 h
   omega
 
 omit [Fintype X] [DecidableEq X] in
@@ -352,34 +354,61 @@ omit [DecidableEq X] in
   rw [zero_mul, add_zero] at h
   exact h.trans_eq (mul_comm _ _)
 
-/-- **The coefficients of the jet are bounded on `[s, t]`.** -/
-@[tmio T, powerlib_foundation] theorem exists_bound_flowJet (hA : Continuous A) {N : ℕ}
-    (hQ : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => Q r k) {K : NNReal} {t : ℝ} (hst : s ≤ t)
-    (hAK : ∀ r ∈ Icc s t, ∀ v, ‖A r *ᵥ v‖ ≤ K * ‖v‖) :
-    ∃ D, 0 ≤ D ∧ ∀ j ≤ N, ∀ r ∈ Icc s t, ‖flowJet A Q s r j‖ ≤ D := by
-  obtain ⟨B, hB0, hB⟩ := exists_bound_coeff (Q := Q) (s := s) (t := t) N hQ
+/-- The bound of the coefficients of orders `0, …, M` of the jet on a segment of length `L`, for
+`E = e^{KL}` and the bound `B ≥ ‖Q_k‖` of the field coefficients: `jetBound 0 = 0`,
+`jetBound 1 = E` (the transition matrix) and
+`jetBound (M + 1) = max (jetBound M) (#Comp(M + 1) · B · D₁^{M+1} · L · E)`,
+`D₁ = max (jetBound M) 1`, for `M ≥ 1` (the variation of constants over the compositions of
+`M + 1`). -/
+def jetBound (E L B : ℝ) : ℕ → ℝ
+  | 0 => 0
+  | M + 1 => max (jetBound E L B M) (if M = 0 then E else
+      (Fintype.card (Composition (M + 1)) : ℝ) * (B * max (jetBound E L B M) 1 ^ (M + 1)) * L * E)
+
+@[tmio T, powerlib_foundation] theorem jetBound_nonneg (E L B : ℝ) :
+    ∀ M, 0 ≤ jetBound E L B M
+  | 0 => le_rfl
+  | M + 1 => (jetBound_nonneg E L B M).trans (le_max_left _ _)
+
+/-- **The coefficients of the jet are bounded on `[s, t]`**: `‖P_j(r)‖ ≤ jetBound E (t − s) B N`
+for `j ≤ N`, `E = e^{K(t − s)}`, when `‖A(r) v‖ ≤ K ‖v‖` and `‖Q_k(r)‖ ≤ B` (`2 ≤ k ≤ N`). -/
+@[tmio T, powerlib_foundation] theorem norm_flowJet_le (hA : Continuous A) {N : ℕ}
+    (hQ : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => Q r k) {K : NNReal} {t B : ℝ} (hst : s ≤ t)
+    (hAK : ∀ r ∈ Icc s t, ∀ v, ‖A r *ᵥ v‖ ≤ K * ‖v‖) (hB0 : 0 ≤ B)
+    (hB : ∀ k, 2 ≤ k → k ≤ N → ∀ r ∈ Icc s t, ‖Q r k‖ ≤ B) :
+    ∀ j ≤ N, ∀ r ∈ Icc s t,
+      ‖flowJet A Q s r j‖ ≤ jetBound (Real.exp (K * (t - s))) (t - s) B N := by
   set E := Real.exp (K * (t - s)) with hE
   have hE0 : 0 ≤ E := (Real.exp_pos _).le
   have hts : 0 ≤ t - s := sub_nonneg.2 hst
-  suffices h : ∀ M, M ≤ N → ∃ D, 0 ≤ D ∧ ∀ j ≤ M, ∀ r ∈ Icc s t, ‖flowJet A Q s r j‖ ≤ D from
-    h N le_rfl
+  suffices h : ∀ M, M ≤ N → ∀ j ≤ M, ∀ r ∈ Icc s t,
+      ‖flowJet A Q s r j‖ ≤ jetBound E (t - s) B M from h N le_rfl
   intro M
   induction M with
   | zero =>
-    refine fun _ => ⟨0, le_rfl, fun j hj r _ => ?_⟩
+    intro _ j hj r _
     obtain rfl : j = 0 := by omega
     rw [flowJet_zero, norm_zero]
+    exact le_rfl
   | succ M ih =>
     intro hMN
-    obtain ⟨D, hD0, hD⟩ := ih (by omega)
+    have hD := ih (by omega)
+    set D := jetBound E (t - s) B M with hDdef
+    have hD0 : 0 ≤ D := jetBound_nonneg _ _ _ M
     -- the new coefficient `j = M + 1`
-    obtain ⟨D', hD'0, hD'⟩ : ∃ D', 0 ≤ D' ∧ ∀ r ∈ Icc s t, ‖flowJet A Q s r (M + 1)‖ ≤ D' := by
-      rcases Nat.lt_or_ge (M + 1) 2 with h1 | h2
-      · obtain rfl : M = 0 := by omega
-        refine ⟨E, hE0, fun r hr => ContinuousMultilinearMap.opNorm_le_bound hE0 fun m => ?_⟩
+    have hnew : ∀ r ∈ Icc s t, ‖flowJet A Q s r (M + 1)‖ ≤ (if M = 0 then E else
+        (Fintype.card (Composition (M + 1)) : ℝ) * (B * max D 1 ^ (M + 1)) * (t - s) * E) := by
+      rcases Nat.eq_zero_or_pos M with h0 | h0
+      · subst h0
+        intro r hr
+        rw [ite_eq_left rfl]
+        refine ContinuousMultilinearMap.opNorm_le_bound hE0 fun m => ?_
         rw [flowJet_one, Fin.prod_univ_one]
         exact norm_transition_mulVec_le hA hAK (m 0) r hr
-      · set D₁ := max D 1 with hD₁
+      · intro r hr
+        rw [ite_eq_right (by omega)]
+        have h2 : 2 ≤ M + 1 := by omega
+        set D₁ := max D 1 with hD₁
         set εS := (Fintype.card (Composition (M + 1)) : ℝ) * (B * D₁ ^ (M + 1)) with hεS
         have hεS0 : 0 ≤ εS := by positivity
         have hSb : ∀ σ ∈ Icc s t, ‖varSource Q (flowJet A Q s) (M + 1) σ‖ ≤ εS := by
@@ -399,8 +428,7 @@ omit [DecidableEq X] in
           · rw [nsmul_eq_mul, hεS]
             gcongr
             exact_mod_cast (Finset.card_filter_le _ _).trans_eq Finset.card_univ
-        refine ⟨εS * (t - s) * E, by positivity, fun r hr =>
-          ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m => ?_⟩
+        refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m => ?_
         have hspec := flowJet_spec (s := s) hA hQ (M + 1) (by omega) hMN
         have hS : Continuous fun σ => varSource Q (flowJet A Q s) (M + 1) σ m :=
           continuous_varSource_apply (fun k hk1 hk2 => hQ k hk1 (by omega))
@@ -412,12 +440,12 @@ omit [DecidableEq X] in
         calc ‖resp A (fun σ => varSource Q (flowJet A Q s) (M + 1) σ m) s r‖
             ≤ (εS * ∏ i, ‖m i‖) * (t - s) * E := h
           _ = εS * (t - s) * E * ∏ i, ‖m i‖ := by ring
-    refine ⟨max D D', le_max_of_le_left hD0, fun j hj r hr => ?_⟩
+    intro j hj r hr
+    show _ ≤ max D _
     rcases Nat.lt_or_ge j (M + 1) with hj' | hj'
     · exact (hD j (by omega) r hr).trans (le_max_left _ _)
     · obtain rfl : j = M + 1 := by omega
-      exact (hD' r hr).trans (le_max_right _ _)
-
+      exact (hnew r hr).trans (le_max_right _ _)
 
 /-! ## The Taylor expansion of the flow to order `N` -/
 
@@ -490,49 +518,83 @@ orders `1, …, n + 1`; the rest is the sum over the compositions of total order
     ← Finset.sum_filter_add_sum_filter_not T (fun a => a.1 ≤ n + 1)]
   abel
 
+/-- The constants of the remainders of the flow, for `E = e^{KL}`, the segment length `L`, the
+bounds `B ≥ ‖Q_k‖`, `D ≥ ‖P_j‖` (`j ≤ N`) and the remainder constant `c` of the field:
+`remConst … 0 = E` (the a priori bound) and
+`remConst … (n + 1) = (c⁺ E^{N+1} + (N + 1) B N F^N C + #T B D₁^N) L E` with
+`C = remConst … n`, `F = max (E + C) 1`, `D₁ = max D 1` and `T` the compositions of
+`compPartialSumTarget 0 (N + 1) (n + 1)`. -/
+def remConst (E L B c D : ℝ) (N : ℕ) : ℕ → ℝ
+  | 0 => E
+  | n + 1 => (max c 0 * E ^ (N + 1) +
+      (N + 1 : ℝ) * (B * N * max (E + remConst E L B c D N n) 1 ^ N * remConst E L B c D N n) +
+      ((FormalMultilinearSeries.compPartialSumTarget 0 (N + 1) (n + 1)).card : ℝ) *
+        (B * max D 1 ^ N)) * L * E
+
+@[tmio T, powerlib_foundation] theorem remConst_nonneg {E L B c D : ℝ} (N : ℕ) (hE : 0 ≤ E)
+    (hL : 0 ≤ L) (hB : 0 ≤ B) : ∀ n, 0 ≤ remConst E L B c D N n
+  | 0 => hE
+  | n + 1 => by
+    have := remConst_nonneg (c := c) (D := D) N hE hL hB n
+    simp only [remConst]
+    positivity
+
+/-- The remainder constant of the expansion of order `N` of the flow over a segment of length
+`L`: `remConst` at the order `N`, with `E = e^{KL}` and `D = jetBound E L B N`. -/
+def flowConst (K L B c : ℝ) (N : ℕ) : ℝ :=
+  remConst (Real.exp (K * L)) L B c (jetBound (Real.exp (K * L)) L B N) N N
+
+@[tmio T, powerlib_foundation] theorem flowConst_nonneg {K L B c : ℝ} (N : ℕ) (hL : 0 ≤ L)
+    (hB : 0 ≤ B) : 0 ≤ flowConst K L B c N :=
+  remConst_nonneg N (Real.exp_pos _).le hL hB N
+
 /-- **The Taylor expansion of the flow to order `N`.** Let `x_*` and `x` solve `ẋ = G(t, x)` on
 `[s, t]`, `G(r, ·)` `K`-Lipschitz, and let `G` have along `x_*` the expansion of order `N`,
 `G(r, x_* + u) = G(r, x_*) + A(r) u + ∑_{2 ≤ k ≤ N} Q_k(r)(u, …, u) + R`, `‖R‖ ≤ c ‖u‖^{N+1}`
-for `‖u‖ ≤ ρ`, with continuous coefficients and `‖A(r) v‖ ≤ K ‖v‖` on `[s, t]` (for a field of
-class `C^{N+1}`: `Q_k = D_x^kG/k!`, `taylor_along_of_contDiff_order`). Then there is `C` with
+for `‖u‖ ≤ ρ`, with continuous coefficients, `‖A(r) v‖ ≤ K ‖v‖` and `‖Q_k(r)‖ ≤ B` on `[s, t]`
+(for a field of class `C^{N+1}`: `Q_k = D_x^kG/k!`, `taylor_along_of_contDiff_order`). Then
 `‖x(r) − x_*(r) − ∑_{1 ≤ j ≤ N} P_j(r)(e, …, e)‖ ≤ C ‖e‖^{N+1}` on `[s, t]`, `e = x(s) − x_*(s)`,
 for `‖e‖ ≤ 1` and `e^{K(t − s)} ‖e‖ ≤ ρ`, with the jet `P_j = flowJet A Q s` of the variational
-hierarchy. The constant is produced by induction on the order: the remainder of order `n + 1`
-solves `ż = A z + (source)` with the source of order `n + 2` by the composition identity
-(`comp_identity`) and the remainder of order `n`. -/
-@[tmio T, powerlib_foundation] theorem exists_norm_sub_flowJet_le {G : ℝ → (X → ℝ) → X → ℝ}
+hierarchy and `C = flowConst K (t − s) B c N`. The proof is an induction on the order: the
+remainder of order `n + 1` solves `ż = A z + (source)` with the source of order `n + 2` by the
+composition identity (`comp_identity`) and the remainder of order `n`. -/
+@[tmio T, powerlib_foundation] theorem norm_sub_flowJet_le {G : ℝ → (X → ℝ) → X → ℝ}
     {K : NNReal} (hK : ∀ t, LipschitzWith K (G t)) (hA : Continuous A) {N : ℕ}
-    (hQ : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => Q r k) {t : ℝ} (hst : s ≤ t)
-    (hAK : ∀ r ∈ Icc s t, ∀ v, ‖A r *ᵥ v‖ ≤ K * ‖v‖) {xs : ℝ → X → ℝ}
-    (hxs : IsIntegralCurveOn xs G (Icc s t)) {c ρ : ℝ}
+    (hQ : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => Q r k) {t B c ρ : ℝ} (hst : s ≤ t)
+    (hAK : ∀ r ∈ Icc s t, ∀ v, ‖A r *ᵥ v‖ ≤ K * ‖v‖) (hB0 : 0 ≤ B)
+    (hB : ∀ k, 2 ≤ k → k ≤ N → ∀ r ∈ Icc s t, ‖Q r k‖ ≤ B) {xs : ℝ → X → ℝ}
+    (hxs : IsIntegralCurveOn xs G (Icc s t))
     (hTay : ∀ r ∈ Icc s t, ∀ u, ‖u‖ ≤ ρ → ‖G r (xs r + u) - G r (xs r) - A r *ᵥ u -
-      ∑ k ∈ Finset.Icc 2 N, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ (N + 1)) :
-    ∃ C, 0 ≤ C ∧ ∀ x : ℝ → X → ℝ, IsIntegralCurveOn x G (Icc s t) → ‖x s - xs s‖ ≤ 1 →
-      Real.exp (K * (t - s)) * ‖x s - xs s‖ ≤ ρ → ∀ r ∈ Icc s t,
+      ∑ k ∈ Finset.Icc 2 N, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ (N + 1))
+    {x : ℝ → X → ℝ} (hx : IsIntegralCurveOn x G (Icc s t)) (he1 : ‖x s - xs s‖ ≤ 1)
+    (heρ : Real.exp (K * (t - s)) * ‖x s - xs s‖ ≤ ρ) :
+    ∀ r ∈ Icc s t,
       ‖x r - xs r - ∑ j ∈ Finset.Icc 1 N, flowJet A Q s r j (fun _ => x s - xs s)‖ ≤
-        C * ‖x s - xs s‖ ^ (N + 1) := by
-  obtain ⟨B, hB0, hB⟩ := exists_bound_coeff (Q := Q) (s := s) (t := t) N hQ
-  obtain ⟨D, hD0, hD⟩ := exists_bound_flowJet hA hQ hst hAK
+        flowConst K (t - s) B c N * ‖x s - xs s‖ ^ (N + 1) := by
   set E := Real.exp (K * (t - s)) with hE
+  set D := jetBound E (t - s) B N with hDdef
+  have hD := norm_flowJet_le hA hQ hst hAK hB0 hB
+  have hD0 : 0 ≤ D := jetBound_nonneg _ _ _ N
   have hts : 0 ≤ t - s := sub_nonneg.2 hst
   have hE1 : 1 ≤ E := Real.one_le_exp (mul_nonneg K.2 hts)
   have hexp : ∀ r ∈ Icc s t, Real.exp (K * (r - s)) ≤ E := fun r hr =>
     Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left (by linarith [hr.2]) K.2)
-  suffices H : ∀ n, n ≤ N → ∃ C, 0 ≤ C ∧ ∀ x : ℝ → X → ℝ, IsIntegralCurveOn x G (Icc s t) →
-      ‖x s - xs s‖ ≤ 1 → E * ‖x s - xs s‖ ≤ ρ → ∀ r ∈ Icc s t,
+  suffices H : ∀ n, n ≤ N → ∀ r ∈ Icc s t,
       ‖x r - xs r - ∑ j ∈ Finset.Icc 1 n, flowJet A Q s r j (fun _ => x s - xs s)‖ ≤
-        C * ‖x s - xs s‖ ^ (n + 1) from H N le_rfl
+        remConst E (t - s) B c D N n * ‖x s - xs s‖ ^ (n + 1) from H N le_rfl
   intro n
   induction n with
   | zero =>
-    refine fun _ => ⟨E, by positivity, fun x hx _ _ r hr => ?_⟩
+    intro _ r hr
     rw [Finset.Icc_eq_empty (by norm_num), Finset.sum_empty, sub_zero, zero_add, pow_one]
     have h := dist_le_of_isIntegralCurveOn_Icc hK hx hxs r hr
     rw [dist_eq_norm, dist_eq_norm] at h
     exact h.trans ((mul_le_mul_of_nonneg_left (hexp r hr) (norm_nonneg _)).trans_eq (mul_comm _ _))
   | succ n ih =>
-    intro hnN
-    obtain ⟨C, hC0, hC⟩ := ih (by omega)
+    intro hnN r₀ hr₀
+    have hC := ih (by omega)
+    set C := remConst E (t - s) B c D N n with hCdef
+    have hC0 : 0 ≤ C := remConst_nonneg N (by positivity) hts hB0 n
     set F := max (E + C) 1 with hF
     have hF1 : 1 ≤ F := le_max_right _ _
     set D₁ := max D 1 with hD₁
@@ -540,7 +602,6 @@ solves `ż = A z + (source)` with the source of order `n + 2` by the composition
     set ε := max c 0 * E ^ (N + 1) + (N + 1 : ℝ) * (B * N * F ^ N * C) +
       (T.card : ℝ) * (B * D₁ ^ N) with hε
     have hε0 : 0 ≤ ε := by positivity
-    refine ⟨ε * (t - s) * E, by positivity, fun x hx he1 heρ r₀ hr₀ => ?_⟩
     set e := x s - xs s with he
     set η := ‖e‖ with hη
     have hη0 : 0 ≤ η := norm_nonneg _
@@ -554,8 +615,7 @@ solves `ż = A z + (source)` with the source of order `n + 2` by the composition
       have h := dist_le_of_isIntegralCurveOn_Icc hK hx hxs r hr
       rw [dist_eq_norm, dist_eq_norm] at h
       exact h.trans ((mul_le_mul_of_nonneg_left (hexp r hr) hη0).trans_eq (mul_comm _ _))
-    have hzb : ∀ r ∈ Icc s t, ‖u r - ∑ j ∈ Finset.Icc 1 n, y j r‖ ≤ C * η ^ (n + 1) :=
-      hC x hx he1 heρ
+    have hzb : ∀ r ∈ Icc s t, ‖u r - ∑ j ∈ Finset.Icc 1 n, y j r‖ ≤ C * η ^ (n + 1) := hC
     have hwb : ∀ r ∈ Icc s t, ‖∑ j ∈ Finset.Icc 1 n, y j r‖ ≤ F * η := by
       intro r hr
       have h1 : ‖∑ j ∈ Finset.Icc 1 n, y j r‖ ≤ ‖u r‖ + ‖u r - ∑ j ∈ Finset.Icc 1 n, y j r‖ := by
@@ -701,7 +761,10 @@ solves `ż = A z + (source)` with the source of order `n + 2` by the composition
     have h := FlowDerivative.norm_le_of_hasDerivWithinAt K.2 (by positivity) hd hbd h0 r₀ hr₀
     calc ‖x r₀ - xs r₀ - ∑ j ∈ Finset.Icc 1 (n + 1), flowJet A Q s r₀ j (fun _ => e)‖
         ≤ (0 + ε * η ^ (n + 2) * (t - s)) * Real.exp (K * (t - s)) := h
-      _ = ε * (t - s) * E * η ^ (n + 1 + 1) := by rw [hE]; ring
+      _ = remConst E (t - s) B c D N (n + 1) * η ^ (n + 1 + 1) := by
+          simp only [remConst]
+          rw [← hCdef, hε, hF, hD₁, hT, hE]
+          ring
 
 
 /-- The first coefficient of the jet at the period is the monodromy:
@@ -715,24 +778,25 @@ solves `ż = A z + (source)` with the source of order `n + 2` by the composition
 
 /-- **The Taylor expansion of the period map to order `N`.** Let `G` be continuous and
 `K`-Lipschitz in the state, `x_*` a global solution with `x_*(T) = x_*(0)`, and let `G` have
-along `x_*` on `[0, T]` the expansion of order `N ≥ 1` of `exists_norm_sub_flowJet_le`. Then the
-period map `P(ξ) = x(T; 0, ξ)` (`FlowDerivative.periodMap`) satisfies, with `p = x_*(0)`,
-`M = Φ(T, 0) = monodromy A T 0` and the coefficients `P_j = P_j(T)` of the variational hierarchy,
+along `x_*` on `[0, T]` the expansion of order `N ≥ 1` of `norm_sub_flowJet_le` (`‖Q_k‖ ≤ B`,
+remainder `c ‖u‖^{N+1}` for `‖u‖ ≤ ρ`). Then the period map `P(ξ) = x(T; 0, ξ)`
+(`FlowDerivative.periodMap`) satisfies, with `p = x_*(0)`, `M = Φ(T, 0) = monodromy A T 0` and
+the coefficients `P_j = P_j(T)` of the variational hierarchy,
 `‖P(p + e) − p − M e − ∑_{2 ≤ j ≤ N} P_j(e, …, e)‖ ≤ C ‖e‖^{N+1}` for
-`‖e‖ ≤ min 1 (ρ e^{−KT})`. -/
+`‖e‖ ≤ min 1 (ρ e^{−KT})`, `C = flowConst K T B c N`. -/
 @[tmio T, powerlib_foundation] theorem periodMap_jet {G : ℝ → (X → ℝ) → X → ℝ} {K : NNReal}
     (hGc : Continuous (uncurry G)) (hK : ∀ t, LipschitzWith K (G t)) (hA : Continuous A)
-    {N : ℕ} (hN : 1 ≤ N) (hQ : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => Q r k) {T : ℝ}
-    (hT : 0 ≤ T) (hAK : ∀ r ∈ Icc 0 T, ∀ v, ‖A r *ᵥ v‖ ≤ K * ‖v‖) {xs : ℝ → X → ℝ}
-    (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t) (hper : xs T = xs 0) {c ρ : ℝ}
+    {N : ℕ} (hN : 1 ≤ N) (hQ : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => Q r k) {T B c ρ : ℝ}
+    (hT : 0 ≤ T) (hAK : ∀ r ∈ Icc 0 T, ∀ v, ‖A r *ᵥ v‖ ≤ K * ‖v‖) (hB0 : 0 ≤ B)
+    (hB : ∀ k, 2 ≤ k → k ≤ N → ∀ r ∈ Icc 0 T, ‖Q r k‖ ≤ B) {xs : ℝ → X → ℝ}
+    (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t) (hper : xs T = xs 0)
     (hTay : ∀ r ∈ Icc 0 T, ∀ u, ‖u‖ ≤ ρ → ‖G r (xs r + u) - G r (xs r) - A r *ᵥ u -
-      ∑ k ∈ Finset.Icc 2 N, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ (N + 1)) :
-    ∃ C, 0 ≤ C ∧ ∀ e : X → ℝ, ‖e‖ ≤ min 1 (ρ / Real.exp (K * T)) →
-      ‖FlowDerivative.periodMap hGc hK T (xs 0 + e) - xs 0 - monodromy A T 0 *ᵥ e -
-        ∑ j ∈ Finset.Icc 2 N, flowJet A Q 0 T j (fun _ => e)‖ ≤ C * ‖e‖ ^ (N + 1) := by
+      ∑ k ∈ Finset.Icc 2 N, Q r k (fun _ => u)‖ ≤ c * ‖u‖ ^ (N + 1))
+    (e : X → ℝ) (he : ‖e‖ ≤ min 1 (ρ / Real.exp (K * T))) :
+    ‖FlowDerivative.periodMap hGc hK T (xs 0 + e) - xs 0 - monodromy A T 0 *ᵥ e -
+        ∑ j ∈ Finset.Icc 2 N, flowJet A Q 0 T j (fun _ => e)‖ ≤
+      flowConst K T B c N * ‖e‖ ^ (N + 1) := by
   have hxsI : IsIntegralCurveOn xs G (Icc 0 T) := fun r _ => (hxs r).hasDerivWithinAt
-  obtain ⟨C, hC0, hC⟩ := exists_norm_sub_flowJet_le hK hA hQ hT hAK hxsI hTay
-  refine ⟨C, hC0, fun e he => ?_⟩
   set x := FlowDerivative.flow hGc hK 0 (xs 0 + e) with hxdef
   have hx0 : x 0 - xs 0 = e := by
     rw [hxdef, FlowDerivative.flow_start]; abel
@@ -745,8 +809,8 @@ period map `P(ξ) = x(T; 0, ξ)` (`FlowDerivative.periodMap`) satisfies, with `p
     have := he.trans (min_le_right _ _)
     rw [le_div_iff₀ hE] at this
     linarith
-  have h := hC x hxI he1 heρ T ⟨hT, le_rfl⟩
-  rw [hx0, hper, sum_flowJet_eq hN, ← sub_sub] at h
+  have h := norm_sub_flowJet_le hK hA hQ hT hAK hB0 hB hxsI hTay hxI he1 heρ T ⟨hT, le_rfl⟩
+  rw [hx0, hper, sum_flowJet_eq hN, ← sub_sub, sub_zero] at h
   exact h
 
 /-! ## Fields of class `C^{N+1}` -/
@@ -864,9 +928,12 @@ the coefficients are those of the variational hierarchy of `A = D_xG(·, x_*)`
         (mul_le_mul_of_nonneg_right (norm_fderiv_le_of_lipschitz ℝ (hK r)) (norm_nonneg v))
   have hTay := taylor_along_of_contDiff_order (I := Icc 0 T) hN
     (fun r _ y _ => (hG r).contDiffAt) hB
-  refine periodMap_jet hGc hK (FlowDerivative.continuous_jacobianAlong hD hxc) hN
-    (fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k ! : ℝ)⁻¹)) hT hAK hxs hper
-    (c := B / (N + 1)!) (ρ := ρ) fun r hr u hu => ?_
+  have hQc : ∀ k, 2 ≤ k → k ≤ N → Continuous fun r => taylorSeries G xs r k :=
+    fun k hk1 hk2 => (hDk k hk1 hk2).const_smul ((k ! : ℝ)⁻¹)
+  obtain ⟨B', hB'0, hB'⟩ := exists_bound_coeff (Q := taylorSeries G xs) (s := 0) (t := T) N hQc
+  refine ⟨flowConst K T B' (B / (N + 1)!) N, flowConst_nonneg N hT hB'0, fun e he =>
+    periodMap_jet hGc hK (FlowDerivative.continuous_jacobianAlong hD hxc) hN hQc hT hAK hB'0 hB'
+      hxs hper (fun r hr u hu => ?_) e he⟩
   rw [FlowDerivative.jacobianAlong_mulVec]
   exact hTay r hr u hu
 
