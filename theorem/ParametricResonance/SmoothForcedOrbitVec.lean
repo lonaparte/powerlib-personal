@@ -29,7 +29,7 @@ multi-channel phasor input are new.
 
 Results.
 * `jacXV`, `matXV`, `matXV_mulVec`, `smDxV`, `smMwV`, `linC`, `linC_harm`, `fderivWC`,
-  `harm_fderivWC`, `norm_harm_le`, `continuous_harm_U`, `smBV`, `smNV`, `smJV`, `smDuV`, `smA1V`,
+  `harm_fderivWC`, `norm_harm_le`, `smBV`, `smNV`, `smJV`, `smDuV`, `smA1V`,
   `smNV_rhs`, `norm_prod_zeroV`, `fderivWC_smul_ofv`, `linC_smul_ofv` — the forced system of a
   smooth field with a phasor input.
 * `smooth_estimates_vec`, `smooth_link_vec` — the estimates and the harmonic data.
@@ -40,6 +40,12 @@ Results.
 * `fderiv_shift_eq_zero`, `fderivW_shift`, `jacXV_shift`, `smMwV_shift`, `fderivWC_shift`,
   `forced_shift`, `smA1V_shift` — shift-invariant fields: the angle channel acts on the relative
   response as the rate input `−jωθ̂ e`, and only the relative response enters `A₁`.
+* `smDxV_eq_smDx`, `smMwV_eq_smM1` — the second derivatives from those of a scalar-input field.
+* `uMag`, `uAng`, `gridSrc`, `harm_gridSrc`, `forced_gridSrc`, `smA1V_gridSrc` — the grid phasor
+  source `(v̂, θ̂)` and the general source form of a grid-synchronized converter:
+  `(jωI − A₀) z_rel = v̂ b_V − jωθ̂ e` and `A₁ = D_x(∂ₓF) z_rel + v̂ D_V(∂ₓF)`.
+* `smooth_orbit_floquet_three_stable_vec`, `smooth_orbit_floquet_three_unstable_vec` — three-state
+  fields from their eigen-data.
 
 Corrections.
 None: an extension.
@@ -148,11 +154,6 @@ omit [Fintype X] [DecidableEq X] [Fintype U] in
     _ ≤ ‖w k‖ * 1 + ‖w k‖ * 1 := by gcongr
     _ ≤ 2 * ‖w‖ := by linarith
 
-omit [Fintype X] [DecidableEq X] [Fintype U] in
-@[tmio T, powerlib_foundation] theorem continuous_harm_U (w : U → ℂ) (ω : ℝ) :
-    Continuous (harm w ω) := by
-  unfold harm; fun_prop
-
 /-- The forcing `b(t) = ∂_wF(q₀) Re{ŵ e^{jωt}}`. -/
 def smBV (F : (X → ℝ) × (U → ℝ) → X → ℝ) (q0 : (X → ℝ) × (U → ℝ)) (w : U → ℂ) (ω t : ℝ) :
     X → ℝ :=
@@ -236,7 +237,7 @@ equilibrium at `q₀` and the drive `w₀ + ε Re{ŵ e^{jωt}}`. -/
   have hc : ∀ ε, Continuous (fun p : ℝ × (X → ℝ) => qp ε p.1 p.2) := fun ε => by
     simp only [hqp]
     exact (continuous_const.add continuous_snd).prodMk
-      (continuous_const.add (((continuous_harm_U w ω).comp continuous_fst).const_smul ε))
+      (continuous_const.add (((continuous_harm w ω).comp continuous_fst).const_smul ε))
   have hmap : ∀ ε, 0 ≤ ε → ε ≤ r / (3 * (a + 1)) → ∀ ρ', r / 3 ≤ ρ' →
       MapsTo (fun p : ℝ × (X → ℝ) => qp ε p.1 p.2) (Set.univ ×ˢ closedBall 0 (r / 3))
         (closedBall q0 ρ') := by
@@ -268,7 +269,7 @@ equilibrium at `q₀` and the drive `w₀ + ε Re{ŵ e^{jωt}}`. -/
     have h4 : Continuous fun p : ℝ × (X → ℝ) => ε • smBV F q0 w ω p.1 := by
       simp only [smBV]
       exact ((fderiv ℝ F q0).continuous.comp (continuous_const.prodMk
-        ((continuous_harm_U w ω).comp continuous_fst))).const_smul ε
+        ((continuous_harm w ω).comp continuous_fst))).const_smul ε
     exact ((h1.add h2.continuousOn).sub h3.continuousOn).sub h4.continuousOn
   · intro ε hε hεe t
     have hsplit : ((0 : X → ℝ), ε • harm w ω t) = ε • ((0 : X → ℝ), harm w ω t) := by
@@ -379,9 +380,9 @@ equilibrium at `q₀` and the drive `w₀ + ε Re{ŵ e^{jωt}}`. -/
   refine ⟨?_, fun t => by simp only [smBV, harm_periodic w hω t],
     fun ε t y => by simp only [smNV, smBV, harm_periodic w hω t], ?_,
     fun t => harm_periodic z hω t, fun t => ?_, fun t => ?_⟩
-  · exact (fderiv ℝ F q0).continuous.comp (continuous_const.prodMk (continuous_harm_U w ω))
+  · exact (fderiv ℝ F q0).continuous.comp (continuous_const.prodMk (continuous_harm w ω))
   · exact continuous_const.add
-      ((LinearMap.continuous_of_finiteDimensional (smMwV F q0)).comp (continuous_harm_U w ω))
+      ((LinearMap.continuous_of_finiteDimensional (smMwV F q0)).comp (continuous_harm w ω))
   · have h := harm_hasDerivAt hz t
     rwa [harm_fderivWC] at h
   · rw [Dx_harm, smA1V, modX_add, smDuV, linC_harm]; abel
@@ -534,7 +535,7 @@ exponentially stable for the nonlinear driven system. -/
     have hφ : Continuous fun p : ℝ × (X → ℝ) =>
         ((q0.1 + p.2, q0.2 + ε • harm w ω p.1) : (X → ℝ) × (U → ℝ)) :=
       (continuous_const.add continuous_snd).prodMk
-        (continuous_const.add (((continuous_harm_U w ω).comp continuous_fst).const_smul ε))
+        (continuous_const.add (((continuous_harm w ω).comp continuous_fst).const_smul ε))
     have hmem : ((q0.1 + p.2, q0.2 + ε • harm w ω p.1) : (X → ℝ) × (U → ℝ)) ∈
         closedBall q0 R := by
       rw [mem_closedBall, dist_eq_norm]; have := hpt p.1 p.2 hp; linarith
