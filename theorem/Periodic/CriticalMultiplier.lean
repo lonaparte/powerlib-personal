@@ -49,7 +49,8 @@ Scope.
   complement is not treated here; for the multiplier `−1` it is reduced to the scalar flip map by
   the centre manifold of the period map in `theorem/Periodic/FlipReduction.lean`
   (`localAsymptoticStable_of_flipCoeff_pos`, `unstable_of_flipCoeff_neg`; the regularity of the
-  period map and `DP = monodromy` are hypotheses there).
+  period map and `DP = monodromy` are hypotheses there, derived from a `C⁴` field in
+  `theorem/Periodic/FlipOrbit.lean`). The multiplier `+1` of a nonconstant orbit is not reduced.
 
 Source: the wave-4 question of this library (the boundary cases that the assumption levels L0–L3
 leave undecided: critical Floquet multipliers at the step L1 → L0); Kuznetsov, *Elements of

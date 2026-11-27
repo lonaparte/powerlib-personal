@@ -32,9 +32,11 @@ Scope.
   `p`. For a periodic orbit, `P` is the period map `y ↦ x(T; 0, y)` and `p = x_*(0)`; its
   regularity is a **hypothesis**: strict derivative `M` at `p` (for the period map, the monodromy
   `Φ(T, 0)` of the linearization along `x_*`) and the cubic Taylor expansion with remainder
-  `K ‖e‖⁴` on `‖e‖ ≤ ρ₀` (a period map of class `C⁴`). Neither the library nor Mathlib or
-  LeanForControl differentiates ODE flows with respect to the initial state, so `DP(p) = Φ(T, 0)`
-  and the expansion are not derived from `G` here.
+  `K ‖e‖⁴` on `‖e‖ ≤ ρ₀` (a period map of class `C⁴`). `DP(p) = Φ(T, 0)` and the expansion are
+  not derived from `G` here; they are derived from the field in
+  `theorem/Periodic/FlowDerivative.lean` (`hasStrictFDerivAt_periodMap`) and
+  `theorem/Periodic/PeriodMapTaylor.lean` (`periodMap_taylor`), composed for a periodic solution
+  in `theorem/Periodic/FlipOrbit.lean`.
 * The spectral hypothesis is in projector form: `M v = −v`, `w ∘ M = −w`, `w v = 1`, and a power
   of the deflated map `L = M + v wᵀ` of norm below one. `multipliers_of_deflate` shows what it
   says about the multipliers: every complex multiplier other than `−1` lies strictly inside the
