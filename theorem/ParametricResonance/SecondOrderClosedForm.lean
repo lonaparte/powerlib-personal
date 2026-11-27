@@ -28,11 +28,14 @@ relative to the resonant one: `N₂ = (T²/2)M² + (T/ω)[M, M₂] + (T/(2ω))[M
 
 On the first-order boundary `s² + d² = |g/2|²`, `s > 0`, this is `T d |g'|²/(4ω)`: the damped
 two-state system is Schur stable for all small `ε` when `d |g'|² > 0` and Floquet unstable when
-`d |g'|² < 0` (`full_boundary_closed_form`); the verdict is left open exactly for `d = 0` or
-`g' = 0` (the latter includes the exact resonant normal form, marginal on the boundary,
-`Boundary.nf_boundary_marginal`). The decisive second-order quantity is thus a function of the
-detuning and of one further pump coefficient of the modulation matrix `A₁`; the undamped case
-`s = 0` is treated in `theorem/ParametricResonance/ZeroDampingBranch.lean`.
+`d |g'|² < 0` (`full_boundary_closed_form`); the verdict is left open at this order exactly for
+`d = 0` or `g' = 0` (the latter includes the exact resonant normal form, marginal on the boundary,
+`Boundary.nf_boundary_marginal`); these cases are taken to third order in
+`theorem/ParametricResonance/ThirdOrderBoundary.lean` (`full_boundary_third_order`,
+`antiFree_stable`, `antiFree_marginal`, `antiFree_undecided`). The decisive second-order
+quantity is thus a function of the detuning and of one further pump coefficient of the
+modulation matrix `A₁`; the undamped case `s = 0` is treated in
+`theorem/ParametricResonance/ZeroDampingBranch.lean`.
 
 Scope.
 * Generic: matrices on a finite index type `X` with the operator `L∞` norm; `trigPoly M₀ C S H ω`
@@ -661,7 +664,7 @@ Schur stable for all small `ε > 0` if `d |g'|² > 0` and Floquet unstable if `d
 (`g' = antiPump A`): `Boundary.full_boundary_decided` with
 `mixedDet(M, N₂) = T d |g'|²/(4ω)` there. The verdict is undecided at this order exactly when
 `d = 0` or `g' = 0` (the latter is the exact resonant normal form, which is marginal,
-`Boundary.nf_boundary_marginal`). -/
+`Boundary.nf_boundary_marginal`); third order: `ThirdOrder.full_boundary_third_order`. -/
 @[tmio T, powerlib_foundation] theorem full_boundary_closed_form {s d ω : ℝ} (hω : 0 < ω)
     (A : Matrix (Fin 2) (Fin 2) ℂ) (hs : 0 < s)
     (hb : s ^ 2 + d ^ 2 = ‖Element.pump A left right / 2‖ ^ 2) :

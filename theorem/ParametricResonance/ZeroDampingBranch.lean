@@ -25,7 +25,9 @@ monodromy `Φ_y = −M`, `tr Φ_y − 2 = −det(Φ_y − I) = −(ε²T² det M
   instability (`zero_damping_unstable`);
 * `|g| = 2|d|`: decided at second order by the sign of `d |g'|²` — positive: marginal, bounded;
   negative: subharmonic instability. Undecided at this order only for `d = 0` (then also `g = 0`
-  and the first-order slow flow vanishes) or `g' = 0`.
+  and the first-order slow flow vanishes) or `g' = 0`; both are decided in
+  `theorem/ParametricResonance/ThirdOrderBoundary.lean` (`zero_detuning_marginal`,
+  `zero_detuning_exact`, `zero_damping_antiFree_marginal`, `zero_damping_antiFree_unbounded`).
 
 At `s = 0` the levels L3 (the frozen `A₀` has the eigenvalues `±jΩ`) and L2 (a slow-flow centre)
 are marginal and say nothing; L1 adds the decisive information: bounded oscillation, never

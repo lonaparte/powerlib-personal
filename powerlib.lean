@@ -370,6 +370,9 @@ import theorem.ParametricResonance.DutyCycle
 import theorem.ParametricResonance.SecondOrderClosedForm
 import theorem.ParametricResonance.ZeroDampingBranch
 import theorem.ParametricResonance.BlockBoundary
+import theorem.ParametricResonance.ThirdOrderBoundary
+import theorem.ParametricResonance.CriticalExponent
+import theorem.ParametricResonance.PhysicalBoundary
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability

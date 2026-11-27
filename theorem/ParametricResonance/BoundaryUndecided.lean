@@ -29,8 +29,10 @@ boundary `s² + d² = |g/2|²`, `s ≥ 0`, it says nothing:
   tr(MN)` and `θ` an added `ε²θ I`: `λ₂ < 0` gives Schur stability and `λ₂ > 0` Floquet instability
   for all small `ε > 0` (`full_boundary_shift`). What is proved is the sign of
   `det(I − Φ_y(T)) = ε³ T mixedDet(M, N₂) + O(ε⁴)`; through `det(I − Φ_y(T)) = (1 − μ₁)(1 − μ₂)`
-  with `1 − μ₂ ≈ 2εsT` this reads as the critical exponent `ε² λ₂ + O(ε³)` (a reading, not a
-  formalized expansion of the exponent).
+  with `1 − μ₂ ≈ 2εsT` this reads as the critical exponent `ε² λ₂ + O(ε³)` (a reading here; the
+  expansion of the critical multipliers and exponent is proved in
+  `theorem/ParametricResonance/CriticalExponent.lean`, `critical_multipliers`,
+  `full_critical_exponent`).
 
 What is and is not decided at the forced operating point of `Periodic.LevelsNonlinear`. Its
 theorems decide the forced orbit for `|V̂||g₁| < 2|λ₁|` (with `Re λ₁ < 0`) and for
@@ -627,7 +629,8 @@ two-state system `ẋ = (A₀ + ε Re{A e^{jωt}}) x` with `σ = εs`, `ω/2 −
 `T = 2π/ω`, `mixedDet(M, N₂) − 2sθT > 0` gives Schur-stable monodromy and `< 0` Floquet
 instability, for all small `ε > 0`. (Read through `det(I − Φ) = (1 − μ₁)(1 − μ₂)`, this is the
 sign of the critical Floquet exponent `ε² (θ − mixedDet(M, N₂)/(2sT)) + O(ε³)`, which no
-first-order datum fixes; only the sign statement is proved.) -/
+first-order datum fixes; only the sign statement is proved here, the expansion at `θ = 0` is
+`CriticalExponent.full_critical_exponent`.) -/
 @[tmio T, powerlib_foundation] theorem full_boundary_shift {s d ω θ : ℝ} (hω : 0 < ω)
     (A : Matrix (Fin 2) (Fin 2) ℂ) (hs : 0 < s)
     (hb : s ^ 2 + d ^ 2 = ‖Element.pump A left right / 2‖ ^ 2) :
