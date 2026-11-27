@@ -463,7 +463,7 @@ def remLip (p : Params) (δ₀ ε m : ℝ) : ℝ :=
       ∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε Ω t).accel (δ t) (δ' t)) t := by
   have hc : Continuous (Function.uncurry fun (s : ℝ) (q : ℝ × ℝ) =>
       (q.2, (loadedSwing p δ₀ ε Ω (s + τ)).accel q.1 q.2)) := by
-    simp only [Function.uncurry, SwingParams.accel, SwingParams.Pe, loadedSwing, modKs]
+    simp only [SwingParams.accel, SwingParams.Pe, loadedSwing, modKs]
     fun_prop
   obtain ⟨q, hq0, hq⟩ := DuffingMathieu.exists_global_solution hc
     (fun s => loaded_field_lipschitz hp δ₀ ε Ω (s + τ)) (a, a')
@@ -526,7 +526,7 @@ def scaledField (p : Params) (δ₀ b d ν ε : ℝ) (w : ℂ) (t : ℝ) : ℂ :
   simp only [vel, mul_assoc, Complex.im_ofReal_mul]; ring
 
 /-- The scaled field written at the unscaled amplitude `z = √ε w`. -/
-@[tmio M, powerlib_domain] private theorem scaledField_eq (hp : p.Pos) {δ₀ b d ν ε : ℝ}
+@[tmio M, powerlib_domain] private theorem scaledField_eq {δ₀ b d ν ε : ℝ}
     (hε : 0 < ε) (hb : p.D / p.M = ε * b) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) (w : ℂ)
     (t : ℝ) : ((√ε : ℝ) : ℂ) * scaledField p δ₀ b d ν ε w t =
       vdpField (p.D / p.M) (loadedFreqSq p δ₀) (ε * loadedFreqSq p δ₀) (alpha3 p δ₀) ν
@@ -572,7 +572,7 @@ weakly nonlinear scaling `D/M = εb`, `ω_L² = ν² − εd` (`DuffingMathieu.h
   convert hw using 1
   have hzw : vdp ν t (δ t - δ₀) (δ' t) =
       ((√ε : ℝ) : ℂ) * (((√ε : ℝ) : ℂ)⁻¹ * vdp ν t (δ t - δ₀) (δ' t)) := by field_simp
-  have e := scaledField_eq hp hε hb hd (((√ε : ℝ) : ℂ)⁻¹ * vdp ν t (δ t - δ₀) (δ' t)) t
+  have e := scaledField_eq hε hb hd (((√ε : ℝ) : ℂ)⁻¹ * vdp ν t (δ t - δ₀) (δ' t)) t
   rw [← hzw, DuffingMathieu.pos_vdp] at e
   rw [← e]
   field_simp
@@ -901,5 +901,528 @@ constant, then `‖transRem‖ ≤ ε√ε M_q` and `‖transRem(w) − transRem
             (norm_add_le _ _) le_rfl)) (norm_sub_le _ _))
       _ ≤ _ := (add_le_add (add_le_add (add_le_add t1 t2) t3) (add_le_add t4 t5)).trans
           (le_of_eq (by ring))
+
+/-! ## Uniform bounds for the machines of the weakly nonlinear scaling -/
+
+/-- **The loaded machine in the scaling** `ω_L² = ν² − εd` (`0 < ε ≤ 1`, `cos δ₀ > 0`):
+`K_s/M ≤ (ν² + |d|)/cos δ₀`, `α₂ = −ω_L² tan δ₀/2`, `α₃ = −ω_L²/6`, `0 < ω_L² ≤ ν² + |d|`. -/
+@[tmio M, powerlib_domain] theorem machine_bounds (hp : p.Pos) {δ₀ ν d ε : ℝ}
+    (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) :
+    p.Ks / p.M ≤ (ν ^ 2 + |d|) / Real.cos δ₀ ∧
+      alpha2 p δ₀ = -(loadedFreqSq p δ₀ * Real.tan δ₀) / 2 ∧
+      alpha3 p δ₀ = -loadedFreqSq p δ₀ / 6 ∧ 0 < loadedFreqSq p δ₀ ∧
+      loadedFreqSq p δ₀ ≤ ν ^ 2 + |d| := by
+  have hM := M_pos₂ hp
+  have hK := hp.Ks
+  have hω : 0 < loadedFreqSq p δ₀ := by rw [loadedFreqSq]; positivity
+  have hle : loadedFreqSq p δ₀ ≤ ν ^ 2 + |d| := by
+    rw [hd]
+    have : -(ε * d) ≤ |d| := by
+      have h1 : |ε * d| ≤ |d| := by
+        rw [abs_mul, abs_of_pos hε]; exact mul_le_of_le_one_left (abs_nonneg _) hε1
+      linarith [neg_abs_le (ε * d)]
+    linarith
+  refine ⟨?_, ?_, ?_, hω, hle⟩
+  · rw [le_div_iff₀ hc]
+    calc p.Ks / p.M * Real.cos δ₀ = loadedFreqSq p δ₀ := by rw [loadedFreqSq]; ring
+      _ ≤ ν ^ 2 + |d| := hle
+  · rw [alpha2, loadedFreqSq, Real.tan_eq_sin_div_cos]; field_simp
+  · rw [alpha3, loadedFreqSq]; field_simp
+
+/-- The uniform bound `Λ(r)` of the scaled loaded remainder (`|remW| ≤ ε²Λr`, Lipschitz `ε²Λ`). -/
+def remConstW (ν d δ₀ r : ℝ) : ℝ :=
+  (ν ^ 2 + |d|) / Real.cos δ₀ * (2 * (|Real.sin δ₀| * r ^ 3 / 6 + |Real.cos δ₀| * r ^ 4 / 6) +
+    |Real.sin δ₀| * r + r ^ 2 / 2)
+
+/-- **The scaled loaded remainder is of order `ε²`, with an `ε²`-Lipschitz constant**, on the disc
+`‖w‖ ≤ r`, uniformly for the machines of the scaling. -/
+@[tmio M, powerlib_domain] theorem remW_bounds (hp : p.Pos) {δ₀ ν d ε r : ℝ}
+    (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d)
+    (hr : 0 ≤ r) {w w' : ℂ} (hw : ‖w‖ ≤ r) (hw' : ‖w'‖ ≤ r) (t : ℝ) :
+    |remW p δ₀ ν ε w t - remW p δ₀ ν ε w' t| ≤ ε ^ 2 * remConstW ν d δ₀ r * ‖w - w'‖ ∧
+      |remW p δ₀ ν ε w t| ≤ ε ^ 2 * (remConstW ν d δ₀ r * r) := by
+  have hM := M_pos₂ hp
+  have hK := hp.Ks
+  obtain ⟨hKM, -, -, -, -⟩ := machine_bounds hp hc hε hε1 hd
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hs1 : √ε ≤ 1 := Real.sqrt_le_one.mpr hε1
+  have hss : √ε * √ε = ε := Real.mul_self_sqrt hε.le
+  set kM := (ν ^ 2 + |d|) / Real.cos δ₀ with hkM
+  have hkM0 : 0 ≤ kM := (div_nonneg hK.le hM.le).trans hKM
+  set m := √ε * r with hm
+  have hm0 : 0 ≤ m := by positivity
+  have hx : ∀ z : ℂ, ‖z‖ ≤ r → |√ε * pos ν z t| ≤ m := fun z hz => by
+    rw [abs_mul, abs_of_pos hs0, hm]
+    exact mul_le_mul_of_nonneg_left ((abs_pos_le₂ ν z t).trans hz) hs0.le
+  -- the Lipschitz constant on `|x| ≤ m`
+  have hL : remLip p δ₀ ε m ≤ ε * √ε * remConstW ν d δ₀ r := by
+    have hS := abs_nonneg (Real.sin δ₀)
+    have hC := abs_nonneg (Real.cos δ₀)
+    have ha2 : |alpha2 p δ₀| ≤ kM * |Real.sin δ₀| / 2 := by
+      rw [alpha2, abs_div, abs_neg, abs_mul, abs_of_pos hK, abs_of_pos (by positivity : (0:ℝ) < 2 * p.M)]
+      rw [show p.Ks * |Real.sin δ₀| / (2 * p.M) = p.Ks / p.M * |Real.sin δ₀| / 2 by field_simp]
+      gcongr
+    have ha3 : |alpha3 p δ₀| ≤ kM / 6 := by
+      rw [alpha3, abs_div, abs_neg, abs_mul, abs_of_pos hK, abs_of_pos (by positivity : (0:ℝ) < 6 * p.M)]
+      rw [show p.Ks * |Real.cos δ₀| / (6 * p.M) = p.Ks / p.M * |Real.cos δ₀| / 6 by field_simp]
+      have := Real.abs_cos_le_one δ₀
+      have h1 : p.Ks / p.M * |Real.cos δ₀| ≤ kM * 1 :=
+        mul_le_mul hKM this hC hkM0
+      linarith
+    have hm2 : m ^ 2 = ε * r ^ 2 := by rw [hm, mul_pow, Real.sq_sqrt hε.le]
+    have hm3 : m ^ 3 = ε * √ε * r ^ 3 := by rw [hm, mul_pow, pow_succ, Real.sq_sqrt hε.le]
+    have hm4 : m ^ 4 = ε ^ 2 * r ^ 4 := by
+      rw [hm, mul_pow, show √ε ^ 4 = (√ε ^ 2) ^ 2 by ring, Real.sq_sqrt hε.le]
+    have hεs : ε ≤ √ε := by nlinarith
+    have hε2 : ε ^ 2 ≤ ε * √ε := by rw [sq]; exact mul_le_mul_of_nonneg_left hεs hε.le
+    rw [remLip, abs_of_pos hε, hm3, hm4, hm2]
+    have h1 : p.Ks * (1 + ε) / p.M ≤ 2 * kM := by
+      rw [show p.Ks * (1 + ε) / p.M = p.Ks / p.M * (1 + ε) by ring]
+      nlinarith [div_nonneg hK.le hM.le]
+    have h2 : |Real.sin δ₀| * (ε * √ε * r ^ 3) / 6 + |Real.cos δ₀| * (ε ^ 2 * r ^ 4) / 6 ≤
+        ε * √ε * (|Real.sin δ₀| * r ^ 3 / 6 + |Real.cos δ₀| * r ^ 4 / 6) := by
+      have : |Real.cos δ₀| * (ε ^ 2 * r ^ 4) / 6 ≤ |Real.cos δ₀| * (ε * √ε * r ^ 4) / 6 := by
+        gcongr
+      nlinarith
+    have h3 : 2 * |alpha2 p δ₀| * m + 3 * |alpha3 p δ₀| * (ε * r ^ 2) ≤
+        √ε * (kM * |Real.sin δ₀| * r + kM * r ^ 2 / 2) := by
+      have e1 : 2 * |alpha2 p δ₀| * m ≤ √ε * (kM * |Real.sin δ₀| * r) := by
+        rw [hm]; nlinarith [mul_le_mul_of_nonneg_right ha2 (mul_nonneg hs0.le hr)]
+      have e2 : 3 * |alpha3 p δ₀| * (ε * r ^ 2) ≤ √ε * (kM * r ^ 2 / 2) := by
+        have : 3 * |alpha3 p δ₀| ≤ kM / 2 := by linarith
+        calc 3 * |alpha3 p δ₀| * (ε * r ^ 2) ≤ kM / 2 * (ε * r ^ 2) := by gcongr
+          _ ≤ kM / 2 * (√ε * r ^ 2) := by gcongr
+          _ = √ε * (kM * r ^ 2 / 2) := by ring
+      linarith
+    have hA : 0 ≤ |Real.sin δ₀| * r ^ 3 / 6 + |Real.cos δ₀| * r ^ 4 / 6 := by positivity
+    calc p.Ks * (1 + ε) / p.M * (|Real.sin δ₀| * (ε * √ε * r ^ 3) / 6 +
+          |Real.cos δ₀| * (ε ^ 2 * r ^ 4) / 6) +
+          ε * (2 * |alpha2 p δ₀| * m + 3 * |alpha3 p δ₀| * (ε * r ^ 2))
+        ≤ 2 * kM * (ε * √ε * (|Real.sin δ₀| * r ^ 3 / 6 + |Real.cos δ₀| * r ^ 4 / 6)) +
+          ε * (√ε * (kM * |Real.sin δ₀| * r + kM * r ^ 2 / 2)) := by
+          gcongr
+      _ = ε * √ε * remConstW ν d δ₀ r := by rw [remConstW, ← hkM]; ring
+  have hlip := abs_loadedRemainder_sub_le hp δ₀ ε (2 * ν) t (hx w hw) (hx w' hw')
+  have hpos : |√ε * pos ν w t - √ε * pos ν w' t| ≤ √ε * ‖w - w'‖ := by
+    rw [← mul_sub, abs_mul, abs_of_pos hs0]
+    exact mul_le_mul_of_nonneg_left (abs_pos_sub_le₂ ν w w' t) hs0.le
+  have hRC : 0 ≤ remConstW ν d δ₀ r := by rw [remConstW, ← hkM]; positivity
+  have hRL0 : 0 ≤ remLip p δ₀ ε m := by unfold remLip; positivity
+  have he2 : ε ^ 2 = ε * √ε * √ε := by rw [mul_assoc, hss, sq]
+  constructor
+  · calc |remW p δ₀ ν ε w t - remW p δ₀ ν ε w' t|
+        ≤ remLip p δ₀ ε m * |√ε * pos ν w t - √ε * pos ν w' t| := hlip
+      _ ≤ remLip p δ₀ ε m * (√ε * ‖w - w'‖) := mul_le_mul_of_nonneg_left hpos hRL0
+      _ ≤ ε * √ε * remConstW ν d δ₀ r * (√ε * ‖w - w'‖) :=
+          mul_le_mul_of_nonneg_right hL (by positivity)
+      _ = ε ^ 2 * remConstW ν d δ₀ r * ‖w - w'‖ := by rw [he2]; ring
+  · have h0 : remainder p δ₀ ε (2 * ν) t 0 = 0 := by simp [remainder]
+    have hlip0 := abs_loadedRemainder_sub_le hp δ₀ ε (2 * ν) t (hx w hw)
+      (by rw [abs_zero]; exact hm0 : |(0 : ℝ)| ≤ m)
+    rw [h0, sub_zero, sub_zero] at hlip0
+    have hx0 : |√ε * pos ν w t| ≤ √ε * r := hx w hw
+    calc |remW p δ₀ ν ε w t| ≤ remLip p δ₀ ε m * |√ε * pos ν w t| := hlip0
+      _ ≤ ε * √ε * remConstW ν d δ₀ r * (√ε * r) := mul_le_mul hL hx0 (abs_nonneg _) (by positivity)
+      _ = ε ^ 2 * (remConstW ν d δ₀ r * r) := by rw [he2]; ring
+
+/-- The uniform speed constant of the scaled loaded field on the disc of radius `r`. -/
+def speedConst (b d ν δ₀ r : ℝ) : ℝ :=
+  (|d| + (ν ^ 2 + |d|) + ν * |b| + 3 * ((ν ^ 2 + |d|) / 6) * r ^ 2) / ν * r +
+    (ν ^ 2 + |d|) * |Real.tan δ₀| / 2 / ν * r ^ 2 + remConstW ν d δ₀ r * r / ν
+
+/-- The uniform Lipschitz constant of the scaled loaded field on the disc of radius `r`. -/
+def lipConstW (b d ν δ₀ r : ℝ) : ℝ :=
+  (|d| + (ν ^ 2 + |d|) + ν * |b| + 3 * ((ν ^ 2 + |d|) / 6) * r ^ 2) / ν +
+    2 * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2) * r / ν + remConstW ν d δ₀ r / ν
+
+/-- **Bounds of the scaled loaded field on discs**, uniformly for the machines of the scaling:
+`‖scaledField(z)‖ ≤ √ε speedConst` and `scaledField` is `lipConstW`-Lipschitz on `‖z‖ ≤ r`. -/
+@[tmio M, powerlib_domain] theorem scaledField_bounds (hp : p.Pos) {δ₀ b d ν ε r : ℝ}
+    (hν : 0 < ν) (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) (hr : 0 ≤ r) {z z' : ℂ} (hz : ‖z‖ ≤ r)
+    (hz' : ‖z'‖ ≤ r) (t : ℝ) :
+    ‖scaledField p δ₀ b d ν ε z t‖ ≤ √ε * speedConst b d ν δ₀ r ∧
+      ‖scaledField p δ₀ b d ν ε z t - scaledField p δ₀ b d ν ε z' t‖ ≤
+        lipConstW b d ν δ₀ r * ‖z - z'‖ := by
+  obtain ⟨-, h2, h3, hω, hωle⟩ := machine_bounds hp hc hε hε1 hd
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hs1 : √ε ≤ 1 := Real.sqrt_le_one.mpr hε1
+  have hεs : ε ≤ √ε := by nlinarith [Real.mul_self_sqrt hε.le]
+  have hK0 : 0 ≤ ν ^ 2 + |d| := by positivity
+  have hA2 : |alpha2 p δ₀| ≤ (ν ^ 2 + |d|) * |Real.tan δ₀| / 2 := by
+    rw [h2, abs_div, abs_neg, abs_mul, abs_of_pos hω, abs_two]
+    gcongr
+  have hA3 : |alpha3 p δ₀| ≤ (ν ^ 2 + |d|) / 6 := by
+    rw [h3, abs_div, abs_neg, abs_of_pos hω, abs_of_pos (by norm_num : (0 : ℝ) < 6)]
+    gcongr
+  have hℓ : (|ν ^ 2 - (ν ^ 2 - d)| + |loadedFreqSq p δ₀| + ν * |b| + 3 * |alpha3 p δ₀| * r ^ 2) / ν ≤
+      (|d| + (ν ^ 2 + |d|) + ν * |b| + 3 * ((ν ^ 2 + |d|) / 6) * r ^ 2) / ν := by
+    rw [show ν ^ 2 - (ν ^ 2 - d) = d by ring, abs_of_pos hω]
+    gcongr
+  set ℓ₁ := (|d| + (ν ^ 2 + |d|) + ν * |b| + 3 * ((ν ^ 2 + |d|) / 6) * r ^ 2) / ν with hℓ₁
+  have hℓ₁0 : 0 ≤ ℓ₁ := by positivity
+  obtain ⟨hRl, hRb⟩ := remW_bounds hp hc hε hε1 hd hr hz hz' t
+  obtain ⟨-, hRb'⟩ := remW_bounds hp hc hε hε1 hd hr hz' hz' t
+  have hRC : 0 ≤ remConstW ν d δ₀ r := by
+    rw [remConstW]; have := hc.le; positivity
+  have hinv : ∀ x : ℂ, ‖inputW p δ₀ ν ε x t‖ = |remW p δ₀ ν ε x t| / ν := fun x => by
+    rw [inputW, norm_neg, norm_mul, norm_mul, norm_phase_inv₂, mul_one, norm_div, Complex.norm_I,
+      Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg hν.le, Real.norm_eq_abs]
+    ring
+  have hinvs : ∀ X : ℝ, (√ε)⁻¹ * (ε ^ 2 * X) = ε * √ε * X := fun X => inv_sqrt_mul_sq hε X
+  constructor
+  · have hV := DuffingMathieu.norm_vdpField_sub_le (b := b) (k₀ := ν ^ 2 - d)
+      (k₁ := loadedFreqSq p δ₀) (γ := alpha3 p δ₀) hν hz (by rw [norm_zero]; exact hr) t
+    rw [DuffingMathieu.vdpField_zero, sub_zero, sub_zero] at hV
+    have hQ := norm_quadField_le (α₂ := alpha2 p δ₀) hν z t
+    rw [scaledField]
+    calc _ ≤ ε * (ℓ₁ * r) + √ε * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2 / ν * r ^ 2) +
+          (√ε)⁻¹ * (ε ^ 2 * (remConstW ν d δ₀ r * r) / ν) := by
+          refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add ?_ ?_)) ?_)
+          · rw [norm_smul, Real.norm_of_nonneg hε.le]
+            exact mul_le_mul_of_nonneg_left (hV.trans (mul_le_mul hℓ hz (norm_nonneg _) hℓ₁0)) hε.le
+          · rw [norm_smul, Real.norm_of_nonneg hs0.le]
+            refine mul_le_mul_of_nonneg_left (hQ.trans ?_) hs0.le
+            gcongr
+          · rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hs0.le), hinv]
+            gcongr
+      _ = ε * (ℓ₁ * r) + √ε * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2 / ν * r ^ 2) +
+          ε * √ε * (remConstW ν d δ₀ r * r / ν) := by
+          rw [show ε ^ 2 * (remConstW ν d δ₀ r * r) / ν = ε ^ 2 * (remConstW ν d δ₀ r * r / ν) by
+            ring, hinvs]
+      _ ≤ √ε * (ℓ₁ * r) + √ε * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2 / ν * r ^ 2) +
+          √ε * (remConstW ν d δ₀ r * r / ν) := by
+          have h1 : ε * √ε ≤ √ε := mul_le_of_le_one_left hs0.le hε1
+          gcongr
+      _ = √ε * speedConst b d ν δ₀ r := by rw [speedConst, ← hℓ₁]; ring
+  · have hV := DuffingMathieu.norm_vdpField_sub_le (b := b) (k₀ := ν ^ 2 - d)
+      (k₁ := loadedFreqSq p δ₀) (γ := alpha3 p δ₀) hν hz hz' t
+    have hQ := norm_quadField_sub_le (α₂ := alpha2 p δ₀) hν hz hz' t
+    have hU : ‖inputW p δ₀ ν ε z t - inputW p δ₀ ν ε z' t‖ ≤ ε ^ 2 * remConstW ν d δ₀ r *
+        ‖z - z'‖ / ν := by
+      have e : inputW p δ₀ ν ε z t - inputW p δ₀ ν ε z' t =
+          -(I / ν * ((remW p δ₀ ν ε z t - remW p δ₀ ν ε z' t : ℝ) : ℂ) * (phase ν t)⁻¹) := by
+        simp only [inputW]; push_cast; ring
+      rw [e, norm_neg, norm_mul, norm_mul, norm_phase_inv₂, mul_one, norm_div, Complex.norm_I,
+        Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg hν.le, Real.norm_eq_abs]
+      calc 1 / ν * |remW p δ₀ ν ε z t - remW p δ₀ ν ε z' t| ≤
+          1 / ν * (ε ^ 2 * remConstW ν d δ₀ r * ‖z - z'‖) := by gcongr
+        _ = _ := by ring
+    have e : scaledField p δ₀ b d ν ε z t - scaledField p δ₀ b d ν ε z' t =
+        ε • (vdpField b (ν ^ 2 - d) (loadedFreqSq p δ₀) (alpha3 p δ₀) ν z t -
+          vdpField b (ν ^ 2 - d) (loadedFreqSq p δ₀) (alpha3 p δ₀) ν z' t) +
+        √ε • (quadField (alpha2 p δ₀) ν z t - quadField (alpha2 p δ₀) ν z' t) +
+        (√ε)⁻¹ • (inputW p δ₀ ν ε z t - inputW p δ₀ ν ε z' t) := by
+      simp only [scaledField, smul_sub]; abel
+    rw [e]
+    calc _ ≤ ε * (ℓ₁ * ‖z - z'‖) +
+          √ε * (2 * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2) * r / ν * ‖z - z'‖) +
+          (√ε)⁻¹ * (ε ^ 2 * (remConstW ν d δ₀ r * ‖z - z'‖ / ν)) := by
+          refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add ?_ ?_)) ?_)
+          · rw [norm_smul, Real.norm_of_nonneg hε.le]
+            exact mul_le_mul_of_nonneg_left (hV.trans (mul_le_mul_of_nonneg_right hℓ
+              (norm_nonneg _))) hε.le
+          · rw [norm_smul, Real.norm_of_nonneg hs0.le]
+            refine mul_le_mul_of_nonneg_left (hQ.trans ?_) hs0.le
+            gcongr
+          · rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hs0.le)]
+            refine mul_le_mul_of_nonneg_left (hU.trans (le_of_eq ?_)) (inv_nonneg.mpr hs0.le)
+            ring
+      _ = ε * (ℓ₁ * ‖z - z'‖) +
+          √ε * (2 * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2) * r / ν * ‖z - z'‖) +
+          ε * √ε * (remConstW ν d δ₀ r * ‖z - z'‖ / ν) := by rw [hinvs]
+      _ ≤ 1 * (ℓ₁ * ‖z - z'‖) + 1 * (2 * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2) * r / ν * ‖z - z'‖) +
+          1 * (remConstW ν d δ₀ r * ‖z - z'‖ / ν) := by
+          have h1 : ε * √ε ≤ 1 := by nlinarith
+          gcongr
+      _ = lipConstW b d ν δ₀ r * ‖z - z'‖ := by rw [lipConstW, ← hℓ₁]; ring
+
+/-! ## The clamped amplitude equation and the clamped near-identity transformation -/
+
+/-- The scaled loaded field read through the clamp `clampC ρc` (globally Lipschitz). -/
+def clampField (p : Params) (δ₀ b d ν ε ρc : ℝ) (t : ℝ) (w : ℂ) : ℂ :=
+  scaledField p δ₀ b d ν ε (clampC ρc w) t
+
+/-- The clamped near-identity transformation `W = w − √ε u(clamp w, t)`. -/
+def Wmap (α₂ ν ε ρc : ℝ) (w : ℂ) (t : ℝ) : ℂ :=
+  w - √ε • nearId α₂ ν (clampC ρc w) t
+
+@[tmio M, powerlib_domain] theorem continuous_clampField (δ₀ b d ν ε ρc : ℝ) :
+    Continuous (Function.uncurry (clampField p δ₀ b d ν ε ρc)) := by
+  have hc : Continuous fun q : ℝ × ℂ => clampC ρc q.2 :=
+    (DuffingMathieu.continuous_clampC ρc).comp continuous_snd
+  have hp : Continuous fun t : ℝ => phase ν t := by unfold phase; fun_prop
+  have hpi : Continuous fun t : ℝ => (phase ν t)⁻¹ :=
+    hp.inv₀ fun t => QuadraticCubic.phase_ne_zero ν t
+  have h1 : Continuous fun q : ℝ × ℂ => vdpField b (ν ^ 2 - d) (loadedFreqSq p δ₀) (alpha3 p δ₀) ν
+      (clampC ρc q.2) q.1 := by
+    simp only [vdpField, accel, pos, vel]
+    fun_prop
+  have h2 : Continuous fun q : ℝ × ℂ => quadField (alpha2 p δ₀) ν (clampC ρc q.2) q.1 := by
+    simp only [quadField, pos]
+    have : Continuous fun q : ℝ × ℂ => (phase ν q.1)⁻¹ := hpi.comp continuous_fst
+    fun_prop
+  have h3 : Continuous fun q : ℝ × ℂ => inputW p δ₀ ν ε (clampC ρc q.2) q.1 := by
+    simp only [inputW, remW, remainder, modKs, pos]
+    have : Continuous fun q : ℝ × ℂ => (phase ν q.1)⁻¹ := hpi.comp continuous_fst
+    fun_prop
+  exact ((h1.const_smul ε).add (h2.const_smul √ε)).add (h3.const_smul (√ε)⁻¹)
+
+/-- The clamped scaled field is globally Lipschitz. -/
+@[tmio M, powerlib_domain] theorem clampField_lipschitz (hp : p.Pos) {δ₀ b d ν ε ρc : ℝ}
+    (hν : 0 < ν) (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) (hρc : 0 ≤ ρc) (t : ℝ) :
+    LipschitzWith (Real.toNNReal (lipConstW b d ν δ₀ (2 * ρc))) (clampField p δ₀ b d ν ε ρc t) := by
+  refine LipschitzWith.of_dist_le_mul fun w w' => ?_
+  rw [dist_eq_norm, dist_eq_norm]
+  have h := (scaledField_bounds (b := b) hp hν hc hε hε1 hd (by positivity : (0 : ℝ) ≤ 2 * ρc)
+    (DuffingMathieu.norm_clampC_le hρc w) (DuffingMathieu.norm_clampC_le hρc w') t).2
+  have hL : 0 ≤ lipConstW b d ν δ₀ (2 * ρc) := by
+    rw [lipConstW, remConstW]; have := hc.le; positivity
+  rw [Real.coe_toNNReal _ hL]
+  exact h.trans (mul_le_mul_of_nonneg_left (DuffingMathieu.norm_clampC_sub_le ρc w w') hL)
+
+/-- The clamped scaled field is slow: `‖clampField‖ ≤ √ε speedConst`. -/
+@[tmio M, powerlib_domain] theorem norm_clampField_le (hp : p.Pos) {δ₀ b d ν ε ρc : ℝ}
+    (hν : 0 < ν) (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) (hρc : 0 ≤ ρc) (t : ℝ) (w : ℂ) :
+    ‖clampField p δ₀ b d ν ε ρc t w‖ ≤ √ε * speedConst b d ν δ₀ (2 * ρc) :=
+  (scaledField_bounds hp hν hc hε hε1 hd (by positivity : (0 : ℝ) ≤ 2 * ρc)
+    (DuffingMathieu.norm_clampC_le hρc w) (DuffingMathieu.norm_clampC_le hρc w) t).1
+
+/-- **Global solutions of the clamped amplitude equation** from every time and amplitude. -/
+@[tmio M, powerlib_domain] theorem exists_clamped_solution (hp : p.Pos) {δ₀ b d ν ε ρc : ℝ}
+    (hν : 0 < ν) (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) (hρc : 0 ≤ ρc) (τ : ℝ) (w₀ : ℂ) :
+    ∃ w : ℝ → ℂ, w τ = w₀ ∧ ∀ t, HasDerivAt w (clampField p δ₀ b d ν ε ρc t (w t)) t := by
+  have hcont : Continuous (Function.uncurry fun s (y : ℂ) => clampField p δ₀ b d ν ε ρc (s + τ) y) :=
+    ((continuous_clampField (p := p) δ₀ b d ν ε ρc).comp
+      ((continuous_fst.add (continuous_const (y := τ))).prodMk continuous_snd)).congr
+        (fun q => rfl)
+  obtain ⟨y, hy0, hy⟩ := DuffingMathieu.exists_global_solution hcont
+    (fun s => clampField_lipschitz hp hν hc hε hε1 hd hρc (s + τ)) w₀
+  refine ⟨fun t => y (t - τ), by simp [hy0], fun t => ?_⟩
+  have h := (hy (t - τ)).comp_sub_const t τ
+  rw [sub_add_cancel] at h
+  exact h
+
+@[tmio T, powerlib_foundation] private theorem phase_period₂ {ν : ℝ} (hν : 0 < ν) (t : ℝ) :
+    phase ν (t + 2 * Real.pi / ν) = phase ν t := by
+  have hν' : (ν : ℂ) ≠ 0 := by exact_mod_cast hν.ne'
+  rw [phase, phase, show ((ν * (t + 2 * Real.pi / ν) : ℝ) : ℂ) * I =
+    ((ν * t : ℝ) : ℂ) * I + 2 * Real.pi * I by push_cast; field_simp, Complex.exp_add,
+    Complex.exp_two_pi_mul_I, mul_one]
+
+@[tmio T, powerlib_foundation] private theorem pos_period₂ {ν : ℝ} (hν : 0 < ν) (w : ℂ)
+    (t : ℝ) : pos ν w (t + 2 * Real.pi / ν) = pos ν w t := by
+  have := phase_period₂ hν t
+  simp only [phase] at this
+  simp only [pos, this]
+
+@[tmio T, powerlib_foundation] private theorem vel_period₂ {ν : ℝ} (hν : 0 < ν) (w : ℂ)
+    (t : ℝ) : vel ν w (t + 2 * Real.pi / ν) = vel ν w t := by
+  have := phase_period₂ hν t
+  simp only [phase] at this
+  simp only [vel, this]
+
+/-- The clamped scaled field is `2π/ν`-periodic in time. -/
+@[tmio M, powerlib_domain] theorem clampField_periodic {δ₀ b d ν ε ρc : ℝ} (hν : 0 < ν)
+    (t : ℝ) (w : ℂ) :
+    clampField p δ₀ b d ν ε ρc (t + 2 * Real.pi / ν) w = clampField p δ₀ b d ν ε ρc t w := by
+  have hcos : Real.cos (2 * ν * (t + 2 * Real.pi / ν)) = Real.cos (2 * ν * t) := by
+    rw [show 2 * ν * (t + 2 * Real.pi / ν) = 2 * ν * t + (2 : ℕ) * (2 * Real.pi) by
+      push_cast; field_simp]
+    exact Real.cos_add_nat_mul_two_pi _ 2
+  simp only [clampField, scaledField, inputW, remW, remainder, modKs, quadField,
+    DuffingMathieu.vdpField_periodic hν, pos_period₂ hν, phase_period₂ hν, hcos]
+
+/-- The clamped near-identity transformation moves by at most `√ε (5|α₂|/(6ν²)) (2ρc)²`. -/
+@[tmio T, powerlib_foundation] theorem norm_Wmap_sub_le {α₂ ν ε ρc : ℝ} (hν : 0 < ν)
+    (hρc : 0 ≤ ρc) (w : ℂ) (t : ℝ) :
+    ‖Wmap α₂ ν ε ρc w t - w‖ ≤ √ε * (5 * |α₂| / (6 * ν ^ 2) * (2 * ρc) ^ 2) := by
+  rw [Wmap, sub_sub_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  gcongr
+  exact (QuadraticCubic.norm_nearId_le hν _ t).trans
+    (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _)
+      (DuffingMathieu.norm_clampC_le hρc w) 2) (by positivity))
+
+/-- The clamped near-identity transformation is a Lipschitz perturbation of the identity. -/
+@[tmio T, powerlib_foundation] theorem norm_Wmap_sub_sub_le {α₂ ν ε ρc : ℝ} (hν : 0 < ν)
+    (hρc : 0 ≤ ρc) (w w' : ℂ) (t : ℝ) :
+    ‖(Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t) - (w - w')‖ ≤
+      √ε * (5 * |α₂| / (3 * ν ^ 2) * (2 * ρc)) * ‖w - w'‖ := by
+  have e : (Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t) - (w - w') =
+      -(√ε • (nearId α₂ ν (clampC ρc w) t - nearId α₂ ν (clampC ρc w') t)) := by
+    simp only [Wmap, smul_sub]; abel
+  rw [e, norm_neg, norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_assoc]
+  gcongr
+  refine (norm_nearId_sub_le hν (DuffingMathieu.norm_clampC_le hρc w)
+    (DuffingMathieu.norm_clampC_le hρc w') t).trans ?_
+  exact mul_le_mul_of_nonneg_left (DuffingMathieu.norm_clampC_sub_le ρc w w') (by positivity)
+
+/-- With `√ε (5|α₂|/(3ν²)) (2ρc) ≤ 1/2` the clamped transformation is bi-Lipschitz:
+`‖w − w'‖ ≤ 2 ‖W − W'‖` and `‖W − W'‖ ≤ (3/2) ‖w − w'‖`. -/
+@[tmio T, powerlib_foundation] theorem Wmap_bilipschitz {α₂ ν ε ρc : ℝ} (hν : 0 < ν)
+    (hρc : 0 ≤ ρc) (hsmall : √ε * (5 * |α₂| / (3 * ν ^ 2) * (2 * ρc)) ≤ 1 / 2) (w w' : ℂ)
+    (t : ℝ) : ‖w - w'‖ ≤ 2 * ‖Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t‖ ∧
+      ‖Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t‖ ≤ 3 / 2 * ‖w - w'‖ := by
+  have h := norm_Wmap_sub_sub_le (α₂ := α₂) (ε := ε) hν hρc w w' t
+  have h1 := norm_sub_norm_le (Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t) (w - w')
+  have h2 := norm_sub_norm_le (w - w') (Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t)
+  rw [norm_sub_rev (w - w')] at h2
+  have h3 : √ε * (5 * |α₂| / (3 * ν ^ 2) * (2 * ρc)) * ‖w - w'‖ ≤ 1 / 2 * ‖w - w'‖ :=
+    mul_le_mul_of_nonneg_right hsmall (norm_nonneg _)
+  constructor <;> linarith
+
+/-- With `√ε (5|α₂|/(3ν²)) (2ρc) ≤ 1/2` the clamped transformation is onto at every time. -/
+@[tmio T, powerlib_foundation] theorem exists_Wmap_eq {α₂ ν ε ρc : ℝ} (hν : 0 < ν)
+    (hρc : 0 ≤ ρc) (hsmall : √ε * (5 * |α₂| / (3 * ν ^ 2) * (2 * ρc)) ≤ 1 / 2) (W : ℂ)
+    (t : ℝ) : ∃ w, Wmap α₂ ν ε ρc w t = W := by
+  set g : ℂ → ℂ := fun w => W + √ε • nearId α₂ ν (clampC ρc w) t with hg
+  have hlip : LipschitzWith (1 / 2 : NNReal) g := by
+    refine LipschitzWith.of_dist_le_mul fun w w' => ?_
+    rw [dist_eq_norm, dist_eq_norm]
+    have h := norm_Wmap_sub_sub_le (α₂ := α₂) (ε := ε) hν hρc w w' t
+    have e : g w - g w' = -((Wmap α₂ ν ε ρc w t - Wmap α₂ ν ε ρc w' t) - (w - w')) := by
+      simp only [hg, Wmap]; abel
+    rw [e, norm_neg]
+    refine h.trans ?_
+    have : ((1 / 2 : NNReal) : ℝ) = 1 / 2 := by norm_num
+    rw [this]
+    exact mul_le_mul_of_nonneg_right hsmall (norm_nonneg _)
+  have hc : ContractingWith (1 / 2) g := ⟨by norm_num, hlip⟩
+  refine ⟨ContractingWith.fixedPoint g hc, ?_⟩
+  have hfix : g (ContractingWith.fixedPoint g hc) = ContractingWith.fixedPoint g hc :=
+    ContractingWith.fixedPoint_isFixedPt hc
+  simp only [hg] at hfix
+  calc Wmap α₂ ν ε ρc (ContractingWith.fixedPoint g hc) t =
+      (W + √ε • nearId α₂ ν (clampC ρc (ContractingWith.fixedPoint g hc)) t) -
+        √ε • nearId α₂ ν (clampC ρc (ContractingWith.fixedPoint g hc)) t := by
+        rw [Wmap]; congr 1; exact hfix.symm
+    _ = W := add_sub_cancel_right _ _
+
+/-- The clamped transformation is `2π/ν`-periodic in time. -/
+@[tmio T, powerlib_foundation] theorem Wmap_periodic {α₂ ν ε ρc : ℝ} (hν : 0 < ν) (w : ℂ)
+    (t : ℝ) : Wmap α₂ ν ε ρc w (t + 2 * Real.pi / ν) = Wmap α₂ ν ε ρc w t := by
+  simp only [Wmap, nearId, phase_period₂ hν]
+
+/-- The right-hand side of the transformed amplitude equation. -/
+def transField (p : Params) (δ₀ b d ν ε : ℝ) (w : ℂ) (t : ℝ) : ℂ :=
+  ε • secondField b (ν ^ 2 - d) (loadedFreqSq p δ₀) (alpha2 p δ₀) (alpha3 p δ₀) ν w t -
+    (ε * √ε) • nearIdDeriv (alpha2 p δ₀) ν w t
+      (vdpField b (ν ^ 2 - d) (loadedFreqSq p δ₀) (alpha3 p δ₀) ν w t) +
+    ((√ε)⁻¹ • inputW p δ₀ ν ε w t - nearIdDeriv (alpha2 p δ₀) ν w t (inputW p δ₀ ν ε w t))
+
+@[tmio T, powerlib_foundation] private theorem nearIdDeriv_real_smul (α₂ ν : ℝ) (z : ℂ) (t c : ℝ)
+    (h : ℂ) : nearIdDeriv α₂ ν z t (c • h) = c • nearIdDeriv α₂ ν z t h := by
+  simp only [nearIdDeriv, Complex.real_smul, map_mul, Complex.conj_ofReal]; ring
+
+/-- **The transformed amplitude equation along a clamped solution**: while `‖w(t)‖ < ρc`,
+`W(t) = Wmap(w(t), t)` has the derivative `transField(w(t), t)`
+(`QuadraticCubic.hasDerivAt_nearId`, `QuadraticCubic.nearIdDeriv_quadField`). -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_Wmap {δ₀ b d ν ε ρc : ℝ} (hν : 0 < ν)
+    (hε : 0 < ε) {w : ℝ → ℂ} {t : ℝ}
+    (hw : HasDerivAt w (clampField p δ₀ b d ν ε ρc t (w t)) t) (hwt : ‖w t‖ < ρc) :
+    HasDerivAt (fun s => Wmap (alpha2 p δ₀) ν ε ρc (w s) s) (transField p δ₀ b d ν ε (w t) t) t := by
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hss : √ε * √ε = ε := Real.mul_self_sqrt hε.le
+  have hcl : clampC ρc (w t) = w t := DuffingMathieu.clampC_of_norm_le hwt.le
+  rw [clampField, hcl] at hw
+  have hN := QuadraticCubic.hasDerivAt_nearId (α₂ := alpha2 p δ₀) hν.ne' hw
+  have hW := hw.sub (hN.const_smul √ε)
+  have hev : (fun s => Wmap (alpha2 p δ₀) ν ε ρc (w s) s) =ᶠ[𝓝 t]
+      fun s => w s - √ε • nearId (alpha2 p δ₀) ν (w s) s := by
+    have hcont : ContinuousAt w t := hw.continuousAt
+    filter_upwards [hcont.preimage_mem_nhds (Metric.ball_mem_nhds (w t) (sub_pos.mpr hwt))]
+      with s hs
+    rw [Set.mem_preimage, Metric.mem_ball, dist_eq_norm] at hs
+    have : ‖w s‖ ≤ ρc := by
+      have := norm_le_norm_add_norm_sub' (w s) (w t)
+      linarith
+    simp only [Wmap, DuffingMathieu.clampC_of_norm_le this]
+  refine (hW.congr_of_eventuallyEq hev).congr_deriv ?_
+  simp only [transField, scaledField, QuadraticCubic.nearIdDeriv_add, nearIdDeriv_real_smul,
+    QuadraticCubic.nearIdDeriv_quadField hν.ne', secondField, smul_add, smul_neg, smul_smul]
+  have h1 : √ε * √ε = ε := hss
+  have h2 : √ε * (√ε)⁻¹ = 1 := mul_inv_cancel₀ hs0.ne'
+  rw [h1, h2, one_smul, show √ε * ε = ε * √ε by ring]
+  abel
+
+@[tmio M, powerlib_foundation] private theorem oscillator_of_vdp₂ {b k₀ k₁ γ ν : ℝ} (hν : ν ≠ 0)
+    {z : ℝ → ℂ} {u : ℝ → ℝ} (t : ℝ)
+    (hz : HasDerivAt z (vdpField b k₀ k₁ γ ν (z t) t -
+      I / ν * (u t : ℂ) * Complex.exp (-(((ν * t : ℝ) : ℂ) * I))) t) :
+    HasDerivAt (fun t => pos ν (z t) t) (vel ν (z t) t) t ∧
+      HasDerivAt (fun t => vel ν (z t) t)
+        (accel b k₀ k₁ γ ν t (pos ν (z t) t) (vel ν (z t) t) + u t) t := by
+  have hν' : (ν : ℂ) ≠ 0 := by exact_mod_cast hν
+  have h1 : HasDerivAt (fun t : ℝ => ((ν * t : ℝ) : ℂ)) (ν : ℂ) t := by
+    have := ((hasDerivAt_id t).const_mul ν).ofReal_comp; simpa using this
+  have hE := (h1.mul_const I).cexp
+  set E := Complex.exp (((ν * t : ℝ) : ℂ) * I) with hEdef
+  have hEinv : Complex.exp (-(((ν * t : ℝ) : ℂ) * I)) * E = 1 := by
+    rw [hEdef, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
+  have hZ := hz.mul hE
+  set Z' := (vdpField b k₀ k₁ γ ν (z t) t - I / ν * (u t : ℂ) *
+      Complex.exp (-(((ν * t : ℝ) : ℂ) * I))) * E + z t * (E * ((ν : ℂ) * I)) with hZ'
+  -- the derivative of `z e^{jνt}`
+  have hkey : Z' = ((vel ν (z t) t : ℝ) : ℂ) -
+      (((accel b k₀ k₁ γ ν t (pos ν (z t) t) (vel ν (z t) t) + u t) / ν : ℝ) : ℂ) * I := by
+    have hzE : z t * E = ((pos ν (z t) t : ℝ) : ℂ) - (((vel ν (z t) t) / ν : ℝ) : ℂ) * I := by
+      apply Complex.ext
+      · simp [pos, hEdef]
+      · simp [vel, hEdef]; field_simp
+    have e1 : (vdpField b k₀ k₁ γ ν (z t) t - I / ν * (u t : ℂ) *
+        Complex.exp (-(((ν * t : ℝ) : ℂ) * I))) * E =
+        -(I / ν) * (((accel b k₀ k₁ γ ν t (pos ν (z t) t) (vel ν (z t) t) +
+          ν ^ 2 * pos ν (z t) t : ℝ) : ℂ) + (u t : ℂ)) := by
+      simp only [vdpField]
+      linear_combination (-(I / ν) * (((accel b k₀ k₁ γ ν t (pos ν (z t) t) (vel ν (z t) t) +
+          ν ^ 2 * pos ν (z t) t : ℝ) : ℂ) + (u t : ℂ))) * hEinv
+    rw [hZ', e1, show z t * (E * ((ν : ℂ) * I)) = (z t * E) * ((ν : ℂ) * I) by ring, hzE]
+    push_cast
+    field_simp
+    ring_nf
+    simp only [I_sq]
+    ring
+  rw [hkey] at hZ
+  constructor
+  · have h := (Complex.reCLM.hasFDerivAt (x := z t * E)).comp_hasDerivAt t hZ
+    simpa [pos, Function.comp_def] using h
+  · have h := ((Complex.imCLM.hasFDerivAt (x := z t * E)).comp_hasDerivAt t hZ).const_mul (-ν)
+    have e : -ν * Complex.imCLM (((vel ν (z t) t : ℝ) : ℂ) -
+        (((accel b k₀ k₁ γ ν t (pos ν (z t) t) (vel ν (z t) t) + u t) / ν : ℝ) : ℂ) * I) =
+        accel b k₀ k₁ γ ν t (pos ν (z t) t) (vel ν (z t) t) + u t := by
+      simp; field_simp
+    rw [e] at h
+    simpa [vel, Function.comp_def] using h
+
+
+/-- **A clamped solution inside the clamp carries a solution of the loaded swing model**: at a
+time with `‖w(t)‖ < ρc`, `δ = δ₀ + Re(√ε w e^{jνt})`, `δ̇ = vel ν (√ε w) t` satisfy the loaded
+swing equations (the converse of `hasDerivAt_scaledAmp`). -/
+@[tmio M, powerlib_domain] theorem swing_of_clamped (hp : p.Pos) {δ₀ b d ν ε ρc : ℝ}
+    (hν : 0 < ν) (hε : 0 < ε) (hb : p.D / p.M = ε * b) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d)
+    {w : ℝ → ℂ} {t : ℝ} (hw : HasDerivAt w (clampField p δ₀ b d ν ε ρc t (w t)) t)
+    (hwt : ‖w t‖ < ρc) :
+    HasDerivAt (fun s => δ₀ + pos ν (((√ε : ℝ) : ℂ) * w s) s)
+        (vel ν (((√ε : ℝ) : ℂ) * w t) t) t ∧
+      HasDerivAt (fun s => vel ν (((√ε : ℝ) : ℂ) * w s) s)
+        ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t)
+          (vel ν (((√ε : ℝ) : ℂ) * w t) t)) t := by
+  have hcl : clampC ρc (w t) = w t := DuffingMathieu.clampC_of_norm_le hwt.le
+  rw [clampField, hcl] at hw
+  have hz := hw.const_mul ((√ε : ℝ) : ℂ)
+  rw [scaledField_eq hε hb hd] at hz
+  have hosc := oscillator_of_vdp₂ hν.ne' (z := fun s => ((√ε : ℝ) : ℂ) * w s)
+    (u := fun s => -alpha2 p δ₀ * pos ν (((√ε : ℝ) : ℂ) * w s) s ^ 2 +
+      remainder p δ₀ ε (2 * ν) s (pos ν (((√ε : ℝ) : ℂ) * w s) s)) t hz
+  refine ⟨hosc.1.const_add δ₀, ?_⟩
+  have e := LoadedSwing.accel_eq hp δ₀ ε (2 * ν) t (pos ν (((√ε : ℝ) : ℂ) * w t) t)
+    (vel ν (((√ε : ℝ) : ℂ) * w t) t)
+  rw [show 2 * ν / 2 = ν by ring] at e
+  rw [e]
+  convert hosc.2 using 1
+  ring
 
 end powerlib.Synchronous.LoadedSubharmonicOrbit
