@@ -46,8 +46,10 @@ Model boundary.
   `clampC (‖w*‖ + 3)` (`clampField`, `Wmap`); the periodic and the attracted solutions stay in the
   disc `‖w − w*‖ ≤ 3/2` where the clamp is the identity.
 * Excluded as in `LoadedSwing`: a constant mechanical power (`LoadedSwingConstantPower`, whose
-  forced response at the pump frequency shifts the state), AVR/PSS, network and multi-machine
-  dynamics, a modulation of `K_d`. No uniqueness statement for the loaded orbit is made here.
+  forced response at the pump frequency shifts the state; its orbit is
+  `theorem/PowerSystem/Synchronous/ConstantPowerSubharmonicOrbit.lean`), AVR/PSS, network and
+  multi-machine dynamics, a modulation of `K_d`. No uniqueness statement for the loaded orbit is
+  made here (`LoadedSubharmonicOrbitUnique.loaded_orbit_unique`).
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11);
 Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations* (the second

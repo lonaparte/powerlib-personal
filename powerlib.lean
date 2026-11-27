@@ -533,6 +533,8 @@ import theorem.PowerSystem.Synchronous.FluxDecayParametric
 import theorem.PowerSystem.Synchronous.LoadedSubharmonicOrbit
 import theorem.PowerSystem.Synchronous.SubharmonicOrbitUnique
 import theorem.PowerSystem.Synchronous.FluxDecayConverse
+import theorem.PowerSystem.Synchronous.LoadedSubharmonicOrbitUnique
+import theorem.PowerSystem.Synchronous.ConstantPowerSubharmonicOrbit
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

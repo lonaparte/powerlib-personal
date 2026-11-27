@@ -17,7 +17,8 @@ Model boundary.
   |δ − jδ̇/ν − √ε w* e^{jνt}|` of the van der Pol amplitude, for all `t`; the radius `√ε r₀`
   (`r₀ > 0` depending on `b, d, ν, w*` only) is of the order of the amplitude. Uniqueness among
   all periodic solutions of other periods or outside the tube is not claimed.
-* Excluded as in `SubharmonicOrbit`: a loaded operating point, AVR/PSS, network and multi-machine
+* Excluded as in `SubharmonicOrbit`: a loaded operating point (its uniqueness is
+  `LoadedSubharmonicOrbitUnique.loaded_orbit_unique`), AVR/PSS, network and multi-machine
   dynamics, a modulation of `K_d`.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11);

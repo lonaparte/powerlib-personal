@@ -34,7 +34,8 @@ Model boundary.
   the weakly nonlinear scaling (`const_second_order`: damping and detuning of the order of the
   depth `0 < ε ≤ 1`, amplitude of order `√ε`, averaged solutions in a disc, time scale `1/ε`
   starting at an aligning time, relative error `O(√ε)`, the remainder of the sine curve included;
-  from any initial time: `ConstantPowerAveraging.const_second_order_from`).
+  from any initial time: `ConstantPowerAveraging.const_second_order_from`; the locked states as
+  genuine periodic solutions: `ConstantPowerOrbit.const_subharmonic_orbit`).
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11)
 (swing model at an operating point, constant mechanical power); the loaded swing
