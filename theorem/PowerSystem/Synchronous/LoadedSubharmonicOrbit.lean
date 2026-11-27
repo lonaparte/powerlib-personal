@@ -1425,4 +1425,313 @@ swing equations (the converse of `hasDerivAt_scaledAmp`). -/
   convert hosc.2 using 1
   ring
 
+/-! ## The limit second-order field in the hypotheses of the periodic-orbit theorem -/
+
+/-- The limit second-order field (`ω_L² → ν²`): damping `b`, stiffness `ν² − d`, pump `ν²`,
+quadratic stiffness `α₂⁰ = −ν² tan δ₀/2`, cubic stiffness `α₃⁰ = −ν²/6`. -/
+abbrev limitSecond (b d ν δ₀ : ℝ) : ℂ → ℝ → ℂ :=
+  secondField b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν
+
+/-- The averaged limit amplitude field of the loaded swing:
+`ampField (b/2) (d/(2ν)) (jν/4) 0 β⁰` with `β⁰ = −(ν/48)(3 + 5 tan²δ₀)`, the value of
+`LoadedSwing.betaLoaded` at the loaded resonance (`LoadedSwing.betaLoaded_resonance`). -/
+abbrev loadedAmp (b d ν δ₀ : ℝ) : ℂ → ℂ :=
+  ampField (b / 2) (d / (2 * ν)) (I * ((ν / 4 : ℝ) : ℂ)) 0 (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2))
+
+/-- The Jacobian of the averaged limit field at `w` in the real coordinates `(Re w, Im w)`. -/
+abbrev loadedJac (b d ν δ₀ : ℝ) (w : ℂ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  ampJacobian (b / 2) (d / (2 * ν)) (I * ((ν / 4 : ℝ) : ℂ)) 0
+    (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) (toReal w)
+
+/-- The period average of the limit second-order field is the averaged limit amplitude field
+(`QuadraticCubic.fieldAverage_secondField`). -/
+@[tmio M, powerlib_domain] theorem fieldAverage_limitSecond {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (w : ℂ) : Averaging.fieldAverage (limitSecond b d ν δ₀) (2 * Real.pi / ν) w =
+      loadedAmp b d ν δ₀ w := by
+  rw [limitSecond, QuadraticCubic.fieldAverage_secondField hν]
+  have e1 : (ν ^ 2 - (ν ^ 2 - d)) / (2 * ν) = d / (2 * ν) := by ring
+  have e2 : ν ^ 2 / (4 * ν) = ν / 4 := by field_simp
+  have e3 : 3 * (-(ν ^ 2) / 6) / (8 * ν) - 5 * (-(ν ^ 2 * Real.tan δ₀) / 2) ^ 2 / (12 * ν ^ 3) =
+      -(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2) := by field_simp; ring
+  rw [e1, e2, e3]
+
+@[tmio T, powerlib_foundation] private theorem norm_toReal_symm₂ (x : ℝ²) :
+    ‖toReal.symm x‖ = ‖x‖ := by
+  have h := Saturation.norm_toReal (toReal.symm x)
+  rw [ContinuousLinearEquiv.apply_symm_apply] at h
+  exact h.symm
+
+/-- The derivative of the cut-off limit field in the real coordinates. -/
+def limitDerivR (b d ν δ₀ : ℝ) (x : ℝ²) (t : ℝ) : ℝ² →L[ℝ] ℝ² :=
+  (toReal : ℂ →L[ℝ] ℝ²).comp ((secondDeriv b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2)
+    (-(ν ^ 2) / 6) ν (toReal.symm x) t).comp (toReal.symm : ℝ² →L[ℝ] ℂ))
+
+/-- The cut-off limit field in real coordinates: derivative, Lipschitz derivative, continuity in
+time, period average and its derivative at a locked state. -/
+@[tmio M, powerlib_domain] theorem limit_hyp {b d ν δ₀ ρc : ℝ} (hν : 0 < ν) {wstar : ℂ}
+    (hw0 : loadedAmp b d ν δ₀ wstar = 0) (hρc : ‖wstar‖ + 1 < ρc) :
+    (∀ x : ℝ², ‖x - toReal wstar‖ ≤ 1 → ∀ t, HasFDerivAt (fun y => realField
+      (QuadraticCubic.cutSecond b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6)
+        ν ρc) y t) (limitDerivR b d ν δ₀ x t) x) ∧
+    (∀ x y : ℝ², ‖x - toReal wstar‖ ≤ 1 → ‖y - toReal wstar‖ ≤ 1 → ∀ t,
+      ‖limitDerivR b d ν δ₀ x t - limitDerivR b d ν δ₀ y t‖ ≤
+        (6 * |-(ν ^ 2) / 6| / ν + 5 * (-(ν ^ 2 * Real.tan δ₀) / 2) ^ 2 / ν ^ 3) *
+          (‖wstar‖ + 1) * ‖x - y‖) ∧
+    Continuous (limitDerivR b d ν δ₀ (toReal wstar)) ∧
+    Averaging.fieldAverage (realField (QuadraticCubic.cutSecond b (ν ^ 2 - d) (ν ^ 2)
+      (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν ρc)) (2 * Real.pi / ν) (toReal wstar) = 0 ∧
+    HasFDerivAt (Averaging.fieldAverage (realField (QuadraticCubic.cutSecond b (ν ^ 2 - d)
+      (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν ρc)) (2 * Real.pi / ν))
+      (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (loadedJac b d ν δ₀ wstar)) (toReal wstar) := by
+  have hρc0 : 0 ≤ ρc := by linarith [norm_nonneg wstar]
+  have hball : ∀ x : ℝ², ‖x - toReal wstar‖ ≤ 1 → ‖toReal.symm x‖ ≤ ‖wstar‖ + 1 := by
+    intro x hx
+    rw [norm_toReal_symm₂]
+    have := norm_le_norm_add_norm_sub' x (toReal wstar)
+    rw [Saturation.norm_toReal] at this
+    linarith
+  -- the period average of the cut field near the locked state
+  have hav : ∀ x : ℝ², ‖x‖ ≤ ρc → Averaging.fieldAverage (realField (QuadraticCubic.cutSecond b
+      (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν ρc)) (2 * Real.pi / ν) x =
+      ampSystem (b / 2) (d / (2 * ν)) (I * ((ν / 4 : ℝ) : ℂ)) 0
+        (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) x := by
+    intro x hx
+    rw [SubharmonicOrbit.fieldAverage_realField (fun w => Averaging.PeriodicField.continuous_snd
+      (QuadraticCubic.cutSecond_hyp hν hρc0) w)]
+    have hw : ‖toReal.symm x‖ ≤ ρc := by rw [norm_toReal_symm₂]; exact hx
+    have e : Averaging.fieldAverage (QuadraticCubic.cutSecond b (ν ^ 2 - d) (ν ^ 2)
+        (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν ρc) (2 * Real.pi / ν) (toReal.symm x) =
+        Averaging.fieldAverage (limitSecond b d ν δ₀) (2 * Real.pi / ν) (toReal.symm x) := by
+      simp only [Averaging.fieldAverage, QuadraticCubic.cutSecond, limitSecond,
+        DuffingMathieu.clampC_of_norm_le hw]
+    rw [e, fieldAverage_limitSecond hν, ← Saturation.toReal_ampField,
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hy : ‖toReal wstar‖ < ρc := by rw [Saturation.norm_toReal]; linarith
+  refine ⟨fun x hx t => ?_, fun x y hx hy t => ?_, ?_, ?_, ?_⟩
+  · apply SubharmonicOrbit.hasFDerivAt_realField
+    exact hasFDerivAt_cutSecond (by linarith [hball x hx]) t
+  · have e : limitDerivR b d ν δ₀ x t - limitDerivR b d ν δ₀ y t =
+        (toReal : ℂ →L[ℝ] ℝ²).comp ((secondDeriv b (ν ^ 2 - d) (ν ^ 2)
+          (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν (toReal.symm x) t -
+          secondDeriv b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2) (-(ν ^ 2) / 6) ν
+            (toReal.symm y) t).comp (toReal.symm : ℝ² →L[ℝ] ℂ)) := by
+      simp only [limitDerivR, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub]
+    rw [e]
+    refine (SubharmonicOrbit.norm_conj_toReal_le _).trans ?_
+    have h := norm_secondDeriv_sub_le (b := b) (k₀ := ν ^ 2 - d) (k₁ := ν ^ 2)
+      (α₂ := -(ν ^ 2 * Real.tan δ₀) / 2) (α₃ := -(ν ^ 2) / 6) hν (hball x hx) (hball y hy) t
+    rw [← map_sub, norm_toReal_symm₂] at h
+    exact h
+  · refine continuous_clm_apply.mpr fun h => ?_
+    simp only [limitDerivR, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+    exact toReal.continuous.comp ((continuous_clm_apply.mp (continuous_secondDeriv _ _ _ _ _ _ _)) _)
+  · rw [hav _ hy.le, Saturation.toReal_ampField]
+    show toReal (loadedAmp b d ν δ₀ wstar) = 0
+    rw [hw0, map_zero]
+  · refine (Saturation.hasFDerivAt_ampSystem _ _ _ _ _ _).congr_of_eventuallyEq ?_
+    filter_upwards [Metric.ball_mem_nhds (toReal wstar) (sub_pos.mpr hy)] with x hx
+    rw [Metric.mem_ball, dist_eq_norm] at hx
+    apply hav
+    have := norm_le_norm_add_norm_sub' x (toReal wstar)
+    linarith [norm_sub_rev x (toReal wstar)]
+
+@[tmio T, powerlib_foundation] private theorem half_bound {x : ℝ} (hx : 0 ≤ x) :
+    1 / (2 * (x + 1)) * x ≤ 1 / 2 := by
+  rw [div_mul_eq_mul_div, one_mul, div_le_div_iff₀ (by positivity) (by norm_num)]
+  nlinarith
+
+/-- The cut-off limit second-order field in the real coordinates. -/
+abbrev limitCutR (b d ν δ₀ ρc : ℝ) : ℝ² → ℝ → ℝ² :=
+  realField (QuadraticCubic.cutSecond b (ν ^ 2 - d) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2)
+    (-(ν ^ 2) / 6) ν ρc)
+
+/-- The remainder of the transformed loaded amplitude equation relative to the limit field. -/
+abbrev transRemL (p : Params) (δ₀ b d ν ε : ℝ) : ℂ → ℝ → ℂ :=
+  transRem b d (loadedFreqSq p δ₀) (alpha2 p δ₀) (alpha3 p δ₀) (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2)
+    (-(ν ^ 2) / 6) ν ε (inputW p δ₀ ν ε)
+
+/-- **The core estimates of the loaded case.** For a locked amplitude `w*` there are `ε₁ > 0` and
+`M_q, L_q ≥ 0` (depending on `b, d, ν, δ₀, ‖w*‖` only) such that for every `0 < ε ≤ ε₁` and every
+machine of the scaling: the clamped transformation `Wmap` (clamp radius `‖w*‖ + 3`) is onto,
+`2`-co-Lipschitz and moves by at most `1/2`; along every clamped solution `w` and over every period
+that starts with `Wmap(w(s), s)` within `1/2` of `w*`, `w` stays within `3/2` of `w*` and the
+transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real coordinates); and
+`transRemL` is bounded by `ε√ε M_q` and `ε√ε L_q`-Lipschitz within `3/2` of `w*`. -/
+@[tmio M, powerlib_domain] private theorem loaded_core {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (hc : 0 < Real.cos δ₀) (wstar : ℂ) :
+    ∃ ε₁ Mq Lq : ℝ, 0 < ε₁ ∧ ε₁ ≤ 1 ∧ 0 ≤ Mq ∧ 0 ≤ Lq ∧ ∀ ε, 0 < ε → ε ≤ ε₁ →
+      ∀ p : Params, p.Pos → p.D / p.M = ε * b → loadedFreqSq p δ₀ = ν ^ 2 - ε * d →
+      (∀ w w' t, ‖w - w'‖ ≤ 2 * ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t -
+        Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w' t‖) ∧
+      (∀ W t, ∃ w, Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t = W) ∧
+      (∀ w t, ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) w t - w‖ ≤ 1 / 2) ∧
+      (∀ w : ℝ → ℂ, (∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t) →
+        ∀ s, ‖Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) (w s) s - wstar‖ ≤ 1 / 2 →
+        ∀ t ∈ Icc s (s + 2 * Real.pi / ν), ‖w t - wstar‖ ≤ 3 / 2 ∧
+          HasDerivAt (fun t => toReal (Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) (w t) t))
+            (ε • limitCutR b d ν δ₀ (‖wstar‖ + 3)
+              (toReal (Wmap (alpha2 p δ₀) ν ε (‖wstar‖ + 3) (w t) t)) t +
+              toReal (transRemL p δ₀ b d ν ε (w t) t)) t) ∧
+      ∀ w w' t, ‖w - wstar‖ ≤ 3 / 2 → ‖w' - wstar‖ ≤ 3 / 2 →
+        ‖transRemL p δ₀ b d ν ε w t‖ ≤ ε * √ε * Mq ∧
+        ‖transRemL p δ₀ b d ν ε w t - transRemL p δ₀ b d ν ε w' t‖ ≤ ε * √ε * Lq * ‖w - w'‖ := by
+  set R := ‖wstar‖ with hR
+  set ρc := R + 3 with hρc
+  set r := R + 2 with hr
+  set T := 2 * Real.pi / ν with hT
+  have hR0 : 0 ≤ R := norm_nonneg _
+  have hρc0 : 0 ≤ ρc := by positivity
+  have hr0 : 0 ≤ r := by positivity
+  have hT0 : 0 < T := by positivity
+  set K0 := ν ^ 2 + |d| with hK0
+  set A2 := K0 * |Real.tan δ₀| / 2 with hA2
+  set A3 := K0 / 6 with hA3
+  set K2 := Real.tan δ₀ ^ 2 / 4 * |d| * (2 * ν ^ 2 + |d|) with hK2
+  set Λ := remConstW ν d δ₀ r with hΛ
+  have hK00 : 0 ≤ K0 := by positivity
+  have hΛ0 : 0 ≤ Λ := by rw [hΛ, remConstW]; have := hc.le; positivity
+  obtain ⟨Mq, Lq, hMq, hLq, hTR⟩ := transRem_bounds hν b d (ν ^ 2) (-(ν ^ 2 * Real.tan δ₀) / 2)
+    (-(ν ^ 2) / 6) r |d| K2 (|d| / 6) A2 A3 K0 (Λ * r / ν) (Λ / ν) hr0 (by positivity)
+    (by positivity) hK00 (abs_nonneg _) (by positivity) (by positivity) (by positivity)
+    (by positivity)
+  set c₂ := 5 * A2 / (3 * ν ^ 2) with hc₂
+  set D₁ := 5 * A2 / (6 * ν ^ 2) * (2 * ρc) ^ 2 with hD₁
+  set S := speedConst b d ν δ₀ (2 * ρc) with hS
+  have hc₂0 : 0 ≤ c₂ := by positivity
+  have hD₁0 : 0 ≤ D₁ := by positivity
+  have hS0 : 0 ≤ S := by
+    rw [hS, speedConst, remConstW]; have := hc.le; positivity
+  set σ := min (1 / (2 * (c₂ * (2 * ρc) + 1))) (min (1 / (2 * (D₁ + 1))) (1 / (2 * (S * T + 1))))
+    with hσ
+  have hσ0 : 0 < σ := by
+    refine lt_min (by positivity) (lt_min (by positivity) (by positivity))
+  refine ⟨min 1 (σ ^ 2), Mq, Lq, by positivity, min_le_left _ _, hMq, hLq, ?_⟩
+  intro ε hε hεε₁ p hp hb hd
+  have hε1 : ε ≤ 1 := hεε₁.trans (min_le_left _ _)
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hsσ : √ε ≤ σ := by
+    have : ε ≤ σ ^ 2 := hεε₁.trans (min_le_right _ _)
+    calc √ε ≤ √(σ ^ 2) := Real.sqrt_le_sqrt this
+      _ = σ := Real.sqrt_sq hσ0.le
+  obtain ⟨-, h2, h3, hω, hωle⟩ := machine_bounds hp hc hε hε1 hd
+  have hα₂ : |alpha2 p δ₀| ≤ A2 := by
+    rw [h2, abs_div, abs_neg, abs_mul, abs_of_pos hω, abs_two, hA2]
+    gcongr
+  have hα₃ : |alpha3 p δ₀| ≤ A3 := by
+    rw [h3, abs_div, abs_neg, abs_of_pos hω, abs_of_pos (by norm_num : (0 : ℝ) < 6), hA3]
+    gcongr
+  -- the smallness conditions
+  have hsm1 : √ε * (5 * |alpha2 p δ₀| / (3 * ν ^ 2) * (2 * ρc)) ≤ 1 / 2 := by
+    have h1 : 5 * |alpha2 p δ₀| / (3 * ν ^ 2) * (2 * ρc) ≤ c₂ * (2 * ρc) := by
+      rw [hc₂]; gcongr
+    have h2' : σ ≤ 1 / (2 * (c₂ * (2 * ρc) + 1)) := min_le_left _ _
+    calc √ε * (5 * |alpha2 p δ₀| / (3 * ν ^ 2) * (2 * ρc)) ≤ σ * (c₂ * (2 * ρc)) :=
+          mul_le_mul hsσ h1 (by positivity) hσ0.le
+      _ ≤ 1 / (2 * (c₂ * (2 * ρc) + 1)) * (c₂ * (2 * ρc)) :=
+          mul_le_mul_of_nonneg_right h2' (by positivity)
+      _ ≤ 1 / 2 := half_bound (by positivity)
+  have hsm2 : ∀ w t, ‖Wmap (alpha2 p δ₀) ν ε ρc w t - w‖ ≤ 1 / 2 := by
+    intro w t
+    refine (norm_Wmap_sub_le hν hρc0 w t).trans ?_
+    have h1 : 5 * |alpha2 p δ₀| / (6 * ν ^ 2) * (2 * ρc) ^ 2 ≤ D₁ := by rw [hD₁]; gcongr
+    have h2' : σ ≤ 1 / (2 * (D₁ + 1)) := (min_le_right _ _).trans (min_le_left _ _)
+    calc √ε * (5 * |alpha2 p δ₀| / (6 * ν ^ 2) * (2 * ρc) ^ 2) ≤ σ * D₁ :=
+          mul_le_mul hsσ h1 (by positivity) hσ0.le
+      _ ≤ 1 / (2 * (D₁ + 1)) * D₁ := mul_le_mul_of_nonneg_right h2' hD₁0
+      _ ≤ 1 / 2 := half_bound hD₁0
+  have hsm3 : √ε * S * T ≤ 1 / 2 := by
+    have h2' : σ ≤ 1 / (2 * (S * T + 1)) := (min_le_right _ _).trans (min_le_right _ _)
+    calc √ε * S * T = √ε * (S * T) := by ring
+      _ ≤ σ * (S * T) := mul_le_mul_of_nonneg_right hsσ (by positivity)
+      _ ≤ 1 / (2 * (S * T + 1)) * (S * T) := mul_le_mul_of_nonneg_right h2' (by positivity)
+      _ ≤ 1 / 2 := half_bound (by positivity)
+  -- the bounds of the transformed remainder
+  have hTRε := hTR ε hε hε1 (loadedFreqSq p δ₀) (alpha2 p δ₀) (alpha3 p δ₀) (inputW p δ₀ ν ε)
+    (by rw [hd, show ν ^ 2 - ε * d - ν ^ 2 = -(ε * d) by ring, abs_neg, abs_mul, abs_of_pos hε])
+    (by
+      rw [h2]
+      have e : (-(loadedFreqSq p δ₀ * Real.tan δ₀) / 2) ^ 2 - (-(ν ^ 2 * Real.tan δ₀) / 2) ^ 2 =
+          ε * (Real.tan δ₀ ^ 2 / 4 * (-d) * (2 * ν ^ 2 - ε * d)) := by rw [hd]; ring
+      rw [e, abs_mul, abs_of_pos hε, hK2]
+      gcongr
+      rw [abs_mul, abs_mul, abs_neg, abs_of_nonneg (by positivity : (0:ℝ) ≤ Real.tan δ₀ ^ 2 / 4)]
+      gcongr
+      refine (abs_sub _ _).trans ?_
+      rw [abs_of_nonneg (by positivity : (0:ℝ) ≤ 2 * ν ^ 2), abs_mul, abs_of_pos hε]
+      gcongr
+      exact mul_le_of_le_one_left (abs_nonneg _) hε1)
+    (by
+      rw [h3, hd, show -(ν ^ 2 - ε * d) / 6 - -(ν ^ 2) / 6 = ε * (d / 6) by ring, abs_mul,
+        abs_of_pos hε, abs_div, abs_of_pos (by norm_num : (0 : ℝ) < 6)])
+    hα₂ hα₃ (by rw [abs_of_pos hω]; exact hωle)
+    (fun w t hw => by
+      have h := (remW_bounds hp hc hε hε1 hd hr0 hw hw t).2
+      rw [inputW, norm_neg, norm_mul, norm_mul, norm_phase_inv₂, mul_one, norm_div, Complex.norm_I,
+        Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg hν.le, Real.norm_eq_abs]
+      calc 1 / ν * |remW p δ₀ ν ε w t| ≤ 1 / ν * (ε ^ 2 * (Λ * r)) := by gcongr
+        _ = ε ^ 2 * (Λ * r / ν) := by ring)
+    (fun w w' t hw hw' => by
+      have h := (remW_bounds hp hc hε hε1 hd hr0 hw hw' t).1
+      have e : inputW p δ₀ ν ε w t - inputW p δ₀ ν ε w' t =
+          -(I / ν * ((remW p δ₀ ν ε w t - remW p δ₀ ν ε w' t : ℝ) : ℂ) * (phase ν t)⁻¹) := by
+        simp only [inputW]; push_cast; ring
+      rw [e, norm_neg, norm_mul, norm_mul, norm_phase_inv₂, mul_one, norm_div, Complex.norm_I,
+        Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg hν.le, Real.norm_eq_abs]
+      calc 1 / ν * |remW p δ₀ ν ε w t - remW p δ₀ ν ε w' t| ≤
+          1 / ν * (ε ^ 2 * Λ * ‖w - w'‖) := by gcongr
+        _ = ε ^ 2 * (Λ / ν) * ‖w - w'‖ := by ring)
+  have hdisc : ∀ w : ℂ, ‖w - wstar‖ ≤ 3 / 2 → ‖w‖ ≤ r := by
+    intro w hw
+    have := norm_le_norm_add_norm_sub' w wstar
+    rw [hr]; linarith
+  refine ⟨fun w w' t => (Wmap_bilipschitz hν hρc0 hsm1 w w' t).1,
+    fun W t => exists_Wmap_eq hν hρc0 hsm1 W t, hsm2, ?_,
+    fun w w' t hw hw' => hTRε w w' t (hdisc w hw) (hdisc w' hw')⟩
+  intro w hw s hs t ht
+  -- the clamped solution stays within `3/2` of `w*` over the period
+  have hws : ‖w s - wstar‖ ≤ 1 := by
+    have h1 := hsm2 (w s) s
+    calc ‖w s - wstar‖ = ‖(Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar) -
+          (Wmap (alpha2 p δ₀) ν ε ρc (w s) s - w s)‖ := by congr 1; abel
+      _ ≤ 1 / 2 + 1 / 2 := (norm_sub_le _ _).trans (add_le_add hs h1)
+      _ = 1 := by norm_num
+  have hdrift : ‖w t - w s‖ ≤ 1 / 2 := by
+    have h := norm_image_sub_le_of_norm_deriv_le_segment' (f := w)
+      (f' := fun u => clampField p δ₀ b d ν ε ρc u (w u)) (C := √ε * S)
+      (fun u _ => (hw u).hasDerivWithinAt)
+      (fun u _ => norm_clampField_le hp hν hc hε hε1 hd hρc0 u (w u)) t ht
+    refine h.trans ?_
+    calc √ε * S * (t - s) ≤ √ε * S * T :=
+          mul_le_mul_of_nonneg_left (by linarith [ht.2]) (by positivity)
+      _ ≤ 1 / 2 := hsm3
+  have hwt : ‖w t - wstar‖ ≤ 3 / 2 := by
+    calc ‖w t - wstar‖ = ‖(w t - w s) + (w s - wstar)‖ := by congr 1; abel
+      _ ≤ 1 / 2 + 1 := (norm_add_le _ _).trans (add_le_add hdrift hws)
+      _ = 3 / 2 := by norm_num
+  refine ⟨hwt, ?_⟩
+  have hwn : ‖w t‖ < ρc := by
+    have := hdisc (w t) hwt
+    rw [hρc, ← hr] at *; linarith
+  have hD := hasDerivAt_Wmap (p := p) (b := b) (d := d) hν hε (hw t) hwn
+  have hD' := (toReal : ℂ →L[ℝ] ℝ²).hasFDerivAt.comp_hasDerivAt t hD
+  refine hD'.congr_deriv ?_
+  -- the transformed field is the limit field at `W` plus the transformed remainder
+  have hcl : clampC ρc (w t) = w t := DuffingMathieu.clampC_of_norm_le hwn.le
+  have hWeq : Wmap (alpha2 p δ₀) ν ε ρc (w t) t = w t - √ε • nearId (alpha2 p δ₀) ν (w t) t := by
+    rw [Wmap, hcl]
+  have hWn : ‖Wmap (alpha2 p δ₀) ν ε ρc (w t) t‖ ≤ ρc := by
+    have h1 := hsm2 (w t) t
+    have h2 := norm_le_norm_add_norm_sub' (Wmap (alpha2 p δ₀) ν ε ρc (w t) t) (w t)
+    have h3 := hdisc (w t) hwt
+    rw [hρc]; rw [hr] at h3; linarith
+  have hf : limitCutR b d ν δ₀ ρc (toReal (Wmap (alpha2 p δ₀) ν ε ρc (w t) t)) t =
+      toReal (limitSecond b d ν δ₀ (w t - √ε • nearId (alpha2 p δ₀) ν (w t) t) t) := by
+    simp only [limitCutR, realField, ContinuousLinearEquiv.symm_apply_apply,
+      QuadraticCubic.cutSecond]
+    rw [DuffingMathieu.clampC_of_norm_le hWn, hWeq]
+  rw [hf, ContinuousLinearEquiv.coe_coe, ← map_smul, ← map_add]
+  congr 1
+  simp only [transRemL, transRem, transField]
+  abel
+
 end powerlib.Synchronous.LoadedSubharmonicOrbit
