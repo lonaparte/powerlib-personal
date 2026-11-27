@@ -60,7 +60,8 @@ Results.
 * `accelC_ofReal`, `hasDerivAt_shift` — the exact equation of `y = x − x_f` with the pump `κ`.
 * `accelC_shift`, `phase_align` — a time shift makes the complex pump a cosine pump.
 * `ampField_rotate`, `nearId_rotate`, `vdp_shift` — rotation equivariance.
-* `remForced`, `abs_resp_le`, `abs_shiftRem_le` — the forced terms are `O(ε²)`.
+* `remForced`, `abs_resp_le`, `abs_shiftRem_le`, `abs_le_scaled` — the forced terms are `O(ε²)`;
+  `|x| ≤ √ε |w|`.
 * `forced_second_order` — **rigorous second-order averaging with the forced response**: on
   `[t₀, t₀ + L/ε]`, `|x − εRe(X e^{2jνt}) − √ε Re(W̄ e^{jνt})| ≤ √ε (B + √ε (5|α₂|/(6ν²))(2(R + 1))²)`,
   `W̄` the solution of the second-order averaged equation with pump coefficient `jκ/(4ν)`.
@@ -355,7 +356,9 @@ def remForced (k₁ α₂ α₃ R ξ : ℝ) : ℝ :=
       add_le_add ((abs_add_le _ _).trans (add_le_add tA tB)) t345
     _ = ε ^ 2 * remForced k₁ α₂ α₃ R ξ := by simp only [remForced, hr]; ring
 
-@[tmio T, powerlib_foundation] private theorem abs_le_scaled {ε : ℝ} (hε : 0 < ε) (ν t x x' : ℝ) :
+/-- The position is bounded by the scaled van der Pol amplitude:
+`|x| ≤ √ε |e^{−jνt}(x − jẋ/ν)/√ε|`. -/
+@[tmio T, powerlib_foundation] theorem abs_le_scaled {ε : ℝ} (hε : 0 < ε) (ν t x x' : ℝ) :
     |x| ≤ √ε * ‖((√ε : ℝ) : ℂ)⁻¹ * vdp ν t x x'‖ := by
   have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
   have hs0' : ((√ε : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hs0.ne'
