@@ -1759,26 +1759,14 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
     (fun t => (clampField_lipschitz hp hν hc hε hε1 hd hρc t).lipschitzOnWith)
     (fun t => ⟨hw t, mem_univ _⟩) (fun t => ⟨hw' t, mem_univ _⟩) h
 
-/-- **The loaded half-frequency oscillation is a periodic solution of the loaded swing model.**
-Let `w*` be a nondegenerate locked state of the averaged limit amplitude equation of the loaded
-swing, `loadedAmp b d ν δ₀ w* = 0` (damping `b/2`, detuning `d/(2ν)`, pump `jν/4`, frequency shift
-`β⁰ = −(ν/48)(3 + 5 tan²δ₀)`) with `det (loadedJac b d ν δ₀ w*) ≠ 0`, at a stable loaded point
-`cos δ₀ > 0`. There are `ε₀ > 0` and `C ≥ 0` (depending on `b, d, ν, δ₀, w*` only) such that for
-every depth `0 < ε ≤ ε₀` and every machine in the weakly nonlinear scaling `D/M = εb`,
-`ω_L² = ν² − εd`, the loaded swing model with `K_s(t) = K_s(1 + ε cos 2νt)` has a solution
-`(δ, δ̇)` that is periodic with period `2π/ν` and satisfies
-`|δ(t) − δ₀ − √ε Re(w* e^{jνt})| ≤ C ε` for ALL `t` — a relative error `O(√ε)`, the quadratic
-stiffness `α₂` included through the second-order transformation
-(`Averaging.exists_periodic_point_perturbed` with a remainder of order `ε^{3/2}`). -/
-@[tmio M, powerlib_domain] theorem loaded_subharmonic_orbit {b d ν δ₀ : ℝ} (hν : 0 < ν)
+@[tmio M, powerlib_domain] private theorem loaded_orbit_core {b d ν δ₀ : ℝ} (hν : 0 < ν)
     (hc : 0 < Real.cos δ₀) {wstar : ℂ} (hw0 : loadedAmp b d ν δ₀ wstar = 0)
     (hdet : (loadedJac b d ν δ₀ wstar).det ≠ 0) :
     ∃ ε₀ C : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ p : Params, p.Pos →
       p.D / p.M = ε * b → loadedFreqSq p δ₀ = ν ^ 2 - ε * d →
-      ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
-        (∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t) ∧
-        (∀ t, δ (t + 2 * Real.pi / ν) = δ t ∧ δ' (t + 2 * Real.pi / ν) = δ' t) ∧
-        ∀ t, |δ t - δ₀ - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε := by
+      ∃ w : ℝ → ℂ, (∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t) ∧
+        (∀ t, w (t + 2 * Real.pi / ν) = w t) ∧ (∀ t, ‖w t - wstar‖ ≤ 3 / 2) ∧
+        ∀ t, ‖w t - wstar‖ ≤ √ε * C := by
   obtain ⟨ε₁, Mq, Lq, hε₁, hε₁1, hMq, hLq, hcore⟩ := loaded_core (b := b) (d := d) hν hc wstar
   set ρc := ‖wstar‖ + 3 with hρc
   have hρc0 : 0 ≤ ρc := by positivity
@@ -1977,18 +1965,37 @@ stiffness `α₂` included through the second-order transformation
           refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans
             (add_le_add hW1 (hW2.le.trans hdr'))) hW3)
       _ = √ε * C := by rw [hC]; ring
+  exact ⟨w, hW yε, hwper, fun t => (hwin t).1, fun t => (hwin t).2⟩
+
+/-- The swing solution carried by a periodic clamped solution that stays within `3/2` of `w*`. -/
+@[tmio M, powerlib_domain] theorem loaded_swing_of_orbit (hp : p.Pos) {δ₀ b d ν ε C : ℝ}
+    (hν : 0 < ν) (hε : 0 < ε) (hb : p.D / p.M = ε * b) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d)
+    {wstar : ℂ} {w : ℝ → ℂ}
+    (hW : ∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t)
+    (hwper : ∀ t, w (t + 2 * Real.pi / ν) = w t) (hw32 : ∀ t, ‖w t - wstar‖ ≤ 3 / 2)
+    (hwC : ∀ t, ‖w t - wstar‖ ≤ √ε * C) :
+    ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
+      (∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t) ∧
+      (∀ t, δ (t + 2 * Real.pi / ν) = δ t ∧ δ' (t + 2 * Real.pi / ν) = δ' t) ∧
+      ∀ t, |δ t - δ₀ - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε := by
+  set ρc := ‖wstar‖ + 3 with hρc
+  set T := 2 * Real.pi / ν with hT
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hss : √ε * √ε = ε := Real.mul_self_sqrt hε.le
+  have hwper' : ∀ t, w (t + T) = w t := hwper
+  have hwin : ∀ t, ‖w t - wstar‖ ≤ 3 / 2 ∧ ‖w t - wstar‖ ≤ √ε * C := fun t => ⟨hw32 t, hwC t⟩
   have hwn : ∀ t, ‖w t‖ < ρc := fun t => by
     have := norm_le_norm_add_norm_sub' (w t) wstar
     have := (hwin t).1
     rw [hρc]; linarith
   -- the swing solution
-  have hsw := fun t => swing_of_clamped hp hν hε hb hd (hW yε t) (hwn t)
+  have hsw := fun t => swing_of_clamped hp hν hε hb hd (hW t) (hwn t)
   refine ⟨fun t => δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t, fun t => vel ν (((√ε : ℝ) : ℂ) * w t) t,
     fun t => (hsw t).1, fun t => (hsw t).2, fun t => ⟨?_, ?_⟩, fun t => ?_⟩
   · show δ₀ + pos ν (((√ε : ℝ) : ℂ) * w (t + T)) (t + T) = δ₀ + pos ν (((√ε : ℝ) : ℂ) * w t) t
-    rw [hwper]; exact congrArg (fun x => δ₀ + x) (pos_period₂ hν _ t)
+    rw [hwper']; exact congrArg (fun x => δ₀ + x) (pos_period₂ hν _ t)
   · show vel ν (((√ε : ℝ) : ℂ) * w (t + T)) (t + T) = vel ν (((√ε : ℝ) : ℂ) * w t) t
-    rw [hwper]; exact vel_period₂ hν _ t
+    rw [hwper']; exact vel_period₂ hν _ t
   · have e1 : pos ν (((√ε : ℝ) : ℂ) * w t) t = √ε * pos ν (w t) t := pos_ofReal_mul₂ ν √ε (w t) t
     have e2 : (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re = pos ν wstar t := rfl
     have e3 : pos ν (w t - wstar) t = pos ν (w t) t - pos ν wstar t := by
@@ -2002,5 +2009,30 @@ stiffness `α₂` included through the second-order transformation
           mul_le_mul_of_nonneg_left ((abs_pos_le₂ ν _ t).trans (hwin t).2) hs0.le
       _ = C * (√ε * √ε) := by ring
       _ = C * ε := by rw [hss]
+
+/-- **The loaded half-frequency oscillation is a periodic solution of the loaded swing model.**
+Let `w*` be a nondegenerate locked state of the averaged limit amplitude equation of the loaded
+swing, `loadedAmp b d ν δ₀ w* = 0` (damping `b/2`, detuning `d/(2ν)`, pump `jν/4`, frequency shift
+`β⁰ = −(ν/48)(3 + 5 tan²δ₀)`) with `det (loadedJac b d ν δ₀ w*) ≠ 0`, at a stable loaded point
+`cos δ₀ > 0`. There are `ε₀ > 0` and `C ≥ 0` (depending on `b, d, ν, δ₀, w*` only) such that for
+every depth `0 < ε ≤ ε₀` and every machine in the weakly nonlinear scaling `D/M = εb`,
+`ω_L² = ν² − εd`, the loaded swing model with `K_s(t) = K_s(1 + ε cos 2νt)` has a solution
+`(δ, δ̇)` that is periodic with period `2π/ν` and satisfies
+`|δ(t) − δ₀ − √ε Re(w* e^{jνt})| ≤ C ε` for ALL `t` — a relative error `O(√ε)`, the quadratic
+stiffness `α₂` included through the second-order transformation
+(`Averaging.exists_periodic_point_perturbed` with a remainder of order `ε^{3/2}`). -/
+@[tmio M, powerlib_domain] theorem loaded_subharmonic_orbit {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (hc : 0 < Real.cos δ₀) {wstar : ℂ} (hw0 : loadedAmp b d ν δ₀ wstar = 0)
+    (hdet : (loadedJac b d ν δ₀ wstar).det ≠ 0) :
+    ∃ ε₀ C : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ p : Params, p.Pos →
+      p.D / p.M = ε * b → loadedFreqSq p δ₀ = ν ^ 2 - ε * d →
+      ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
+        (∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t) ∧
+        (∀ t, δ (t + 2 * Real.pi / ν) = δ t ∧ δ' (t + 2 * Real.pi / ν) = δ' t) ∧
+        ∀ t, |δ t - δ₀ - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε := by
+  obtain ⟨ε₀, C, hε₀, hC, horb⟩ := loaded_orbit_core hν hc hw0 hdet
+  refine ⟨ε₀, C, hε₀, hC, fun ε hε hεε₀ p hp hb hd => ?_⟩
+  obtain ⟨w, hw, hwper, hw32, hwC⟩ := horb ε hε hεε₀ p hp hb hd
+  exact loaded_swing_of_orbit hp hν hε hb hd hw hwper hw32 hwC
 
 end powerlib.Synchronous.LoadedSubharmonicOrbit
