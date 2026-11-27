@@ -27,7 +27,8 @@ Scope.
   `nearId_rotate`, `vdp_shift`), the closed forms of `|κ|²` and of `κ` to leading order.
 * The averaging step is `QuadraticCubic.second_order_averaging` (damping, detuning `ν² − k₀`,
   pump `k₁` and forcing `F` of order `ε`, amplitude of order `√ε`, `0 < ε ≤ 1`, averaged solutions
-  in a disc, time scale `1/ε`, starting at an aligning time `t₀`); the forced terms are `O(ε²)`
+  in a disc, time scale `1/ε`, starting at an aligning time `t₀`; from any initial time:
+  `ComplexPump.forced_second_order_from`); the forced terms are `O(ε²)`
   (`abs_shiftRem_le`). Thresholds are statements about the averaged equation (level L2), via
   `Saturation.zero_stable_iff`.
 * Generic mathematics, no model family.

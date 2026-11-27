@@ -37,7 +37,8 @@ Scope.
   (damping `μs`, levels `ω²/4 + μa_i`) through the time change of `SquareWave.twoPiece`
   generalized to a switching instant at `δT` (`twoPieceDuty`). The agreement of L1 and L2 at the
   same pump frequency outside a cone, and the threshold function `ε_c(ξ; δ)`, are
-  `theorem/ParametricResonance/DutyCycleLevels.lean`.
+  `theorem/ParametricResonance/DutyCycleLevels.lean`; instability exactly above `ε_c(ξ; δ)` is
+  `theorem/ParametricResonance/DutyCycleThreshold.lean`.
 * The generic two-piece averaging theorems concern continuous bounded `G₁`, `G₂` on `[0, δT]` and
   `[δT, T]` (`Periodic.transition`), `δ ∈ (0, 1)`, stated for `ε → 0⁺`.
 * Generic mathematics; no model family.

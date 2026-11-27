@@ -382,6 +382,9 @@ import theorem.ParametricResonance.BlockRemainderSecond
 import theorem.ParametricResonance.ForcedOrbitSecond
 import theorem.ParametricResonance.SmoothForcedOrbitSecond
 import theorem.ParametricResonance.ThreeStateCore
+import theorem.ParametricResonance.DutyCycleThreshold
+import theorem.ParametricResonance.ComplexPumpAveraging
+import theorem.ParametricResonance.FirstOrderFailsExistence
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -505,6 +508,7 @@ import theorem.PowerSystem.Synchronous.LoadedSwing
 import theorem.PowerSystem.Synchronous.ParametricSaturationRigorous
 import theorem.PowerSystem.Synchronous.LoadedSwingConstantPower
 import theorem.PowerSystem.Synchronous.SubharmonicOrbit
+import theorem.PowerSystem.Synchronous.LoadedSwingConstantPowerAveraging
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

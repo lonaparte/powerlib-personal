@@ -23,7 +23,9 @@ Scope.
   `|w| ≤ 2(R + 1)`, the branch condition, `errSecond … < 1`); the second-order averaged solution
   `W₂` from the transformed initial value and the first-order prediction `W₁` from the scaled
   initial amplitude `w(0)` are given on the window and stay in the disc of radius `R` (as in
-  `QuadraticCubic.second_order_averaging`, existence of these solutions is a hypothesis).
+  `QuadraticCubic.second_order_averaging`, existence of these solutions is a hypothesis here; it
+  is discharged in `theorem/ParametricResonance/FirstOrderFailsExistence.lean`,
+  `first_order_fails_initial`).
 * Exact statements: the bound and the Lipschitz constant of the cubic amplitude field on discs
   (`norm_ampField_le`, `norm_ampField_sub_le`), the frequency-shift difference
   (`ampField_sub_beta`), the drift and separation of averaged solutions (`norm_sub_le_drift`,

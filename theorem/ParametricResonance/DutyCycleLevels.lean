@@ -44,7 +44,8 @@ Scope.
 * `dutyCentreThreshold δ ξ` is a real-valued function (an infimum over depths, unit `ω₀`,
   centre-following period `T = π/(δν₁ + (1 − δ)ν₂)`); its band and limit are proved for small
   `ξ` from the cone alone. Unlike `CentreThreshold.centre_unstable_iff_threshold` for `δ = 1/2`,
-  no monotonicity in the depth (instability exactly above `ε_c`) is claimed.
+  no monotonicity in the depth (instability exactly above `ε_c`) is claimed here; it is proved in
+  `theorem/ParametricResonance/DutyCycleThreshold.lean` (`duty_unstable_iff_threshold`).
 * Generic mathematics; no model family.
 
 Source: the duty-cycle model, its exact centre criterion and cone

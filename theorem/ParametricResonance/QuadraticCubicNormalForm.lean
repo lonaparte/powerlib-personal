@@ -31,7 +31,9 @@ Scope.
   (`norm_nearIdDeriv_le`), and `W − w` is of order `√ε` (`norm_nearId_le`); `secondField` is
   Lipschitz on discs (`norm_secondField_sub_le`), so `secondField(w) − secondField(W)` is of
   order `√ε` as well.
-* The averaging step is rigorous (`second_order_averaging`): `Ẇ = ε secondField(W, t) + q(t)`
+* The averaging step is rigorous (`second_order_averaging`; on any window and for a complex pump:
+  `ComplexPump.second_order_from`, `ComplexPump.complex_second_order`):
+  `Ẇ = ε secondField(W, t) + q(t)`
   with `|q| ≤ ε^{3/2} M_q` while `W` stays in the disc `R + 1` (the a-priori bound
   `|w| < 2(R + 1)` through the implicit relation `w = W + √ε u(w, t)` is a continuity argument
   under the branch condition `4(R + 1)√ε (5|α₂|/(6ν²)) < 1`), and the perturbed averaging theorem
