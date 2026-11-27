@@ -26,8 +26,8 @@ Model boundary.
   deviation `δ − δ₀` from the operating point of the unmodulated machine.
 * The modulation `K_s(t) = K_s(1 + ε cos Ωt)` (`ParametricSaturation.modKs`, pump `Ω = 2ν`) of the
   curve with constant mechanical power `P_m = K_s sin δ₀` (`constSwing`). Excluded: AVR/PSS,
-  network and multi-machine dynamics, a modulation of `K_d` or of `P_m`, the resonant case
-  `ω_L² = 4ν²`, `D = 0` (where the forced response is not defined).
+  network and multi-machine dynamics, a modulation of `K_d` or of `P_m`, the undamped resonant
+  case `ω_L² = 4ν²`, `D = 0` (where the forced response at `2ν` does not exist).
 * Exact statements: the normalized form (`accel_eq`, `accel_normal`), the closed forms of the
   effective pump and of its size, the comparison with `LoadedSwing`, the dependence on `δ₀`, and
   the Hurwitz criterion of the averaged zero state (level L2). The averaging step is rigorous in

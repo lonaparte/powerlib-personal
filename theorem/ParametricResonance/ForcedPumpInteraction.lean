@@ -65,8 +65,11 @@ Results.
 * `forced_second_order` — **rigorous second-order averaging with the forced response**: on
   `[t₀, t₀ + L/ε]`, `|x − εRe(X e^{2jνt}) − √ε Re(W̄ e^{jνt})| ≤ √ε (B + √ε (5|α₂|/(6ν²))(2(R + 1))²)`,
   `W̄` the solution of the second-order averaged equation with pump coefficient `jκ/(4ν)`.
+* `normSq_pumpEff_phasor`, `pumpEff_lt_iff_phasor` — `|k₁ + 2α₂X|² = k₁² + 4α₂(k₁ Re X + α₂|X|²)`
+  for any phasor: the phase condition for lowering or raising the pump.
 * `normSq_pumpEff`, `normSq_pumpEff_eq_sq`, `pumpEff_lt_iff`, `lt_pumpEff_iff`, `pumpEff_leading` —
-  the size of the effective pump, when the forcing lowers or raises it, its leading order.
+  the size of the effective pump for the forced response, when the forcing lowers or raises it,
+  its leading order.
 * `forced_zero_stable_iff`, `threshold_raised`, `threshold_lowered` — the averaged half-frequency
   threshold `|κ|² = 16ν²(σ² + Δ²)` and its shift by the forcing.
 -/
@@ -528,6 +531,25 @@ complex sum `κ = k₁ + 2α₂X`; the cubic coefficient is unchanged. Proof: th
   have h2 : 2 * ν * b = 0 := by nlinarith [sq_nonneg (k₀ - 4 * ν ^ 2), sq_nonneg (2 * ν * b)]
   rw [forcedDen, h1, h2]; simp
 
+/-- **The size of the effective pump for any phasor:**
+`|k₁ + 2α₂X|² = k₁² + 4α₂(k₁ Re X + α₂|X|²)` — the forced response raises or lowers the pump
+according to its phase: with `X = |X|e^{jφ}`, the change is `4α₂|X|(k₁ cos φ + α₂|X|)`. -/
+@[tmio T, powerlib_foundation] theorem normSq_pumpEff_phasor (k₁ α₂ : ℝ) (X : ℂ) :
+    ‖pumpEff k₁ α₂ X‖ ^ 2 = k₁ ^ 2 + 4 * α₂ * (k₁ * X.re + α₂ * ‖X‖ ^ 2) := by
+  rw [Complex.sq_norm, Complex.normSq_apply, Complex.sq_norm, Complex.normSq_apply]
+  simp only [pumpEff, Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.re_ofNat, Complex.im_ofNat]
+  ring
+
+/-- **The phase condition:** the effective pump is smaller than the parametric one,
+`|k₁ + 2α₂X| < |k₁|`, iff `α₂(k₁ Re X + α₂|X|²) < 0`; larger iff `> 0`. -/
+@[tmio T, powerlib_foundation] theorem pumpEff_lt_iff_phasor (k₁ α₂ : ℝ) (X : ℂ) :
+    (‖pumpEff k₁ α₂ X‖ < |k₁| ↔ α₂ * (k₁ * X.re + α₂ * ‖X‖ ^ 2) < 0) ∧
+      (|k₁| < ‖pumpEff k₁ α₂ X‖ ↔ 0 < α₂ * (k₁ * X.re + α₂ * ‖X‖ ^ 2)) := by
+  rw [← sq_lt_sq₀ (norm_nonneg _) (abs_nonneg _), ← sq_lt_sq₀ (abs_nonneg _) (norm_nonneg _),
+    sq_abs, normSq_pumpEff_phasor]
+  constructor <;> constructor <;> intro h <;> linarith
+
 /-- **The size of the effective pump.** For the forced response `X̂ = f₀/(k₀ − 4ν² + 2jνb)`:
 `|k₁ + 2α₂X̂|² = k₁² + 4α₂f₀(k₁(k₀ − 4ν²) + α₂f₀)/((k₀ − 4ν²)² + 4ν²b²)`. -/
 @[tmio T, powerlib_foundation] theorem normSq_pumpEff (h : forcedDen b k₀ ν ≠ 0)
@@ -544,21 +566,11 @@ complex sum `κ = k₁ + 2α₂X`; the cubic coefficient is unchanged. Proof: th
     simp only [forcedDen, Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im,
       Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im]
     ring
-  have hXim : (forcedAmp b k₀ ν f₀).im =
-      -(f₀ * (2 * ν * b)) / ((k₀ - 4 * ν ^ 2) ^ 2 + (2 * ν * b) ^ 2) := by
-    rw [forcedAmp, Complex.div_im, hns]
-    simp only [forcedDen, Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im]
-    ring
-  have hre : (pumpEff k₁ α₂ (forcedAmp b k₀ ν f₀)).re = k₁ + 2 * α₂ * (forcedAmp b k₀ ν f₀).re := by
-    simp [pumpEff]
-  have him : (pumpEff k₁ α₂ (forcedAmp b k₀ ν f₀)).im = 2 * α₂ * (forcedAmp b k₀ ν f₀).im := by
-    simp [pumpEff]
-  rw [Complex.sq_norm, Complex.normSq_apply, hre, him, hXre, hXim]
+  have hXn : ‖forcedAmp b k₀ ν f₀‖ ^ 2 = f₀ ^ 2 / ((k₀ - 4 * ν ^ 2) ^ 2 + (2 * ν * b) ^ 2) := by
+    rw [Complex.sq_norm, forcedAmp, Complex.normSq_div, hns, Complex.normSq_ofReal]; ring
+  rw [normSq_pumpEff_phasor, hXre, hXn]
   set N := (k₀ - 4 * ν ^ 2) ^ 2 + (2 * ν * b) ^ 2 with hNdef
   field_simp
-  rw [hNdef]
-  ring
 
 /-- **The effective pump as a sum of squares:**
 `|k₁ + 2α₂X̂|² = ((2α₂f₀ + k₁(k₀ − 4ν²))² + k₁²(2νb)²)/((k₀ − 4ν²)² + (2νb)²)`. The forced response
