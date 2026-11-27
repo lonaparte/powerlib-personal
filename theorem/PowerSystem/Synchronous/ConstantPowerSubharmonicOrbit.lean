@@ -209,11 +209,6 @@ open powerlib.Synchronous.LoadedSubharmonicOrbit (inputField vdpInput inputClamp
   rw [phase, ← Complex.exp_nat_mul, show ((2 : ℕ) : ℂ) * (((ν * t : ℝ) : ℂ) * I) =
     (((2 * ν * t) : ℝ) : ℂ) * I by push_cast; ring, Complex.exp_ofReal_mul_I_im]
 
-@[tmio T, powerlib_foundation] private theorem half_bound₄ {x : ℝ} (hx : 0 ≤ x) :
-    1 / (2 * (x + 1)) * x ≤ 1 / 2 := by
-  rw [div_mul_eq_mul_div, one_mul, div_le_div_iff₀ (by positivity) (by norm_num)]
-  nlinarith
-
 /-! ## The shifted constant-power swing -/
 
 /-- The limit `κ⁰ = ν²(1 − tan²δ₀/3)` of the effective pump `κ = pumpConst` of the

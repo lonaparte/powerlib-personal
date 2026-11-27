@@ -107,19 +107,6 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
     pos ν ((s : ℂ) * w) t = s * pos ν w t := by
   simp only [pos, mul_assoc, Complex.re_ofReal_mul]
 
-@[tmio T, powerlib_foundation] private theorem abs_pos_sub_le₃ (ν : ℝ) (z w : ℂ) (t : ℝ) :
-    |pos ν z t - pos ν w t| ≤ ‖z - w‖ := by
-  have : pos ν z t - pos ν w t = ((z - w) * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re := by
-    simp only [pos, sub_mul, Complex.sub_re]
-  rw [this]
-  refine (Complex.abs_re_le_norm _).trans ?_
-  rw [norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one]
-
-@[tmio T, powerlib_foundation] private theorem abs_pos_le₃ (ν : ℝ) (z : ℂ) (t : ℝ) :
-    |pos ν z t| ≤ ‖z‖ := by
-  have := abs_pos_sub_le₃ ν z 0 t
-  simpa [pos] using this
-
 @[tmio T, powerlib_foundation] private theorem norm_phase_inv₃ (ν t : ℝ) :
     ‖(phase ν t)⁻¹‖ = 1 := by
   rw [norm_inv, show ‖phase ν t‖ = 1 from Complex.norm_exp_ofReal_mul_I _, inv_one]
@@ -136,12 +123,6 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
   have := phase_period₃ hν t
   simp only [phase] at this
   simp only [pos, this]
-
-@[tmio T, powerlib_foundation] private theorem vel_period₃ {ν : ℝ} (hν : 0 < ν) (w : ℂ)
-    (t : ℝ) : vel ν w (t + 2 * Real.pi / ν) = vel ν w t := by
-  have := phase_period₃ hν t
-  simp only [phase] at this
-  simp only [vel, this]
 
 @[tmio T, powerlib_foundation] private theorem norm_toReal_symm₃ (x : ℝ²) :
     ‖toReal.symm x‖ = ‖x‖ := by
