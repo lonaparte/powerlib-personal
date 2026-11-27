@@ -22,7 +22,8 @@ order of the averaging (`ω/(2ω₀) = 1 + O(d)`) `ε_c^{L2} = π √(ξ² + d²
 Against the exact Meissner boundary (L1, `theorem/ParametricResonance/Meissner.lean`):
 * first-order agreement at the exact tongue centre `Ω = ν₁ + ν₂`: for every `η > 0` and all
   small `ξ`, `ε`, `ε > (π + η)ξ` gives Floquet instability and `ε < (π − η)ξ` Schur stability
-  (the limit `ε_c/ξ → π` in cone form; no threshold function is defined); at the same pump
+  (the limit `ε_c/ξ → π` in cone form; the threshold function `ε_c(ξ)` with `ε_c(ξ)/ξ → π` is
+  `theorem/ParametricResonance/CentreThreshold.lean`); at the same pump
   frequency the L2 verdicts are the same, so the two levels can disagree only in the cone
   `|ε − πξ| ≤ ηξ`;
 * the finite-`ξ` gap: the exact centre is Schur stable when `ε < πξ √(1 − ε − ξ²)` and Floquet
@@ -37,7 +38,9 @@ Against the exact Meissner boundary (L1, `theorem/ParametricResonance/Meissner.l
   with the same average, to which `Averaging.averaging_schurStable` and
   `Averaging.averaging_floquetUnstable` apply;
 * the universal region `|ε|/√(1 − |ε|) < 2ξ` of `theorem/ParametricResonance/UniversalThreshold.lean`
-  (proved there for continuous stiffness, compared here algebraically) lies inside the L2 stable
+  (proved there for continuous stiffness, compared here algebraically; for the square wave
+  itself in `theorem/ParametricResonance/UniversalThresholdPiecewise.lean`,
+  `square_wave_levels_agree_of_universal`) lies inside the L2 stable
   region at every detuning for `ω ≥ (4/π) ω₀ √(1 − |ε|)`; at `ω = 2ω₀` the L2 threshold `πξ` is
   `π/(2√(1 − |ε|)) ≥ π/2` times the universal one.
 
@@ -546,7 +549,8 @@ averaged square-wave model is unstable iff `πξ < |ε|` and Hurwitz iff `|ε| <
 /-- **The universal region lies inside the L2 stable region.** If the square-wave depth satisfies
 the frequency- and waveform-free bound `|ε|/√(1 − |ε|) < 2ξ`, `ξ = c/ω₀`
 (`UniversalThreshold.schurStable_of_threshold` with `m = 1`, `D = 2c`, `K̄ = ω₀²`; proved there
-for continuous stiffness, so it does not itself cover the square wave), then the averaged model is
+for continuous stiffness, so it does not itself cover the square wave; the square-wave version is
+`PiecewiseThreshold.meissner_schurStable_of_universal`), then the averaged model is
 Hurwitz at every detuning for every pump frequency `ω ≥ (4/π) ω₀ √(1 − |ε|)`, in particular near
 `2ω₀`: `2|ε|ω₀² < 4cω₀√(1 − |ε|) ≤ πωc ≤ πω√(c² + Δ²)`. At `ω = 2ω₀` the L2 threshold `πξ`
 exceeds the universal one `2ξ√(1 − |ε|)` by the factor `π/(2√(1 − |ε|)) ≥ π/2`. -/

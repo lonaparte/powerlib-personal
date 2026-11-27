@@ -360,6 +360,9 @@ import theorem.ParametricResonance.SquareWaveAveraging
 import theorem.ParametricResonance.SubharmonicContent
 import theorem.ParametricResonance.QuadraticCubicNormalForm
 import theorem.ParametricResonance.RobustVsUniversal
+import theorem.ParametricResonance.UniversalThresholdPiecewise
+import theorem.ParametricResonance.CentreThreshold
+import theorem.ParametricResonance.DutyCycle
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability

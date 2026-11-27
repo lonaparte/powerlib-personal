@@ -42,7 +42,10 @@ Scope.
   `Wirtinger.pump_amplitude_cos`, and the square-wave Meissner oscillator of
   `theorem/ParametricResonance/Meissner.lean` at the centre of its principal tongue. The square
   wave is discontinuous, so the bound itself does not cover it; `meissner_centre_above_universal`
-  compares the two thresholds algebraically.
+  compares the two thresholds algebraically. The extension to integrable (jumping) stiffness,
+  which covers the square wave and every duty ratio, is
+  `theorem/ParametricResonance/UniversalThresholdPiecewise.lean`
+  (`schurStable_of_threshold_piecewise`, `meissner_schurStable_of_universal`).
 * Generic mathematics; no model family.
 
 Source: the energy mechanism of parametric oscillations (Landau–Lifshitz, *Mechanics* §27: the
