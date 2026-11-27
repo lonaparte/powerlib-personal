@@ -53,7 +53,8 @@ Source: Hartman, *Ordinary Differential Equations*, Ch. V (higher differentiabil
 to initial conditions; the higher variational equations); Kuznetsov, *Elements of Applied
 Bifurcation Theory* (3rd ed.), §5.4 (the Taylor coefficients of a Poincaré map, entering the
 normal-form coefficients); the open item of `theorem/Periodic/FlipReduction.lean` (Scope: the
-cubic Taylor expansion of the period map was a hypothesis there).
+cubic Taylor expansion of the period map was a hypothesis there). The expansion to every order
+`N` is `theorem/Periodic/PeriodMapJet.lean` (`periodMap_jet`, `periodMap_jet_of_contDiff`).
 
 Results.
 * `resp`, `resp_eq_integral`, `resp_start`, `hasDerivAt_resp`, `resp_add`, `resp_smul`,

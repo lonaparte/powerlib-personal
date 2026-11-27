@@ -24,7 +24,7 @@ Scope.
   (Mathlib `IsIntegralCurveOn`). `G(t, ·)` is differentiable with `D_xG` (`fderiv ℝ (G t)`) jointly
   continuous in `(t, x)` and `G(t, ·)` is `K`-Lipschitz uniformly in `t` (global form; a field
   that is only locally Lipschitz is first multiplied by a smooth cut-off equal to `1` near the
-  trajectory, which is not done here).
+  trajectory, which is not done here; for periodic fields: `theorem/Periodic/LocalField.lean`).
 * The derivative is stated for any continuous matrix function `A` that equals `D_xG` along the
   reference solution on `[s, t]` (`A r *ᵥ v = D_xG(r, x₀ r) v`); along a continuous curve the
   canonical choice is `jacobianAlong G x`, which for an autonomous field is the

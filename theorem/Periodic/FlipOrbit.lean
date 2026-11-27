@@ -30,7 +30,8 @@ Scope.
 * `G` is `T`-periodic in `t` (`Function.Periodic G T`, `T > 0`), continuous, differentiable in `x`
   with `D_xG` jointly continuous, and globally `K`-Lipschitz in `x` (a field that is only locally
   Lipschitz is first multiplied by a smooth cut-off equal to `1` near the orbit, which is not done
-  here). `x_*` is a global solution with `x_*(T) = x_*(0)`.
+  here; it is done in `theorem/Periodic/LocalField.lean`, `orbit_stable_of_flipCoeff_pos_local`,
+  `orbit_unstable_of_flipCoeff_neg_local`). `x_*` is a global solution with `x_*(T) = x_*(0)`.
 * Along `x_*` on `[0, T]` the field has the cubic Taylor expansion with continuous coefficients
   `D_xG(r, x_*(r))`, `Q₂(r)`, `Q₃(r)` and a remainder `c₄ ‖u‖⁴` for `‖u‖ ≤ ρ`
   (`PeriodMapTaylor`); for a field of class `C⁴` in `x` with `D_x²G`, `D_x³G` continuous along
@@ -40,8 +41,9 @@ Scope.
   monodromy matrix `M = monodromy (jacobianAlong G x_*) T 0`: `M vm = −vm`, `wmᵀ M = −wmᵀ`,
   `wm ⬝ vm = 1`, `M + vm wmᵀ` Schur stable (`−1` simple, every other multiplier strictly inside the
   unit circle).
-* The solution statements concern the initial time `0` (solutions on `[0, ∞)`); the degenerate
-  flip `a² + b = 0` is not decided.
+* The solution statements concern the initial time `0` (solutions on `[0, ∞)`; uniformly in the
+  initial time: `theorem/Periodic/FlipOrbitUniform.lean`); the degenerate flip `a² + b = 0` is not
+  decided here.
 * Only the multiplier `−1` is reduced here. A periodic solution with the multiplier `+1` (the
   transcritical and cubic normal forms of `theorem/Periodic/CriticalMultiplier.lean`) is
   `theorem/Periodic/FoldOrbit.lean`, with the reduction at `+1` in
