@@ -45,7 +45,9 @@ Scope.
 * The quadratic and cubic terms are a continuous bilinear map `P₂` (not assumed symmetric) and a
   continuous trilinear map `P₃` on the diagonal (`ContinuousMultilinearMap` on `Fin 3`); `k₂` is
   any solution of `k₂ − M k₂ = Q P₂(v, v)` (unique, `I − M` being invertible).
-* `a² + b = 0` (a degenerate flip) is not decided here.
+* `a² + b = 0` (a degenerate flip) is not decided here; it is decided by the fifth-order
+  coefficient in `theorem/Periodic/DegenerateFlipReduction.lean` (scalar theory and flat jets
+  that no finite order decides: `theorem/Map/DegenerateFlip.lean`).
 * Generic; nothing here describes a physical system (foundation).
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), Ch. 4 (the flip

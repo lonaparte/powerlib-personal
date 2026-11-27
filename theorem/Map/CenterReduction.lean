@@ -36,9 +36,11 @@ Scope.
 * The agreement `Φ (G e) = F (Φ e)` holds on a ball `‖e‖ < ρ`; `F` is the map with the cut-off
   nonlinearities (`ε`-Lipschitz, vanishing at `0`), so every conclusion concerns the original `G`.
   The reduced map is the one of the cut-off, equal to `x ↦ A x + f₀(x, h x)` near `0`.
-* Not proved: "`r` Lyapunov stable (not asymptotically) ⇒ `G` Lyapunov stable", which needs the
-  asymptotic phase (a second contraction for the stable fibres); the transfers proved here are
-  those that decide the normal forms (asymptotic stability both ways, instability from `r` to `G`).
+* Not proved here: "`r` Lyapunov stable (not asymptotically) ⇒ `G` Lyapunov stable", which needs
+  the asymptotic phase; the transfers proved here are those that decide the normal forms
+  (asymptotic stability both ways, instability from `r` to `G`). The remaining directions are
+  `theorem/Map/AsymptoticPhase.lean` (`lyapunovStable_of_reduced`, `lyapunovStable_iff`,
+  `unstable_iff`).
 * Generic; nothing here describes a physical system (foundation).
 
 Source: Carr, *Applications of Centre Manifold Theory* (1981), Ch. 2 (Theorem 2, the reduction
