@@ -73,10 +73,11 @@ Results.
   `antiFreeModulation_data`, `antiFree_undecided`.
 
 Corrections.
-The undamped branch `d = 0` called undecided at second order in
-`theorem/ParametricResonance/ZeroDampingBranch.lean` is in fact never unstable: it is elliptic for
-`g' ≠ 0` and exactly `−I` for `g' = 0`. The branch `g' = 0` is never Floquet unstable (`K ≥ 0`); it
-is decided by the rotational coefficient `b`.
+None: an extension (the cases left open at second order by
+`theorem/ParametricResonance/ZeroDampingBranch.lean` and
+`theorem/ParametricResonance/SecondOrderClosedForm.lean`). The undamped branch `d = 0` is never
+unstable (elliptic for `g' ≠ 0`, exactly `−I` for `g' = 0`), and the branch `g' = 0` is never
+Floquet unstable (`K ≥ 0`); it is decided by the rotational coefficient `b`.
 
 Family and connection conclusions.
 None: static evidence on periodic linear systems.
