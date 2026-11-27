@@ -37,10 +37,13 @@ Scope.
   block (`A₁₂ = A₂₁ = 0`), constant coupling `β`, `γ`, no first-order shift of the pair
   (`B₁₁ = 0`, so `shiftRe = shiftIm = 0`); `a < 0` for `ρ(E) < 1`; the boundary
   `s² + d² = |g/2|²`, `s > 0`; statements for all small `ε > 0`.
-* Not covered: modulated coupling `A₁₂`, `A₂₁` (harmonics `3ω/2` enter the same integrals), a
-  first-order shift `B₁₁ ≠ 0` of the pair, larger stable blocks; `coreMixed = 0` (next order).
-* Generic mathematics; no model family. No engineering instance is given: the library has no
-  model of the swing pair with a first-order governor or AVR lag in this modal form.
+* Not covered here: modulated coupling `A₁₂`, `A₂₁` (harmonics `3ω/2` enter the same integrals),
+  a first-order shift `B₁₁ ≠ 0` of the pair, larger stable blocks — all three are
+  `theorem/ParametricResonance/BlockCoreClosedForm.lean` (`effSecond_closed_form`,
+  `block_boundary`); `coreMixed = 0` (next order).
+* Generic mathematics; no model family. No engineering instance is given here; the flux-decay
+  (Heffron–Phillips) machine with a pumped synchronizing coefficient is
+  `theorem/PowerSystem/Synchronous/FluxDecayParametric.lean`.
 
 Source: the wave-6 question of this library (a closed form of `BlockBoundary.effSecond` for a
 concrete core); `BlockBoundary.averagingB_boundary`, `SecondOrder.mixedDet_secondTerm_stdForm`

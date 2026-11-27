@@ -53,7 +53,9 @@ Scope.
   Both are taken up in `theorem/ParametricResonance/BlockRemainderSecond.lean` (an expanded
   remainder `ε²R₂ + O(ε³)` decides, a merely bounded one provably does not:
   `averagingR2_boundary`, `averagingR_bounded_undecided`) and
-  `theorem/ParametricResonance/ThreeStateCore.lean` (`effSecond_core`, `three_state_boundary`).
+  `theorem/ParametricResonance/ThreeStateCore.lean` (`effSecond_core`, `three_state_boundary`),
+  for every stable block and modulated coupling in
+  `theorem/ParametricResonance/BlockCoreClosedForm.lean` (`effSecond_closed_form`).
 * Generic mathematics; no model family.
 
 Source: the wave-5 question of this library (the second-order decision of the first-order
