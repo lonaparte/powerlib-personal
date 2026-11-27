@@ -374,6 +374,8 @@ import theorem.ParametricResonance.ThirdOrderBoundary
 import theorem.ParametricResonance.CriticalExponent
 import theorem.ParametricResonance.PhysicalBoundary
 import theorem.ParametricResonance.DutyCycleLevels
+import theorem.ParametricResonance.ForcedPumpInteraction
+import theorem.ParametricResonance.FirstOrderAveragingFails
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -492,6 +494,7 @@ import theorem.PowerSystem.Synchronous.ParametricSwing
 import theorem.PowerSystem.Synchronous.ParametricSaturation
 import theorem.PowerSystem.Synchronous.LoadedSwing
 import theorem.PowerSystem.Synchronous.ParametricSaturationRigorous
+import theorem.PowerSystem.Synchronous.LoadedSwingConstantPower
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

@@ -26,7 +26,8 @@ Model boundary.
   `P_m(t) = K_s(t) sin δ₀` (`loadedSwing`), so that `δ₀` stays an equilibrium. Excluded: a constant
   `P_m = K_s sin δ₀` under a modulated curve, which adds the additive forcing
   `−εK_s sin δ₀ cos Ωt` at the pump frequency (a forced response at `Ω` that, through the
-  quadratic term, also changes the effective pump; not formalized), AVR/PSS, network and
+  quadratic term, also changes the effective pump; treated in
+  `theorem/PowerSystem/Synchronous/LoadedSwingConstantPower.lean`), AVR/PSS, network and
   multi-machine dynamics, a modulation of `K_d`.
 * Exact statements: the normalized form with its remainder and the bound of the remainder
   (`accel_eq`, `abs_remainder_le`), the exact second-order transformation of the actual model

@@ -56,8 +56,9 @@ Sharpenings.
 * `theorem/Averaging/KBM.lean` and `theorem/ParametricResonance/DuffingMathieu.lean` average to
   first order only; with a quadratic stiffness the quadratic field is of order `√ε` in the
   scaled amplitude, so first-order averaging controls the error only on the time scale `1/√ε`
-  (recorded, not formalized), while the second-order equation with `β_eff` holds on the time
-  scale `1/ε` (`second_order_averaging`).
+  (proved in `theorem/ParametricResonance/FirstOrderAveragingFails.lean`: `first_order_fails`,
+  `first_order_short`), while the second-order equation with `β_eff` holds on the time scale
+  `1/ε` (`second_order_averaging`).
 * `β_eff > 0` (hardening) iff `10α₂² < 9ν²α₃`; with `α₃ ≤ 0` the oscillator softens for every
   `α₂`, and a hardening cubic stiffness is turned into a softening one by a quadratic stiffness
   with `10α₂² > 9ν²α₃` (`betaEff_pos_iff`).
