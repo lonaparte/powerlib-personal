@@ -24,7 +24,9 @@ Results.
   variational equation (chain rule).
 * `monodromy_mulVec_velocity` — `Φ(T, 0) f(x_p(0)) = f(x_p(0))`.
 * `one_mem_spectrum_monodromy` — if the orbit is not an equilibrium (`f(x_p(0)) ≠ 0`), `1` is a
-  Floquet multiplier (an eigenvalue of the complexified monodromy matrix).
+  Floquet multiplier (an eigenvalue of the complexified monodromy matrix). Its consequence for the
+  centre-manifold reduction at `+1` (reduced map the identity, Lyapunov stable, never
+  asymptotically stable) is `FoldOrbit.autonomous_trivial_multiplier`.
 -/
 
 noncomputable section

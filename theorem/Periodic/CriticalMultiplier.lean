@@ -34,8 +34,9 @@ Scope.
   coordinate `y 0`, with explicit remainder hypotheses
   `|F y 0 − (normal form)| ≤ K |y 0|^k` for `‖y‖ ≤ ρ` (`k = 3` or `4`); no smoothness beyond
   these bounds is assumed. A Poincaré map restricted to a one-dimensional centre direction is such a
-  map; the centre-manifold reduction itself is not formalized (for a scalar periodic ODE no
-  reduction is needed, and only `μ = +1` occurs there, since `μ = e^{∫ ∂ₓG} > 0`).
+  map; the centre-manifold reduction is not formalized here (for a scalar periodic ODE no
+  reduction is needed, and only `μ = +1` occurs there, since `μ = e^{∫ ∂ₓG} > 0`); it is
+  `theorem/Map/CenterManifold.lean` and `theorem/Map/CenterReduction.lean`.
 * Flows: autonomous fields on `ℝⁿ` read as `T`-periodic systems for every `T`, with LeanForControl's
   segment semantics (`LyapunovStable`, `LocalAsymptoticStable`, `Unstable`) and
   `Flow.GloballyAsymptoticallyStable`. The pairs are `ẋ = S x ∓ κ ‖x‖² x` (`rotCubicField`) with
@@ -50,7 +51,10 @@ Scope.
   the centre manifold of the period map in `theorem/Periodic/FlipReduction.lean`
   (`localAsymptoticStable_of_flipCoeff_pos`, `unstable_of_flipCoeff_neg`; the regularity of the
   period map and `DP = monodromy` are hypotheses there, derived from a `C⁴` field in
-  `theorem/Periodic/FlipOrbit.lean`). The multiplier `+1` of a nonconstant orbit is not reduced.
+  `theorem/Periodic/FlipOrbit.lean`). The multiplier `+1` of a periodic solution of a periodic
+  (non-autonomous) system is reduced in `theorem/Periodic/FoldReduction.lean` and
+  `theorem/Periodic/FoldOrbit.lean` (fold coefficient `a ≠ 0`: unstable; `a = 0`: the cubic
+  coefficient decides); for autonomous orbits `+1` is trivial (`autonomous_trivial_multiplier`).
 
 Source: the wave-4 question of this library (the boundary cases that the assumption levels L0–L3
 leave undecided: critical Floquet multipliers at the step L1 → L0); Kuznetsov, *Elements of

@@ -42,9 +42,10 @@ Scope.
   unit circle).
 * The solution statements concern the initial time `0` (solutions on `[0, ∞)`); the degenerate
   flip `a² + b = 0` is not decided.
-* Only the multiplier `−1` is reduced. A nonconstant orbit with the multiplier `+1` (the
-  transcritical and cubic normal forms of `theorem/Periodic/CriticalMultiplier.lean`) needs the
-  centre-manifold reduction at `+1`, which `FlipReduction` does not provide; it is not treated.
+* Only the multiplier `−1` is reduced here. A periodic solution with the multiplier `+1` (the
+  transcritical and cubic normal forms of `theorem/Periodic/CriticalMultiplier.lean`) is
+  `theorem/Periodic/FoldOrbit.lean`, with the reduction at `+1` in
+  `theorem/Periodic/FoldReduction.lean`.
 * Generic mathematics; no model family.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), Ch. 4 (the flip bifurcation

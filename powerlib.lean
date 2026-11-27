@@ -414,6 +414,8 @@ import theorem.Periodic.ExponentialRobustComparison
 import theorem.Periodic.FlowDerivative
 import theorem.Periodic.PeriodMapTaylor
 import theorem.Periodic.FlipOrbit
+import theorem.Periodic.FoldReduction
+import theorem.Periodic.FoldOrbit
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
