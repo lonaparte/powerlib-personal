@@ -139,6 +139,7 @@ def bilin (f : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F) : E →L[ℝ
   ((continuousMultilinearCurryFin1 ℝ E F).toContinuousLinearEquiv :
     ContinuousMultilinearMap ℝ (fun _ : Fin 1 => E) F →L[ℝ] E →L[ℝ] F).comp f.curryLeft
 
+/-- `bilin f a b = f(a, b)`. -/
 @[tmio T, powerlib_foundation] theorem bilin_apply
     (f : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F) (a b : E) :
     bilin f a b = f ![a, b] := by
@@ -147,6 +148,8 @@ def bilin (f : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F) : E →L[ℝ
   funext i
   fin_cases i <;> rfl
 
+/-- On the diagonal, `bilin f e e = f(e, e)`: the quadratic term of a jet is that of its bilinear
+map. -/
 @[tmio T, powerlib_foundation] theorem bilin_diag
     (f : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F) (e : E) :
     bilin f e e = f (fun _ => e) := by
