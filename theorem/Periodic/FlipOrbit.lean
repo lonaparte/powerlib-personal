@@ -32,8 +32,9 @@ Scope.
   off, e.g. `Periodic.clampField`). `x_*` is a global solution with `x_*(T) = x_*(0)`.
 * Along `x_*` on `[0, T]` the field has the cubic Taylor expansion with continuous coefficients
   `D_xG(r, x_*(r))`, `Q₂(r)`, `Q₃(r)` and a remainder `c₄ ‖u‖⁴` for `‖u‖ ≤ ρ`
-  (`PeriodMapTaylor`; for a `C⁴` field `Q₂ = D_x²G/2`, `Q₃ = D_x³G/6`, not derived here from
-  iterated derivatives). The bounds of `Q₂`, `Q₃` on `[0, T]` come from their continuity.
+  (`PeriodMapTaylor`); for a field of class `C⁴` in `x` with `D_x²G`, `D_x³G` continuous along
+  `x_*` and `‖D_x⁴G‖` bounded on the tube it holds with `Q₂ = D_x²G/2`, `Q₃ = D_x³G/6` (the
+  `_of_contDiff` theorems). The bounds of `Q₂`, `Q₃` on `[0, T]` come from their continuity.
 * The spectral hypothesis is the projector form of `FlipReduction.multipliers_of_deflate` for the
   monodromy matrix `M = monodromy (jacobianAlong G x_*) T 0`: `M vm = −vm`, `wmᵀ M = −wmᵀ`,
   `wm ⬝ vm = 1`, `M + vm wmᵀ` Schur stable (`−1` simple, every other multiplier strictly inside the
@@ -66,7 +67,9 @@ Results.
 * **The theorems**: `orbit_stable_of_flipCoeff_pos` (`a² + b > 0`: the period map is locally
   asymptotically, not exponentially, stable at `x_*(0)`, and `x_*` is Lyapunov stable and
   attracting) and `orbit_unstable_of_flipCoeff_neg` (`a² + b < 0`: the period map and `x_*` are
-  unstable).
+  unstable); `orbit_stable_of_flipCoeff_pos_of_contDiff`,
+  `orbit_unstable_of_flipCoeff_neg_of_contDiff` — the same for a field of class `C⁴` in `x`, with
+  `Q₂ = D_x²G/2`, `Q₃ = D_x³G/6` along `x_*` and the remainder from a bound on `D_x⁴G`.
 
 Corrections.
 None: an extension (`FlipReduction` for the period map of a periodic system, with its regularity
@@ -600,6 +603,71 @@ on `[0, ∞)` starting arbitrarily close to `x_*(0)` reach the distance `ε` fro
     orbit_data hGc hGd hD hK hT hxs hfix hQ₂ hQ₃ hρ hTay
   have hmap := unstable_of_flipCoeff_neg_coord hP hPp hv hw hwv hS hC hρ₀ hTay' hk hab
   exact ⟨hmap, solution_unstable_of_map hGc hK hT hGper hxs hfix hmap⟩
+
+/-- **Fields of class `C⁴`, stable side.** `orbit_stable_of_flipCoeff_pos` for a field with
+`G(t, ·)` of class `C⁴`, `D_x²G`, `D_x³G` continuous along `x_*` and `‖D_x⁴G‖ ≤ B₄` on the tube
+of radius `ρ` about `x_*`: the Taylor coefficients are `Q₂ = D_x²G/2 = taylor2 G x_*` and
+`Q₃ = D_x³G/6 = taylor3 G x_*` (`PeriodMapTaylor.taylor_along_of_contDiff`). -/
+@[tmio T, powerlib_foundation] theorem orbit_stable_of_flipCoeff_pos_of_contDiff
+    (hGc : Continuous (uncurry G)) (hG4 : ∀ t, ContDiff ℝ 4 (G t))
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2)
+    (hK : ∀ t, LipschitzWith K (G t)) {T : ℝ} (hT : 0 < T) (hGper : Periodic G T)
+    {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t) (hfix : xs T = xs 0)
+    (hD2 : Continuous fun r => fderiv ℝ (fderiv ℝ (G r)) (xs r))
+    (hD3 : Continuous fun r => iteratedFDeriv ℝ 3 (G r) (xs r)) {ρ B₄ : ℝ} (hρ : 0 < ρ)
+    (hB4 : ∀ r ∈ Icc 0 T, ∀ y ∈ Metric.closedBall (xs r) ρ, ‖iteratedFDeriv ℝ 4 (G r) y‖ ≤ B₄)
+    {vm wm : Fin n → ℝ} (hv : monodromy (jacobianAlong G xs) T 0 *ᵥ vm = -vm)
+    (hw : wm ᵥ* monodromy (jacobianAlong G xs) T 0 = -wm) (hwv : wm ⬝ᵥ vm = 1)
+    (hS : LTI.SchurStable (monodromy (jacobianAlong G xs) T 0 + vecMulVec vm wm))
+    {k : Fin n → ℝ} (hk : k - monodromy (jacobianAlong G xs) T 0 *ᵥ k =
+      secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm vm -
+        (wm ⬝ᵥ secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm vm) • vm)
+    (hab : 0 < (wm ⬝ᵥ secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm vm) ^ 2 +
+      (wm ⬝ᵥ thirdVariation (jacobianAlong G xs) (taylor2 G xs) (taylor3 G xs) 0 T
+          (fun _ => vm) +
+        wm ⬝ᵥ (secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm k +
+          secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T k vm))) :
+    (Map.LocalAsymptoticStable (euclidMap (periodMap hGc hK T))
+        ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) ∧
+      ¬ Map.LocallyExponentiallyStable (euclidMap (periodMap hGc hK T))
+        ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) ∧
+    (∀ ε, 0 < ε → ∃ δ, 0 < δ ∧ ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Ici 0) →
+      ‖x 0 - xs 0‖ < δ → ∀ t, 0 ≤ t → ‖x t - xs t‖ < ε) ∧
+    ∃ δ, 0 < δ ∧ ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Ici 0) →
+      ‖x 0 - xs 0‖ < δ → Tendsto (fun t => x t - xs t) atTop (𝓝 0) :=
+  orbit_stable_of_flipCoeff_pos hGc (fun t => (hG4 t).differentiable (by norm_num)) hD hK hT
+    hGper hxs hfix (hD2.const_smul (1 / 2 : ℝ)) (hD3.const_smul (1 / 6 : ℝ)) hρ
+    (taylor_along_of_contDiff (fun r _ y _ => (hG4 r).contDiffAt) hB4) hv hw hwv hS hk hab
+
+/-- **Fields of class `C⁴`, unstable side.** `orbit_unstable_of_flipCoeff_neg` with
+`Q₂ = D_x²G/2`, `Q₃ = D_x³G/6` along `x_*`, under the hypotheses of
+`orbit_stable_of_flipCoeff_pos_of_contDiff`. -/
+@[tmio T, powerlib_foundation] theorem orbit_unstable_of_flipCoeff_neg_of_contDiff
+    (hGc : Continuous (uncurry G)) (hG4 : ∀ t, ContDiff ℝ 4 (G t))
+    (hD : Continuous fun p : ℝ × (Fin n → ℝ) => fderiv ℝ (G p.1) p.2)
+    (hK : ∀ t, LipschitzWith K (G t)) {T : ℝ} (hT : 0 < T) (hGper : Periodic G T)
+    {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t) (hfix : xs T = xs 0)
+    (hD2 : Continuous fun r => fderiv ℝ (fderiv ℝ (G r)) (xs r))
+    (hD3 : Continuous fun r => iteratedFDeriv ℝ 3 (G r) (xs r)) {ρ B₄ : ℝ} (hρ : 0 < ρ)
+    (hB4 : ∀ r ∈ Icc 0 T, ∀ y ∈ Metric.closedBall (xs r) ρ, ‖iteratedFDeriv ℝ 4 (G r) y‖ ≤ B₄)
+    {vm wm : Fin n → ℝ} (hv : monodromy (jacobianAlong G xs) T 0 *ᵥ vm = -vm)
+    (hw : wm ᵥ* monodromy (jacobianAlong G xs) T 0 = -wm) (hwv : wm ⬝ᵥ vm = 1)
+    (hS : LTI.SchurStable (monodromy (jacobianAlong G xs) T 0 + vecMulVec vm wm))
+    {k : Fin n → ℝ} (hk : k - monodromy (jacobianAlong G xs) T 0 *ᵥ k =
+      secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm vm -
+        (wm ⬝ᵥ secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm vm) • vm)
+    (hab : (wm ⬝ᵥ secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm vm) ^ 2 +
+      (wm ⬝ᵥ thirdVariation (jacobianAlong G xs) (taylor2 G xs) (taylor3 G xs) 0 T
+          (fun _ => vm) +
+        wm ⬝ᵥ (secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T vm k +
+          secondVariation (jacobianAlong G xs) (taylor2 G xs) 0 T k vm)) < 0) :
+    Map.Unstable (euclidMap (periodMap hGc hK T))
+        ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) ∧
+    ∃ ε, 0 < ε ∧ ∀ δ, 0 < δ → ∃ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Ici 0) ∧
+      ‖x 0 - xs 0‖ < δ ∧ ∃ t, 0 ≤ t ∧ ε ≤ ‖x t - xs t‖ :=
+  orbit_unstable_of_flipCoeff_neg hGc (fun t => (hG4 t).differentiable (by norm_num)) hD hK hT
+    hGper hxs hfix (hD2.const_smul (1 / 2 : ℝ)) (hD3.const_smul (1 / 6 : ℝ)) hρ
+    (taylor_along_of_contDiff (fun r _ y _ => (hG4 r).contDiffAt) hB4) hv hw hwv hS hk hab
 
 end Orbit
 

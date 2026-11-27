@@ -1,4 +1,5 @@
 import theorem.Periodic.OrbitMultiplier
+import theorem.Periodic.MeanTrace
 
 /-! # Differentiability of the flow in the initial state: the first variation
 
@@ -155,7 +156,8 @@ def jacobianAlong (G : ℝ → (X → ℝ) → X → ℝ) (x : ℝ → X → ℝ
 
 /-! ## The first-variation estimate -/
 
-/-- `t ↦ Φ(t, s) v` solves `ẏ = A(t) y` on all of `ℝ`. -/
+/-- `t ↦ Φ(t, s) v` solves `ẏ = A(t) y` on all of `ℝ`, from any initial time `s` (the case
+`s = 0` is `Periodic.hasDerivAt_transition_mulVec` of `theorem/Periodic/MeanTrace.lean`). -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_transition_mulVec {A : ℝ → Matrix X X ℝ}
     (hA : Continuous A) (s : ℝ) (v : X → ℝ) (r : ℝ) :
     HasDerivAt (fun r => transition A r s *ᵥ v) (A r *ᵥ (transition A r s *ᵥ v)) r := by

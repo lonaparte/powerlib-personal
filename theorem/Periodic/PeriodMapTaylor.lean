@@ -1,5 +1,6 @@
 import theorem.Periodic.FlowDerivative
 import theorem.Periodic.ForcedRegime
+import Mathlib.Analysis.Calculus.TaylorIntegral
 
 /-! # The cubic Taylor expansion of the flow and of the period map
 
@@ -36,9 +37,9 @@ Scope.
   trilinear maps, `ContinuousMultilinearMap` on `Fin 3`) with `‖A(r) v‖ ≤ K ‖v‖`, `‖Q₂(r)‖ ≤ B₂`,
   `‖Q₃(r)‖ ≤ B₃` and the remainder `c₄ ‖u‖⁴` for `‖u‖ ≤ ρ`. For `G(r, ·)` of class `C⁴` with
   continuous `D_x²G`, `D_x³G` and `‖D_x⁴G‖ ≤ 24 c₄` near `x_*` it holds with `A = D_xG`,
-  `Q₂ = D_x²G/2`, `Q₃ = D_x³G/6` (Taylor's theorem, Mathlib
-  `map_add_eq_sum_add_integral_iteratedFDeriv`); that derivation from iterated derivatives is not
-  carried out here. `Q₂`, `Q₃` need not be symmetric.
+  `Q₂ = D_x²G/2`, `Q₃ = D_x³G/6` (`taylor_along_of_contDiff`, Taylor's theorem with integral
+  remainder, Mathlib `map_add_eq_sum_add_integral_iteratedFDeriv`). `Q₂`, `Q₃` need not be
+  symmetric.
 * `P₂ = secondVariation` and `P₃ = thirdVariation` are defined by their values on (pairs, triples
   of) basis vectors (`bilinOfBasis`, `multilinOfBasis`); `secondVariation_apply`,
   `thirdVariation_apply` identify them with the solutions of the forced variational equations
@@ -70,6 +71,9 @@ Results.
   `‖x(t) − x_*(t) − Φ(t, s) e − P₂(t)(e, e) − P₃(t)(e, e, e)‖ ≤ C₄ ‖e‖⁴`.
 * `periodMap_taylor` — the same for the period map at a `T`-periodic solution:
   `‖P(p + e) − p − M e − P₂(e, e) − P₃(e, e, e)‖ ≤ C₄ ‖e‖⁴` for `‖e‖ ≤ min 1 (ρ e^{−KT})`.
+* `norm_taylor_three_le`, `taylor2`, `taylor3`, `taylor_along_of_contDiff` — for a field of
+  class `C⁴` with `‖D_x⁴G‖ ≤ B₄` on the tube the Taylor hypothesis holds with
+  `Q₂ = D_x²G/2`, `Q₃ = D_x³G/6` and `c₄ = B₄/24` (Taylor's theorem with integral remainder).
 
 Corrections.
 None: an extension (the cubic Taylor expansion of the period map, a hypothesis of
@@ -84,7 +88,7 @@ namespace powerlib.Periodic.PeriodMapTaylor
 
 open Set Matrix Function Filter Topology
 open scoped Matrix.Norms.Operator
-open FlowDerivative (norm_le_of_hasDerivWithinAt hasDerivAt_transition_mulVec)
+open FlowDerivative (norm_le_of_hasDerivWithinAt)
 
 variable {X : Type*} [Fintype X] [DecidableEq X]
 
@@ -206,7 +210,7 @@ variable {Q₂ : ℝ → (X → ℝ) →L[ℝ] (X → ℝ) →L[ℝ] X → ℝ}
 
 @[tmio T, powerlib_foundation] theorem continuous_transition_mulVec (hA : Continuous A) (s : ℝ)
     (v : X → ℝ) : Continuous fun r => transition A r s *ᵥ v :=
-  continuous_iff_continuousAt.2 fun r => (hasDerivAt_transition_mulVec hA s v r).continuousAt
+  continuous_iff_continuousAt.2 fun r => (FlowDerivative.hasDerivAt_transition_mulVec hA s v r).continuousAt
 
 /-- The source of the second variational equation, `Q₂(r)(Φ(r, s) e, Φ(r, s) f)`. -/
 def secondSource (A : ℝ → Matrix X X ℝ) (Q₂ : ℝ → (X → ℝ) →L[ℝ] (X → ℝ) →L[ℝ] X → ℝ) (s : ℝ)
@@ -432,7 +436,8 @@ the second and third variations `P₂ = secondVariation`, `P₃ = thirdVariation
   have hxu : ∀ r, x r = xs r + u r := fun r => by simp [hu]
   have hu' : ∀ r ∈ Icc s t, HasDerivWithinAt u (G r (x r) - G r (xs r)) (Icc s t) r :=
     fun r hr => (hx r hr).sub (hxs r hr)
-  have hy₁' : ∀ r, HasDerivAt y₁ (A r *ᵥ y₁ r) r := hasDerivAt_transition_mulVec hA s e
+  have hy₁' : ∀ r, HasDerivAt y₁ (A r *ᵥ y₁ r) r :=
+    FlowDerivative.hasDerivAt_transition_mulVec hA s e
   have hy₂' : ∀ r, HasDerivAt y₂ (A r *ᵥ y₂ r + Q₂ r (y₁ r) (y₁ r)) r :=
     hasDerivAt_secondVariation hA hQ₂ s e e
   have hy₃' : ∀ r, HasDerivAt y₃
@@ -671,5 +676,84 @@ the state, `x_*` a global solution with `x_*(T) = x_*(0)`, and let `G` have alon
   rw [hx0, sub_zero, hper] at h
   rw [monodromy, zero_add]
   exact h
+
+/-! ## Fields of class `C⁴` -/
+
+section ContDiff
+
+/-- **Taylor's theorem to third order with a quartic remainder.** For `f` of class `C⁴` on the
+closed ball of radius `ρ` about `x` with `‖D⁴f‖ ≤ B₄` there,
+`‖f(x + u) − f(x) − Df(x) u − ½ D²f(x)(u, u) − ⅙ D³f(x)(u, u, u)‖ ≤ (B₄/24) ‖u‖⁴` for `‖u‖ ≤ ρ`
+(Mathlib `map_add_eq_sum_add_integral_iteratedFDeriv`, the integral remainder
+`(1/3!) ∫₀¹ (1 − τ)³ D⁴f(x + τ u)(u, u, u, u) dτ`). -/
+@[tmio T, powerlib_foundation] theorem norm_taylor_three_le {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {f : E → F} {x : E} {ρ B₄ : ℝ} (hf : ∀ y ∈ Metric.closedBall x ρ, ContDiffAt ℝ 4 f y)
+    (hB : ∀ y ∈ Metric.closedBall x ρ, ‖iteratedFDeriv ℝ 4 f y‖ ≤ B₄) {u : E} (hu : ‖u‖ ≤ ρ) :
+    ‖f (x + u) - f x - fderiv ℝ f x u - (1 / 2 : ℝ) • fderiv ℝ (fderiv ℝ f) x u u -
+      (1 / 6 : ℝ) • iteratedFDeriv ℝ 3 f x (fun _ => u)‖ ≤ B₄ / 24 * ‖u‖ ^ 4 := by
+  have hmem : ∀ τ ∈ Icc (0 : ℝ) 1, x + τ • u ∈ Metric.closedBall x ρ := fun τ hτ => by
+    rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul,
+      Real.norm_of_nonneg hτ.1]
+    nlinarith [norm_nonneg u, hτ.2]
+  have hT := map_add_eq_sum_add_integral_iteratedFDeriv (n := 3) (x := x) (y := u) (f := f)
+    (fun τ hτ => by convert hf _ (hmem τ hτ); norm_num)
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, Nat.factorial,
+    iteratedFDeriv_zero_apply, iteratedFDeriv_one_apply, iteratedFDeriv_two_apply] at hT
+  have hid : f (x + u) - f x - fderiv ℝ f x u - (1 / 2 : ℝ) • fderiv ℝ (fderiv ℝ f) x u u -
+      (1 / 6 : ℝ) • iteratedFDeriv ℝ 3 f x (fun _ => u) =
+      (1 / 6 : ℝ) • ∫ τ in (0 : ℝ)..1,
+        (1 - τ) ^ 3 • iteratedFDeriv ℝ 4 f (x + τ • u) (fun _ => u) := by
+    rw [hT]
+    norm_num
+    abel
+  rw [hid]
+  have hbound : ∀ τ ∈ Ioc (0 : ℝ) 1,
+      ‖(1 - τ) ^ 3 • iteratedFDeriv ℝ 4 f (x + τ • u) (fun _ => u)‖ ≤
+        (1 - τ) ^ 3 * (B₄ * ‖u‖ ^ 4) := by
+    intro τ hτ
+    rw [norm_smul, Real.norm_of_nonneg (pow_nonneg (by linarith [hτ.2]) 3)]
+    refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg (by linarith [hτ.2]) 3)
+    refine ((iteratedFDeriv ℝ 4 f (x + τ • u)).le_opNorm _).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    gcongr
+    exact hB _ (hmem τ ⟨hτ.1.le, hτ.2⟩)
+  have hint := intervalIntegral.norm_integral_le_of_norm_le (μ := MeasureTheory.volume)
+    zero_le_one (MeasureTheory.ae_of_all _ hbound)
+    ((by fun_prop : Continuous fun τ : ℝ => (1 - τ) ^ 3 * (B₄ * ‖u‖ ^ 4)).intervalIntegrable 0 1)
+  have hval : ∫ τ in (0 : ℝ)..1, (1 - τ) ^ 3 * (B₄ * ‖u‖ ^ 4) = B₄ * ‖u‖ ^ 4 / 4 := by
+    rw [intervalIntegral.integral_mul_const,
+      intervalIntegral.integral_comp_sub_left (fun τ => τ ^ 3)]
+    norm_num [integral_pow]
+    ring
+  rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
+  calc 1 / 6 * ‖∫ τ in (0 : ℝ)..1, (1 - τ) ^ 3 • iteratedFDeriv ℝ 4 f (x + τ • u) (fun _ => u)‖
+      ≤ 1 / 6 * (B₄ * ‖u‖ ^ 4 / 4) := by rw [← hval]; gcongr
+    _ = B₄ / 24 * ‖u‖ ^ 4 := by ring
+
+/-- The quadratic Taylor coefficient `Q₂(r) = D_x²G(r, x_*(r))/2` along a curve. -/
+def taylor2 (G : ℝ → (X → ℝ) → X → ℝ) (xs : ℝ → X → ℝ) (r : ℝ) :
+    (X → ℝ) →L[ℝ] (X → ℝ) →L[ℝ] X → ℝ :=
+  (1 / 2 : ℝ) • fderiv ℝ (fderiv ℝ (G r)) (xs r)
+
+/-- The cubic Taylor coefficient `Q₃(r) = D_x³G(r, x_*(r))/6` along a curve. -/
+def taylor3 (G : ℝ → (X → ℝ) → X → ℝ) (xs : ℝ → X → ℝ) (r : ℝ) :
+    ContinuousMultilinearMap ℝ (fun _ : Fin 3 => X → ℝ) (X → ℝ) :=
+  (1 / 6 : ℝ) • iteratedFDeriv ℝ 3 (G r) (xs r)
+
+omit [DecidableEq X] in
+/-- **The Taylor expansion along a curve for a field of class `C⁴`.** If `G(r, ·)` is `C⁴` on the
+tube of radius `ρ` about `x_*` with `‖D_x⁴G‖ ≤ B₄` there, then along `x_*`
+`‖G(r, x_* + u) − G(r, x_*) − D_xG u − Q₂(u, u) − Q₃(u, u, u)‖ ≤ (B₄/24) ‖u‖⁴` for `‖u‖ ≤ ρ`, with
+`Q₂ = taylor2 G x_*`, `Q₃ = taylor3 G x_*`. -/
+@[tmio T, powerlib_foundation] theorem taylor_along_of_contDiff {G : ℝ → (X → ℝ) → X → ℝ}
+    {xs : ℝ → X → ℝ} {I : Set ℝ} {ρ B₄ : ℝ}
+    (hG : ∀ r ∈ I, ∀ y ∈ Metric.closedBall (xs r) ρ, ContDiffAt ℝ 4 (G r) y)
+    (hB : ∀ r ∈ I, ∀ y ∈ Metric.closedBall (xs r) ρ, ‖iteratedFDeriv ℝ 4 (G r) y‖ ≤ B₄) :
+    ∀ r ∈ I, ∀ u, ‖u‖ ≤ ρ → ‖G r (xs r + u) - G r (xs r) - fderiv ℝ (G r) (xs r) u -
+      taylor2 G xs r u u - taylor3 G xs r (fun _ => u)‖ ≤ B₄ / 24 * ‖u‖ ^ 4 :=
+  fun r hr _ hu => norm_taylor_three_le (hG r hr) (hB r hr) hu
+
+end ContDiff
 
 end powerlib.Periodic.PeriodMapTaylor
