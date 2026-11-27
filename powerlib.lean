@@ -164,6 +164,7 @@ import theorem.Grid.MeasurementPoint
 import theorem.GridTiedConverter.GFL.Parametric.PLLBlock
 import theorem.GridTiedConverter.GFL.Parametric.AngleModulation
 import theorem.GridTiedConverter.GFL.Parametric.AngleModulationHopf
+import theorem.GridTiedConverter.GFL.Parametric.AngleModulationIndex
 import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStatic
 import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStaticFold
 import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStaticFoldHopf
