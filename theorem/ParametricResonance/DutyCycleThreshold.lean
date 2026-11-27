@@ -1,4 +1,5 @@
 import theorem.ParametricResonance.DutyCycleLevels
+import theorem.ParametricResonance.CentreThreshold
 
 /-! # The duty-cycle tongue-centre threshold as the onset of instability
 
@@ -43,9 +44,10 @@ Source: the exact duty-`δ` centre criterion `DutyCycle.centre_threshold_iff`, t
 multipliers `DutyCycle.floquet_iff`, `DutyCycle.pm_one_mem_spectrum_iff` and the centre trace
 `DutyCycle.dutyTrace_centre` (`theorem/ParametricResonance/DutyCycle.lean`); the threshold
 function `DutyCycleLevels.dutyCentreThreshold` (`theorem/ParametricResonance/DutyCycleLevels.lean`);
-the symmetric-wave pattern `CentreThreshold.centre_unstable_iff_threshold`
-(`theorem/ParametricResonance/CentreThreshold.lean`); Mathlib's `ContDiffAt.continuousAt_fderiv`,
-`strictMonoOn_of_deriv_pos` and `intermediate_value_Icc`.
+the symmetric-wave criterion `CentreThreshold.centreGap` and its pattern
+`CentreThreshold.centre_unstable_iff_threshold`
+(`theorem/ParametricResonance/CentreThreshold.lean`); Mathlib's
+`ContDiffAt.continuousAt_fderiv`, `strictMonoOn_of_deriv_pos` and `intermediate_value_Icc`.
 
 Sharpenings.
 * `DutyCycleLevels` proves only the band and the limit `ε_c(ξ; δ)/ξ → 2π(1 − δ)/sin(πδ)` and
@@ -57,6 +59,7 @@ Results.
   normalized criterion along the centre-following family.
 * `duty_centre_iff_gap` — the duty-`δ` centre is Floquet unstable iff `0 < dutyGap δ ξ ε`, and
   (for `ξ > 0`) Schur stable iff `dutyGap δ ξ ε < 0`, for every `ω₀ > 0`.
+* `dutyGap_half` — at `δ = 1/2`, `dutyGap (1/2) ξ ε = 2 · CentreThreshold.centreGap ξ ε`.
 * `hasDerivAt_dutyGap_pos` — for `|ξ|, |ε| < ρ` the depth derivative of `dutyGap δ ξ` is positive.
 * `dutyGap_strictMonoOn` — for `|ξ| < ρ`, `dutyGap δ ξ` is strictly increasing on `[0, ρ]`.
 * `duty_unstable_iff_threshold` — `0 < ε_c(ξ; δ) < ε₁`; unstable iff `ε_c(ξ; δ) < ε`, Schur
@@ -159,6 +162,39 @@ the exact centre `ν₁δT + ν₂(1 − δ)T = π`: the duty-`δ` monodromy is 
   refine ⟨hU.trans ?_, fun hξ' => (hS (by positivity)).trans ?_⟩
   · rw [hLe, hRe, mul_lt_mul_iff_right₀ hω2, hgap, sub_pos]
   · rw [hLe, hRe, mul_lt_mul_iff_right₀ hω2, hgap, sub_neg]
+
+/-- **At duty `1/2` the criterion is twice the symmetric one.** For `δ = 1/2` (then `ε' = ε`) and
+both levels oscillatory, `dutyGap (1/2) ξ ε = 2 · CentreThreshold.centreGap ξ ε`: with
+`ν₁, ν₂ = √(1 ± ε − ξ²)`, `sin(πν₁/(ν₁ + ν₂)) = cos(πε/(ν₁ + ν₂)²)` (because
+`ν₁² − ν₂² = 2ε`), `CentreThreshold.centreProd ξ ε = ν₁ν₂` and
+`CentreThreshold.centreSum ξ ε = ν₁ + ν₂`. -/
+@[tmio T, powerlib_foundation] theorem dutyGap_half {ξ ε : ℝ} (hε : 0 ≤ ε) (h : ε + ξ ^ 2 < 1) :
+    dutyGap (1 / 2) ξ ε = 2 * CentreThreshold.centreGap ξ ε := by
+  have hπ := Real.pi_pos
+  have hr : (1 / 2 : ℝ) / (1 - 1 / 2) = 1 := by norm_num
+  have hb : dutyFreq₂ (1 / 2) ξ ε = √(1 - ε - ξ ^ 2) := by rw [dutyFreq₂, hr, one_mul]
+  set a := dutyFreq₁ ξ ε with hadef
+  set b := √(1 - ε - ξ ^ 2) with hbdef
+  have ha0 : 0 < a := Real.sqrt_pos.mpr (by linarith)
+  have hb0 : 0 < b := Real.sqrt_pos.mpr (by linarith)
+  have ha2 : a ^ 2 = 1 + ε - ξ ^ 2 := Real.sq_sqrt (by linarith)
+  have hb2 : b ^ 2 = 1 - ε - ξ ^ 2 := Real.sq_sqrt (by linarith)
+  have hq : CentreThreshold.centreProd ξ ε = a * b := by
+    rw [CentreThreshold.centreProd, show (1 - ξ ^ 2) ^ 2 - ε ^ 2 = (a * b) ^ 2 by
+      rw [mul_pow, ha2, hb2]; ring, Real.sqrt_sq (by positivity)]
+  have hy : CentreThreshold.centreSum ξ ε = a + b := by
+    rw [CentreThreshold.centreSum, hq, show 2 * (1 - ξ ^ 2 + a * b) = (a + b) ^ 2 by
+      nlinarith [ha2, hb2], Real.sqrt_sq (by positivity)]
+  have hm : dutyMean (1 / 2) ξ ε = (a + b) / 2 := by rw [dutyMean, hb]; ring
+  have hsin : Real.sin (Real.pi * (1 / 2) * a / ((a + b) / 2)) =
+      Real.cos (Real.pi * ε / (a + b) ^ 2) := by
+    rw [← Real.cos_pi_div_two_sub, show Real.pi / 2 - Real.pi * (1 / 2) * a / ((a + b) / 2) =
+      -(Real.pi * ε / (a + b) ^ 2) by
+        field_simp
+        linear_combination (-1 : ℝ) * ha2 + hb2, Real.cos_neg]
+  rw [dutyGap, hm, hb, hr, CentreThreshold.centreGap, hq, hy, hsin,
+    show Real.pi * ξ / (2 * ((a + b) / 2)) = Real.pi * ξ / (a + b) by field_simp]
+  ring
 
 end Criterion
 
