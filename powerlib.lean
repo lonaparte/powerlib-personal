@@ -365,6 +365,9 @@ import theorem.ParametricResonance.RobustVsUniversal
 import theorem.ParametricResonance.UniversalThresholdPiecewise
 import theorem.ParametricResonance.CentreThreshold
 import theorem.ParametricResonance.DutyCycle
+import theorem.ParametricResonance.SecondOrderClosedForm
+import theorem.ParametricResonance.ZeroDampingBranch
+import theorem.ParametricResonance.BlockBoundary
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability

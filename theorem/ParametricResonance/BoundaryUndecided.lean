@@ -42,8 +42,15 @@ among `O(ε²)` completions of the variational matrix (`full_boundary_completion
 `λ₂`. For the `n`-state forced orbit the `O(ε²)` part of its variational matrix (third Taylor
 coefficients of the field, second-order forced response, coupling to the stable block) and its
 second-order averaging are not formalized: no theorem here decides the nonlinear forced orbit on
-the boundary. Even an exactly marginal variational equation would leave the step L1 → L0 open
-(multiplier `−1`: the flip normal form of `theorem/Periodic/CriticalMultiplier.lean`).
+the boundary. Given the second-order data of an `n`-state block monodromy (critical block `N`,
+couplings `Q₁`, `R₁`, stable block `E`), the boundary is decided by the sign of
+`mixedDet(M, N + Q₁(I + E)⁻¹R₁)` in `theorem/ParametricResonance/BlockBoundary.lean`; the closed
+form of `mixedDet(M, N₂)` for the two-state standard form is
+`theorem/ParametricResonance/SecondOrderClosedForm.lean`, and the case `s = 0` is
+`theorem/ParametricResonance/ZeroDampingBranch.lean`. Even an exactly marginal variational
+equation would leave the step L1 → L0 open (multiplier `−1`: the flip normal form of
+`theorem/Periodic/CriticalMultiplier.lean`, reduced to it for a periodic orbit with a stable
+complement in `theorem/Periodic/FlipReduction.lean`).
 
 Scope.
 * Normal form: `NormalForm.nfMatrix σ Ω ω c` (state `(Re z, Im z)`, pump frequency `ω > 0`, period
