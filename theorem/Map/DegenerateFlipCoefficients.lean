@@ -47,7 +47,8 @@ Scope.
   maps on `Fin 3`, `Fin 4`, `Fin 5` (`ContinuousMultilinearMap`), none assumed symmetric; the
   cubic part is the hypothesis of `FlipReduction`. For a period map the expansion is to be
   derived from the field (to third order it is `periodMap_taylor` of
-  `theorem/Periodic/PeriodMapTaylor.lean`); it is not derived here.
+  `theorem/Periodic/PeriodMapTaylor.lean`); it is not derived here, but in
+  `theorem/Periodic/DegenerateFlipOrbit.lean` from `PeriodMapJet.periodMap_jet`.
 * `k₂, k₃, k₄` are any solutions of the homological equations; they exist
   (`exists_homological`), `k₂` and `k₄` are unique and `k₃` is unique in `ker w`.
 * `c₅ + 3c₂c₄ − 2c₂⁴ = 0` is not decided (the next odd order is needed, and no finite order

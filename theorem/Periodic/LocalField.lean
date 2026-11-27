@@ -39,7 +39,8 @@ Scope.
   Lipschitz field may blow up).
 * The cut-off field is globally Lipschitz but its higher derivatives are not claimed to be
   bounded: the flip reduction only reads the field on the tube about `x_*`, where `G̃ = G`.
-* The degenerate flip `a² + b = 0` is not decided (as in `FlipOrbit`).
+* The degenerate flip `a² + b = 0` is not decided here (as in `FlipOrbit`); it is decided from
+  the fifth-order jet of the field in `theorem/Periodic/DegenerateFlipOrbit.lean`.
 * Generic mathematics; no model family.
 
 Source: the localization of a locally Lipschitz field by a smooth cut-off and the uniqueness of

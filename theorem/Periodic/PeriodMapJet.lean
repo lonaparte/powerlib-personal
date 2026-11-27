@@ -29,8 +29,8 @@ previous step, `k ≥ 2`), the remainder of the field, and the identity `comp_id
 blocks of order `≤ n`, whose part of total order `≤ n + 1` is exactly the sum of the sources of
 orders `≤ n + 1`. At `s = 0`, `r = T` and a `T`-periodic `x_*` this is the expansion of the period
 map, `P(p + e) = p + M e + ∑_{2 ≤ j ≤ N} P_j(T)(e, …, e) + O(‖e‖^{N+1})`, `M = Φ(T, 0)`; for
-`N = 5` it is the fifth-order expansion used by the degenerate flip
-(`theorem/Periodic/DegenerateFlipReduction.lean`).
+`N = 5` it is the fifth-order expansion used by the degenerate flip of a periodic solution
+(`theorem/Periodic/DegenerateFlipOrbit.lean`, through `Map/DegenerateFlipCoefficients`).
 
 Scope.
 * `ℝ^X` (`X → ℝ`, finite `X`, sup norm), continuous time, solutions on segments `[s, t]`, as in

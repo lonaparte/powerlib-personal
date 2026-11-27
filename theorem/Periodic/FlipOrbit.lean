@@ -43,7 +43,7 @@ Scope.
   unit circle).
 * The solution statements concern the initial time `0` (solutions on `[0, ∞)`; uniformly in the
   initial time: `theorem/Periodic/FlipOrbitUniform.lean`); the degenerate flip `a² + b = 0` is not
-  decided here.
+  decided here (from the fifth-order jet of the field: `theorem/Periodic/DegenerateFlipOrbit.lean`).
 * Only the multiplier `−1` is reduced here. A periodic solution with the multiplier `+1` (the
   transcritical and cubic normal forms of `theorem/Periodic/CriticalMultiplier.lean`) is
   `theorem/Periodic/FoldOrbit.lean`, with the reduction at `+1` in

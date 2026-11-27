@@ -28,7 +28,8 @@ Scope.
   with `x_*(T) = x_*(0)`; the map semantics on `ℝⁿ` through `FlipOrbit.euclidMap`.
 * Solutions from the initial time `τ` are integral curves on `[τ, ∞)` (Mathlib
   `IsIntegralCurveOn`); `τ` is any real number.
-* The degenerate flip `a² + b = 0` is not decided (as in `FlipOrbit`).
+* The degenerate flip `a² + b = 0` is not decided here (as in `FlipOrbit`); it is decided from
+  the fifth-order jet of the field in `theorem/Periodic/DegenerateFlipOrbit.lean`.
 * Generic mathematics; no model family.
 
 Source: W. Hahn, *Stability of Motion* (1967): for periodic right-hand sides stability and
