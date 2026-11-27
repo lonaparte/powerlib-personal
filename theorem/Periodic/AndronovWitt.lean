@@ -1,6 +1,7 @@
 import theorem.Periodic.PoincareSection
 import theorem.Periodic.FlipOrbitUniform
 import theorem.Periodic.OrbitalInstability
+import theorem.Periodic.LocalField
 
 /-! # The Andronov–Witt theorem: orbital stability and instability of autonomous periodic orbits
 
@@ -34,9 +35,12 @@ multipliers as its eigenvalues on the section.
 Scope.
 * `ẋ = f(x)` on `ℝ^{Fin n}` with the sup norm, continuous time, solutions on `[0, ∞)` (Mathlib
   `IsIntegralCurveOn`); `f` of class `C¹` and globally `K`-Lipschitz (as in
-  `theorem/Periodic/PoincareSection.lean`; locally Lipschitz fields would first be cut off near the
-  orbit as in `theorem/Periodic/LocalField.lean`, which is not done here). `x_*` is a global
-  `T`-periodic solution, `T > 0`, `f(x_*(0)) ≠ 0`; `T` need not be the minimal period.
+  `theorem/Periodic/PoincareSection.lean`). The `_local` theorems drop the Lipschitz bound: `f` is
+  replaced by the cut-off field `f ∘ ψ_R` of `theorem/Periodic/LocalField.lean`, equal to `f`
+  within distance `1` of the orbit, and the verdicts are transferred back (on the stable side the
+  solutions starting near the orbit exist on `[0, ∞)` and are unique; on the unstable side the
+  escaping solutions are solutions of `f` on segments `[0, t]`). `x_*` is a global `T`-periodic
+  solution, `T > 0`, `f(x_*(0)) ≠ 0`; `T` need not be the minimal period.
 * The map semantics on `ℝⁿ = EuclideanSpace ℝ (Fin n)` is used through `FlipOrbit.euclidMap`
   (`poincareMap_stability`); the solution statements are in the sup norm. Orbital distance is
   `Metric.infDist` to the range of `x_*`.
@@ -69,6 +73,9 @@ Results.
 * **The theorem** `andronov_witt` (deflated form: `M − f(p) wᵀ` Schur stable for some
   `w ⬝ f(p) = 1`) and `andronov_witt_of_multipliers` (`1` simple, all other multipliers strictly
   inside the unit circle): asymptotic phase and orbital exponential stability.
+* Without a global Lipschitz bound: `andronov_witt_local` (existence near the orbit, asymptotic
+  phase, orbital exponential stability) and `orbit_unstable_local` (orbital instability through
+  solutions on segments).
 
 Corrections.
 None: an extension (orbital asymptotic stability with asymptotic phase and orbital instability of
@@ -819,5 +826,219 @@ phase (the two conclusions of `andronov_witt`). -/
   have hw := sectionVec_dotProduct hMv hne
   have hS := (schurStable_deflate_iff hMv hne hw).2 ⟨h1, hμ⟩
   exact andronov_witt hf hfK hxs hT hper hne hw hS
+
+/-! ## Fields that are only locally Lipschitz -/
+
+/-- **The localized field of a periodic orbit.** For `f` of class `C¹` and a `T`-periodic orbit
+`x_*` there is a radius `R` such that the localized field `f̃ = f ∘ ψ_R`
+(`LocalField.localField`) is of class `C¹` and globally Lipschitz, agrees with `f` within distance
+`1` of the orbit, has `x_*` as a solution, and has the same variational matrix along `x_*`. -/
+@[tmio T, powerlib_foundation] private theorem local_data (hf : ContDiff ℝ 1 f)
+    {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
+    (hper : Periodic xs T) :
+    ∃ R : ℝ, ∃ K' : NNReal, ContDiff ℝ 1 (LocalField.localField (fun _ => f) R 0) ∧
+      LipschitzWith K' (LocalField.localField (fun _ => f) R 0) ∧
+      (∀ (y : Fin n → ℝ) σ, ‖y - xs σ‖ ≤ 1 → ‖y‖ ≤ R) ∧
+      (∀ y : Fin n → ℝ, ‖y‖ ≤ R → LocalField.localField (fun _ => f) R 0 y = f y) ∧
+      (∀ t, HasDerivAt xs (LocalField.localField (fun _ => f) R 0 (xs t)) t) ∧
+      variationalMatrix (LocalField.localField (fun _ => f) R 0) xs = variationalMatrix f xs := by
+  have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
+  obtain ⟨B, hB⟩ := isBounded_iff_forall_norm_le.1
+    (hper.compact_of_continuous hT.ne' hxc).isBounded
+  set R := B + 2 with hR
+  have hGd : ∀ (t : ℝ) x, DifferentiableAt ℝ ((fun _ : ℝ => f) t) x :=
+    fun _ x => (hf.differentiable one_ne_zero) x
+  have hD : Continuous fun q : ℝ × (Fin n → ℝ) => fderiv ℝ ((fun _ : ℝ => f) q.1) q.2 :=
+    (hf.continuous_fderiv one_ne_zero).comp continuous_snd
+  obtain ⟨K', hK'⟩ := LocalField.exists_lipschitzWith_localField hGd hD hT
+    (G := fun _ => f) (fun _ => rfl) R
+  have hxsR : ∀ t, ‖xs t‖ < R := fun t => by
+    have := hB (xs t) (mem_range_self t); rw [hR]; linarith
+  refine ⟨R, K', LocalField.contDiff_localField (G := fun _ => f) hf, hK' 0,
+    fun y σ hy => ?_, fun y hy => LocalField.localField_eq hy, fun t => ?_, ?_⟩
+  · have := hB (xs σ) (mem_range_self σ)
+    calc ‖y‖ = ‖xs σ + (y - xs σ)‖ := by rw [add_sub_cancel]
+      _ ≤ ‖xs σ‖ + ‖y - xs σ‖ := norm_add_le _ _
+      _ ≤ R := by rw [hR]; linarith
+  · rw [LocalField.localField_eq (hxsR t).le]; exact hxs t
+  · funext t
+    simp only [variationalMatrix]
+    rw [LocalField.fderiv_localField_eq (G := fun _ => f) (hxsR t)]
+
+/-- **The Andronov–Witt theorem for a `C¹` field without a global Lipschitz bound.** If the
+trivial multiplier `1` of a nonconstant `T`-periodic orbit of `ẋ = f(x)` (`f` of class `C¹`) is
+simple and every other multiplier lies strictly inside the unit circle, there are `δ > 0`,
+`C ≥ 0`, `λ > 0` such that every point within `δ` of the orbit starts a solution on `[0, ∞)`,
+every solution starting within `δ` of `x_*(σ)` has an asymptotic phase `θ`,
+`|θ| ≤ C ‖x(0) − x_*(σ)‖`, with `‖x(t) − x_*(t + σ + θ)‖ ≤ C e^{−λt} ‖x(0) − x_*(σ)‖`, and every
+solution starting within `δ` of the orbit satisfies
+`dist(x(t), x_*(ℝ)) ≤ C e^{−λt} dist(x(0), x_*(ℝ))`. -/
+@[tmio T, powerlib_foundation] theorem andronov_witt_local (hf : ContDiff ℝ 1 f)
+    {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
+    (hper : Periodic xs T) (hne : f (xs 0) ≠ 0)
+    (h1 : (monodromy (variationalMatrix f xs) T 0).charpoly.rootMultiplicity 1 = 1)
+    (hμ : ∀ μ ∈ spectrum ℂ ((monodromy (variationalMatrix f xs) T 0).map (algebraMap ℝ ℂ)),
+      μ ≠ 1 → ‖μ‖ < 1) :
+    ∃ δ C lam : ℝ, 0 < δ ∧ 0 ≤ C ∧ 0 < lam ∧
+      (∀ ξ : Fin n → ℝ, Metric.infDist ξ (range xs) < δ →
+        ∃ x : ℝ → Fin n → ℝ, x 0 = ξ ∧ IsIntegralCurveOn x (fun _ => f) (Ici 0)) ∧
+      (∀ (σ : ℝ) (x : ℝ → Fin n → ℝ), IsIntegralCurveOn x (fun _ => f) (Ici 0) →
+        ‖x 0 - xs σ‖ < δ → ∃ θ : ℝ, |θ| ≤ C * ‖x 0 - xs σ‖ ∧
+          ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ C * Real.exp (-(lam * t)) * ‖x 0 - xs σ‖) ∧
+      ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x (fun _ => f) (Ici 0) →
+        Metric.infDist (x 0) (range xs) < δ → ∀ t, 0 ≤ t → Metric.infDist (x t) (range xs) ≤
+          C * Real.exp (-(lam * t)) * Metric.infDist (x 0) (range xs) := by
+  obtain ⟨R, K', hfl, hflK, hR1, hflf, hxsl, hvar⟩ := local_data hf hxs hT hper
+  set fl := LocalField.localField (fun _ => f) R 0 with hfldef
+  have hnel : fl (xs 0) ≠ 0 := by
+    rwa [hflf _ (hR1 _ 0 (by simp))]
+  obtain ⟨⟨δ₁, C₁, lam₁, hδ₁, hC₁, hlam₁, hph⟩, ⟨δ₂, C₂, lam₂, hδ₂, hC₂, hlam₂, hdist⟩⟩ :=
+    andronov_witt_of_multipliers hfl hflK hxsl hT hper hnel (by rwa [hvar]) (by rwa [hvar])
+  have hGd : ∀ (t : ℝ) x, DifferentiableAt ℝ ((fun _ : ℝ => f) t) x :=
+    fun _ x => (hf.differentiable one_ne_zero) x
+  have hD : Continuous fun q : ℝ × (Fin n → ℝ) => fderiv ℝ ((fun _ : ℝ => f) q.1) q.2 :=
+    (hf.continuous_fderiv one_ne_zero).comp continuous_snd
+  set δ := min (min δ₁ δ₂) (1 / (C₁ + 1)) with hδ
+  have hδ0 : 0 < δ := lt_min (lt_min hδ₁ hδ₂) (by positivity)
+  have hδ1 : δ ≤ δ₁ := (min_le_left _ _).trans (min_le_left _ _)
+  have hδ2 : δ ≤ δ₂ := (min_le_left _ _).trans (min_le_right _ _)
+  have hδC : C₁ * δ < 1 := by
+    have h := min_le_right (min δ₁ δ₂) (1 / (C₁ + 1))
+    rw [← hδ] at h
+    calc C₁ * δ ≤ C₁ * (1 / (C₁ + 1)) := mul_le_mul_of_nonneg_left h hC₁
+      _ < 1 := by rw [mul_one_div, div_lt_one (by positivity)]; linarith
+  -- the solution of the localized field from a point near the orbit solves `f`
+  have hflow : ∀ (σ : ℝ) (ξ : Fin n → ℝ), ‖ξ - xs σ‖ < δ →
+      IsIntegralCurveOn (flow (G := fun _ => fl) (hflK.continuous.comp continuous_snd)
+        (fun _ => hflK) 0 ξ) (fun _ => f) (Ici 0) := fun σ ξ hξ => by
+    set y := flow (G := fun _ => fl) (hflK.continuous.comp continuous_snd) (fun _ => hflK) 0 ξ
+    have hyI : IsIntegralCurveOn y (fun _ => fl) (Ici 0) := flow_solution _ _ 0 ξ
+    have hy0 : y 0 = ξ := flow_start _ _ 0 ξ
+    obtain ⟨θ, -, hθ⟩ := hph σ y hyI (by rw [hy0]; exact hξ.trans_le hδ1)
+    refine LocalField.isIntegralCurveOn_of_localField (G := fun _ => f) hyI fun t ht => ?_
+    refine hR1 _ (t + σ + θ) ?_
+    refine (hθ t ht).trans ?_
+    rw [hy0]
+    have he : Real.exp (-(lam₁ * t)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [mem_Ici.1 ht])
+    calc C₁ * Real.exp (-(lam₁ * t)) * ‖ξ - xs σ‖ ≤ C₁ * 1 * δ := by gcongr
+      _ ≤ 1 := by linarith
+  -- every solution of `f` from near the orbit solves the localized field
+  have hsol : ∀ (σ : ℝ) (x : ℝ → Fin n → ℝ), IsIntegralCurveOn x (fun _ => f) (Ici 0) →
+      ‖x 0 - xs σ‖ < δ → IsIntegralCurveOn x (fun _ => fl) (Ici 0) := fun σ x hx hx0 => by
+    set y := flow (G := fun _ => fl) (hflK.continuous.comp continuous_snd) (fun _ => hflK) 0
+      (x 0)
+    have hyf := hflow σ (x 0) hx0
+    have hyI : IsIntegralCurveOn y (fun _ => fl) (Ici 0) := flow_solution _ _ 0 (x 0)
+    have hy0 : y 0 = x 0 := flow_start _ _ 0 (x 0)
+    have hxy : ∀ t, 0 ≤ t → x t = y t := fun t ht =>
+      LocalField.eqOn_of_isIntegralCurveOn_Icc_of_fderiv hGd hD
+        (hx.mono Icc_subset_Ici_self) (hyf.mono Icc_subset_Ici_self) hy0.symm ⟨ht, le_rfl⟩
+    obtain ⟨θ, -, hθ⟩ := hph σ y hyI (by rw [hy0]; exact hx0.trans_le hδ1)
+    intro t ht
+    have h : HasDerivWithinAt x (f (x t)) (Ici 0) t := hx t ht
+    show HasDerivWithinAt x (fl (x t)) (Ici 0) t
+    rwa [← hflf (x t) ?_] at h
+    rw [hxy t ht]
+    refine hR1 _ (t + σ + θ) ((hθ t ht).trans ?_)
+    rw [hy0]
+    have he : Real.exp (-(lam₁ * t)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [mem_Ici.1 ht])
+    calc C₁ * Real.exp (-(lam₁ * t)) * ‖x 0 - xs σ‖ ≤ C₁ * 1 * δ := by gcongr
+      _ ≤ 1 := by linarith
+  have hnear : ∀ ξ : Fin n → ℝ, Metric.infDist ξ (range xs) < δ → ∃ σ, ‖ξ - xs σ‖ < δ :=
+    fun ξ hξ => by
+      obtain ⟨_, ⟨σ, rfl⟩, hσ⟩ := (Metric.infDist_lt_iff (range_nonempty xs)).1 hξ
+      exact ⟨σ, by rwa [dist_eq_norm] at hσ⟩
+  refine ⟨δ, max C₁ C₂, min lam₁ lam₂, hδ0, le_max_of_le_left hC₁, lt_min hlam₁ hlam₂,
+    fun ξ hξ => ?_, fun σ x hx hx0 => ?_, fun x hx hx0 t ht => ?_⟩
+  · obtain ⟨σ, hσ⟩ := hnear ξ hξ
+    exact ⟨_, flow_start _ _ 0 ξ, hflow σ ξ hσ⟩
+  · obtain ⟨θ, hθ, hθt⟩ := hph σ x (hsol σ x hx hx0) (hx0.trans_le hδ1)
+    refine ⟨θ, hθ.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)),
+      fun t ht => (hθt t ht).trans ?_⟩
+    have he : Real.exp (-(lam₁ * t)) ≤ Real.exp (-(min lam₁ lam₂ * t)) :=
+      Real.exp_le_exp.2 (by nlinarith [min_le_left lam₁ lam₂])
+    gcongr
+    exact le_max_left _ _
+  · obtain ⟨σ, hσ⟩ := hnear (x 0) hx0
+    refine (hdist x (hsol σ x hx hσ) (hx0.trans_le hδ2) t ht).trans ?_
+    have he : Real.exp (-(lam₂ * t)) ≤ Real.exp (-(min lam₁ lam₂ * t)) :=
+      Real.exp_le_exp.2 (by nlinarith [min_le_right lam₁ lam₂])
+    gcongr
+    · exact Metric.infDist_nonneg
+    · exact le_max_right _ _
+
+/-- **Orbital instability for a `C¹` field without a global Lipschitz bound.** If the monodromy
+of a nonconstant `T`-periodic orbit of `ẋ = f(x)` (`f` of class `C¹`) has a multiplier
+`|μ| > 1`, there is `ε > 0` such that for every `δ > 0` a solution of `f` on a segment `[0, t]`
+starts within `δ` of `x_*(0)` and ends at the distance `ε` or more from the orbit. -/
+@[tmio T, powerlib_foundation] theorem orbit_unstable_local (hf : ContDiff ℝ 1 f)
+    {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
+    (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) {μ : ℂ}
+    (hμ : μ ∈ spectrum ℂ ((monodromy (variationalMatrix f xs) T 0).map (algebraMap ℝ ℂ)))
+    (h1 : 1 < ‖μ‖) :
+    ∃ ε > 0, ∀ δ > 0, ∃ (x : ℝ → Fin n → ℝ) (t : ℝ), 0 ≤ t ∧
+      IsIntegralCurveOn x (fun _ => f) (Icc 0 t) ∧ ‖x 0 - xs 0‖ < δ ∧
+      ε ≤ Metric.infDist (x t) (range xs) := by
+  obtain ⟨R, K', hfl, hflK, hR1, hflf, hxsl, hvar⟩ := local_data hf hxs hT hper
+  set fl := LocalField.localField (fun _ => f) R 0 with hfldef
+  have hnel : fl (xs 0) ≠ 0 := by
+    rwa [hflf _ (hR1 _ 0 (by simp))]
+  obtain ⟨ε₀, hε₀, hesc⟩ :=
+    orbit_unstable hfl hflK hxsl hT hper hnel (μ := μ) (by rwa [hvar]) h1
+  set ε := min ε₀ (1 / 2) with hε
+  have hε0 : 0 < ε := lt_min hε₀ (by norm_num)
+  have hεh : ε ≤ 1 / 2 := min_le_right _ _
+  refine ⟨ε, hε0, fun δ hδ => ?_⟩
+  obtain ⟨x, hxI, hx0, t, ht, hxt⟩ := hesc (min δ ε) (lt_min hδ hε0)
+  set g : ℝ → ℝ := fun s => Metric.infDist (x s) (range xs) with hg
+  have hxc : ContinuousOn x (Icc 0 t) := (hxI.mono Icc_subset_Ici_self).continuousOn
+  have hgc : ContinuousOn g (Icc 0 t) :=
+    (Metric.continuous_infDist_pt (range xs)).comp_continuousOn hxc
+  have hg0 : g 0 < ε := by
+    calc g 0 ≤ dist (x 0) (xs 0) := Metric.infDist_le_dist_of_mem (mem_range_self 0)
+      _ = ‖x 0 - xs 0‖ := dist_eq_norm _ _
+      _ < min δ ε := hx0
+      _ ≤ ε := min_le_right _ _
+  -- the first time at the distance `ε`
+  set S := {s ∈ Icc 0 t | ε ≤ g s} with hS
+  have hScl : IsClosed S := hgc.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Ici
+  have hScpt : IsCompact S := isCompact_Icc.of_isClosed_subset hScl fun s hs => hs.1
+  have htS : t ∈ S := ⟨⟨ht, le_rfl⟩, (min_le_left _ _).trans hxt⟩
+  set t' := sInf S with ht'
+  have ht'S : t' ∈ S := hScpt.sInf_mem ⟨t, htS⟩
+  have hbefore : ∀ s ∈ Ico 0 t', g s < ε := fun s hs => by
+    by_contra hcon
+    have hsS : s ∈ S := ⟨⟨hs.1, hs.2.le.trans ht'S.1.2⟩, not_lt.1 hcon⟩
+    exact absurd (csInf_le hScpt.bddBelow hsS) (not_le.2 hs.2)
+  have ht'0 : 0 < t' := by
+    rcases ht'S.1.1.eq_or_lt with h0 | h0
+    · exfalso; have := ht'S.2; rw [← h0] at this; linarith
+    · exact h0
+  -- up to that time the solution stays within distance `1` of the orbit
+  have hin : ∀ s ∈ Icc 0 t', ‖x s‖ ≤ R := by
+    have hnear : ∀ s ∈ Icc 0 t, g s < 1 → ‖x s‖ ≤ R := fun s _ hs => by
+      obtain ⟨_, ⟨σ, rfl⟩, hσ⟩ := (Metric.infDist_lt_iff (range_nonempty xs)).1 hs
+      exact hR1 _ σ (by rw [dist_eq_norm] at hσ; exact hσ.le)
+    intro s hs
+    rcases hs.2.lt_or_eq with hlt | heq
+    · exact hnear s ⟨hs.1, hlt.le.trans ht'S.1.2⟩ ((hbefore s ⟨hs.1, hlt⟩).trans_le
+        (hεh.trans (by norm_num)))
+    · rw [heq]
+      obtain ⟨η, hη, hηx⟩ := Metric.continuousWithinAt_iff.1 (hxc t' ht'S.1) (1 / 2)
+        (by norm_num)
+      set s₁ := max 0 (t' - η / 2) with hs₁
+      have hs₁I : s₁ ∈ Ico 0 t' := ⟨le_max_left _ _, max_lt ht'0 (by linarith)⟩
+      have hs₁t : s₁ ∈ Icc 0 t := ⟨hs₁I.1, hs₁I.2.le.trans ht'S.1.2⟩
+      have hd : dist (x s₁) (x t') < 1 / 2 := hηx hs₁t (by
+        rw [Real.dist_eq, abs_lt]; constructor <;> linarith [le_max_right 0 (t' - η / 2),
+          hs₁I.2])
+      have hgs₁ := hbefore s₁ hs₁I
+      refine hnear t' ht'S.1 ?_
+      calc g t' ≤ g s₁ + dist (x t') (x s₁) := Metric.infDist_le_infDist_add_dist
+        _ < 1 / 2 + 1 / 2 := by rw [dist_comm]; linarith
+        _ = 1 := by norm_num
+  refine ⟨x, t', ht'S.1.1, ?_, hx0.trans_le (min_le_left _ _), ht'S.2⟩
+  exact LocalField.isIntegralCurveOn_of_localField (G := fun _ => f)
+    (hxI.mono fun s hs => mem_Ici.2 hs.1) hin
 
 end powerlib.Periodic.AndronovWitt
