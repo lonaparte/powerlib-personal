@@ -28,8 +28,9 @@ Model boundary.
   `w̄̇ = ε ampField (b/2) (d/(2ν)) (jω_n²/(4ν)) 0 (−ω_n²/(16ν)) w̄` (`swing_averaging`) or,
   unscaled, exactly the equation of `ParametricSaturation.averaged_swing` with `Ω = 2ω_n(1 + d)`
   (`swing_averaging_physical`).
-* Excluded as in `ParametricSaturation`: a loaded operating point, AVR/PSS, network and
-  multi-machine dynamics, a modulation of `K_d`.
+* Excluded as in `ParametricSaturation`: a loaded operating point (treated, at second order, in
+  `theorem/PowerSystem/Synchronous/LoadedSwing.lean`), AVR/PSS, network and multi-machine
+  dynamics, a modulation of `K_d`.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11);
 the van der Pol form with the truncation remainder `ParametricSaturation.hasDerivAt_vdp` and its

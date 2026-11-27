@@ -31,11 +31,11 @@ Model boundary.
 * Exact statements: the normalized form with its remainder and the bound of the remainder
   (`accel_eq`, `abs_remainder_le`), the exact second-order transformation of the actual model
   (`hasDerivAt_transformed`), the exact second-order average (`averaged_loaded`), the sign and
-  size of `β_L`, and the saturated states of the second-order averaged equation. The averaging
-  step from the transformed model to its average is the boundary of
-  `QuadraticCubic`: amplitudes and stability are statements about the second-order averaged
-  amplitude equation (level L2), its neglected terms of relative order `√ε` in the weakly
-  nonlinear scaling (`QuadraticCubic.hasDerivAt_transformed_scaled`).
+  size of `β_L`, and the saturated states of the second-order averaged equation (level L2). The
+  averaging step is rigorous in the weakly nonlinear scaling (`loaded_second_order`: damping and
+  detuning of the order of the depth `0 < ε ≤ 1`, amplitude of order `√ε`, averaged solutions in
+  a disc, time scale `1/ε`, relative error `O(√ε)`, the remainder included); amplitudes and
+  stability of the locked states are statements about the averaged equation.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11)
 (swing model at an operating point); the classical power-angle curve of `Params.toSwing` and the
@@ -68,6 +68,9 @@ Results.
   value at `ν = ω_L`.
 * `loaded_states`, `loaded_stable_iff` — the saturated half-frequency amplitudes
   `a² = (Δ ± √(|c|² − σ²))/β_L` and their stability `β_L(β_L a² − Δ) > 0`.
+* `remLoaded`, `loaded_second_order` — **the actual loaded swing follows its second-order averaged
+  amplitude**: `|δ(t) − δ₀ − √ε Re(W̄(t) e^{jνt})| ≤ √ε (B + √ε (5|α₂|/(6ν²))(2(R + 1))²)` on
+  `[0, L/ε]` (`QuadraticCubic.second_order_averaging`).
 -/
 
 noncomputable section
@@ -348,5 +351,116 @@ and instability of the averaged equation. -/
     Saturation.det_ampJacobian hx hx0, Saturation.norm_toReal, e]
   refine ⟨⟨fun h => pos_of_mul_pos_right h.2 hpos.le, fun h => ⟨htr, mul_pos hpos h⟩⟩,
     fun h => mul_neg_of_pos_of_neg hpos h⟩
+
+/-- The bound `M_u` of the loaded remainder, `|remainder| ≤ ε² M_u` for `|δ − δ₀| ≤ √ε r`,
+`r = 2(R + 1)`, `0 < ε ≤ 1` (`loaded_second_order`). -/
+def remLoaded (p : Params) (δ₀ R : ℝ) : ℝ :=
+  p.Ks / p.M * (2 * (|Real.sin δ₀| * ((2 * (R + 1)) ^ 4 / 24) +
+      |Real.cos δ₀| * ((2 * (R + 1)) ^ 5 / 120)) +
+    (|Real.sin δ₀| * ((2 * (R + 1)) ^ 2 / 2) + |Real.cos δ₀| * ((2 * (R + 1)) ^ 3 / 6)))
+
+/-- **The actual loaded swing follows its second-order averaged amplitude on the time scale
+`1/ε`.** For the loaded swing model with pump `Ω = 2ν` (`ν > 0`, `0 < ε ≤ 1`) in the weakly
+nonlinear scaling `D/M = εb`, `ω_L² = ν² − εd`, let `W̄` solve the second-order averaged equation
+`W̄̇ = ε ampField (b/2) (d/(2ν)) (jω_L²/(4ν)) 0 β_L W̄` on `[0, L/ε]` in the disc `|W̄| ≤ R`, from
+the transformed scaled amplitude of the swing, `W̄(0) = w(0) − √ε u(w(0), 0)`, `w = z/√ε`, with
+`|w(0)| < 2(R + 1)`, the branch condition `4(R + 1)√ε (5|α₂|/(6ν²)) < 1` and
+`B = QuadraticCubic.errSecond … < 1`. Then on `[0, L/ε]`
+`|δ(t) − δ₀ − √ε Re(W̄(t) e^{jνt})| ≤ √ε (B + √ε (5|α₂|/(6ν²)) (2(R + 1))²)`, the sine
+nonlinearity's remainder included (`QuadraticCubic.second_order_averaging`, `accel_eq`,
+`abs_remainder_le`). -/
+@[tmio M, powerlib_domain] theorem loaded_second_order (hp : p.Pos) {δ₀ ν b d R L ε : ℝ}
+    (hν : 0 < ν) (hR : 0 ≤ R) (hL : 0 ≤ L) (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hb : p.D / p.M = ε * b) (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) {δ δ' : ℝ → ℝ}
+    (hδ : ∀ t, HasDerivAt δ (δ' t) t)
+    (hδ' : ∀ t, HasDerivAt δ' ((loadedSwing p δ₀ ε (2 * ν) t).accel (δ t) (δ' t)) t)
+    {Wbar : ℝ → ℂ}
+    (hWbar : ∀ t ∈ Icc 0 (L / ε), HasDerivWithinAt Wbar
+      (ε • ampField (b / 2) (d / (2 * ν)) (I * ((loadedFreqSq p δ₀ / (4 * ν) : ℝ) : ℂ)) 0
+        (betaLoaded p δ₀ ν) (Wbar t)) (Icc 0 (L / ε)) t)
+    (hbound : ∀ t ∈ Icc 0 (L / ε), ‖Wbar t‖ ≤ R)
+    (h0 : ((√ε : ℝ) : ℂ)⁻¹ * DuffingMathieu.vdp ν 0 (δ 0 - δ₀) (δ' 0) - (√ε : ℂ) *
+      QuadraticCubic.nearId (alpha2 p δ₀) ν
+        (((√ε : ℝ) : ℂ)⁻¹ * DuffingMathieu.vdp ν 0 (δ 0 - δ₀) (δ' 0)) 0 = Wbar 0)
+    (hw0 : ‖((√ε : ℝ) : ℂ)⁻¹ * DuffingMathieu.vdp ν 0 (δ 0 - δ₀) (δ' 0)‖ < 2 * (R + 1))
+    (hbranch : 4 * (R + 1) * (√ε * (5 * |alpha2 p δ₀| / (6 * ν ^ 2))) < 1)
+    (hsmall : QuadraticCubic.errSecond b d (loadedFreqSq p δ₀) (alpha2 p δ₀) (alpha3 p δ₀) ν R L
+      ε (remLoaded p δ₀ R) < 1) :
+    ∀ t ∈ Icc 0 (L / ε), |δ t - δ₀ - √ε * (Wbar t * QuadraticCubic.phase ν t).re| ≤
+      √ε * (QuadraticCubic.errSecond b d (loadedFreqSq p δ₀) (alpha2 p δ₀) (alpha3 p δ₀) ν R L ε
+        (remLoaded p δ₀ R) + √ε * (5 * |alpha2 p δ₀| / (6 * ν ^ 2)) * (2 * (R + 1)) ^ 2) := by
+  have hM := M_pos hp
+  have hK := hp.Ks
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hs2 : √ε ^ 2 = ε := Real.sq_sqrt hε.le
+  have hs1 : √ε ≤ 1 := Real.sqrt_le_one.mpr hε1
+  have hmu : 0 ≤ remLoaded p δ₀ R := by
+    unfold remLoaded; have := hR; positivity
+  have hx' : ∀ t, HasDerivAt δ' (DuffingMathieu.accel (ε * b) (ν ^ 2 - ε * d)
+      (ε * loadedFreqSq p δ₀) (alpha3 p δ₀) ν t (δ t - δ₀) (δ' t) - alpha2 p δ₀ * (δ t - δ₀) ^ 2 +
+        remainder p δ₀ ε (2 * ν) t (δ t - δ₀)) t := by
+    intro t
+    have h := hδ' t
+    rw [show δ t = δ₀ + (δ t - δ₀) by ring, accel_eq hp, show 2 * ν / 2 = ν by ring] at h
+    have e : DuffingMathieu.accel (p.D / p.M) (loadedFreqSq p δ₀) (ε * loadedFreqSq p δ₀)
+        (alpha3 p δ₀) ν = DuffingMathieu.accel (ε * b) (ν ^ 2 - ε * d) (ε * loadedFreqSq p δ₀)
+          (alpha3 p δ₀) ν := by
+      rw [hb, hd]
+    rw [e] at h
+    simpa using h
+  refine QuadraticCubic.second_order_averaging (x := fun t => δ t - δ₀) (x' := δ') hν hR hL hε hε1
+    hmu (fun t => (hδ t).sub_const δ₀) hx' (fun t _ hw => ?_) hWbar hbound h0 hw0 hbranch hsmall
+  -- the remainder is `O(ε²)` while the scaled amplitude stays in the disc of radius `2(R + 1)`
+  set r := 2 * (R + 1) with hr
+  have hr0 : 0 ≤ r := by positivity
+  have hx : |δ t - δ₀| ≤ √ε * r := by
+    have e := (DuffingMathieu.pos_vdp ν t (δ t - δ₀) (δ' t)).symm
+    have hz : DuffingMathieu.vdp ν t (δ t - δ₀) (δ' t) = ((√ε : ℝ) : ℂ) *
+        (((√ε : ℝ) : ℂ)⁻¹ * DuffingMathieu.vdp ν t (δ t - δ₀) (δ' t)) := by
+      have : ((√ε : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hs0.ne'
+      field_simp
+    rw [e]
+    refine (Complex.abs_re_le_norm _).trans ?_
+    rw [norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one, hz, norm_mul, Complex.norm_real,
+      Real.norm_of_nonneg hs0.le]
+    exact mul_le_mul_of_nonneg_left hw hs0.le
+  have hr' := abs_remainder_le hp δ₀ ε (2 * ν) t (δ t - δ₀)
+  rw [abs_of_pos hε] at hr'
+  set y := |δ t - δ₀| with hy
+  have hy0 : 0 ≤ y := abs_nonneg _
+  have e4 : (δ t - δ₀) ^ 4 = y ^ 4 := by rw [hy, ← abs_pow, abs_of_nonneg (by positivity)]
+  have e2 : (δ t - δ₀) ^ 2 = y ^ 2 := by rw [hy, sq_abs]
+  rw [e4, e2] at hr'
+  have hsr : √ε * r ≥ 0 := by positivity
+  have p2 : y ^ 2 ≤ ε * r ^ 2 := by
+    calc y ^ 2 ≤ (√ε * r) ^ 2 := pow_le_pow_left₀ hy0 hx 2
+      _ = ε * r ^ 2 := by rw [mul_pow, hs2]
+  have p3 : y ^ 3 ≤ ε * r ^ 3 := by
+    calc y ^ 3 ≤ (√ε * r) ^ 3 := pow_le_pow_left₀ hy0 hx 3
+      _ = √ε ^ 2 * √ε * r ^ 3 := by ring
+      _ ≤ √ε ^ 2 * 1 * r ^ 3 := by gcongr
+      _ = ε * r ^ 3 := by rw [hs2]; ring
+  have p4 : y ^ 4 ≤ ε ^ 2 * r ^ 4 := by
+    calc y ^ 4 ≤ (√ε * r) ^ 4 := pow_le_pow_left₀ hy0 hx 4
+      _ = (√ε ^ 2) ^ 2 * r ^ 4 := by ring
+      _ = ε ^ 2 * r ^ 4 := by rw [hs2]
+  have p5 : y ^ 5 ≤ ε ^ 2 * r ^ 5 := by
+    calc y ^ 5 ≤ (√ε * r) ^ 5 := pow_le_pow_left₀ hy0 hx 5
+      _ = (√ε ^ 2) ^ 2 * √ε * r ^ 5 := by ring
+      _ ≤ (√ε ^ 2) ^ 2 * 1 * r ^ 5 := by gcongr
+      _ = ε ^ 2 * r ^ 5 := by rw [hs2]; ring
+  refine hr'.trans ?_
+  have hS := abs_nonneg (Real.sin δ₀)
+  have hC := abs_nonneg (Real.cos δ₀)
+  have hKM : 0 ≤ p.Ks / p.M := by positivity
+  calc p.Ks / p.M * ((1 + ε) * (|Real.sin δ₀| * (y ^ 4 / 24) + |Real.cos δ₀| * (y ^ 5 / 120)) +
+        ε * (|Real.sin δ₀| * (y ^ 2 / 2) + |Real.cos δ₀| * (y ^ 3 / 6)))
+      ≤ p.Ks / p.M * (2 * (|Real.sin δ₀| * (ε ^ 2 * r ^ 4 / 24) +
+          |Real.cos δ₀| * (ε ^ 2 * r ^ 5 / 120)) +
+          ε * (|Real.sin δ₀| * (ε * r ^ 2 / 2) + |Real.cos δ₀| * (ε * r ^ 3 / 6))) := by
+        gcongr
+        linarith
+    _ = ε ^ 2 * remLoaded p δ₀ R := by
+        simp only [remLoaded, ← hr]; ring
 
 end powerlib.Synchronous.LoadedSwing

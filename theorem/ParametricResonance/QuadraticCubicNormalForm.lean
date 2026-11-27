@@ -1,4 +1,5 @@
 import theorem.ParametricResonance.DuffingMathieu
+import theorem.Averaging.KBMPerturbed
 import Mathlib.Analysis.Calculus.Deriv.Star
 
 /-! # Quadratic and cubic stiffness: the second-order 2:1 amplitude equation
@@ -8,8 +9,8 @@ For the parametrically pumped oscillator with quadratic and cubic stiffness,
 quadratic terms have no resonant part at the half pump frequency `ν`: first-order averaging
 removes them and is then blind to them, although at amplitude `a` they shift the frequency by
 `O(α₂²a²/ν³)`, of the same order as the cubic shift `3α₃a²/(8ν)`. A near-identity change of the
-van der Pol amplitude, `V = z − u(z, t)` with the explicit generator `u` (`nearId`, the zero-mean
-primitive of the quadratic field), removes the quadratic terms exactly; the price is a cubic term
+van der Pol amplitude, `V = z − u(z, t)` with the explicit generator `u(z, t)` (`nearId`, the
+zero-mean primitive of the quadratic field; not to be confused with the input `u(t)`), removes the quadratic terms exactly; the price is a cubic term
 `cubicCorr = −D_z u[quadField]`, whose period average is the resonant frequency shift
 `−5α₂²/(12ν³)`. The second-order 2:1 amplitude equation is therefore the cubic amplitude equation
 of `theorem/ParametricResonance/SaturatedAmplitude.lean` with the effective coefficient
@@ -27,15 +28,17 @@ Scope.
   the transformed scaled amplitude `W = w − √ε u(w, t)`, `w = z/√ε`, obeys exactly
   `Ẇ = ε secondField(w) − ε√ε D_z u(w)[vdpField(w)] + (input terms)`
   (`hasDerivAt_transformed_scaled`): the neglected terms are of order `ε^{3/2}` on bounded sets
-  (`norm_nearIdDeriv_le`), and `W − w` is of order `√ε` (`norm_nearId_le`). With `W` read in
-  `secondField(W)` instead of `secondField(w)` the difference is of order `ε^{3/2}` as well
-  (`secondField` is Lipschitz on bounded sets).
-* Boundary (not formalized here): the averaging step from `Ẇ = ε secondField(W, t) + O(ε^{3/2})`
-  to its average `ε ampField … β_eff` — a first-order averaging with an `O(ε^{1+κ})`
-  perturbation, `κ = 1/2`, which is `Averaging.kbm_perturbed_order` (error `O(ε^{1/2})` in `W`
-  on `[0, L/ε]`) once a cut-off of `secondField` and the a-priori bound of `w` through the implicit
-  relation `w = W + √ε u(w, t)` are supplied. The relative error of the amplitude is then
-  `O(√ε)`, against `O(1)` for first-order averaging, which drops the `α₂²` shift.
+  (`norm_nearIdDeriv_le`), and `W − w` is of order `√ε` (`norm_nearId_le`); `secondField` is
+  Lipschitz on discs (`norm_secondField_sub_le`), so `secondField(w) − secondField(W)` is of
+  order `√ε` as well.
+* The averaging step is rigorous (`second_order_averaging`): `Ẇ = ε secondField(W, t) + q(t)`
+  with `|q| ≤ ε^{3/2} M_q` while `W` stays in the disc `R + 1` (the a-priori bound
+  `|w| < 2(R + 1)` through the implicit relation `w = W + √ε u(w, t)` is a continuity argument
+  under the branch condition `4(R + 1)√ε (5|α₂|/(6ν²)) < 1`), and the perturbed averaging theorem
+  `Averaging.kbm_perturbed_local` for the cut-off field `cutSecond` gives `|W − W̄| = O(√ε)` on
+  `[0, L/ε]`; the oscillation is `√ε Re(W̄ e^{jνt}) + O(ε)`, a relative error `O(√ε)`. The input
+  `u` (a remainder of the model) is admitted with `|u| ≤ ε² M_u` while `|w| ≤ 2(R + 1)`. The
+  estimate is not uniform in time, and only averaged solutions in the disc `|W̄| ≤ R` are covered.
 * Generic mathematics, no model family.
 
 Source: second-order averaging / near-identity transformations of weakly nonlinear oscillators
@@ -50,6 +53,11 @@ Sharpenings.
 * The exact second-order coefficient carries `ν` (the half pump frequency) where the classical
   free-oscillator formula carries `ω₀`: `β_eff = 3α₃/(8ν) − 5α₂²/(12ν³)`; at exact resonance
   `ν = ω₀` it is the Landau–Lifshitz coefficient.
+* `theorem/Averaging/KBM.lean` and `theorem/ParametricResonance/DuffingMathieu.lean` average to
+  first order only; with a quadratic stiffness the quadratic field is of order `√ε` in the
+  scaled amplitude, so first-order averaging controls the error only on the time scale `1/√ε`
+  (recorded, not formalized), while the second-order equation with `β_eff` holds on the time
+  scale `1/ε` (`second_order_averaging`).
 * `β_eff > 0` (hardening) iff `10α₂² < 9ν²α₃`; with `α₃ ≤ 0` the oscillator softens for every
   `α₂`, and a hardening cubic stiffness is turned into a softening one by a quadratic stiffness
   with `10α₂² > 9ν²α₃` (`betaEff_pos_iff`).
@@ -73,6 +81,14 @@ Results.
   `|D_z u[h]| ≤ (5|α₂|/(3ν²))|z||h|`.
 * `hasDerivAt_transformed_scaled` — the exact second-order normal form in the scaled variables,
   with the neglected terms displayed.
+* `norm_cubicCorr_sub_le`, `lipSecond`, `norm_secondField_sub_le`, `secondField_zero`,
+  `continuous_secondField`, `secondField_periodic`, `cutSecond`, `cutSecond_hyp` — the second-order
+  field is `lipSecond`-Lipschitz on discs (`lipConst … r + (5α₂²/(2ν³)) r²`), continuous,
+  `2π/ν`-periodic; its cut-off satisfies the hypotheses of `Averaging.kbm_first_order`.
+* `remSecond`, `errSecond`, `second_order_averaging` — **rigorous second-order averaging**: on
+  `[0, L/ε]`, `|x(t) − √ε Re(W̄(t) e^{jνt})| ≤ √ε (B + √ε (5|α₂|/(6ν²)) (2(R + 1))²)` with
+  `B = errSecond … = ((2ℓMLT + 2MT) ε + L √ε M_q) e^{ℓL} = O(√ε)`, `W̄` the solution of the
+  second-order averaged equation with `β_eff`.
 -/
 
 noncomputable section
@@ -477,5 +493,413 @@ order `√ε` in `ẇ`, are gone; the remaining field is `ε secondField` (whose
     rw [hneg, ← hsε]
     field_simp
     ring
+
+/-! ## The second-order field on bounded sets -/
+
+@[tmio T, powerlib_foundation] private theorem norm_mul3_sub_le {a₁ a₂ a₃ b₁ b₂ b₃ : ℂ} {r d : ℝ}
+    (ha₂ : ‖a₂‖ ≤ r) (ha₃ : ‖a₃‖ ≤ r) (hb₁ : ‖b₁‖ ≤ r) (hb₂ : ‖b₂‖ ≤ r)
+    (h₁ : ‖a₁ - b₁‖ ≤ d) (h₂ : ‖a₂ - b₂‖ ≤ d) (h₃ : ‖a₃ - b₃‖ ≤ d) :
+    ‖a₁ * a₂ * a₃ - b₁ * b₂ * b₃‖ ≤ 3 * r ^ 2 * d := by
+  have hr : 0 ≤ r := (norm_nonneg _).trans ha₂
+  have hd : 0 ≤ d := (norm_nonneg _).trans h₁
+  have e : a₁ * a₂ * a₃ - b₁ * b₂ * b₃ =
+      (a₁ - b₁) * a₂ * a₃ + b₁ * (a₂ - b₂) * a₃ + b₁ * b₂ * (a₃ - b₃) := by ring
+  rw [e]
+  have t1 : ‖(a₁ - b₁) * a₂ * a₃‖ ≤ d * r * r := by
+    rw [norm_mul, norm_mul]; gcongr
+  have t2 : ‖b₁ * (a₂ - b₂) * a₃‖ ≤ r * d * r := by
+    rw [norm_mul, norm_mul]; gcongr
+  have t3 : ‖b₁ * b₂ * (a₃ - b₃)‖ ≤ r * r * d := by
+    rw [norm_mul, norm_mul]; gcongr
+  calc _ ≤ ‖(a₁ - b₁) * a₂ * a₃‖ + ‖b₁ * (a₂ - b₂) * a₃‖ + ‖b₁ * b₂ * (a₃ - b₃)‖ :=
+        norm_add₃_le
+    _ ≤ d * r * r + r * d * r + r * r * d := by linarith
+    _ = 3 * r ^ 2 * d := by ring
+
+/-- **Lipschitz bound of the second-order cubic term on a disc:** for `|z|, |y| ≤ r`,
+`|cubicCorr z t − cubicCorr y t| ≤ (5α₂²/(2ν³)) r² |z − y|`. -/
+@[tmio T, powerlib_foundation] theorem norm_cubicCorr_sub_le (hν : 0 < ν) {r : ℝ} {z y : ℂ}
+    (hz : ‖z‖ ≤ r) (hy : ‖y‖ ≤ r) (t : ℝ) :
+    ‖cubicCorr α₂ ν z t - cubicCorr α₂ ν y t‖ ≤ 5 * α₂ ^ 2 / (2 * ν ^ 3) * r ^ 2 * ‖z - y‖ := by
+  set d := ‖z - y‖
+  have hzc : ‖(starRingEnd ℂ) z‖ ≤ r := by rwa [Complex.norm_conj]
+  have hyc : ‖(starRingEnd ℂ) y‖ ≤ r := by rwa [Complex.norm_conj]
+  have hd : ‖z - y‖ ≤ d := le_rfl
+  have hdc : ‖(starRingEnd ℂ) z - (starRingEnd ℂ) y‖ ≤ d := by
+    rw [← map_sub, Complex.norm_conj]
+  have m1 := norm_mul3_sub_le hz hz hy hy hd hd hd
+  have m2 := norm_mul3_sub_le hz hzc hy hy hd hd hdc
+  have m3 := norm_mul3_sub_le hzc hzc hy hyc hd hdc hdc
+  have m4 := norm_mul3_sub_le hzc hzc hyc hyc hdc hdc hdc
+  set k := α₂ ^ 2 / (16 * ν ^ 3) with hk
+  have hk0 : 0 ≤ k := by positivity
+  have e : cubicCorr α₂ ν z t - cubicCorr α₂ ν y t = -(I * (k : ℂ)) *
+      (4 * (z * z * z - y * y * y) * phase ν t ^ 2 +
+        20 / 3 * (z * z * (starRingEnd ℂ) z - y * y * (starRingEnd ℂ) y) +
+        4 / 3 * (z * (starRingEnd ℂ) z * (starRingEnd ℂ) z - y * (starRingEnd ℂ) y *
+          (starRingEnd ℂ) y) * (phase ν t)⁻¹ ^ 2 -
+        4 / 3 * ((starRingEnd ℂ) z * (starRingEnd ℂ) z * (starRingEnd ℂ) z -
+          (starRingEnd ℂ) y * (starRingEnd ℂ) y * (starRingEnd ℂ) y) * (phase ν t)⁻¹ ^ 4) := by
+    simp only [cubicCorr, hk]; ring
+  rw [e, norm_mul, norm_neg, norm_mul, Complex.norm_I, one_mul, Complex.norm_real,
+    Real.norm_of_nonneg hk0]
+  have hpn : ‖phase ν t‖ = 1 := Complex.norm_exp_ofReal_mul_I _
+  have hp2 : ‖phase ν t ^ 2‖ = 1 := by rw [norm_pow, hpn, one_pow]
+  have hp2' : ‖(phase ν t)⁻¹ ^ 2‖ = 1 := by rw [norm_pow, norm_inv, hpn, inv_one, one_pow]
+  have hp4' : ‖(phase ν t)⁻¹ ^ 4‖ = 1 := by rw [norm_pow, norm_inv, hpn, inv_one, one_pow]
+  set A := z * z * z - y * y * y
+  set B := z * z * (starRingEnd ℂ) z - y * y * (starRingEnd ℂ) y
+  set C := z * (starRingEnd ℂ) z * (starRingEnd ℂ) z - y * (starRingEnd ℂ) y * (starRingEnd ℂ) y
+  set D := (starRingEnd ℂ) z * (starRingEnd ℂ) z * (starRingEnd ℂ) z -
+    (starRingEnd ℂ) y * (starRingEnd ℂ) y * (starRingEnd ℂ) y
+  have hsum : ‖4 * A * phase ν t ^ 2 + 20 / 3 * B + 4 / 3 * C * (phase ν t)⁻¹ ^ 2 -
+      4 / 3 * D * (phase ν t)⁻¹ ^ 4‖ ≤ 40 / 3 * (3 * r ^ 2 * d) := by
+    have n1 : ‖4 * A * phase ν t ^ 2‖ ≤ 4 * (3 * r ^ 2 * d) := by
+      rw [norm_mul, norm_mul, hp2, mul_one, Complex.norm_ofNat]; gcongr
+    have n2 : ‖(20 / 3 : ℂ) * B‖ ≤ 20 / 3 * (3 * r ^ 2 * d) := by
+      rw [norm_mul, show ‖(20 / 3 : ℂ)‖ = 20 / 3 by
+        rw [show (20 / 3 : ℂ) = ((20 / 3 : ℝ) : ℂ) by push_cast; ring, Complex.norm_real,
+          Real.norm_of_nonneg (by norm_num)]]
+      gcongr
+    have n3 : ‖(4 / 3 : ℂ) * C * (phase ν t)⁻¹ ^ 2‖ ≤ 4 / 3 * (3 * r ^ 2 * d) := by
+      rw [norm_mul, norm_mul, hp2', mul_one, show ‖(4 / 3 : ℂ)‖ = 4 / 3 by
+        rw [show (4 / 3 : ℂ) = ((4 / 3 : ℝ) : ℂ) by push_cast; ring, Complex.norm_real,
+          Real.norm_of_nonneg (by norm_num)]]
+      gcongr
+    have n4 : ‖(4 / 3 : ℂ) * D * (phase ν t)⁻¹ ^ 4‖ ≤ 4 / 3 * (3 * r ^ 2 * d) := by
+      rw [norm_mul, norm_mul, hp4', mul_one, show ‖(4 / 3 : ℂ)‖ = 4 / 3 by
+        rw [show (4 / 3 : ℂ) = ((4 / 3 : ℝ) : ℂ) by push_cast; ring, Complex.norm_real,
+          Real.norm_of_nonneg (by norm_num)]]
+      gcongr
+    calc _ ≤ ‖4 * A * phase ν t ^ 2 + 20 / 3 * B + 4 / 3 * C * (phase ν t)⁻¹ ^ 2‖ +
+          ‖(4 / 3 : ℂ) * D * (phase ν t)⁻¹ ^ 4‖ := norm_sub_le _ _
+      _ ≤ ‖4 * A * phase ν t ^ 2‖ + ‖(20 / 3 : ℂ) * B‖ + ‖(4 / 3 : ℂ) * C * (phase ν t)⁻¹ ^ 2‖ +
+          ‖(4 / 3 : ℂ) * D * (phase ν t)⁻¹ ^ 4‖ := by
+          gcongr; exact norm_add₃_le
+      _ ≤ _ := by linarith
+  calc k * ‖4 * A * phase ν t ^ 2 + 20 / 3 * B + 4 / 3 * C * (phase ν t)⁻¹ ^ 2 -
+        4 / 3 * D * (phase ν t)⁻¹ ^ 4‖ ≤ k * (40 / 3 * (3 * r ^ 2 * d)) := by gcongr
+    _ = 5 * α₂ ^ 2 / (2 * ν ^ 3) * r ^ 2 * d := by rw [hk]; field_simp; ring
+
+/-- The Lipschitz constant `lipConst … r + (5α₂²/(2ν³)) r²` of `secondField` on the disc of
+radius `r`. -/
+def lipSecond (b k₀ k₁ α₂ α₃ ν r : ℝ) : ℝ :=
+  DuffingMathieu.lipConst b k₀ k₁ α₃ ν r + 5 * α₂ ^ 2 / (2 * ν ^ 3) * r ^ 2
+
+/-- The second-order field read through the clamp onto the square of half-side `ρ`. -/
+def cutSecond (b k₀ k₁ α₂ α₃ ν ρ : ℝ) (w : ℂ) (t : ℝ) : ℂ :=
+  secondField b k₀ k₁ α₂ α₃ ν (DuffingMathieu.clampC ρ w) t
+
+/-- **Lipschitz bound of the second-order field on a disc.** -/
+@[tmio T, powerlib_foundation] theorem norm_secondField_sub_le (hν : 0 < ν) {r : ℝ} {z y : ℂ}
+    (hz : ‖z‖ ≤ r) (hy : ‖y‖ ≤ r) (t : ℝ) :
+    ‖secondField b k₀ k₁ α₂ α₃ ν z t - secondField b k₀ k₁ α₂ α₃ ν y t‖ ≤
+      lipSecond b k₀ k₁ α₂ α₃ ν r * ‖z - y‖ := by
+  have h1 := DuffingMathieu.norm_vdpField_sub_le (b := b) (k₀ := k₀) (k₁ := k₁) (γ := α₃) hν hz
+    hy t
+  have h2 := norm_cubicCorr_sub_le (α₂ := α₂) hν hz hy t
+  have e : secondField b k₀ k₁ α₂ α₃ ν z t - secondField b k₀ k₁ α₂ α₃ ν y t =
+      (vdpField b k₀ k₁ α₃ ν z t - vdpField b k₀ k₁ α₃ ν y t) +
+        (cubicCorr α₂ ν z t - cubicCorr α₂ ν y t) := by simp only [secondField]; ring
+  rw [e]
+  refine (norm_add_le _ _).trans ?_
+  simp only [lipSecond, DuffingMathieu.lipConst]
+  linarith
+
+@[tmio T, powerlib_foundation] theorem secondField_zero (t : ℝ) :
+    secondField b k₀ k₁ α₂ α₃ ν 0 t = 0 := by
+  simp [secondField, DuffingMathieu.vdpField_zero, cubicCorr]
+
+@[tmio T, powerlib_foundation] theorem continuous_secondField :
+    Continuous fun q : ℂ × ℝ => secondField b k₀ k₁ α₂ α₃ ν q.1 q.2 := by
+  have hp : Continuous fun q : ℂ × ℝ => phase ν q.2 := by unfold phase; fun_prop
+  have hpi : Continuous fun q : ℂ × ℝ => (phase ν q.2)⁻¹ := hp.inv₀ fun q => phase_ne_zero ν q.2
+  have hv := DuffingMathieu.continuous_vdpField (b := b) (k₀ := k₀) (k₁ := k₁) (γ := α₃) (ν := ν)
+  unfold secondField cubicCorr
+  fun_prop
+
+@[tmio T, powerlib_foundation] theorem secondField_periodic (hν : 0 < ν) (z : ℂ) (t : ℝ) :
+    secondField b k₀ k₁ α₂ α₃ ν z (t + 2 * Real.pi / ν) = secondField b k₀ k₁ α₂ α₃ ν z t := by
+  have hp : phase ν (t + 2 * Real.pi / ν) = phase ν t := by
+    have hν' : (ν : ℂ) ≠ 0 := by exact_mod_cast hν.ne'
+    rw [phase, phase, show ((ν * (t + 2 * Real.pi / ν) : ℝ) : ℂ) * I =
+      ((ν * t : ℝ) : ℂ) * I + 2 * Real.pi * I by push_cast; field_simp, Complex.exp_add,
+      Complex.exp_two_pi_mul_I, mul_one]
+  simp only [secondField, cubicCorr, hp, DuffingMathieu.vdpField_periodic hν]
+
+/-- **The cut-off second-order field satisfies the hypotheses of KBM**
+(`Averaging.kbm_first_order`): period `2π/ν`, Lipschitz constant `ℓ = lipSecond … (2ρ)`, bound
+`2ρℓ`. -/
+@[tmio T, powerlib_foundation] theorem cutSecond_hyp (hν : 0 < ν) {ρ : ℝ} (hρ : 0 ≤ ρ) :
+    0 < 2 * Real.pi / ν ∧ 0 ≤ lipSecond b k₀ k₁ α₂ α₃ ν (2 * ρ) ∧
+      Continuous (Function.uncurry (cutSecond b k₀ k₁ α₂ α₃ ν ρ)) ∧
+      (∀ x t, cutSecond b k₀ k₁ α₂ α₃ ν ρ x (t + 2 * Real.pi / ν) =
+        cutSecond b k₀ k₁ α₂ α₃ ν ρ x t) ∧
+      (∀ x y t, ‖cutSecond b k₀ k₁ α₂ α₃ ν ρ x t - cutSecond b k₀ k₁ α₂ α₃ ν ρ y t‖ ≤
+        lipSecond b k₀ k₁ α₂ α₃ ν (2 * ρ) * ‖x - y‖) ∧
+      ∀ x t, ‖cutSecond b k₀ k₁ α₂ α₃ ν ρ x t‖ ≤ lipSecond b k₀ k₁ α₂ α₃ ν (2 * ρ) * (2 * ρ) := by
+  have hℓ : 0 ≤ lipSecond b k₀ k₁ α₂ α₃ ν (2 * ρ) := by
+    unfold lipSecond DuffingMathieu.lipConst; have := hν.le; positivity
+  have hlip : ∀ x y t, ‖cutSecond b k₀ k₁ α₂ α₃ ν ρ x t - cutSecond b k₀ k₁ α₂ α₃ ν ρ y t‖ ≤
+      lipSecond b k₀ k₁ α₂ α₃ ν (2 * ρ) * ‖x - y‖ := fun x y t =>
+    (norm_secondField_sub_le hν (DuffingMathieu.norm_clampC_le hρ x)
+      (DuffingMathieu.norm_clampC_le hρ y) t).trans
+      (mul_le_mul_of_nonneg_left (DuffingMathieu.norm_clampC_sub_le ρ x y) hℓ)
+  have hcont : Continuous (Function.uncurry (cutSecond b k₀ k₁ α₂ α₃ ν ρ)) := by
+    have e : Function.uncurry (cutSecond b k₀ k₁ α₂ α₃ ν ρ) =
+        (fun q : ℂ × ℝ => secondField b k₀ k₁ α₂ α₃ ν q.1 q.2) ∘
+          fun q : ℂ × ℝ => (DuffingMathieu.clampC ρ q.1, q.2) := by
+      funext q; simp only [Function.uncurry, cutSecond, Function.comp_apply]
+    rw [e]
+    exact continuous_secondField.comp
+      (((DuffingMathieu.continuous_clampC ρ).comp continuous_fst).prodMk continuous_snd)
+  refine ⟨by positivity, hℓ, hcont, fun x t => secondField_periodic hν _ t, hlip,
+    fun x t => ?_⟩
+  have h := norm_secondField_sub_le (b := b) (k₀ := k₀) (k₁ := k₁) (α₂ := α₂) (α₃ := α₃) hν
+    (DuffingMathieu.norm_clampC_le hρ x) (by rw [norm_zero]; positivity) t
+  rw [secondField_zero, sub_zero, sub_zero] at h
+  exact h.trans (mul_le_mul_of_nonneg_left (DuffingMathieu.norm_clampC_le hρ x) hℓ)
+
+/-! ## Rigorous second-order averaging -/
+
+/-- The bound `M_q` of the neglected terms of the transformed scaled amplitude, `‖q‖ ≤ ε^{3/2} M_q`,
+on the disc of radius `r = 2(R + 1)` (input `|u| ≤ ε² M_u`). -/
+def remSecond (b d k₁ α₂ α₃ ν R Mu : ℝ) : ℝ :=
+  lipSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν (2 * (R + 1)) * (5 * |α₂| / (6 * ν ^ 2)) *
+      (2 * (R + 1)) ^ 2 +
+    5 * |α₂| / (3 * ν ^ 2) * DuffingMathieu.lipConst b (ν ^ 2 - d) k₁ α₃ ν (2 * (R + 1)) *
+      (2 * (R + 1)) ^ 2 +
+    Mu / ν + 5 * |α₂| / (3 * ν ^ 2) * (2 * (R + 1)) * (Mu / ν)
+
+/-- The error bound of the transformed amplitude: KBM's bound
+`((2ℓMLT + 2MT) ε + L √ε M_q) e^{ℓL}` for the cut-off second-order field
+(`ℓ = lipSecond … (2(R + 1))`, `M = 2(R + 1)ℓ`, `T = 2π/ν`). -/
+def errSecond (b d k₁ α₂ α₃ ν R L ε Mu : ℝ) : ℝ :=
+  ((2 * lipSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν (2 * (R + 1)) *
+        (lipSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν (2 * (R + 1)) * (2 * (R + 1))) * L *
+          (2 * Real.pi / ν) +
+      2 * (lipSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν (2 * (R + 1)) * (2 * (R + 1))) *
+        (2 * Real.pi / ν)) * ε +
+    L * (√ε * remSecond b d k₁ α₂ α₃ ν R Mu)) *
+  Real.exp (lipSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν (2 * (R + 1)) * L)
+
+@[tmio T, powerlib_foundation] private theorem lt_of_forbidden {φ : ℝ → ℝ} {t a c : ℝ}
+    (hφ : ContinuousOn φ (Icc 0 t)) (ha : 0 < a) (hac : 4 * a * c < 1) (h0 : φ 0 < 2 * a)
+    (hle : ∀ s ∈ Icc 0 t, φ s ≤ a + c * φ s ^ 2) : ∀ s ∈ Icc 0 t, φ s < 2 * a := by
+  intro s hs
+  by_contra hcon
+  push Not at hcon
+  have hsub : Icc 0 s ⊆ Icc 0 t := Icc_subset_Icc le_rfl hs.2
+  obtain ⟨s', hs', hφs'⟩ := intermediate_value_Icc hs.1 (hφ.mono hsub) ⟨h0.le, hcon⟩
+  have h := hle s' (hsub hs')
+  rw [hφs'] at h
+  nlinarith
+
+/-- **Rigorous second-order averaging of the pumped oscillator with quadratic and cubic
+stiffness.** For `ẍ + εbẋ + (ν² − εd + εk₁ cos 2νt)x + α₂x² + α₃x³ = u(t)` (`ν > 0`,
+`0 < ε ≤ 1`), with scaled amplitude `w = z/√ε` and transformed amplitude `W = w − √ε u(w, t)`
+(`nearId`), let `W̄` solve the second-order averaged equation
+`W̄̇ = ε ampField (b/2) (d/(2ν)) (jk₁/(4ν)) 0 β_eff W̄`, `β_eff = 3α₃/(8ν) − 5α₂²/(12ν³)`, on
+`[0, L/ε]` in the disc `|W̄| ≤ R`, from `W̄(0) = W(0)`. Assume `|w(0)| < 2(R + 1)`, the input bound
+`|u(t)| ≤ ε² M_u` while `|w(t)| ≤ 2(R + 1)`, the branch condition
+`4(R + 1)√ε (5|α₂|/(6ν²)) < 1` and `B = errSecond … < 1`. Then on `[0, L/ε]`
+`|x(t) − √ε Re(W̄(t) e^{jνt})| ≤ √ε (B + √ε (5|α₂|/(6ν²)) (2(R + 1))²)`: with
+`B = O(√ε)`, the second-order amplitude equation gives the oscillation of amplitude `O(√ε)` up to
+`O(ε)` on the time scale `1/ε` (`hasDerivAt_transformed_scaled`, `cutSecond_hyp`,
+`Averaging.kbm_perturbed_local` with an `O(ε^{3/2})` perturbation). -/
+@[tmio T, powerlib_foundation] theorem second_order_averaging (hν : 0 < ν)
+    {b d k₁ α₂ α₃ R L ε Mu : ℝ} (hR : 0 ≤ R) (hL : 0 ≤ L) (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (hMu : 0 ≤ Mu) {x x' u : ℝ → ℝ} (hx : ∀ t, HasDerivAt x (x' t) t)
+    (hx' : ∀ t, HasDerivAt x'
+      (accel (ε * b) (ν ^ 2 - ε * d) (ε * k₁) α₃ ν t (x t) (x' t) - α₂ * x t ^ 2 + u t) t)
+    (hu : ∀ t ∈ Icc 0 (L / ε), ‖((√ε : ℝ) : ℂ)⁻¹ * vdp ν t (x t) (x' t)‖ ≤ 2 * (R + 1) →
+      |u t| ≤ ε ^ 2 * Mu)
+    {Wbar : ℝ → ℂ}
+    (hWbar : ∀ t ∈ Icc 0 (L / ε), HasDerivWithinAt Wbar
+      (ε • ampField (b / 2) (d / (2 * ν)) (I * ((k₁ / (4 * ν) : ℝ) : ℂ)) 0
+        (3 * α₃ / (8 * ν) - 5 * α₂ ^ 2 / (12 * ν ^ 3)) (Wbar t)) (Icc 0 (L / ε)) t)
+    (hbound : ∀ t ∈ Icc 0 (L / ε), ‖Wbar t‖ ≤ R)
+    (h0 : ((√ε : ℝ) : ℂ)⁻¹ * vdp ν 0 (x 0) (x' 0) -
+      (√ε : ℂ) * nearId α₂ ν (((√ε : ℝ) : ℂ)⁻¹ * vdp ν 0 (x 0) (x' 0)) 0 = Wbar 0)
+    (hw0 : ‖((√ε : ℝ) : ℂ)⁻¹ * vdp ν 0 (x 0) (x' 0)‖ < 2 * (R + 1))
+    (hbranch : 4 * (R + 1) * (√ε * (5 * |α₂| / (6 * ν ^ 2))) < 1)
+    (hsmall : errSecond b d k₁ α₂ α₃ ν R L ε Mu < 1) :
+    ∀ t ∈ Icc 0 (L / ε), |x t - √ε * (Wbar t * phase ν t).re| ≤
+      √ε * (errSecond b d k₁ α₂ α₃ ν R L ε Mu +
+        √ε * (5 * |α₂| / (6 * ν ^ 2)) * (2 * (R + 1)) ^ 2) := by
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hs0' : ((√ε : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hs0.ne'
+  have hsε : √ε * √ε = ε := Real.mul_self_sqrt hε.le
+  have hs1 : √ε ≤ 1 := Real.sqrt_le_one.mpr hε1
+  have hR1 : 0 < R + 1 := by linarith
+  set c₁ := 5 * |α₂| / (6 * ν ^ 2) with hc₁
+  set c₂ := 5 * |α₂| / (3 * ν ^ 2) with hc₂
+  have hc₁0 : 0 ≤ c₁ := by positivity
+  have hc₂0 : 0 ≤ c₂ := by positivity
+  set w : ℝ → ℂ := fun t => ((√ε : ℝ) : ℂ)⁻¹ * vdp ν t (x t) (x' t) with hwdef
+  set W : ℝ → ℂ := fun t => w t - (√ε : ℂ) * nearId α₂ ν (w t) t with hWdef
+  set U : ℝ → ℂ := fun t => -(I / ν * (u t : ℂ) * (phase ν t)⁻¹) with hUdef
+  set q : ℝ → ℂ := fun t => ε • secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (w t) t -
+      (ε * √ε : ℝ) • nearIdDeriv α₂ ν (w t) t (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t) +
+      (((√ε : ℝ) : ℂ)⁻¹ * U t - nearIdDeriv α₂ ν (w t) t (U t)) -
+      ε • secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t with hqdef
+  have hW : ∀ t, HasDerivAt W (ε • secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t + q t) t := by
+    intro t
+    have h := hasDerivAt_transformed_scaled (b := b) (k₁ := k₁) (α₂ := α₂) (α₃ := α₃) hν.ne' hε
+      hx hx' t
+    convert h using 1
+    simp only [hqdef, hUdef]
+    abel
+  -- the transformation is small: `‖w − W‖ ≤ √ε c₁ ‖w‖²`
+  have hwW : ∀ t, ‖w t - W t‖ ≤ √ε * c₁ * ‖w t‖ ^ 2 := by
+    intro t
+    rw [hWdef]
+    simp only [sub_sub_cancel, norm_mul, Complex.norm_real, Real.norm_of_nonneg hs0.le]
+    rw [mul_assoc]
+    exact mul_le_mul_of_nonneg_left (norm_nearId_le hν _ t) hs0.le
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t => (hx t).continuousAt
+  have hx'c : Continuous x' := continuous_iff_continuousAt.2 fun t => (hx' t).continuousAt
+  have hwc : Continuous w := by
+    simp only [hwdef, vdp]
+    fun_prop
+  -- while `W` stays in the disc of radius `R + 1`, `w` stays in that of radius `2(R + 1)`
+  have hbr : ∀ t, 0 ≤ t → (∀ s ∈ Icc 0 t, ‖W s‖ ≤ R + 1) → ∀ s ∈ Icc 0 t, ‖w s‖ < 2 * (R + 1) := by
+    intro t _ hhist
+    refine lt_of_forbidden (φ := fun s => ‖w s‖) (c := √ε * c₁) hwc.norm.continuousOn hR1
+      hbranch hw0 fun s hs => ?_
+    have h1 := norm_le_norm_add_norm_sub' (w s) (W s)
+    have h2 := hwW s
+    have h3 := hhist s hs
+    show ‖w s‖ ≤ R + 1 + √ε * c₁ * ‖w s‖ ^ 2
+    linarith
+  -- the neglected terms are of order `ε^{3/2}`
+  have hqb : ∀ t, ‖w t‖ ≤ 2 * (R + 1) → ‖W t‖ ≤ 2 * (R + 1) → |u t| ≤ ε ^ 2 * Mu →
+      ‖q t‖ ≤ ε * (√ε * remSecond b d k₁ α₂ α₃ ν R Mu) := by
+    intro t hw hW' hut
+    set r := 2 * (R + 1)
+    set ℓ₂ := lipSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν r
+    set ℓ₁ := DuffingMathieu.lipConst b (ν ^ 2 - d) k₁ α₃ ν r
+    have hr0 : 0 ≤ r := by positivity
+    have hℓ₁ : 0 ≤ ℓ₁ := by
+      simp only [ℓ₁, DuffingMathieu.lipConst]; have := hν.le; positivity
+    have hℓ₂ : 0 ≤ ℓ₂ := by
+      simp only [ℓ₂, lipSecond, DuffingMathieu.lipConst]; have := hν.le; positivity
+    have e : q t = ε • (secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (w t) t -
+        secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t) -
+        (ε * √ε : ℝ) • nearIdDeriv α₂ ν (w t) t (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t) +
+        (((√ε : ℝ) : ℂ)⁻¹ * U t - nearIdDeriv α₂ ν (w t) t (U t)) := by
+      simp only [hqdef, smul_sub]; abel
+    have hU : ‖U t‖ ≤ ε ^ 2 * Mu / ν := by
+      simp only [hUdef, norm_neg, norm_mul, norm_div, Complex.norm_I, Complex.norm_real,
+        Real.norm_eq_abs, norm_inv, Complex.norm_exp_ofReal_mul_I, phase, abs_of_pos hν]
+      rw [inv_one, mul_one, one_div]
+      rw [inv_mul_eq_div]
+      exact div_le_div_of_nonneg_right hut hν.le
+    have hF : ‖vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t‖ ≤ ℓ₁ * r := by
+      have h := DuffingMathieu.norm_vdpField_sub_le (b := b) (k₀ := ν ^ 2 - d) (k₁ := k₁)
+        (γ := α₃) hν hw (by rw [norm_zero]; exact hr0) t
+      rw [DuffingMathieu.vdpField_zero, sub_zero, sub_zero] at h
+      exact h.trans (mul_le_mul_of_nonneg_left hw hℓ₁)
+    have t1 : ‖ε • (secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (w t) t -
+        secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t)‖ ≤ ε * √ε * (ℓ₂ * c₁ * r ^ 2) := by
+      rw [norm_smul, Real.norm_of_nonneg hε.le]
+      have h := norm_secondField_sub_le (b := b) (k₀ := ν ^ 2 - d) (k₁ := k₁) (α₂ := α₂)
+        (α₃ := α₃) hν hw hW' t
+      have h2 : ‖w t - W t‖ ≤ √ε * c₁ * r ^ 2 :=
+        (hwW t).trans (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hw 2)
+          (by positivity))
+      calc ε * ‖secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (w t) t -
+            secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t‖ ≤ ε * (ℓ₂ * (√ε * c₁ * r ^ 2)) := by
+            gcongr; exact h.trans (mul_le_mul_of_nonneg_left h2 hℓ₂)
+        _ = ε * √ε * (ℓ₂ * c₁ * r ^ 2) := by ring
+    have t2 : ‖(ε * √ε : ℝ) • nearIdDeriv α₂ ν (w t) t (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t)‖ ≤
+        ε * √ε * (c₂ * ℓ₁ * r ^ 2) := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+      have h := norm_nearIdDeriv_le (α₂ := α₂) hν (w t) (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t) t
+      calc ε * √ε * ‖nearIdDeriv α₂ ν (w t) t (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t)‖
+          ≤ ε * √ε * (c₂ * (r * (ℓ₁ * r))) := by
+            gcongr; exact h.trans (mul_le_mul_of_nonneg_left (mul_le_mul hw hF (norm_nonneg _)
+              hr0) hc₂0)
+        _ = ε * √ε * (c₂ * ℓ₁ * r ^ 2) := by ring
+    have t3 : ‖((√ε : ℝ) : ℂ)⁻¹ * U t‖ ≤ ε * √ε * (Mu / ν) := by
+      rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hs0.le]
+      calc (√ε)⁻¹ * ‖U t‖ ≤ (√ε)⁻¹ * (ε ^ 2 * Mu / ν) := by gcongr
+        _ = ε * √ε * (Mu / ν) := by
+            have h2 : ε ^ 2 = ε * √ε * √ε := by rw [mul_assoc, hsε, sq]
+            rw [h2]; field_simp
+    have t4 : ‖nearIdDeriv α₂ ν (w t) t (U t)‖ ≤ ε * √ε * (c₂ * r * (Mu / ν)) := by
+      have h := norm_nearIdDeriv_le (α₂ := α₂) hν (w t) (U t) t
+      have hε2 : ε ^ 2 ≤ ε * √ε := by
+        rw [sq]; exact mul_le_mul_of_nonneg_left (by nlinarith [Real.sqrt_nonneg ε]) hε.le
+      have hMν : 0 ≤ Mu / ν := div_nonneg hMu hν.le
+      calc ‖nearIdDeriv α₂ ν (w t) t (U t)‖ ≤ c₂ * (r * (ε ^ 2 * Mu / ν)) :=
+            h.trans (mul_le_mul_of_nonneg_left (mul_le_mul hw hU (norm_nonneg _) hr0) hc₂0)
+        _ = c₂ * r * (Mu / ν) * ε ^ 2 := by ring
+        _ ≤ c₂ * r * (Mu / ν) * (ε * √ε) := by
+            apply mul_le_mul_of_nonneg_left hε2; positivity
+        _ = ε * √ε * (c₂ * r * (Mu / ν)) := by ring
+    rw [e]
+    calc _ ≤ ‖ε • (secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (w t) t -
+          secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t) -
+          (ε * √ε : ℝ) • nearIdDeriv α₂ ν (w t) t (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t)‖ +
+          ‖((√ε : ℝ) : ℂ)⁻¹ * U t - nearIdDeriv α₂ ν (w t) t (U t)‖ := norm_add_le _ _
+      _ ≤ (‖ε • (secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (w t) t -
+          secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν (W t) t)‖ +
+          ‖(ε * √ε : ℝ) • nearIdDeriv α₂ ν (w t) t (vdpField b (ν ^ 2 - d) k₁ α₃ ν (w t) t)‖) +
+          (‖((√ε : ℝ) : ℂ)⁻¹ * U t‖ + ‖nearIdDeriv α₂ ν (w t) t (U t)‖) :=
+          add_le_add (norm_sub_le _ _) (norm_sub_le _ _)
+      _ ≤ _ := by
+          simp only [remSecond]
+          nlinarith [t1, t2, t3, t4]
+  -- KBM with the perturbation for the transformed amplitude
+  have hg := cutSecond_hyp (b := b) (k₀ := ν ^ 2 - d) (k₁ := k₁) (α₂ := α₂) (α₃ := α₃) hν
+    hR1.le
+  have hfg : ∀ y ∈ {y : ℂ | ‖y‖ ≤ R + 1}, ∀ t,
+      secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν y t =
+        cutSecond b (ν ^ 2 - d) k₁ α₂ α₃ ν (R + 1) y t := by
+    intro y hy t
+    simp only [cutSecond, DuffingMathieu.clampC_of_norm_le hy]
+  have hrem : 0 ≤ remSecond b d k₁ α₂ α₃ ν R Mu := by
+    simp only [remSecond, lipSecond, DuffingMathieu.lipConst]; have := hν.le; positivity
+  have hk := Averaging.kbm_perturbed_local hg hfg hε hL (mul_nonneg hs0.le hrem) (ρ := 1)
+    (x := W) (xbar := Wbar) (q := q) (fun t _ => (hW t).hasDerivWithinAt)
+    (fun t ht hhist => by
+      have hw := hbr t ht.1 hhist t ⟨ht.1, le_rfl⟩
+      exact hqb t hw.le ((hhist t ⟨ht.1, le_rfl⟩).trans (by linarith))
+        (hu t ht hw.le))
+    (fun t ht => by
+      rw [fieldAverage_secondField hν, show (ν ^ 2 - (ν ^ 2 - d)) / (2 * ν) = d / (2 * ν) by ring]
+      exact hWbar t ht)
+    (fun t ht y hy => by
+      show ‖y‖ ≤ R + 1
+      have := norm_le_norm_add_norm_sub' y (Wbar t)
+      linarith [hbound t ht])
+    (by simp only [hWdef, hwdef]; exact h0) (by simpa [errSecond] using hsmall)
+  -- back to the oscillation
+  intro t ht
+  have hB : ∀ s ∈ Icc 0 (L / ε), ‖W s - Wbar s‖ ≤ errSecond b d k₁ α₂ α₃ ν R L ε Mu := by
+    intro s hs; simpa [errSecond] using hk s hs
+  have hhist : ∀ s ∈ Icc 0 t, ‖W s‖ ≤ R + 1 := by
+    intro s hs
+    have hs' : s ∈ Icc 0 (L / ε) := ⟨hs.1, hs.2.trans ht.2⟩
+    have := norm_le_norm_add_norm_sub' (W s) (Wbar s)
+    have := hB s hs'
+    have := hbound s hs'
+    linarith
+  have hwt := hbr t ht.1 hhist t ⟨ht.1, le_rfl⟩
+  have hwWb : ‖w t - Wbar t‖ ≤ errSecond b d k₁ α₂ α₃ ν R L ε Mu + √ε * c₁ * (2 * (R + 1)) ^ 2 := by
+    calc ‖w t - Wbar t‖ ≤ ‖W t - Wbar t‖ + ‖w t - W t‖ := by
+          rw [show w t - Wbar t = (W t - Wbar t) + (w t - W t) by ring]; exact norm_add_le _ _
+      _ ≤ _ := add_le_add (hB t ht) ((hwW t).trans (mul_le_mul_of_nonneg_left
+          (pow_le_pow_left₀ (norm_nonneg _) hwt.le 2) (by positivity)))
+  have hx_eq : x t = (vdp ν t (x t) (x' t) * phase ν t).re :=
+    (DuffingMathieu.pos_vdp ν t (x t) (x' t)).symm
+  have hz : vdp ν t (x t) (x' t) = ((√ε : ℝ) : ℂ) * w t := by simp only [hwdef]; field_simp
+  rw [hx_eq, hz, show √ε * (Wbar t * phase ν t).re = ((((√ε : ℝ) : ℂ) * Wbar t) * phase ν t).re by
+    rw [mul_assoc, Complex.re_ofReal_mul], ← Complex.sub_re, ← sub_mul, ← mul_sub]
+  refine (Complex.abs_re_le_norm _).trans ?_
+  rw [norm_mul, norm_mul, show ‖phase ν t‖ = 1 from Complex.norm_exp_ofReal_mul_I _, mul_one,
+    Complex.norm_real, Real.norm_of_nonneg hs0.le]
+  exact mul_le_mul_of_nonneg_left hwWb hs0.le
 
 end powerlib.ParametricResonance.QuadraticCubic
