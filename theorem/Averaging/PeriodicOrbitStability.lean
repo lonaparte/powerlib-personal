@@ -31,9 +31,9 @@ Scope.
   depend only on `T, ℓ, M, ℓ_r, M_r, ρ, L₂` and `J` — not on `ε`, not on the remainder `r`.
 * Generic mathematics, no model family.
 
-Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*,
-§26 (stability of the periodic solutions of the second theorem); Hale, *Ordinary Differential
-Equations*, Ch. V (periodic solutions of averaged systems and their stability);
+Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*
+(the second theorem of Bogoliubov: stability of its periodic solutions); Hale, *Ordinary
+Differential Equations*, Ch. V (periodic solutions of averaged systems and their stability);
 Sanders–Verhulst–Murdock, *Averaging Methods in Nonlinear Dynamical Systems*, Ch. 5 (attraction:
 validity of averaging on `[0, ∞)` near an attracting hyperbolic equilibrium, the
 Eckhaus/Sanchez-Palencia theorem); the Lyapunov equation and Chetaev's indefinite quadratic form
@@ -221,8 +221,10 @@ bound `κ₀ > 0` and `D ≥ 0` such that every perturbed Euler step `e ↦ e + 
       (∀ e : ℝⁿ, p₁ * ‖e‖ ^ 2 ≤ quadraticForm P e ∧ quadraticForm P e ≤ p₂ * ‖e‖ ^ 2) ∧
       ∀ h, 0 < h → h ≤ h₀ → ∀ κ σ : ℝ, 0 ≤ κ → κ ≤ κ₀ → 0 ≤ σ → ∀ e p : ℝⁿ,
         ‖p‖ ≤ h * κ * ‖e‖ + σ →
-        quadraticForm P (e + h • (op J) e + p) ≤ (1 - c * h) * quadraticForm P e + D * σ ^ 2 / h := by
-  obtain ⟨P, hPd, hEq, -⟩ := hJ.exists_posDef_unique_solution_continuous_lyapunov 1 Matrix.PosDef.one
+        quadraticForm P (e + h • (op J) e + p) ≤
+          (1 - c * h) * quadraticForm P e + D * σ ^ 2 / h := by
+  obtain ⟨P, hPd, hEq, -⟩ :=
+    hJ.exists_posDef_unique_solution_continuous_lyapunov 1 Matrix.PosDef.one
   obtain ⟨p₁, hp₁, hlow⟩ := exists_pos_mul_norm_sq_le_quadraticForm P hPd
   set p₂ := ‖op P‖ + 1 with hp₂def
   have hp₂ : 0 < p₂ := by positivity
@@ -369,7 +371,8 @@ certificate `HJ + JᵀH − 2αH ≻ 0`). -/
     rw [e1, e2]
     linarith
   -- the perturbation
-  have hWup : quadraticForm H u - 2 * (‖u‖ * (η * ‖p‖)) - η * ‖p‖ ^ 2 ≤ quadraticForm H (u + p) := by
+  have hWup : quadraticForm H u - 2 * (‖u‖ * (η * ‖p‖)) - η * ‖p‖ ^ 2 ≤
+      quadraticForm H (u + p) := by
     rw [quadraticForm_add hH u p]
     have h1 : |⟪u, (op H) p⟫| ≤ ‖u‖ * (η * ‖p‖) :=
       (abs_real_inner_le_norm _ _).trans

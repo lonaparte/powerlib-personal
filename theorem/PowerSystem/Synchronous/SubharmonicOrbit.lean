@@ -11,7 +11,11 @@ the swing model for all time. Here Bogoliubov's second theorem `Averaging.exists
 is applied to the scaled van der Pol form of TR-110's swing model (the `sin δ` remainder
 included): every nondegenerate phase-locked state `w*` of the averaged amplitude equation is,
 for all small depths `ε`, a genuine `2π/ν`-periodic solution of the swing model — twice the
-pump period — with `δ_ε(t) = √ε Re(w* e^{jνt}) + O(ε^{3/2})` uniformly in `t ∈ ℝ`.
+pump period — with `δ_ε(t) = √ε Re(w* e^{jνt}) + O(ε^{3/2})` uniformly in `t ∈ ℝ`. It is
+exponentially stable in the swing model when the averaged Jacobian at `w*` is Hurwitz, and
+unstable when that Jacobian has an eigenvalue with positive real part
+(`Averaging.exp_stable_of_hurwitz`, `Averaging.unstable_of_root`), deviations being measured in
+the phase-plane norm `|Δδ − jΔδ̇/ν|` of the van der Pol amplitude.
 
 Model boundary.
 * One generator, TR-110's swing equation (3-8) with `P_e = K_s(t) sin δ + K_d Δω`, `Δω = δ̇/ω₀`,
@@ -41,8 +45,9 @@ Model boundary.
   multi-machine dynamics, a modulation of `K_d`.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11);
-Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*, §§25–26
-(`Averaging.exists_periodic_orbit`); the exact scaled van der Pol form
+Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations* (the second
+theorem of Bogoliubov, `Averaging.exists_periodic_orbit`, with the stability statements
+`Averaging.exp_stable_of_hurwitz`, `Averaging.unstable_of_root`); the exact scaled van der Pol form
 `ParametricSaturation.hasDerivAt_scaled` and the remainder bound
 `ParametricSaturation.remainder_le`; the exact period average
 `DuffingMathieu.fieldAverage_vdpField`; the cut-off `DuffingMathieu.cutField_hyp`; the averaged
@@ -751,7 +756,8 @@ def rCut (ωn ν d ε ρc : ℝ) (w : ℂ) (t : ℝ) : ℂ := rfull ωn ν d ε 
 
 @[tmio M, powerlib_domain] theorem rCut_hyp {ωn ν d ε K ρc : ℝ} (hν : 0 < ν) (hε : 0 < ε)
     (hε1 : ε ≤ 1) (hK : ωn ^ 2 ≤ K) (hρc : 0 ≤ ρc) :
-    0 < 2 * Real.pi / ν ∧ 0 ≤ rLip ν d K (2 * ρc) ∧ Continuous (Function.uncurry (rCut ωn ν d ε ρc)) ∧
+    0 < 2 * Real.pi / ν ∧ 0 ≤ rLip ν d K (2 * ρc) ∧
+      Continuous (Function.uncurry (rCut ωn ν d ε ρc)) ∧
       (∀ x t, rCut ωn ν d ε ρc x (t + 2 * Real.pi / ν) = rCut ωn ν d ε ρc x t) ∧
       (∀ x y t, ‖rCut ωn ν d ε ρc x t - rCut ωn ν d ε ρc y t‖ ≤ rLip ν d K (2 * ρc) * ‖x - y‖) ∧
       ∀ x t, ‖rCut ωn ν d ε ρc x t‖ ≤ rBound ν d K (2 * ρc) := by
@@ -853,8 +859,9 @@ vanishes and has the derivative `limitJac b d ν w*`. -/
 
 @[tmio T, powerlib_foundation] private theorem toEuclideanCLM_inv_apply
     {J : Matrix (Fin 2) (Fin 2) ℝ} (hJ : J.det ≠ 0) (v : ℝ²) :
-    Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J⁻¹ v)
-      = v ∧ Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J⁻¹
+    Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J
+        (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J⁻¹ v) = v ∧
+      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J⁻¹
         (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J v) = v := by
   have hu : IsUnit J.det := isUnit_iff_ne_zero.mpr hJ
   have h1 : Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J *

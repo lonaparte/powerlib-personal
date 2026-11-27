@@ -26,10 +26,12 @@ Scope.
   unique (`DuffingMathieu.exists_global_solution`, Mathlib's `ODE_solution_unique_univ`).
 * Generic mathematics, no model family.
 
-Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*,
-§§25–26 (the second theorem of Bogoliubov: periodic solutions near hyperbolic equilibria of the
-averaged system); Sanders–Verhulst–Murdock, *Averaging Methods in Nonlinear Dynamical Systems*,
-§6.3 (periodic averaging and periodic solutions); work-sync theory/T-averaging-method.md §1.1–1.3
+Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*
+(the justification of the averaging method, the second theorem of Bogoliubov: periodic solutions
+near hyperbolic equilibria of the averaged system); Hale, *Ordinary Differential Equations*,
+Ch. V (the method of averaging, periodic solutions); Sanders–Verhulst–Murdock, *Averaging Methods
+in Nonlinear Dynamical Systems*, Ch. 6 (periodic averaging and hyperbolicity); work-sync
+theory/T-averaging-method.md §1.1–1.3
 (standard form, averaged field); the one-period estimates are proved here from KBM's
 `Averaging.periodIntegral_eq` and Grönwall's inequality (Mathlib `dist_le_of_trajectories_ODE`).
 
