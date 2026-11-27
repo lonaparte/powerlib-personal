@@ -77,10 +77,14 @@ Results.
   model and the swing solution it carries.
 * `subharmonic_orbit` — **the sustained subharmonic oscillation**: for `0 < ε ≤ ε₀` a
   `2π/ν`-periodic solution of the swing model with `|δ(t) − √ε Re(w* e^{jνt})| ≤ C ε √ε`.
-* `swing_unique_forward` — forward uniqueness of swing solutions (globally Lipschitz field).
+* `swing_field_lipschitz`, `swing_unique_Icc`, `exists_swing_solution` — the swing field is
+  globally Lipschitz; uniqueness on intervals and global existence of swing solutions.
 * `subharmonic_orbit_stable` — a Hurwitz averaged Jacobian at `w*`: the subharmonic orbit attracts
   every swing solution starting within `√ε δ₀` in the phase-plane norm `|Δδ − jΔδ̇/ν|`, at the
   rate `βε`, uniformly in the initial time.
+* `subharmonic_orbit_unstable`, `subharmonic_orbit_saddle` — a characteristic root `Re μ > 0` of
+  the averaged Jacobian (e.g. `det < 0`, the saddle branch): the subharmonic orbit is unstable,
+  swing solutions starting within `√ε η` (any `η > 0`) reach the distance `√ε δ₀`.
 -/
 
 noncomputable section
@@ -1084,81 +1088,108 @@ swing model itself, not of an averaged equation (`scaled_orbit`, `swing_orbit_of
   have h := (hy (t - τ)).comp_sub_const t τ
   simpa [sub_add_cancel] using h
 
-/-- **Forward uniqueness for the swing model**: two solutions with the same angle and speed at
-`τ` agree for all `t ≥ τ` (the field is globally Lipschitz). -/
-@[tmio M, powerlib_domain] theorem swing_unique_forward (hp : p.Pos) {ε Ω τ : ℝ}
-    {δ₁ δ₁' δ₂ δ₂' : ℝ → ℝ} (h1 : ∀ t, τ ≤ t → HasDerivAt δ₁ (δ₁' t) t)
-    (h1' : ∀ t, τ ≤ t →
-      HasDerivAt δ₁' ((frozen p (modKs p ε Ω) t).toSwing.accel (δ₁ t) (δ₁' t)) t)
-    (h2 : ∀ t, τ ≤ t → HasDerivAt δ₂ (δ₂' t) t)
-    (h2' : ∀ t, τ ≤ t →
-      HasDerivAt δ₂' ((frozen p (modKs p ε Ω) t).toSwing.accel (δ₂ t) (δ₂' t)) t)
-    (h0 : δ₁ τ = δ₂ τ) (h0' : δ₁' τ = δ₂' τ) : ∀ t, τ ≤ t → δ₁ t = δ₂ t ∧ δ₁' t = δ₂' t := by
+/-- The swing field `(δ, δ̇) ↦ (δ̇, accel)` is globally Lipschitz (sup norm on `ℝ × ℝ`). -/
+@[tmio M, powerlib_domain] theorem swing_field_lipschitz (hp : p.Pos) (ε Ω t : ℝ) :
+    LipschitzWith (Real.toNNReal (1 + (|2 * p.dampingRatio * natFreq p| +
+      natFreq p ^ 2 * (1 + |ε|))))
+      (fun q : ℝ × ℝ => (q.2, (frozen p (modKs p ε Ω) t).toSwing.accel q.1 q.2)) := by
   set c := |2 * p.dampingRatio * natFreq p| + natFreq p ^ 2 * (1 + |ε|) with hc
-  set v : ℝ → ℝ × ℝ → ℝ × ℝ := fun t q =>
-    (q.2, (frozen p (modKs p ε Ω) t).toSwing.accel q.1 q.2) with hv
-  have hlip : ∀ t, LipschitzOnWith (Real.toNNReal (1 + c)) (v t) univ := by
-    intro t
-    refine LipschitzOnWith.of_dist_le_mul fun q _ q' _ => ?_
-    rw [Real.coe_toNNReal _ (by positivity)]
-    simp only [hv, Prod.dist_eq, Real.dist_eq, ParametricSaturation.accel_eq hp]
-    have ha := abs_sub_le_iff.mp (le_refl |q.1 - q'.1|)
-    have hd1 : |q.1 - q'.1| ≤ max |q.1 - q'.1| |q.2 - q'.2| := le_max_left _ _
-    have hd2 : |q.2 - q'.2| ≤ max |q.1 - q'.1| |q.2 - q'.2| := le_max_right _ _
-    have hs := Real.abs_sin_sub_sin_le q.1 q'.1
-    have hcos : |1 + ε * Real.cos (Ω * t)| ≤ 1 + |ε| := by
-      refine (abs_add_le _ _).trans ?_
-      rw [abs_one, abs_mul]
-      have := Real.abs_cos_le_one (Ω * t)
-      nlinarith [abs_nonneg ε]
-    have hacc : |-(2 * p.dampingRatio * natFreq p * q.2 +
+  have hc0 : 0 ≤ c := by positivity
+  refine LipschitzWith.of_dist_le_mul fun q q' => ?_
+  rw [Real.coe_toNNReal _ (by positivity)]
+  simp only [Prod.dist_eq, Real.dist_eq, ParametricSaturation.accel_eq hp]
+  have hd1 : |q.1 - q'.1| ≤ max |q.1 - q'.1| |q.2 - q'.2| := le_max_left _ _
+  have hd2 : |q.2 - q'.2| ≤ max |q.1 - q'.1| |q.2 - q'.2| := le_max_right _ _
+  have hs := Real.abs_sin_sub_sin_le q.1 q'.1
+  have hcos : |1 + ε * Real.cos (Ω * t)| ≤ 1 + |ε| := by
+    refine (abs_add_le _ _).trans ?_
+    rw [abs_one, abs_mul]
+    have := Real.abs_cos_le_one (Ω * t)
+    nlinarith [abs_nonneg ε]
+  have hacc : |-(2 * p.dampingRatio * natFreq p * q.2 +
+      natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q.1) -
+      -(2 * p.dampingRatio * natFreq p * q'.2 +
+        natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q'.1)| ≤
+      c * max |q.1 - q'.1| |q.2 - q'.2| := by
+    have e : -(2 * p.dampingRatio * natFreq p * q.2 +
         natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q.1) -
         -(2 * p.dampingRatio * natFreq p * q'.2 +
-          natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q'.1)| ≤
-        c * max |q.1 - q'.1| |q.2 - q'.2| := by
-      have e : -(2 * p.dampingRatio * natFreq p * q.2 +
-          natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q.1) -
-          -(2 * p.dampingRatio * natFreq p * q'.2 +
-            natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q'.1) =
-          -(2 * p.dampingRatio * natFreq p * (q.2 - q'.2) +
-            natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * (Real.sin q.1 - Real.sin q'.1)) := by
-        ring
-      rw [e, abs_neg]
-      refine (abs_add_le _ _).trans ?_
-      rw [abs_mul (2 * p.dampingRatio * natFreq p),
-        abs_mul (natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t))), abs_mul (natFreq p ^ 2),
-        abs_of_nonneg (sq_nonneg (natFreq p))]
-      calc |2 * p.dampingRatio * natFreq p| * |q.2 - q'.2| +
-            natFreq p ^ 2 * |1 + ε * Real.cos (Ω * t)| * |Real.sin q.1 - Real.sin q'.1|
-          ≤ |2 * p.dampingRatio * natFreq p| * max |q.1 - q'.1| |q.2 - q'.2| +
-              natFreq p ^ 2 * (1 + |ε|) * max |q.1 - q'.1| |q.2 - q'.2| := by
-            gcongr
-            exact hs.trans hd1
-        _ = c * max |q.1 - q'.1| |q.2 - q'.2| := by rw [hc]; ring
-    have hc0 : 0 ≤ c := by positivity
-    apply max_le
-    · calc |q.2 - q'.2| ≤ max |q.1 - q'.1| |q.2 - q'.2| := hd2
-        _ ≤ (1 + c) * max |q.1 - q'.1| |q.2 - q'.2| := by nlinarith [abs_nonneg (q.2 - q'.2)]
-    · calc _ ≤ c * max |q.1 - q'.1| |q.2 - q'.2| := hacc
-        _ ≤ (1 + c) * max |q.1 - q'.1| |q.2 - q'.2| := by nlinarith [abs_nonneg (q.2 - q'.2)]
-  have hder : ∀ (a a' : ℝ → ℝ), (∀ t, τ ≤ t → HasDerivAt a (a' t) t) →
-      (∀ t, τ ≤ t → HasDerivAt a' ((frozen p (modKs p ε Ω) t).toSwing.accel (a t) (a' t)) t) →
-      ∀ t, τ ≤ t → HasDerivAt (fun t => (a t, a' t)) (v t (a t, a' t)) t :=
+          natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * Real.sin q'.1) =
+        -(2 * p.dampingRatio * natFreq p * (q.2 - q'.2) +
+          natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t)) * (Real.sin q.1 - Real.sin q'.1)) := by
+      ring
+    rw [e, abs_neg]
+    refine (abs_add_le _ _).trans ?_
+    rw [abs_mul (2 * p.dampingRatio * natFreq p),
+      abs_mul (natFreq p ^ 2 * (1 + ε * Real.cos (Ω * t))), abs_mul (natFreq p ^ 2),
+      abs_of_nonneg (sq_nonneg (natFreq p))]
+    calc |2 * p.dampingRatio * natFreq p| * |q.2 - q'.2| +
+          natFreq p ^ 2 * |1 + ε * Real.cos (Ω * t)| * |Real.sin q.1 - Real.sin q'.1|
+        ≤ |2 * p.dampingRatio * natFreq p| * max |q.1 - q'.1| |q.2 - q'.2| +
+            natFreq p ^ 2 * (1 + |ε|) * max |q.1 - q'.1| |q.2 - q'.2| := by
+          gcongr
+          exact hs.trans hd1
+      _ = c * max |q.1 - q'.1| |q.2 - q'.2| := by rw [hc]; ring
+  apply max_le
+  · calc |q.2 - q'.2| ≤ max |q.1 - q'.1| |q.2 - q'.2| := hd2
+      _ ≤ (1 + c) * max |q.1 - q'.1| |q.2 - q'.2| := by nlinarith [abs_nonneg (q.2 - q'.2)]
+  · calc _ ≤ c * max |q.1 - q'.1| |q.2 - q'.2| := hacc
+      _ ≤ (1 + c) * max |q.1 - q'.1| |q.2 - q'.2| := by nlinarith [abs_nonneg (q.2 - q'.2)]
+
+/-- **Uniqueness for the swing model on an interval**: two solutions on `[τ, T₁]` with the same
+angle and speed at `τ` agree on `[τ, T₁]` (the field is globally Lipschitz). -/
+@[tmio M, powerlib_domain] theorem swing_unique_Icc (hp : p.Pos) {ε Ω τ T₁ : ℝ}
+    {δ₁ δ₁' δ₂ δ₂' : ℝ → ℝ} (h1 : ∀ t ∈ Icc τ T₁, HasDerivAt δ₁ (δ₁' t) t)
+    (h1' : ∀ t ∈ Icc τ T₁,
+      HasDerivAt δ₁' ((frozen p (modKs p ε Ω) t).toSwing.accel (δ₁ t) (δ₁' t)) t)
+    (h2 : ∀ t ∈ Icc τ T₁, HasDerivAt δ₂ (δ₂' t) t)
+    (h2' : ∀ t ∈ Icc τ T₁,
+      HasDerivAt δ₂' ((frozen p (modKs p ε Ω) t).toSwing.accel (δ₂ t) (δ₂' t)) t)
+    (h0 : δ₁ τ = δ₂ τ) (h0' : δ₁' τ = δ₂' τ) : ∀ t ∈ Icc τ T₁, δ₁ t = δ₂ t ∧ δ₁' t = δ₂' t := by
+  set v : ℝ → ℝ × ℝ → ℝ × ℝ := fun t q =>
+    (q.2, (frozen p (modKs p ε Ω) t).toSwing.accel q.1 q.2) with hv
+  have hder : ∀ (a a' : ℝ → ℝ), (∀ t ∈ Icc τ T₁, HasDerivAt a (a' t) t) →
+      (∀ t ∈ Icc τ T₁,
+        HasDerivAt a' ((frozen p (modKs p ε Ω) t).toSwing.accel (a t) (a' t)) t) →
+      ∀ t ∈ Icc τ T₁, HasDerivAt (fun t => (a t, a' t)) (v t (a t, a' t)) t :=
     fun a a' ha ha' t ht => (ha t ht).prodMk (ha' t ht)
   intro t ht
-  have hEq := ODE_solution_unique_of_mem_Icc_right (v := v) (s := fun _ => univ) (a := τ) (b := t)
-    (f := fun t => (δ₁ t, δ₁' t)) (g := fun t => (δ₂ t, δ₂' t)) (fun s _ => hlip s)
-    (fun s hs => (hder δ₁ δ₁' h1 h1' s hs.1).continuousAt.continuousWithinAt)
-    (fun s hs => (hder δ₁ δ₁' h1 h1' s hs.1).hasDerivWithinAt) (fun _ _ => mem_univ _)
-    (fun s hs => (hder δ₂ δ₂' h2 h2' s hs.1).continuousAt.continuousWithinAt)
-    (fun s hs => (hder δ₂ δ₂' h2 h2' s hs.1).hasDerivWithinAt) (fun _ _ => mem_univ _)
-    (by simp [h0, h0']) ⟨ht, le_rfl⟩
+  have hEq := ODE_solution_unique_of_mem_Icc_right (v := v) (s := fun _ => univ) (a := τ) (b := T₁)
+    (f := fun t => (δ₁ t, δ₁' t)) (g := fun t => (δ₂ t, δ₂' t))
+    (fun s _ => (swing_field_lipschitz hp ε Ω s).lipschitzOnWith)
+    (fun s hs => (hder δ₁ δ₁' h1 h1' s hs).continuousAt.continuousWithinAt)
+    (fun s hs => (hder δ₁ δ₁' h1 h1' s (Ico_subset_Icc_self hs)).hasDerivWithinAt)
+    (fun _ _ => mem_univ _)
+    (fun s hs => (hder δ₂ δ₂' h2 h2' s hs).continuousAt.continuousWithinAt)
+    (fun s hs => (hder δ₂ δ₂' h2 h2' s (Ico_subset_Icc_self hs)).hasDerivWithinAt)
+    (fun _ _ => mem_univ _) (by simp [h0, h0']) ht
   exact ⟨congrArg Prod.fst hEq, congrArg Prod.snd hEq⟩
+
+/-- **Global solutions of the swing model**: from every angle and speed at `t = 0`. -/
+@[tmio M, powerlib_domain] theorem exists_swing_solution (hp : p.Pos) (ε Ω a a' : ℝ) :
+    ∃ δ δ' : ℝ → ℝ, δ 0 = a ∧ δ' 0 = a' ∧ (∀ t, HasDerivAt δ (δ' t) t) ∧
+      ∀ t, HasDerivAt δ' ((frozen p (modKs p ε Ω) t).toSwing.accel (δ t) (δ' t)) t := by
+  have hc : Continuous (Function.uncurry fun (t : ℝ) (q : ℝ × ℝ) =>
+      (q.2, (frozen p (modKs p ε Ω) t).toSwing.accel q.1 q.2)) := by
+    have e : (Function.uncurry fun (t : ℝ) (q : ℝ × ℝ) =>
+        (q.2, (frozen p (modKs p ε Ω) t).toSwing.accel q.1 q.2)) = fun r : ℝ × (ℝ × ℝ) =>
+        (r.2.2, -(2 * p.dampingRatio * natFreq p * r.2.2 +
+          natFreq p ^ 2 * (1 + ε * Real.cos (Ω * r.1)) * Real.sin r.2.1)) := by
+      funext r
+      simp only [Function.uncurry, ParametricSaturation.accel_eq hp]
+    rw [e]
+    fun_prop
+  obtain ⟨q, hq0, hq⟩ := DuffingMathieu.exists_global_solution hc
+    (fun t => swing_field_lipschitz hp ε Ω t) (a, a')
+  refine ⟨fun t => (q t).1, fun t => (q t).2, by simp [hq0], by simp [hq0], fun t => ?_,
+    fun t => ?_⟩
+  · exact (hasFDerivAt_fst.comp_hasDerivAt t (hq t))
+  · exact (hasFDerivAt_snd.comp_hasDerivAt t (hq t))
 
 /-- The transfer of an attraction estimate of the cut-off real system to the swing model. -/
 @[tmio M, powerlib_domain] private theorem transfer_stable (hp : p.Pos) {ν b d ε ρc K β δ₀ : ℝ}
     (hν : 0 < ν) (hε : 0 < ε) (hb : 2 * p.dampingRatio * natFreq p = ε * b)
-    (hd : natFreq p ^ 2 = ν ^ 2 - ε * d) (hK : 0 ≤ K) (hβ : 0 ≤ β) (hδ₀ : 0 ≤ δ₀)
+    (hd : natFreq p ^ 2 = ν ^ 2 - ε * d) (hK : 0 ≤ K) (hβ : 0 ≤ β)
     {x₂ : ℝ → ℝ²} (hin : ∀ t, ‖x₂ t‖ + K * δ₀ ≤ ρc)
     (hex : ∀ τ (y₀ : ℝ²), ∃ x : ℝ → ℝ², x τ = y₀ ∧
       ∀ t, HasDerivAt x (ε • realField (limitCut b d ν ρc) (x t) t +
@@ -1221,8 +1252,8 @@ swing model itself, not of an averaged equation (`scaled_orbit`, `swing_orbit_of
     rw [hxτ, ContinuousLinearEquiv.symm_apply_apply, hsw0, DuffingMathieu.pos_vdp]
   have hvel0 : vel ν (((√ε : ℝ) : ℂ) * toReal.symm (x τ)) τ = δ' τ := by
     rw [hxτ, ContinuousLinearEquiv.symm_apply_apply, hsw0, DuffingMathieu.vel_vdp hν.ne']
-  have huniq := swing_unique_forward hp (fun s hs => (hsw s hs).1) (fun s hs => (hsw s hs).2)
-    (fun s _ => hδ s) (fun s _ => hδ' s) hpos0 hvel0 t ht
+  have huniq := swing_unique_Icc hp (T₁ := t) (fun s hs => (hsw s hs.1).1)
+    (fun s hs => (hsw s hs.1).2) (fun s _ => hδ s) (fun s _ => hδ' s) hpos0 hvel0 t ⟨ht, le_rfl⟩
   have hdevt : vdp ν t (δ t - pos ν (((√ε : ℝ) : ℂ) * toReal.symm (x₂ t)) t)
       (δ' t - vel ν (((√ε : ℝ) : ℂ) * toReal.symm (x₂ t)) t) =
       ((√ε : ℝ) : ℂ) * toReal.symm (x t) - ((√ε : ℝ) : ℂ) * toReal.symm (x₂ t) := by
@@ -1241,7 +1272,7 @@ the `2π/ν`-periodic solution `(δ_ε, δ̇_ε)` of `subharmonic_orbit`, and ev
 the swing model whose phase-plane deviation `‖vdp ν τ (δ − δ_ε) (δ̇ − δ̇_ε)‖ =
 |(δ − δ_ε) − j(δ̇ − δ̇_ε)/ν|` at a time `τ` is at most `√ε δ₀` converges to it:
 `‖vdp ν t (δ − δ_ε) (δ̇ − δ̇_ε)‖ ≤ K e^{−βε(t − τ)} ‖vdp ν τ (δ − δ_ε) (δ̇ − δ̇_ε)‖` for all
-`t ≥ τ` (`Averaging.exp_stable_of_hurwitz` on the scaled model, `swing_unique_forward`). -/
+`t ≥ τ` (`Averaging.exp_stable_of_hurwitz` on the scaled model, `swing_unique_Icc`). -/
 @[tmio M, powerlib_domain] theorem subharmonic_orbit_stable {b d ν : ℝ} (hν : 0 < ν) {wstar : ℂ}
     (hw0 : limitAmp b d ν wstar = 0) (hJ : LinearSystems.IsHurwitz (limitJac b d ν wstar)) :
     ∃ ε₀ C δ₀ K β : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ 0 < δ₀ ∧ 0 < K ∧ 0 < β ∧
@@ -1320,7 +1351,174 @@ the swing model whose phase-plane deviation `‖vdp ν τ (δ − δ_ε) (δ̇ �
         ε ^ 2 • realField (rCut (natFreq p) ν d ε ρc) (x t) t) t := fun τ y₀ =>
     exists_solution_from (Averaging.full_field_continuous hf.2.2.1 hr.2.2.1 ε)
       (fun t => Averaging.field_lipschitzWith hf.2.2.2.2.1 hr.2.2.2.2.1 hf.2.1 hr.2.1 hε.le t) τ y₀
-  exact transfer_stable hp hν hε hb hd hK'.le hβ.le hδ₀0.le hin hex
+  exact transfer_stable hp hν hε hb hd hK'.le hβ.le hin hex
     (fun x hx τ hτ => hstab' x x₂ hx hx₂ hz τ (hτ.trans (min_le_left _ _))) hδ hδ' hτ ht
+
+/-! ## Instability of the subharmonic orbit in the swing model -/
+
+/-- The first time a continuous function reaches a level. -/
+@[tmio T, powerlib_foundation] private theorem exists_first_hit {g : ℝ → ℝ} (hg : Continuous g)
+    {a t c : ℝ} (hat : a ≤ t) (ha : g a < c) (ht : c ≤ g t) :
+    ∃ s ∈ Icc a t, c ≤ g s ∧ ∀ u ∈ Icc a s, g u ≤ c := by
+  set S := Icc a t ∩ g ⁻¹' Ici c with hS
+  have hSc : IsClosed S := isClosed_Icc.inter (isClosed_Ici.preimage hg)
+  have hSne : S.Nonempty := ⟨t, ⟨hat, le_rfl⟩, ht⟩
+  have hSbdd : BddBelow S := ⟨a, fun u hu => hu.1.1⟩
+  have hsS : sInf S ∈ S := hSc.csInf_mem hSne hSbdd
+  have hbefore : ∀ u ∈ Ico a (sInf S), g u < c := by
+    intro u hu
+    by_contra h
+    push Not at h
+    exact absurd (csInf_le hSbdd ⟨⟨hu.1, hu.2.le.trans hsS.1.2⟩, h⟩) (not_le.mpr hu.2)
+  have has : a < sInf S := by
+    rcases eq_or_lt_of_le hsS.1.1 with h | h
+    · exfalso
+      have : c ≤ g (sInf S) := hsS.2
+      rw [← h] at this
+      linarith
+    · exact h
+  have hle : g (sInf S) ≤ c := by
+    have hcl : sInf S ∈ closure (Ico a (sInf S)) := by
+      rw [closure_Ico has.ne]; exact ⟨has.le, le_rfl⟩
+    exact (hg.continuousWithinAt (s := Ico a (sInf S))).closure_le hcl continuousWithinAt_const
+      fun u hu => (hbefore u hu).le
+  refine ⟨sInf S, hsS.1, hsS.2, fun u hu => ?_⟩
+  rcases eq_or_lt_of_le hu.2 with h | h
+  · rw [h]; exact hle
+  · exact (hbefore u ⟨hu.1, h⟩).le
+
+/-- **The subharmonic orbit of a locked state with an unstable averaged Jacobian is unstable in
+the swing model.** If the Jacobian `limitJac b d ν w*` of a nondegenerate locked state has a
+characteristic root `μ` with `Re μ > 0` (e.g. the saddle branch, negative determinant), there are
+`ε₀, δ₀ > 0` and `C ≥ 0` such that for every `0 < ε ≤ ε₀` and every machine in the scaling
+`2ξω_n = εb`, `ω_n² = ν² − εd`, the `2π/ν`-periodic swing solution `(δ_ε, δ̇_ε)` of
+`subharmonic_orbit` is unstable: for every `η > 0` some solution of the swing model starts within
+`√ε η` of it in the phase-plane norm `|Δδ − jΔδ̇/ν|` and later reaches the distance `√ε δ₀`
+(`Averaging.unstable_of_root` on the scaled model). -/
+@[tmio M, powerlib_domain] theorem subharmonic_orbit_unstable {b d ν : ℝ} (hν : 0 < ν)
+    {wstar : ℂ} (hw0 : limitAmp b d ν wstar = 0) (hdet : (limitJac b d ν wstar).det ≠ 0)
+    {μ : ℂ} (hroot : (Linear.characteristicMatrix (limitJac b d ν wstar) μ).det = 0)
+    (hμ : 0 < μ.re) :
+    ∃ ε₀ C δ₀ : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ 0 < δ₀ ∧
+      ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ p : Params, p.Pos →
+      2 * p.dampingRatio * natFreq p = ε * b → natFreq p ^ 2 = ν ^ 2 - ε * d →
+      ∃ δε δε' : ℝ → ℝ, (∀ t, HasDerivAt δε (δε' t) t) ∧
+        (∀ t, HasDerivAt δε' ((frozen p (modKs p ε (2 * ν)) t).toSwing.accel (δε t) (δε' t)) t) ∧
+        (∀ t, δε (t + 2 * Real.pi / ν) = δε t ∧ δε' (t + 2 * Real.pi / ν) = δε' t) ∧
+        (∀ t, |δε t - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε * √ε) ∧
+        ∀ η, 0 < η → ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
+          (∀ t, HasDerivAt δ' ((frozen p (modKs p ε (2 * ν)) t).toSwing.accel (δ t) (δ' t)) t) ∧
+          ‖vdp ν 0 (δ 0 - δε 0) (δ' 0 - δε' 0)‖ ≤ √ε * η ∧
+          ∃ t, 0 ≤ t ∧ √ε * δ₀ ≤ ‖vdp ν t (δ t - δε t) (δ' t - δε' t)‖ := by
+  obtain ⟨ε₁, C, hε₁, hC, hCε₁, horb⟩ := scaled_orbit hν hw0 hdet
+  set ρc := ‖wstar‖ + 3 with hρc
+  have hρc0 : 0 ≤ ρc := by positivity
+  set K := ν ^ 2 + |d| with hKdef
+  have hf := realField_hyp (DuffingMathieu.cutField_hyp (b := b) (k₀ := ν ^ 2 - d) (k₁ := ν ^ 2)
+    (γ := -(ν ^ 2) / 6) hν hρc0)
+  obtain ⟨-, hA⟩ := averaged_limitCut_at (b := b) (d := d) (ρc := ρc) hν hw0 (by linarith)
+  have hball : ∀ x : ℝ², ‖x - toReal wstar‖ ≤ 1 → ‖x‖ ≤ ‖wstar‖ + 1 := by
+    intro x hx
+    have := norm_le_norm_add_norm_sub' x (toReal wstar)
+    rw [Saturation.norm_toReal] at this
+    linarith
+  have hD : ∀ x : ℝ², ‖x - toReal wstar‖ ≤ 1 → ∀ t,
+      HasFDerivAt (fun y => realField (limitCut b d ν ρc) y t) (limitDeriv b d ν x t) x :=
+    fun x hx t => hasFDerivAt_limitCut (by linarith [hball x hx]) t
+  have hDl : ∀ x y : ℝ², ‖x - toReal wstar‖ ≤ 1 → ‖y - toReal wstar‖ ≤ 1 → ∀ t,
+      ‖limitDeriv b d ν x t - limitDeriv b d ν y t‖ ≤ ν * (‖wstar‖ + 1) * ‖x - y‖ :=
+    fun x y hx hy t => norm_limitDeriv_sub_le hν (hball x hx) (hball y hy) t
+  obtain ⟨ε₂, δ₁, hε₂, hδ₁, hunst⟩ := Averaging.unstable_of_root hf one_pos (by positivity) hD hDl
+    (continuous_limitDeriv b d ν _) hA hroot hμ
+    (ℓr := rLip ν d K (2 * ρc)) (Mr := rBound ν d K (2 * ρc))
+    (by rw [rLip]; positivity) (by rw [rBound]; positivity)
+  set δ₀ := min δ₁ 1 with hδ₀
+  have hδ₀0 : 0 < δ₀ := lt_min hδ₁ one_pos
+  set ε₀ := min (min ε₁ ε₂) (min 1 (δ₀ / (C + 1))) with hε₀
+  refine ⟨ε₀, C, δ₀, by positivity, hC, hδ₀0, ?_⟩
+  intro ε hε hεε₀ p hp hb hd
+  have hε1 : ε ≤ 1 := hεε₀.trans ((min_le_right _ _).trans (min_le_left _ _))
+  have hεε₁ : ε ≤ ε₁ := hεε₀.trans ((min_le_left _ _).trans (min_le_left _ _))
+  have hεε₂ : ε ≤ ε₂ := hεε₀.trans ((min_le_left _ _).trans (min_le_right _ _))
+  have hCδ : C * ε ≤ δ₀ := by
+    have h1 : ε ≤ δ₀ / (C + 1) := hεε₀.trans ((min_le_right _ _).trans (min_le_right _ _))
+    rw [le_div_iff₀ (by positivity)] at h1
+    have e : ε * (C + 1) = C * ε + ε := by ring
+    linarith
+  have hKω : natFreq p ^ 2 ≤ K := by
+    rw [hd, hKdef]
+    have h1 : |ε * d| ≤ |d| := by
+      rw [abs_mul, abs_of_pos hε]; exact mul_le_of_le_one_left (abs_nonneg _) hε1
+    linarith [neg_abs_le (ε * d)]
+  have hr := realField_hyp (rCut_hyp (d := d) hν hε hε1 hKω hρc0)
+  obtain ⟨x₂, hx₂, hper, hbd⟩ := horb ε hε hεε₁ (natFreq p) hd
+  have hCε : C * ε ≤ 1 := (mul_le_mul_of_nonneg_left hεε₁ hC).trans hCε₁
+  obtain ⟨h1, h2, h3, h4⟩ := swing_orbit_of_real hp hν hε hb hd hx₂ hper hbd hCε
+  refine ⟨_, _, h1, h2, h3, h4, fun η hη => ?_⟩
+  have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
+  have hz : ∀ t, ‖x₂ t - toReal wstar‖ ≤ δ₁ := fun t =>
+    (hbd t).trans (hCδ.trans (min_le_left _ _))
+  set η' := min η (δ₀ / 2) with hη'
+  have hη'0 : 0 < η' := lt_min hη (by positivity)
+  obtain ⟨x, hx, hx0, t₀, ht₀, hesc⟩ := hunst ε hε hεε₂ _ hr x₂ hx₂ hz η' hη'0
+  -- the first time the deviation reaches `δ₀`
+  have hgc : Continuous fun u => ‖x u - x₂ u‖ :=
+    ((continuous_iff_continuousAt.mpr fun t => (hx t).continuousAt).sub
+      (continuous_iff_continuousAt.mpr fun t => (hx₂ t).continuousAt)).norm
+  obtain ⟨s, hs, hsδ, hsle⟩ := exists_first_hit hgc ht₀
+    (show ‖x 0 - x₂ 0‖ < δ₀ by
+      have : η' ≤ δ₀ / 2 := min_le_right _ _
+      linarith)
+    ((min_le_left δ₁ 1).trans hesc)
+  -- up to `s` the cut-off solution carries a swing solution
+  have hbx : ∀ u ∈ Icc 0 s, ‖x u‖ ≤ ρc := by
+    intro u hu
+    have h5 := hsle u hu
+    have h6 := norm_le_norm_add_norm_sub' (x u) (x₂ u)
+    have h7 := norm_le_norm_add_norm_sub' (x₂ u) (toReal wstar)
+    rw [Saturation.norm_toReal] at h7
+    have h8 := hbd u
+    have h9 : δ₀ ≤ 1 := min_le_right _ _
+    linarith
+  have hsw := fun u (hu : u ∈ Icc 0 s) =>
+    swing_of_scaled hp hν hε hb hd (w := fun t => toReal.symm (x t)) u
+      (uncut_of_real u (hx u) (hbx u hu))
+  obtain ⟨δ, δ', hδ0, hδ0', hδ, hδ'⟩ := exists_swing_solution hp ε (2 * ν)
+    (pos ν (((√ε : ℝ) : ℂ) * toReal.symm (x 0)) 0) (vel ν (((√ε : ℝ) : ℂ) * toReal.symm (x 0)) 0)
+  have huniq := swing_unique_Icc hp (T₁ := s) (fun u hu => (hsw u hu).1)
+    (fun u hu => (hsw u hu).2) (fun u _ => hδ u) (fun u _ => hδ' u) hδ0.symm hδ0'.symm
+  -- the deviations in the phase-plane norm
+  have hdev : ∀ u ∈ Icc 0 s, ‖vdp ν u (δ u - pos ν (((√ε : ℝ) : ℂ) * toReal.symm (x₂ u)) u)
+      (δ' u - vel ν (((√ε : ℝ) : ℂ) * toReal.symm (x₂ u)) u)‖ = √ε * ‖x u - x₂ u‖ := by
+    intro u hu
+    rw [vdp_sub, ← (huniq u hu).1, ← (huniq u hu).2, vdp_pos_vel hν.ne', vdp_pos_vel hν.ne',
+      ← mul_sub, ← map_sub, norm_mul, Complex.norm_real, Real.norm_of_nonneg hs0.le,
+      norm_toReal_symm]
+  refine ⟨δ, δ', hδ, hδ', ?_, s, hs.1, ?_⟩
+  · rw [hdev 0 ⟨le_rfl, hs.1⟩]
+    exact mul_le_mul_of_nonneg_left (hx0.trans (min_le_left _ _)) hs0.le
+  · rw [hdev s ⟨hs.1, le_rfl⟩]
+    exact mul_le_mul_of_nonneg_left hsδ hs0.le
+
+/-- **The saddle branch** (`det (limitJac b d ν w*) < 0`, the lower amplitude of
+`Saturation.shift_states` in the softening case): its subharmonic orbit is unstable in the swing
+model (`subharmonic_orbit_unstable` with the positive real characteristic root of
+`Criteria.exists_root_re_pos_of_det`). -/
+@[tmio M, powerlib_domain] theorem subharmonic_orbit_saddle {b d ν : ℝ} (hν : 0 < ν)
+    {wstar : ℂ} (hw0 : limitAmp b d ν wstar = 0) (hdet : (limitJac b d ν wstar).det < 0) :
+    ∃ ε₀ C δ₀ : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ 0 < δ₀ ∧
+      ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ p : Params, p.Pos →
+      2 * p.dampingRatio * natFreq p = ε * b → natFreq p ^ 2 = ν ^ 2 - ε * d →
+      ∃ δε δε' : ℝ → ℝ, (∀ t, HasDerivAt δε (δε' t) t) ∧
+        (∀ t, HasDerivAt δε' ((frozen p (modKs p ε (2 * ν)) t).toSwing.accel (δε t) (δε' t)) t) ∧
+        (∀ t, δε (t + 2 * Real.pi / ν) = δε t ∧ δε' (t + 2 * Real.pi / ν) = δε' t) ∧
+        (∀ t, |δε t - √ε * (wstar * Complex.exp (((ν * t : ℝ) : ℂ) * I)).re| ≤ C * ε * √ε) ∧
+        ∀ η, 0 < η → ∃ δ δ' : ℝ → ℝ, (∀ t, HasDerivAt δ (δ' t) t) ∧
+          (∀ t, HasDerivAt δ' ((frozen p (modKs p ε (2 * ν)) t).toSwing.accel (δ t) (δ' t)) t) ∧
+          ‖vdp ν 0 (δ 0 - δε 0) (δ' 0 - δε' 0)‖ ≤ √ε * η ∧
+          ∃ t, 0 ≤ t ∧ √ε * δ₀ ≤ ‖vdp ν t (δ t - δε t) (δ' t - δε' t)‖ := by
+  obtain ⟨μ, hroot, hμ⟩ := Criteria.exists_root_re_pos_of_det (limitJac b d ν wstar)
+    (by simpa using hdet)
+  exact subharmonic_orbit_unstable hν hw0 hdet.ne hroot hμ
 
 end powerlib.Synchronous.SubharmonicOrbit
