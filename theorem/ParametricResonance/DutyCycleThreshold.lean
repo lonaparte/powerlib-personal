@@ -335,8 +335,8 @@ derivative of the criterion is positive. -/
 /-- **The depth derivative of the duty-`δ` criterion is positive.** Fix `δ ∈ (0, 1)`. There is
 `ρ > 0` such that for `|ξ|, |ε| < ρ` the criterion `dutyGap δ ξ` has a positive derivative in the
 depth at `ε`: at `(ξ, ε) = (0, 0)` the derivative is `(1 + δ/(1 − δ)) sin(πδ) > 0` (the damping
-term vanishes with `ξ`, the depth enters the phase `θ₁` only at second order), and the
-criterion is `C¹` in `(ξ, ε)` near `(0, 0)`. -/
+term vanishes with `ξ`, and the change of the phase `θ₁` with the depth is multiplied by `ε`),
+and the criterion is `C¹` in `(ξ, ε)` near `(0, 0)`. -/
 @[tmio T, powerlib_foundation] theorem hasDerivAt_dutyGap_pos (hδ0 : 0 < δ) (hδ1 : δ < 1) :
     ∃ ρ > 0, ∀ ξ ε, |ξ| < ρ → |ε| < ρ → ∃ E, HasDerivAt (dutyGap δ ξ) E ε ∧ 0 < E := by
   obtain ⟨ρ, hρ, hP⟩ := deriv_aux hδ0 hδ1
