@@ -817,12 +817,11 @@ omit [DecidableEq X] in
   · simp [uMag]
   · simp [uMag]
 
-omit [DecidableEq X] in
-@[tmio T, powerlib_foundation] private theorem eventually_diff_line {G : (X → ℝ) × ℝ → X → ℝ}
-    {x0 : X → ℝ} {u0 : ℝ}
-    (hG : ContDiffAt ℝ 2 G (x0, u0)) (c : ℝ → (X → ℝ) × ℝ) (hc : Continuous c)
-    (hc0 : c 0 = (x0, u0)) : ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ G (c t) := by
-  have h1 : ∀ᶠ q in 𝓝 (x0, u0), ContDiffAt ℝ 2 G q := hG.eventually (by simp)
+@[tmio T, powerlib_foundation] private theorem eventually_diff_curve {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {G : E → F} {g : E} (hG : ContDiffAt ℝ 2 G g) (c : ℝ → E) (hc : Continuous c)
+    (hc0 : c 0 = g) : ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ G (c t) := by
+  have h1 : ∀ᶠ p in 𝓝 g, ContDiffAt ℝ 2 G p := hG.eventually (by simp)
   have h2 := hc.tendsto 0
   rw [hc0] at h2
   exact (h2.eventually h1).mono fun t ht => ht.differentiableAt (by norm_num)
@@ -831,7 +830,7 @@ omit [DecidableEq X] in
     {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 2 G (x0, u0)) (y : X → ℝ) :
     smDxV (phasor G e) (x0, ![u0, 0]) y = smDx G (x0, u0) y := by
   refine smDxV_eq_smDx (contDiffAt_phasor hG) hG y ?_
-  filter_upwards [eventually_diff_line hG (fun t => (x0 + t • y, u0)) (by fun_prop) (by simp)]
+  filter_upwards [eventually_diff_curve hG (fun t => (x0 + t • y, u0)) (by fun_prop) (by simp)]
     with t ht
   rw [matXV_phasor (by simpa using ht)]
   simp
@@ -840,7 +839,7 @@ omit [DecidableEq X] in
     {x0 : X → ℝ} {u0 : ℝ} (hG : ContDiffAt ℝ 2 G (x0, u0)) :
     smMwV (phasor G e) (x0, ![u0, 0]) uMag = smM1 G (x0, u0) := by
   refine smMwV_eq_smM1 (contDiffAt_phasor hG) hG uMag ?_
-  filter_upwards [eventually_diff_line hG (fun t => (x0, u0 + t)) (by fun_prop) (by simp)]
+  filter_upwards [eventually_diff_curve hG (fun t => (x0, u0 + t)) (by fun_prop) (by simp)]
     with t ht
   rw [matXV_phasor (by simpa [uMag] using ht)]
   simp [uMag]
@@ -1158,33 +1157,13 @@ omit [DecidableEq X] in
   congr 1
   ext <;> simp
 
-omit [DecidableEq X] in
-@[tmio T, powerlib_foundation] private theorem eventually_diff_curve
-    {F : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
-    {q : (X → ℝ) × (Fin 2 → ℝ)} (hF : ContDiffAt ℝ 2 F q) (c : ℝ → (X → ℝ) × (Fin 2 → ℝ))
-    (hc : Continuous c) (hc0 : c 0 = q) : ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ F (c t) := by
-  have h1 : ∀ᶠ p in 𝓝 q, ContDiffAt ℝ 2 F p := hF.eventually (by simp)
-  have h2 := hc.tendsto 0
-  rw [hc0] at h2
-  exact (h2.eventually h1).mono fun t ht => ht.differentiableAt (by norm_num)
-
-omit [DecidableEq X] in
-@[tmio T, powerlib_foundation] private theorem eventually_diff_curveG
-    {G : (X → ℝ) × ℝ → X → ℝ} {g : (X → ℝ) × ℝ}
-    (hG : ContDiffAt ℝ 2 G g) (c : ℝ → (X → ℝ) × ℝ) (hc : Continuous c) (hc0 : c 0 = g) :
-    ∀ᶠ t in 𝓝 (0 : ℝ), DifferentiableAt ℝ G (c t) := by
-  have h1 : ∀ᶠ p in 𝓝 g, ContDiffAt ℝ 2 G p := hG.eventually (by simp)
-  have h2 := hc.tendsto 0
-  rw [hc0] at h2
-  exact (h2.eventually h1).mono fun t ht => ht.differentiableAt (by norm_num)
-
 @[tmio T, powerlib_foundation] theorem smDxV_slice {H : (X → ℝ) × (Fin 2 → ℝ) → X → ℝ}
     {G : (X → ℝ) × ℝ → X → ℝ} (hHG : ∀ x V, H (x, ![V, 0]) = G (x, V)) {x0 : X → ℝ} {u0 : ℝ}
     (hH : ContDiffAt ℝ 2 H (x0, ![u0, 0])) (hG : ContDiffAt ℝ 2 G (x0, u0)) (y : X → ℝ) :
     smDxV H (x0, ![u0, 0]) y = smDx G (x0, u0) y := by
   refine smDxV_eq_smDx hH hG y ?_
   filter_upwards [eventually_diff_curve hH (fun t => (x0 + t • y, ![u0, 0])) (by fun_prop)
-    (by simp), eventually_diff_curveG hG (fun t => (x0 + t • y, u0)) (by fun_prop) (by simp)]
+    (by simp), eventually_diff_curve hG (fun t => (x0 + t • y, u0)) (by fun_prop) (by simp)]
     with t h1 h2
   exact matXV_slice hHG h1 h2
 
@@ -1196,7 +1175,7 @@ omit [DecidableEq X] in
     funext k; fin_cases k <;> simp [uMag]
   refine smMwV_eq_smM1 hH hG uMag ?_
   filter_upwards [eventually_diff_curve hH (fun t => (x0, ![u0, 0] + t • uMag)) (by fun_prop)
-    (by simp), eventually_diff_curveG hG (fun t => (x0, u0 + t)) (by fun_prop) (by simp)]
+    (by simp), eventually_diff_curve hG (fun t => (x0, u0 + t)) (by fun_prop) (by simp)]
     with t h1 h2
   rw [e] at h1 ⊢
   exact matXV_slice hHG h1 h2
