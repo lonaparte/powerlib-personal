@@ -62,14 +62,15 @@ Scope.
 * Generic; nothing here describes a physical system (foundation).
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), Ch. 4 (the fold of fixed
-points of maps, the normal form `η ↦ η + a η² + …`, and §4.2 / the pitchfork and transcritical
-degeneracies with the cubic normal form `η ↦ η + c η³`) and §5.4 (restricted normalized maps by
-the projection method: the coefficients `⟨w, B(v, v)⟩`, `⟨w, C(v, v, v)⟩ + 3⟨w, B(v, k)⟩`); Carr,
-*Applications of Centre Manifold Theory* (1981), Ch. 2; Iooss, *Bifurcation of Maps and
-Applications* (1979); the open items of `theorem/Periodic/CriticalMultiplier.lean` (Scope: "The
-multiplier `+1` of a nonconstant orbit is not reduced") and `theorem/Periodic/FlipOrbit.lean`
-(Scope: "A nonconstant orbit with the multiplier `+1` … needs the centre-manifold reduction at
-`+1`, which `FlipReduction` does not provide").
+points of maps, the normal form `η ↦ η + a η² + …`), Ch. 9 (the cusp point of a map, where the
+fold coefficient vanishes and the cubic normal form `η ↦ η + c η³` decides) and §5.4 (restricted
+normalized maps by the projection method: `(1/2)⟨w, B(v, v)⟩` and
+`(1/6)(⟨w, C(v, v, v)⟩ + 3⟨w, B(v, k)⟩)`); Carr, *Applications of Centre Manifold Theory* (1981),
+Ch. 2; Iooss, *Bifurcation of Maps and Applications* (1979); the open items of
+`theorem/Periodic/CriticalMultiplier.lean` (Scope: "The multiplier `+1` of a nonconstant orbit is
+not reduced") and `theorem/Periodic/FlipOrbit.lean` (Scope: "A nonconstant orbit with the
+multiplier `+1` … needs the centre-manifold reduction at `+1`, which `FlipReduction` does not
+provide").
 
 Results.
 * The splitting at `μ`: `deflateAt` (`L = M − μ v wᵀ`), `reflect` (`M_μ = M − (1 + μ) v wᵀ`),
@@ -91,8 +92,8 @@ Results.
   exponentially, stable), `unstable_of_cubicCoeff_pos` (`a = 0`, `b > 0`: unstable), and their
   matrix forms `unstable_of_foldCoeff_ne_zero_matrix`,
   `localAsymptoticStable_of_cubicCoeff_neg_matrix`, `unstable_of_cubicCoeff_pos_matrix`.
-* `foldCoeffs_eq_zero_of_fixedPoints` — fixed points accumulating at `p` force `a = 0`, `b = 0`
-  and exclude local asymptotic stability.
+* `not_localAsymptoticStable_of_fixedPoints` (fixed points accumulating at `p` exclude local
+  asymptotic stability), `foldCoeffs_eq_zero_of_fixedPoints` — they force `a = 0`, `b = 0`.
 
 Corrections.
 None: an extension (the critical multiplier `+1` of a periodic solution of a non-autonomous
@@ -827,6 +828,18 @@ has `a = c = 0`. -/
       _ = (|K'| * |u|) * |u| ^ 3 := by ring
   exact le_of_mul_le_mul_right t (by positivity)
 
+/-- Fixed points other than `p` accumulating at `p` exclude local asymptotic stability: their
+orbits are constant. -/
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_fixedPoints {P : ℝⁿ → ℝⁿ}
+    {p : ℝⁿ} (hfix : ∀ δ > 0, ∃ q, P q = q ∧ q ≠ p ∧ ‖q - p‖ < δ) :
+    ¬ Map.LocalAsymptoticStable P p := by
+  rintro ⟨-, c, hc, hatt⟩
+  obtain ⟨q, hq, hqp, hqd⟩ := hfix c hc
+  have h1 := hatt q hqd
+  have h2 : (fun k : ℕ => P^[k] q) = fun _ => q := funext fun k => Function.iterate_fixed hq k
+  rw [h2] at h1
+  exact hqp (tendsto_nhds_unique tendsto_const_nhds h1)
+
 /-- **Accumulating fixed points: the coefficients vanish.** Under the hypotheses of
 `unstable_of_foldCoeff_ne_zero` (a simple multiplier `+1` with stable complement), if fixed points
 of `P` other than `p` accumulate at `p` — as along a curve of fixed points, such as a periodic
@@ -892,15 +905,9 @@ map fixes their centre coordinates. -/
   have hk₀' : k₀ - M k₀ = specProj v w (P₂ v v) := by
     rw [← hk₀, deflateAt_apply, hwk₀, mul_zero, zero_smul, sub_zero]
   have ha := (key k₀ hk₀').1
-  refine ⟨ha, fun k₂ hk₂ => ?_, ?_⟩
-  · have := (key k₂ hk₂).2
-    rw [ha, mul_zero, sub_zero] at this
-    exact this
-  · rintro ⟨-, c, hc, hatt⟩
-    obtain ⟨q, hq, hqp, hqd⟩ := hfix c hc
-    have h1 := hatt q hqd
-    have h2 : (fun k : ℕ => P^[k] q) = fun _ => q := funext fun k => Function.iterate_fixed hq k
-    rw [h2] at h1
-    exact hqp (tendsto_nhds_unique tendsto_const_nhds h1)
+  refine ⟨ha, fun k₂ hk₂ => ?_, not_localAsymptoticStable_of_fixedPoints hfix⟩
+  have := (key k₂ hk₂).2
+  rw [ha, mul_zero, sub_zero] at this
+  exact this
 
 end powerlib.Periodic.FoldReduction
