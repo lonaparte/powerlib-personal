@@ -165,6 +165,7 @@ import theorem.GridTiedConverter.GFL.Parametric.PLLBlock
 import theorem.GridTiedConverter.GFL.Parametric.AngleModulation
 import theorem.GridTiedConverter.GFL.Parametric.AngleModulationHopf
 import theorem.GridTiedConverter.GFL.Parametric.AngleModulationIndex
+import theorem.GridTiedConverter.GFL.Parametric.GridModulation
 import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStatic
 import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStaticFold
 import theorem.GridTiedConverter.GFL.PowerLoop.QuasiStaticFoldHopf
@@ -205,6 +206,7 @@ import theorem.GridTiedConverter.GFM.PSCVoltage
 import theorem.GridTiedConverter.GFM.PSCOrbit
 import theorem.GridTiedConverter.GFM.DVOCOrbit
 import theorem.GridTiedConverter.GFM.VoltageModulationSmooth
+import theorem.GridTiedConverter.GFM.VoltageModulationPhasor
 import theorem.GridTiedConverter.GFM.DroopVoltageOrbit
 import theorem.GridTiedConverter.GFM.MatchingVoltageOrbit
 import theorem.GridTiedConverter.GFM.GFMOrbitStability
@@ -337,6 +339,7 @@ import theorem.ParametricResonance.StableBlockNorm
 import theorem.ParametricResonance.StableBasis
 import theorem.ParametricResonance.StableHurwitz
 import theorem.ParametricResonance.HurwitzForcedOrbit
+import theorem.ParametricResonance.SmoothForcedOrbitVec
 import theorem.ParametricResonance.SmoothOrbitStability
 import theorem.ParametricResonance.FieldTransfer
 import theorem.ParametricResonance.TongueQuadratic
