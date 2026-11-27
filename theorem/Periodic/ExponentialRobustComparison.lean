@@ -137,7 +137,6 @@ bound for `K`. -/
     (hτ : 0 ≤ τ) (i j : X) : |(NormedSpace.exp (τ • A)) i j| ≤ K * Real.exp (-(α * τ)) :=
   (ParametricResonance.Averaging.entry_le_norm _ i j).trans (hexp τ hτ)
 
-
 /-! ## Elementary bounds -/
 
 /-- `x e^{1 − x} ≤ 1`: for `c > 0` and every `α`, `α e^{1 − α/c} ≤ c`. -/
