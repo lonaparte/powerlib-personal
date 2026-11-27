@@ -31,7 +31,10 @@ Scope.
   curve with defect `O(t⁵)`, for instance the polynomial `η(t) = t² k₂ + t³ k₃ + t⁴ k₄` of the
   projection method. Their expression through the multilinear Taylor coefficients of `P` (the
   homological equations for `k₂, k₃, k₄` and the resulting formulas for `c₄`, `c₅`) is not
-  derived here: the theorems take the expansion of the scalar map as a hypothesis.
+  derived here: the theorems take the expansion of the scalar map as a hypothesis. It is derived,
+  from a fifth-order expansion of `P` and without the flatness hypothesis on `N`, in
+  `theorem/Map/DegenerateFlipCoefficients.lean` (`localAsymptoticStable_of_degenerateFlip_taylor`,
+  `unstable_of_degenerateFlip_taylor`).
 * `c₅ + 3c₂c₄ − 2c₂⁴ = 0` is not decided (the next odd order is needed, and no finite order
   suffices in general: `Map.flat_jet_undecided`).
 * Generic; nothing here describes a physical system (foundation).

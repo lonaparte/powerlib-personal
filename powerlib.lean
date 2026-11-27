@@ -57,6 +57,8 @@ import theorem.Map.CenterManifold
 import theorem.Map.CenterReduction
 import theorem.Map.AsymptoticPhase
 import theorem.Map.DegenerateFlip
+import theorem.Map.DegenerateFlipCoefficients
+import theorem.Map.AsymptoticPhaseRegularity
 import theorem.LTI.Oscillator2
 import theorem.LTI.SecondOrderResonance
 import theorem.LTI.BoundedForcing

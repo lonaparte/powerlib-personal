@@ -39,7 +39,8 @@ Scope.
   only with constants growing like `((‖A‖ + ε)/(a − ε))^N`, and Lipschitz (or `C¹`) stable
   fibres are known under smoothness and bunching hypotheses that are not assumed here (stable
   foliations are in general only Hölder continuous). Continuity, `φ(0) = 0` and the linear bound
-  at the graph are what the stability transfers use.
+  at the graph are what the stability transfers use. Hölder continuity with an explicit exponent
+  is `theorem/Map/AsymptoticPhaseRegularity.lean` (`norm_asymptoticPhase_sub_le_rpow`).
 * The local form (`exists_local_asymptoticPhase`): for nonlinearities with strict derivative `0`
   at `0`, the cut-off of `exists_local_centreManifold`; every orbit of the original map that stays
   in the ball `‖p‖ ≤ ρ` is shadowed by an orbit of the cut-off map on the graph.
