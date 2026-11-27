@@ -59,7 +59,8 @@ open in `theorem/Periodic/LevelsNonlinear.lean` and
 second-order perturbation of a forced periodic orbit and the variational equation along it
 (Nayfeh–Mook, *Nonlinear Oscillations*, Ch. 5); `ForcedOrbit.smooth_estimates`,
 `ForcedOrbit.smooth_link`, `ForcedOrbitSecond.orbit_boundary_floquet`,
-`Periodic.exp_stable_of_floquet`, `Periodic.unstable_of_floquet`.
+`Periodic.exp_stable_of_floquet`, `Periodic.unstable_of_floquet`, `Periodic.Levels.pump_drive`,
+`Boundary.forced_threshold_boundary_iff`.
 
 Results.
 * `taylor_two` — `‖G(q₀ + h) − G(q₀) − G'(q₀)h − ½G''(q₀)hh‖ ≤ L‖h‖³`.
@@ -72,7 +73,8 @@ Results.
   `second_response_harmonic` — `y₂ = w₀ + Re{w₁ e^{jωt}} + Re{w₂ e^{2jωt}}` by harmonic balance.
 * `smooth_orbit_boundary_floquet` — level L1 on the boundary, decided by the sign of `Δ`.
 * `smooth_orbit_L0` — from the multipliers of any small periodic solution to its nonlinear
-  stability or instability; `smooth_orbit_boundary` — level L0 on the boundary.
+  stability or instability; `smooth_orbit_boundary` — level L0 on the boundary;
+  `smooth_orbit_at_threshold` — the same at the drive threshold `|V̂||g₁| = 2|λ₁|`.
 
 Corrections.
 None: an extension (the boundary `|V̂||g₁| = 2|λ₁|` of `Periodic.Levels`).
@@ -821,6 +823,53 @@ perturbation acting on the first-order response the frequency `ω`. -/
     have h₀' : matX F q0 *ᵥ w₀ = -smH0 F q0 Vh z := eq_neg_of_add_eq_zero_left h₀
     rw [h₀']
     abel
+
+/-- **The forced operating point at the drive threshold `|V̂||g₁| = 2|λ₁|`, decided at second
+order** (levels L1 and L0). `z₁` is the forced response per unit drive amplitude, `g₁ = u A₁(1) r̄`
+the pump per unit amplitude, `λ₁ = u A₀' r` with `Re λ₁ < 0`; at the threshold
+`|V̂| |g₁| = 2 |λ₁|` left open by `Periodic.Levels.orbit_stable_below_threshold` /
+`orbit_unstable_above_threshold` (`Boundary.forced_threshold_boundary_iff`), with the second-order
+response `y₂` of the drive amplitude `V̂` and `Δ = orbitMixed P Q A_s ω A₀' A₁(V̂) A₂`:
+`Δ > 0` gives a locally exponentially stable and `Δ < 0` an unstable forced orbit, for all small
+`ε > 0`. -/
+@[tmio T, powerlib_foundation] theorem smooth_orbit_at_threshold {Y : Type*} [Fintype Y]
+    [DecidableEq Y] {F : (X → ℝ) × ℝ → X → ℝ} {q0 : (X → ℝ) × ℝ} (hF : ContDiffAt ℝ 4 F q0)
+    (hF0 : F q0 = 0) {Vh ω : ℝ} (hω : 0 < ω)
+    {P : Matrix X (Fin 2 ⊕ Y) ℝ} {Q : Matrix (Fin 2 ⊕ Y) X ℝ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (As : Matrix Y Y ℝ) (hA0 : Q * matX F q0 * P = fromBlocks (base 0 (ω / 2)) 0 0 As)
+    (hsr : spectralRadius ℂ ((expS As (2 * Real.pi / ω)).map (algebraMap ℝ ℂ)) < 1) {z₁ : X → ℂ}
+    (hz₁ : ((ω : ℂ) * I) • z₁ - (matX F q0).map (algebraMap ℝ ℂ) *ᵥ z₁ =
+      fun i => ((fderiv ℝ F q0 (0, 1) i : ℝ) : ℂ))
+    (A0' : Matrix X X ℝ) {y₂ : ℝ → X → ℝ} (h₂yp : ∀ t, y₂ (t + 2 * Real.pi / ω) = y₂ t)
+    (h₂d : ∀ t, HasDerivAt y₂ (matX F q0 *ᵥ y₂ t + smH2 F q0 Vh ω A0' ((Vh : ℂ) • z₁) t) t)
+    (hs : (physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)).re < 0)
+    (hdrive : |Vh| * ‖physLeft Q ⬝ᵥ (smA1 F q0 1 z₁ *ᵥ star (physRight P))‖ =
+      2 * ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖) :
+    ∃ c, 0 ≤ c ∧
+      (0 < orbitMixed P Q As ω A0' (smA1 F q0 Vh ((Vh : ℂ) • z₁))
+          (fun t => smDx F q0 (y₂ t) + smB2 F q0 Vh ω ((Vh : ℂ) • z₁) t) →
+        ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ, (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧
+          (∀ t, ‖y t‖ ≤ c * ε) ∧ (∀ t, HasDerivAt y (F (q0.1 + y t,
+            q0.2 + ε * (Vh * Real.cos (ω * t))) + ε • (A0' *ᵥ y t)) t) ∧
+          ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → X → ℝ),
+            IsIntegralCurveOn x (fun t v => F (q0.1 + v, q0.2 + ε * (Vh * Real.cos (ω * t))) +
+              ε • (A0' *ᵥ v)) (Ici s) →
+            ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+              ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖) ∧
+      (orbitMixed P Q As ω A0' (smA1 F q0 Vh ((Vh : ℂ) • z₁))
+          (fun t => smDx F q0 (y₂ t) + smB2 F q0 Vh ω ((Vh : ℂ) • z₁) t) < 0 →
+        ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → X → ℝ, (∀ t, y (t + 2 * Real.pi / ω) = y t) ∧
+          (∀ t, ‖y t‖ ≤ c * ε) ∧ (∀ t, HasDerivAt y (F (q0.1 + y t,
+            q0.2 + ε * (Vh * Real.cos (ω * t))) + ε • (A0' *ᵥ y t)) t) ∧
+          ∀ s, ∃ η, 0 < η ∧ ∀ δ, 0 < δ → ∃ (x : ℝ → X → ℝ) (t : ℝ), s ≤ t ∧
+            IsIntegralCurveOn x (fun t v => F (q0.1 + v, q0.2 + ε * (Vh * Real.cos (ω * t))) +
+              ε • (A0' *ᵥ v)) (Icc s t) ∧ ‖x s - y s‖ < δ ∧ η ≤ ‖x t - y t‖) := by
+  have hbd : ‖physLeft Q ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ physRight P)‖ ^ 2 =
+      ‖physLeft Q ⬝ᵥ (smA1 F q0 Vh ((Vh : ℂ) • z₁) *ᵥ star (physRight P)) / 2‖ ^ 2 := by
+    rw [Periodic.Levels.pump_drive]
+    exact ((Boundary.forced_threshold_boundary_iff _ _ Vh).mpr hdrive).symm
+  exact smooth_orbit_boundary hF hF0 hω hPQ hQP As hA0 hsr
+    (Periodic.Levels.forced_response_drive hz₁ Vh) A0' h₂yp h₂d hs hbd
 
 end Smooth
 
