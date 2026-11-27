@@ -521,4 +521,318 @@ integral of the periodic part. -/
 
 end Reduction
 
+/-! ## Exact transition matrices of two special standard forms -/
+
+section Exact
+
+open _root_.powerlib.ParametricResonance.NormalForm (quarter rot)
+
+@[tmio T, powerlib_foundation] private theorem quarter_mul_quarter₂ :
+    quarter * quarter = -(1 : Matrix (Fin 2) (Fin 2) ℝ) := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [quarter, Matrix.mul_apply, Fin.sum_univ_two]
+
+@[tmio T, powerlib_foundation] private theorem quarter_mul_rot (θ : ℝ) :
+    quarter * rot θ = rot θ * quarter := by
+  simp only [rot, Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul,
+    Matrix.mul_one, Matrix.one_mul]
+
+/-- **A rotation-commuting standard form is solved exactly.** If `A(t) = α(t) I + β(t) J`
+(continuous, bounded) with primitives `p' = α`, `q' = β`, `p(0) = q(0) = 0`, then
+`Φ(t, 0) = e^{p(t)} R(q(t))` for `t ≥ 0`. -/
+@[tmio T, powerlib_foundation] theorem transition_rotation_commuting
+    {A : ℝ → Matrix (Fin 2) (Fin 2) ℝ} {B : ℝ} (hA : Continuous A) (hB : ∀ r, ‖A r‖ ≤ B)
+    {α β p q : ℝ → ℝ} (hAeq : ∀ r, A r = α r • (1 : Matrix (Fin 2) (Fin 2) ℝ) + β r • quarter)
+    (hp : ∀ r, HasDerivAt p (α r) r) (hq : ∀ r, HasDerivAt q (β r) r) (hp0 : p 0 = 0)
+    (hq0 : q 0 = 0) {t : ℝ} (ht : 0 ≤ t) :
+    Periodic.transition A t 0 = Real.exp (p t) • rot (q t) := by
+  have hY : IsIntegralCurveOn (fun r => Real.exp (p r) • rot (q r)) (Periodic.matField A)
+      (Ici 0) := by
+    intro r _
+    have hrot : HasDerivAt (fun r => rot (q r)) (β r • (rot (q r) * quarter)) r := by
+      have h := ((Real.hasDerivAt_cos (q r)).comp r (hq r)).smul_const
+        (1 : Matrix (Fin 2) (Fin 2) ℝ) |>.add
+        (((Real.hasDerivAt_sin (q r)).comp r (hq r)).smul_const quarter)
+      refine h.congr_deriv ?_
+      simp only [rot, Matrix.add_mul, Matrix.smul_mul, Matrix.one_mul, quarter_mul_quarter₂,
+        smul_neg, smul_add, smul_smul]
+      module
+    have hexp : HasDerivAt (fun r => Real.exp (p r)) (Real.exp (p r) * α r) r :=
+      (Real.hasDerivAt_exp (p r)).comp r (hp r)
+    have h := hexp.smul hrot
+    have key : Real.exp (p r) • (β r • (rot (q r) * quarter)) +
+        (Real.exp (p r) * α r) • rot (q r) = Periodic.matField A r (Real.exp (p r) • rot (q r)) := by
+      simp only [Periodic.matField, hAeq r, Matrix.add_mul, Matrix.smul_mul, Matrix.mul_smul,
+        Matrix.one_mul, quarter_mul_rot, smul_smul]
+      module
+    rw [key] at h
+    exact h.hasDerivWithinAt
+  have h := Periodic.transition_unique hA hB hY t ht
+  simp only [hp0, hq0, Real.exp_zero, one_smul] at h
+  have hr0 : rot 0 = 1 := by simp [rot]
+  rw [hr0, Matrix.mul_one] at h
+  exact h.symm
+
+/-- **A standard form `κ M + α(t) I` with `M² = τ M` is solved exactly.** If `A(t) = κ M + α(t) I`
+(continuous, bounded) with `M * M = τ M`, `p' = α`, `p(0) = 0`, and `f' = κ(1 + τ f)`,
+`f(0) = 0`, then `Φ(t, 0) = e^{p(t)} (I + f(t) M)` for `t ≥ 0`. -/
+@[tmio T, powerlib_foundation] theorem transition_rank_one
+    {A : ℝ → Matrix (Fin 2) (Fin 2) ℝ} {B : ℝ} (hA : Continuous A) (hB : ∀ r, ‖A r‖ ≤ B)
+    {M : Matrix (Fin 2) (Fin 2) ℝ} {τ κ : ℝ} (hMM : M * M = τ • M) {α p f : ℝ → ℝ}
+    (hAeq : ∀ r, A r = κ • M + α r • (1 : Matrix (Fin 2) (Fin 2) ℝ))
+    (hp : ∀ r, HasDerivAt p (α r) r) (hf : ∀ r, HasDerivAt f (κ * (1 + τ * f r)) r)
+    (hp0 : p 0 = 0) (hf0 : f 0 = 0) {t : ℝ} (ht : 0 ≤ t) :
+    Periodic.transition A t 0 = Real.exp (p t) • (1 + f t • M) := by
+  have hY : IsIntegralCurveOn (fun r => Real.exp (p r) • (1 + f r • M)) (Periodic.matField A)
+      (Ici 0) := by
+    intro r _
+    have hexp : HasDerivAt (fun r => Real.exp (p r)) (Real.exp (p r) * α r) r :=
+      (Real.hasDerivAt_exp (p r)).comp r (hp r)
+    have hfM : HasDerivAt (fun r => 1 + f r • M) ((κ * (1 + τ * f r)) • M) r :=
+      ((hf r).smul_const M).const_add 1
+    have h := hexp.smul hfM
+    have key : Real.exp (p r) • ((κ * (1 + τ * f r)) • M) +
+        (Real.exp (p r) * α r) • (1 + f r • M) =
+          Periodic.matField A r (Real.exp (p r) • (1 + f r • M)) := by
+      simp only [Periodic.matField, hAeq r, Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul,
+        Matrix.mul_smul, Matrix.one_mul, Matrix.mul_one, hMM, smul_smul, smul_add]
+      module
+    rw [key] at h
+    exact h.hasDerivWithinAt
+  have h := Periodic.transition_unique hA hB hY t ht
+  simp only [hp0, hf0, Real.exp_zero, one_smul, zero_smul, add_zero, Matrix.mul_one] at h
+  exact h.symm
+
+end Exact
+
+/-! ## The two-state 2:1 system: structure of the standard form -/
+
+section Structure
+
+open TwoToOne (full stdForm left right refl1 refl2)
+open SecondOrder (antiPump)
+open _root_.powerlib.ParametricResonance.NormalForm (quarter rot)
+
+/-- The rotational fundamental coefficient `b = (a₁₀ − a₀₁)/2` of a modulation matrix `A₁`: the
+coefficient of the quarter turn `J` in `A₁` (`A₁ = a I + b J + …`); in the rotating frame the
+fundamental harmonic of the standard form contributes `Re{b e^{jωt}} J`. -/
+def rotCoeff (A : Matrix (Fin 2) (Fin 2) ℂ) : ℂ := (A 1 0 - A 0 1) / 2
+
+/-- **Without the anti-resonant pump the second harmonic vanishes.** If `g' = 0`
+(`SecondOrder.antiPump A = 0`), the rotating-frame matrix is
+`F(t) = M + Re{a e^{jωt}} I + Re{b e^{jωt}} J`, `M = slowFlowMatrix s d (g/2)`,
+`a = (a₀₀ + a₁₁)/2`, `b = rotCoeff A`: all its oscillating terms commute with `J`. -/
+@[tmio T, powerlib_foundation] theorem stdForm_of_antiPump_eq_zero (s d ω : ℝ)
+    {A : Matrix (Fin 2) (Fin 2) ℂ} (h : antiPump A = 0) (t : ℝ) :
+    stdForm s d ω A t = slowFlowMatrix s d (Element.pump A left right / 2) +
+      (((A 0 0).re + (A 1 1).re) / 2 * Real.cos (ω * t) -
+          ((A 0 0).im + (A 1 1).im) / 2 * Real.sin (ω * t)) • (1 : Matrix (Fin 2) (Fin 2) ℝ) +
+      ((rotCoeff A).re * Real.cos (ω * t) - (rotCoeff A).im * Real.sin (ω * t)) • quarter := by
+  rw [SecondOrder.antiPump_eq] at h
+  have hre := congrArg Complex.re h
+  have him := congrArg Complex.im h
+  simp at hre him
+  have c1 : ((A 0 0).re - (A 1 1).re + (A 0 1).im + (A 1 0).im) / 4 = 0 := by linarith
+  have c2 : ((A 0 1).re + (A 1 0).re - (A 0 0).im + (A 1 1).im) / 4 = 0 := by linarith
+  have c3 : ((A 0 1).im + (A 1 0).im + (A 0 0).re - (A 1 1).re) / 4 = 0 := by linarith
+  rw [TwoToOne.stdForm_eq, c1, c2, c3]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [rotCoeff, quarter] <;> ring
+
+/-- With `g = g' = 0` and `s = d = 0` the rotating-frame matrix is `Re{a e^{jωt}} I +
+Re{b e^{jωt}} J`. -/
+@[tmio T, powerlib_foundation] private theorem stdForm_commuting (ω : ℝ)
+    {A : Matrix (Fin 2) (Fin 2) ℂ} (hg : Element.pump A left right = 0) (h : antiPump A = 0)
+    (t : ℝ) :
+    stdForm 0 0 ω A t =
+      (((A 0 0).re + (A 1 1).re) / 2 * Real.cos (ω * t) -
+          ((A 0 0).im + (A 1 1).im) / 2 * Real.sin (ω * t)) • (1 : Matrix (Fin 2) (Fin 2) ℝ) +
+      ((rotCoeff A).re * Real.cos (ω * t) - (rotCoeff A).im * Real.sin (ω * t)) • quarter := by
+  rw [stdForm_of_antiPump_eq_zero 0 0 ω h, hg, zero_div]
+  have h0 : slowFlowMatrix 0 0 0 = 0 := by
+    ext i j; fin_cases i <;> fin_cases j <;> simp [slowFlowMatrix]
+  rw [h0, zero_add]
+
+/-- The primitive of `c cos(ωt) − e sin(ωt)` vanishing at `0`. -/
+@[tmio T, powerlib_foundation] private theorem hasDerivAt_trigPrim {ω : ℝ} (hω : ω ≠ 0)
+    (c e : ℝ) (r : ℝ) :
+    HasDerivAt (fun t => (c * Real.sin (ω * t) - e * (1 - Real.cos (ω * t))) / ω)
+      (c * Real.cos (ω * r) - e * Real.sin (ω * r)) r := by
+  have h1 : HasDerivAt (fun t => ω * t) ω r := by simpa using (hasDerivAt_id r).const_mul ω
+  have h := ((((Real.hasDerivAt_sin (ω * r)).comp r h1).const_mul c).sub
+    ((((Real.hasDerivAt_cos (ω * r)).comp r h1).const_sub 1).const_mul e)).div_const ω
+  refine h.congr_deriv ?_
+  field_simp
+
+@[tmio T, powerlib_foundation] private theorem trigPrim_period {ω : ℝ} (hω : 0 < ω) (c e : ℝ) :
+    (c * Real.sin (ω * (2 * Real.pi / ω)) - e * (1 - Real.cos (ω * (2 * Real.pi / ω)))) / ω = 0 := by
+  have h : ω * (2 * Real.pi / ω) = 2 * Real.pi := by field_simp
+  rw [h, Real.sin_two_pi, Real.cos_two_pi]
+  ring
+
+end Structure
+
+/-! ## The undamped two-state system on its boundary at third order -/
+
+section Undamped
+
+open TwoToOne (full stdForm left right)
+open SecondOrder (antiPump)
+open _root_.powerlib.ParametricResonance.NormalForm (quarter rot)
+
+/-- **`tr Φ + 2 = det Y` for the undamped system.** For `TwoToOne.full 0 d ω A ε` (`s = 0`) the
+monodromy is `Φ = −Φ_y = −(I + Y)` with `det Φ = 1` (Liouville), so
+`tr Φ + 2 = det(Φ_y − I)` exactly, for every `ε`. -/
+@[tmio T, powerlib_foundation] theorem zero_damping_trace_add_two (d : ℝ) {ω : ℝ} (hω : 0 < ω)
+    (A : Matrix (Fin 2) (Fin 2) ℂ) (ε : ℝ) :
+    (Periodic.monodromy (full 0 d ω A ε) (2 * Real.pi / ω) 0).trace + 2 =
+      (Periodic.monodromy (fun t => ε • stdForm 0 d ω A t) (2 * Real.pi / ω) 0 - 1).det := by
+  have hm := TwoToOne.monodromy_full 0 d hω A ε
+  have hdet := (ZeroDamping.zero_damping_reciprocal d hω A ε).1
+  set Py := Periodic.monodromy (fun t => ε • stdForm 0 d ω A t) (2 * Real.pi / ω) 0
+  have e : Periodic.monodromy (full 0 d ω A ε) (2 * Real.pi / ω) 0 = -(1 + (Py - 1)) := by
+    rw [hm, add_sub_cancel]
+  rw [e] at hdet ⊢
+  exact trace_neg_add_two hdet
+
+/-- **The undamped boundary decided at third order.** For `TwoToOne.full 0 d ω A ε` on the
+boundary `d² = |g/2|²` with `d |g'|² = 0` (where the second-order test of
+`ZeroDamping.zero_damping_trace` is void), with `F = TwoToOne.stdForm 0 d ω A`,
+`M = slowFlowMatrix 0 d (g/2)`, `T = 2π/ω`, `N₂ = secondTerm F T`, `N₃ = thirdTerm F T`:
+`tr Φ + 2 = ε⁴ K + O(ε⁵)`, `K = det N₂ + T mixedDet(M, N₃)`, and for all small `ε > 0`
+`K > 0` gives `|tr Φ| < 2` (elliptic), `K < 0` gives `tr Φ < −2` (a real multiplier `< −1`). -/
+@[tmio T, powerlib_foundation] theorem zero_damping_third_order {d ω : ℝ} (hω : 0 < ω)
+    (A : Matrix (Fin 2) (Fin 2) ℂ) (hb : d ^ 2 = ‖Element.pump A left right / 2‖ ^ 2)
+    (hdg : d * ‖antiPump A‖ ^ 2 = 0) :
+    (0 < (secondTerm (stdForm 0 d ω A) (2 * Real.pi / ω)).det + 2 * Real.pi / ω *
+        mixedDet (slowFlowMatrix 0 d (Element.pump A left right / 2))
+          (thirdTerm (stdForm 0 d ω A) (2 * Real.pi / ω)) →
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+        |(Periodic.monodromy (full 0 d ω A ε) (2 * Real.pi / ω) 0).trace| < 2) ∧
+    ((secondTerm (stdForm 0 d ω A) (2 * Real.pi / ω)).det + 2 * Real.pi / ω *
+        mixedDet (slowFlowMatrix 0 d (Element.pump A left right / 2))
+          (thirdTerm (stdForm 0 d ω A) (2 * Real.pi / ω)) < 0 →
+      ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+        (Periodic.monodromy (full 0 d ω A ε) (2 * Real.pi / ω) 0).trace < -2) := by
+  set T := 2 * Real.pi / ω with hTdef
+  have hT : 0 < T := by positivity
+  set g := Element.pump A left right with hg
+  set F := stdForm 0 d ω A with hF
+  set Mb := slowFlowMatrix 0 d (g / 2) with hMb
+  obtain ⟨MF, hMF0, hMF⟩ := TwoToOne.exists_bound_stdForm 0 d hω A
+  have havg : ∫ r in (0 : ℝ)..T, F r = T • Mb := TwoToOne.integral_stdForm 0 d hω A
+  have hFc : Continuous F := TwoToOne.continuous_stdForm 0 d ω A
+  set Py : ℝ → Matrix (Fin 2) (Fin 2) ℝ := fun ε => Periodic.monodromy (fun t => ε • F t) T 0
+    with hPy
+  have hmono : ∀ ε, Periodic.monodromy (full 0 d ω A ε) T 0 = -Py ε := fun ε =>
+    TwoToOne.monodromy_full 0 d hω A ε
+  have htrace : ∀ ε, (Periodic.monodromy (full 0 d ω A ε) T 0).trace = -(Py ε).trace :=
+    fun ε => by rw [hmono, Matrix.trace_neg]
+  have hdetPy : ∀ ε, 0 < ε → ε ≤ 1 → (Py ε).det = 1 := fun ε _ _ => by
+    have h := (ZeroDamping.zero_damping_reciprocal d hω A ε).1
+    rw [hmono, Matrix.det_neg, Fintype.card_fin] at h
+    simpa using h
+  set K₃ := MF * T * (MF * T * (MF * T * (MF * T * (‖(1 : Matrix (Fin 2) (Fin 2) ℝ)‖ *
+    Real.exp (MF * T))))) with hK₃
+  have hK₃0 : 0 ≤ K₃ := by positivity
+  have hexp : ∀ ε, 0 < ε → ε ≤ 1 → ‖Py ε - 1 - (ε * T) • Mb - ε ^ 2 • secondTerm F T -
+      ε ^ 3 • thirdTerm F T‖ ≤ K₃ * ε ^ 4 := fun ε h0 h1 => by
+    have h := monodromy_expansion_three (F := F) hFc hMF hMF0 hT.le havg h0.le h1
+    rw [← hK₃] at h
+    calc _ ≤ ε ^ 4 * K₃ := h
+      _ = K₃ * ε ^ 4 := mul_comm _ _
+  have hdetM : Mb.det = 0 := by rw [hMb, det_slowFlowMatrix, ← hb]; ring
+  have hmix : mixedDet Mb (secondTerm F T) = 0 := by
+    rw [hMb, hF, SecondOrder.mixedDet_secondTerm_stdForm 0 d hω A]
+    have e : 2 * Real.pi / ω * d * ‖antiPump A‖ ^ 2 / (4 * ω) =
+        2 * Real.pi / ω / (4 * ω) * (d * ‖antiPump A‖ ^ 2) := by ring
+    rw [e, hdg]; ring
+  obtain ⟨j1, j2⟩ := conservative_jury_three (P := Py) hT hK₃0 hexp hdetPy hdetM hmix
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · filter_upwards [j1 h] with ε hε
+    rwa [htrace, abs_neg]
+  · filter_upwards [j2 h] with ε hε
+    rw [htrace]; linarith
+
+/-- **The fourth-order coefficient at zero detuning.** For `s = d = 0` the boundary forces
+`g = 0`; then `M = 0`, the second Picard term is `N₂ = −(T|g'|²/(8ω)) J`
+(`SecondOrder.secondTerm_stdForm`) and `K = det N₂ + T mixedDet(M, N₃) = (T|g'|²/(8ω))²`. -/
+@[tmio T, powerlib_foundation] theorem zero_detuning_coefficient {ω : ℝ} (hω : 0 < ω)
+    {A : Matrix (Fin 2) (Fin 2) ℂ} (hg : Element.pump A left right = 0) :
+    secondTerm (stdForm 0 0 ω A) (2 * Real.pi / ω) =
+        -((2 * Real.pi / ω * ‖antiPump A‖ ^ 2 / (8 * ω)) • quarter) ∧
+      (secondTerm (stdForm 0 0 ω A) (2 * Real.pi / ω)).det + 2 * Real.pi / ω *
+          mixedDet (slowFlowMatrix 0 0 (Element.pump A left right / 2))
+            (thirdTerm (stdForm 0 0 ω A) (2 * Real.pi / ω)) =
+        (2 * Real.pi / ω * ‖antiPump A‖ ^ 2 / (8 * ω)) ^ 2 := by
+  have h0 : slowFlowMatrix 0 0 0 = 0 := by
+    ext i j; fin_cases i <;> fin_cases j <;> simp [slowFlowMatrix]
+  have hN : secondTerm (stdForm 0 0 ω A) (2 * Real.pi / ω) =
+      -((2 * Real.pi / ω * ‖antiPump A‖ ^ 2 / (8 * ω)) • quarter) := by
+    rw [SecondOrder.secondTerm_stdForm 0 0 hω A, hg, zero_div, h0]
+    simp
+  refine ⟨hN, ?_⟩
+  rw [hN, hg, zero_div, h0]
+  simp [mixedDet, Matrix.det_fin_two, quarter]
+  ring
+
+/-- **Zero damping, zero detuning, `g' ≠ 0`: marginally stable.** For `TwoToOne.full 0 0 ω A ε` on
+the boundary (`g = 0`) with anti-resonant pump `g' ≠ 0`, for all small `ε > 0`: every Floquet
+multiplier is non-real on the unit circle, the monodromy is neither Schur stable nor Floquet
+unstable, every solution is bounded and none decays (`K = (T|g'|²/(8ω))² > 0`). -/
+@[tmio T, powerlib_foundation] theorem zero_detuning_marginal {ω : ℝ} (hω : 0 < ω)
+    {A : Matrix (Fin 2) (Fin 2) ℂ} (hg : Element.pump A left right = 0) (hg' : antiPump A ≠ 0) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      (∀ μ ∈ spectrum ℂ ((Periodic.monodromy (full 0 0 ω A ε) (2 * Real.pi / ω) 0).map
+          (algebraMap ℝ ℂ)), ‖μ‖ = 1 ∧ μ.im ≠ 0) ∧
+        ¬ LTI.SchurStable (Periodic.monodromy (full 0 0 ω A ε) (2 * Real.pi / ω) 0) ∧
+        ¬ Periodic.FloquetUnstable (full 0 0 ω A ε) (2 * Real.pi / ω) ∧
+        (∃ K, ∀ t, 0 ≤ t → ∀ v : Fin 2 → ℝ,
+          ‖Periodic.transition (full 0 0 ω A ε) t 0 *ᵥ v‖ ≤ K * ‖v‖) ∧
+        ∃ c > 0, ∀ (n : ℕ) (v : Fin 2 → ℝ),
+          c * ‖v‖ ≤ ‖Periodic.transition (full 0 0 ω A ε) (n * (2 * Real.pi / ω)) 0 *ᵥ v‖ := by
+  have hb : (0 : ℝ) ^ 2 = ‖Element.pump A left right / 2‖ ^ 2 := by rw [hg]; simp
+  have hK := (zero_detuning_coefficient hω hg).2
+  have hpos : 0 < 2 * Real.pi / ω * ‖antiPump A‖ ^ 2 / (8 * ω) := by
+    have := norm_pos_iff.mpr hg'
+    positivity
+  have htr := (zero_damping_third_order hω A hb (by ring)).1 (by rw [hK]; positivity)
+  filter_upwards [htr] with ε hε
+  exact ZeroDamping.elliptic_monodromy (TwoToOne.continuous_full 0 0 ω A ε)
+    (TwoToOne.periodic_full 0 0 hω.ne' A ε) (by positivity)
+    (ZeroDamping.zero_damping_reciprocal 0 hω A ε).1 hε
+
+/-- **Zero damping, zero detuning, `g = g' = 0`: the monodromy is exactly `−I`.** Then the
+rotating-frame matrix `Re{a e^{jωt}} I + Re{b e^{jωt}} J` commutes with itself at all times and
+its transition matrix is `e^{εp(t)} R(εq(t))` with `p(T) = q(T) = 0`
+(`transition_rotation_commuting`): for every `ε` the monodromy of `TwoToOne.full 0 0 ω A ε` is
+`−I` (every solution `2T`-periodic). -/
+@[tmio T, powerlib_foundation] theorem zero_detuning_exact {ω : ℝ} (hω : 0 < ω)
+    {A : Matrix (Fin 2) (Fin 2) ℂ} (hg : Element.pump A left right = 0) (hg' : antiPump A = 0)
+    (ε : ℝ) :
+    Periodic.monodromy (full 0 0 ω A ε) (2 * Real.pi / ω) 0 = -1 := by
+  set T := 2 * Real.pi / ω with hTdef
+  have hT : 0 < T := by positivity
+  obtain ⟨MF, hMF0, hMF⟩ := TwoToOne.exists_bound_stdForm 0 0 hω A
+  set c₀ := ((A 0 0).re + (A 1 1).re) / 2
+  set e₀ := ((A 0 0).im + (A 1 1).im) / 2
+  set c₁ := (rotCoeff A).re
+  set e₁ := (rotCoeff A).im
+  have hB : ∀ r, ‖ε • stdForm 0 0 ω A r‖ ≤ |ε| * MF := fun r => by
+    rw [norm_smul, Real.norm_eq_abs]; exact mul_le_mul_of_nonneg_left (hMF r) (abs_nonneg ε)
+  have h := transition_rotation_commuting (A := fun r => ε • stdForm 0 0 ω A r)
+    ((TwoToOne.continuous_stdForm 0 0 ω A).const_smul ε) hB
+    (α := fun r => ε * (c₀ * Real.cos (ω * r) - e₀ * Real.sin (ω * r)))
+    (β := fun r => ε * (c₁ * Real.cos (ω * r) - e₁ * Real.sin (ω * r)))
+    (p := fun r => ε * ((c₀ * Real.sin (ω * r) - e₀ * (1 - Real.cos (ω * r))) / ω))
+    (q := fun r => ε * ((c₁ * Real.sin (ω * r) - e₁ * (1 - Real.cos (ω * r))) / ω))
+    (fun r => by rw [stdForm_commuting ω hg hg' r, smul_add, smul_smul, smul_smul])
+    (fun r => (hasDerivAt_trigPrim hω.ne' c₀ e₀ r).const_mul ε)
+    (fun r => (hasDerivAt_trigPrim hω.ne' c₁ e₁ r).const_mul ε)
+    (by simp) (by simp) hT.le
+  rw [trigPrim_period hω, trigPrim_period hω, mul_zero, Real.exp_zero, one_smul] at h
+  rw [TwoToOne.monodromy_full 0 0 hω A ε, Periodic.monodromy, zero_add, h]
+  simp [rot]
+
+end Undamped
+
 end powerlib.ParametricResonance.ThirdOrder
