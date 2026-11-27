@@ -140,7 +140,8 @@ def cubicCoeffH (α₂ ν : ℝ) (z : ℂ) (t : ℝ) : ℂ :=
 /-- The coefficient of `h̄` in the derivative of `cubicCorr`. -/
 def cubicCoeffC (α₂ ν : ℝ) (z : ℂ) (t : ℝ) : ℂ :=
   -(I * ((α₂ ^ 2 / (16 * ν ^ 3) : ℝ) : ℂ)) * (20 / 3 * z ^ 2 +
-    8 / 3 * z * (starRingEnd ℂ) z * (phase ν t)⁻¹ ^ 2 - 4 * (starRingEnd ℂ) z ^ 2 * (phase ν t)⁻¹ ^ 4)
+    8 / 3 * z * (starRingEnd ℂ) z * (phase ν t)⁻¹ ^ 2 -
+      4 * (starRingEnd ℂ) z ^ 2 * (phase ν t)⁻¹ ^ 4)
 
 /-- The (real-linear) derivative of `w ↦ cubicCorr α₂ ν w t`:
 `h ↦ cubicCoeffH · h + cubicCoeffC · h̄`. -/
@@ -149,7 +150,8 @@ def cubicDeriv (α₂ ν : ℝ) (z : ℂ) (t : ℝ) : ℂ →L[ℝ] ℂ :=
     cubicCoeffC α₂ ν z t • (Complex.conjCLE : ℂ →L[ℝ] ℂ)
 
 @[tmio T, powerlib_foundation] theorem cubicDeriv_apply (α₂ ν : ℝ) (z : ℂ) (t : ℝ) (h : ℂ) :
-    cubicDeriv α₂ ν z t h = cubicCoeffH α₂ ν z t * h + cubicCoeffC α₂ ν z t * (starRingEnd ℂ) h := by
+    cubicDeriv α₂ ν z t h =
+      cubicCoeffH α₂ ν z t * h + cubicCoeffC α₂ ν z t * (starRingEnd ℂ) h := by
   simp [cubicDeriv]
 
 /-- **The second-order cubic term is differentiable in the amplitude** with derivative
@@ -200,7 +202,8 @@ def cubicDeriv (α₂ ν : ℝ) (z : ℂ) (t : ℝ) : ℂ →L[ℝ] ℂ :=
       (by positivity)]
   have hA : ‖cubicCoeffH α₂ ν z t - cubicCoeffH α₂ ν y t‖ ≤
       α₂ ^ 2 / (16 * ν ^ 3) * (12 * (2 * r * d) + 40 / 3 * (2 * r * d) + 4 / 3 * (2 * r * d)) := by
-    have e : cubicCoeffH α₂ ν z t - cubicCoeffH α₂ ν y t = -(I * ((α₂ ^ 2 / (16 * ν ^ 3) : ℝ) : ℂ)) *
+    have e : cubicCoeffH α₂ ν z t - cubicCoeffH α₂ ν y t =
+        -(I * ((α₂ ^ 2 / (16 * ν ^ 3) : ℝ) : ℂ)) *
         (12 * (z ^ 2 - y ^ 2) * phase ν t ^ 2 +
           40 / 3 * (z * (starRingEnd ℂ) z - y * (starRingEnd ℂ) y) +
           4 / 3 * ((starRingEnd ℂ) z ^ 2 - (starRingEnd ℂ) y ^ 2) * (phase ν t)⁻¹ ^ 2) := by
@@ -215,7 +218,8 @@ def cubicDeriv (α₂ ν : ℝ) (z : ℂ) (t : ℝ) : ℂ →L[ℝ] ℂ :=
       simp only [norm_div, Complex.norm_ofNat]; gcongr
   have hB : ‖cubicCoeffC α₂ ν z t - cubicCoeffC α₂ ν y t‖ ≤
       α₂ ^ 2 / (16 * ν ^ 3) * (20 / 3 * (2 * r * d) + 8 / 3 * (2 * r * d) + 4 * (2 * r * d)) := by
-    have e : cubicCoeffC α₂ ν z t - cubicCoeffC α₂ ν y t = -(I * ((α₂ ^ 2 / (16 * ν ^ 3) : ℝ) : ℂ)) *
+    have e : cubicCoeffC α₂ ν z t - cubicCoeffC α₂ ν y t =
+        -(I * ((α₂ ^ 2 / (16 * ν ^ 3) : ℝ) : ℂ)) *
         (20 / 3 * (z ^ 2 - y ^ 2) +
           8 / 3 * (z * (starRingEnd ℂ) z - y * (starRingEnd ℂ) y) * (phase ν t)⁻¹ ^ 2 -
           4 * ((starRingEnd ℂ) z ^ 2 - (starRingEnd ℂ) y ^ 2) * (phase ν t)⁻¹ ^ 4) := by
@@ -444,7 +448,8 @@ def remLip (p : Params) (δ₀ ε m : ℝ) : ℝ :=
   have hd : ∀ s ∈ Icc (-m) m, HasDerivWithinAt (remainder p δ₀ ε Ω t) (g' s) (Icc (-m) m) s := by
     intro s _
     have h1 := ((Real.hasDerivAt_cos s).sub_const 1).add ((hasDerivAt_pow 2 s).div_const 2)
-    have h2 := (Real.hasDerivAt_sin s).sub ((hasDerivAt_id s).sub ((hasDerivAt_pow 3 s).div_const 6))
+    have h2 := (Real.hasDerivAt_sin s).sub ((hasDerivAt_id s).sub
+      ((hasDerivAt_pow 3 s).div_const 6))
     have h3 := ((h1.const_mul (Real.sin δ₀)).add (h2.const_mul (Real.cos δ₀))).const_mul
       (-(modKs p ε Ω t / p.M))
     have h4 := (((hasDerivAt_pow 2 s).const_mul (alpha2 p δ₀)).add
@@ -732,7 +737,8 @@ Lipschitz on discs with a constant linear in the coefficient changes. -/
   rw [h2]; field_simp
 
 /-- The remainder of the transformed amplitude equation relative to the limit second-order field
-`F⁰ = secondField b (ν² − d) k₁⁰ α₂⁰ α₃⁰ ν`: `ε F(w) − ε√ε D_z u(w)[vdpField(w)] + U/√ε − D_z u(w)[U]
+`F⁰ = secondField b (ν² − d) k₁⁰ α₂⁰ α₃⁰ ν`:
+`ε F(w) − ε√ε D_z u(w)[vdpField(w)] + U/√ε − D_z u(w)[U]
 − ε F⁰(w − √ε u(w))`, with the actual coefficients `k₁, α₂, α₃` in `F`, `u` and `vdpField`. -/
 def transRem (b d k₁ α₂ α₃ k10 a20 a30 ν ε : ℝ) (U : ℂ → ℝ → ℂ) (w : ℂ) (t : ℝ) : ℂ :=
   ε • secondField b (ν ^ 2 - d) k₁ α₂ α₃ ν w t -
@@ -826,7 +832,8 @@ constant, then `‖transRem‖ ≤ ε√ε M_q` and `‖transRem(w) − transRem
       rw [mul_assoc]; exact mul_le_of_le_one_left (by positivity) hs1
     linarith [hul]
   -- the cut-off limit field agrees with `F0` on the disc of radius `R'`
-  have hcutF : ∀ x, ‖x‖ ≤ R' → F0 x = QuadraticCubic.cutSecond b (ν ^ 2 - d) k10 a20 a30 ν ρ'' x t :=
+  have hcutF : ∀ x, ‖x‖ ≤ R' →
+      F0 x = QuadraticCubic.cutSecond b (ν ^ 2 - d) k10 a20 a30 ν ρ'' x t :=
     fun x hx => by
       simp only [hF0, QuadraticCubic.cutSecond, DuffingMathieu.clampC_of_norm_le (hx.trans
         (by linarith : R' ≤ ρ''))]
@@ -874,7 +881,8 @@ constant, then `‖transRem‖ ≤ ε√ε M_q` and `‖transRem(w) − transRem
   have hF0z : F 0 - F0 0 = 0 := by
     simp only [hF, hF0, QuadraticCubic.secondField_zero, sub_self]
   -- the second difference of the limit field
-  have hD2 := Averaging.second_diff_le (f := QuadraticCubic.cutSecond b (ν ^ 2 - d) k10 a20 a30 ν ρ'')
+  have hD2 := Averaging.second_diff_le
+    (f := QuadraticCubic.cutSecond b (ν ^ 2 - d) k10 a20 a30 ν ρ'')
     (Df := secondDeriv b (ν ^ 2 - d) k10 a20 a30 ν) (ystar := 0) (ρ := R') (L₂ := L₂)
     (ℓ := ℓF) (fun x hx t => hasFDerivAt_cutSecond (by rw [sub_zero] at hx; linarith) t)
     (fun x y hx hy t => by
@@ -1048,11 +1056,13 @@ def remConstW (ν d δ₀ r : ℝ) : ℝ :=
     have hS := abs_nonneg (Real.sin δ₀)
     have hC := abs_nonneg (Real.cos δ₀)
     have ha2 : |alpha2 p δ₀| ≤ kM * |Real.sin δ₀| / 2 := by
-      rw [alpha2, abs_div, abs_neg, abs_mul, abs_of_pos hK, abs_of_pos (by positivity : (0:ℝ) < 2 * p.M)]
+      rw [alpha2, abs_div, abs_neg, abs_mul, abs_of_pos hK,
+        abs_of_pos (by positivity : (0:ℝ) < 2 * p.M)]
       rw [show p.Ks * |Real.sin δ₀| / (2 * p.M) = p.Ks / p.M * |Real.sin δ₀| / 2 by field_simp]
       gcongr
     have ha3 : |alpha3 p δ₀| ≤ kM / 6 := by
-      rw [alpha3, abs_div, abs_neg, abs_mul, abs_of_pos hK, abs_of_pos (by positivity : (0:ℝ) < 6 * p.M)]
+      rw [alpha3, abs_div, abs_neg, abs_mul, abs_of_pos hK,
+        abs_of_pos (by positivity : (0:ℝ) < 6 * p.M)]
       rw [show p.Ks * |Real.cos δ₀| / (6 * p.M) = p.Ks / p.M * |Real.cos δ₀| / 6 by field_simp]
       have := Real.abs_cos_le_one δ₀
       have h1 : p.Ks / p.M * |Real.cos δ₀| ≤ kM * 1 :=
@@ -1144,7 +1154,8 @@ def lipConstW (b d ν δ₀ r : ℝ) : ℝ :=
   have hA3 : |alpha3 p δ₀| ≤ (ν ^ 2 + |d|) / 6 := by
     rw [h3, abs_div, abs_neg, abs_of_pos hω, abs_of_pos (by norm_num : (0 : ℝ) < 6)]
     gcongr
-  have hℓ : (|ν ^ 2 - (ν ^ 2 - d)| + |loadedFreqSq p δ₀| + ν * |b| + 3 * |alpha3 p δ₀| * r ^ 2) / ν ≤
+  have hℓ : (|ν ^ 2 - (ν ^ 2 - d)| + |loadedFreqSq p δ₀| + ν * |b| +
+      3 * |alpha3 p δ₀| * r ^ 2) / ν ≤
       (|d| + (ν ^ 2 + |d|) + ν * |b| + 3 * ((ν ^ 2 + |d|) / 6) * r ^ 2) / ν := by
     rw [show ν ^ 2 - (ν ^ 2 - d) = d by ring, abs_of_pos hω]
     gcongr
@@ -1167,7 +1178,8 @@ def lipConstW (b d ν δ₀ r : ℝ) : ℝ :=
     rw [scaledField]
     calc _ ≤ ε * (ℓ₁ * r) + √ε * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2 / ν * r ^ 2) +
           (√ε)⁻¹ * (ε ^ 2 * (remConstW ν d δ₀ r * r) / ν) := by
-          refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add ?_ ?_)) ?_)
+          refine (norm_add_le _ _).trans
+            (add_le_add ((norm_add_le _ _).trans (add_le_add ?_ ?_)) ?_)
           · rw [norm_smul, Real.norm_of_nonneg hε.le]
             exact mul_le_mul_of_nonneg_left (hV.trans (mul_le_mul hℓ hz (norm_nonneg _) hℓ₁0)) hε.le
           · rw [norm_smul, Real.norm_of_nonneg hs0.le]
@@ -1207,7 +1219,8 @@ def lipConstW (b d ν δ₀ r : ℝ) : ℝ :=
     calc _ ≤ ε * (ℓ₁ * ‖z - z'‖) +
           √ε * (2 * ((ν ^ 2 + |d|) * |Real.tan δ₀| / 2) * r / ν * ‖z - z'‖) +
           (√ε)⁻¹ * (ε ^ 2 * (remConstW ν d δ₀ r * ‖z - z'‖ / ν)) := by
-          refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add ?_ ?_)) ?_)
+          refine (norm_add_le _ _).trans
+            (add_le_add ((norm_add_le _ _).trans (add_le_add ?_ ?_)) ?_)
           · rw [norm_smul, Real.norm_of_nonneg hε.le]
             exact mul_le_mul_of_nonneg_left (hV.trans (mul_le_mul_of_nonneg_right hℓ
               (norm_nonneg _))) hε.le
@@ -1284,7 +1297,8 @@ def Wmap (α₂ ν ε ρc : ℝ) (w : ℂ) (t : ℝ) : ℂ :=
     (hν : 0 < ν) (hc : 0 < Real.cos δ₀) (hε : 0 < ε) (hε1 : ε ≤ 1)
     (hd : loadedFreqSq p δ₀ = ν ^ 2 - ε * d) (hρc : 0 ≤ ρc) (τ : ℝ) (w₀ : ℂ) :
     ∃ w : ℝ → ℂ, w τ = w₀ ∧ ∀ t, HasDerivAt w (clampField p δ₀ b d ν ε ρc t (w t)) t := by
-  have hcont : Continuous (Function.uncurry fun s (y : ℂ) => clampField p δ₀ b d ν ε ρc (s + τ) y) :=
+  have hcont :
+      Continuous (Function.uncurry fun s (y : ℂ) => clampField p δ₀ b d ν ε ρc (s + τ) y) :=
     ((continuous_clampField (p := p) δ₀ b d ν ε ρc).comp
       ((continuous_fst.add (continuous_const (y := τ))).prodMk continuous_snd)).congr
         (fun q => rfl)
@@ -1412,7 +1426,8 @@ def transField (p : Params) (δ₀ b d ν ε : ℝ) (w : ℂ) (t : ℝ) : ℂ :=
 @[tmio M, powerlib_domain] theorem hasDerivAt_Wmap {δ₀ b d ν ε ρc : ℝ} (hν : 0 < ν)
     (hε : 0 < ε) {w : ℝ → ℂ} {t : ℝ}
     (hw : HasDerivAt w (clampField p δ₀ b d ν ε ρc t (w t)) t) (hwt : ‖w t‖ < ρc) :
-    HasDerivAt (fun s => Wmap (alpha2 p δ₀) ν ε ρc (w s) s) (transField p δ₀ b d ν ε (w t) t) t := by
+    HasDerivAt (fun s => Wmap (alpha2 p δ₀) ν ε ρc (w s) s)
+      (transField p δ₀ b d ν ε (w t) t) t := by
   have hs0 : 0 < √ε := Real.sqrt_pos.mpr hε
   have hss : √ε * √ε = ε := Real.mul_self_sqrt hε.le
   have hcl : clampC ρc (w t) = w t := DuffingMathieu.clampC_of_norm_le hwt.le
@@ -1613,7 +1628,8 @@ time, period average and its derivative at a locked state. -/
     exact h
   · refine continuous_clm_apply.mpr fun h => ?_
     simp only [limitDerivR, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-    exact toReal.continuous.comp ((continuous_clm_apply.mp (continuous_secondDeriv _ _ _ _ _ _ _)) _)
+    exact toReal.continuous.comp
+      ((continuous_clm_apply.mp (continuous_secondDeriv _ _ _ _ _ _ _)) _)
   · rw [hav _ hy.le, Saturation.toReal_ampField]
     show toReal (loadedAmp b d ν δ₀ wstar) = 0
     rw [hw0, map_zero]
@@ -1865,7 +1881,8 @@ transformed amplitude solves `Ẇ = ε limitCutR(W, t) + transRemL(w, t)` (real 
       ∃ w : ℝ → ℂ, (∀ t, HasDerivAt w (clampField p δ₀ b d ν ε (‖wstar‖ + 3) t (w t)) t) ∧
         (∀ t, w (t + 2 * Real.pi / ν) = w t) ∧ (∀ t, ‖w t - wstar‖ ≤ 3 / 2) ∧
         ∀ t, ‖w t - wstar‖ ≤ √ε * C := by
-  obtain ⟨ε₁, Mq, Lq, Dc, hε₁, hε₁1, hMq, hLq, -, hcore⟩ := loaded_core (b := b) (d := d) hν hc wstar
+  obtain ⟨ε₁, Mq, Lq, Dc, hε₁, hε₁1, hMq, hLq, -, hcore⟩ :=
+    loaded_core (b := b) (d := d) hν hc wstar
   set ρc := ‖wstar‖ + 3 with hρc
   have hρc0 : 0 ≤ ρc := by positivity
   set T := 2 * Real.pi / ν with hT
@@ -2347,7 +2364,8 @@ transformed amplitude, `loaded_unique_Icc`). -/
   have hzb : ∀ s, ‖Z s - toReal wstar‖ ≤ r₁ * p₁ / (2 * 1 * p₂) * 1 := fun s => by
     simp only [hZ, ← map_sub, Saturation.norm_toReal]
     calc ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - wstar‖ ≤
-        ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - w s‖ + ‖w s - wstar‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+        ‖Wmap (alpha2 p δ₀) ν ε ρc (w s) s - w s‖ + ‖w s - wstar‖ :=
+          norm_sub_le_norm_sub_add_norm_sub _ _ _
       _ ≤ √ε * Dc + √ε * C := add_le_add (hWD _ _) (hwC s)
       _ = √ε * (Dc + C) := by ring
       _ ≤ δa := hsDC
