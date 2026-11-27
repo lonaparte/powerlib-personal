@@ -34,8 +34,8 @@ stable mode `λ₃ = −1/τ`, `τ = K₃T'_{d0}`, decided on the first-order bo
   `s' > 0`, the field's second-order terms — the constant couplings `β`, `γ` and the modulated
   coupling `A₂₁` that the pump induces in the field through the modal coordinates, all through
   `(λ₃ − jν)⁻¹` — are proportional to `s'² + d'² − |g/2|²` and cancel exactly, because `A₀'` and
-  `A₁` act through the same (torque) equation; the verdict is the sign of `−d'`
-  (`Driven.secondOrder_boundary`).
+  `A₁` act through the same (torque) equation (`BlockCoreClosedForm.sameRow_blockMixed`); the
+  verdict is the sign of `−d'` (`Driven.secondOrder_boundary`).
 
 Model boundary.
 * One synchronous machine, the linearized one-axis model at an operating point in the state
@@ -637,82 +637,6 @@ end Weak
 
 /-! ## The driven-field family: the flux-decay torque at first order -/
 
-@[tmio T, powerlib_foundation] private theorem re_quarter_star (c x y : ℝ) :
-    ((c : ℂ) * I / 2 / 2 * star (⟨x, y⟩ : ℂ)).re = c * y / 4 := by
-  simp [Complex.mul_re, Complex.mul_im]; ring
-
-set_option maxHeartbeats 1000000 in
-/-- **A core whose perturbation and modulation act through one equation.** In modal coordinates
-with the pair block `B₁₁ = [[0, 0], [−2d, −2s]]`, the coupling `β = (0, b)ᵀ`, `γ = ρ(−2d, −2s)`,
-`A₁₁ = [[0, 0], [a, 0]]`, `A₂₁ = ρ(a, 0)`, `A₁₂ = 0` and one real stable mode `l`:
-`blockMixed = d(s² + d² − 3a²/32)/ν − 2bρl(s² + d² − a²/16)/(l² + ν²)`; the resolvent terms
-are proportional to `s² + d² − |g/2|²` (`g = ja`) and vanish on the first-order boundary. -/
-@[tmio T, powerlib_foundation] private theorem sameRow_blockMixed (s d a b ρ l ν : ℝ)
-    (hν : 0 < ν) :
-    blockMixed 0 0 (2 * ν) !![l]
-        (fromBlocks !![0, 0; (a : ℂ), 0] 0 !![((ρ * a : ℝ) : ℂ), 0] 0)
-        (fromBlocks !![0, 0; -(2 * d), -(2 * s)] !![0; b] !![-(2 * ρ * d), -(2 * ρ * s)]
-          !![ρ * b]) =
-      d * (s ^ 2 + d ^ 2 - 3 * a ^ 2 / 32) / ν -
-        2 * b * ρ * l * (s ^ 2 + d ^ 2 - a ^ 2 / 16) / (l ^ 2 + ν ^ 2) := by
-  set A : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℂ :=
-    fromBlocks !![0, 0; (a : ℂ), 0] 0 !![((ρ * a : ℝ) : ℂ), 0] 0 with hA
-  set B : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ :=
-    fromBlocks !![0, 0; -(2 * d), -(2 * s)] !![0; b] !![-(2 * ρ * d), -(2 * ρ * s)] !![ρ * b]
-    with hB
-  have hA12 : A.toBlocks₁₂ = 0 := toBlocks_fromBlocks₁₂ _ _ _ _
-  have hup : upPlus A = 0 := by simp [upPlus, hA12]
-  have hum : upMinus A = 0 := by simp [upMinus, hA12]
-  have hre : A.toBlocks₂₁.map Complex.re = !![ρ * a, 0] := by
-    ext i j; fin_cases i; fin_cases j <;> simp [hA]
-  have him : A.toBlocks₂₁.map Complex.im = 0 := by
-    ext i j; fin_cases i; fin_cases j <;> simp [hA]
-  have hlm : lowMinus A = !![ρ * a / 2, 0] := by
-    rw [lowMinus, hre, him, Matrix.zero_mul, sub_zero]
-    ext i j; fin_cases i; fin_cases j <;> simp; ring
-  have hD : l ^ 2 + ν ^ 2 ≠ 0 := by
-    have : 0 < ν ^ 2 := by positivity
-    positivity
-  have hD' : l ^ 2 + (-ν) ^ 2 ≠ 0 := by rw [neg_sq]; exact hD
-  have h2 : 2 * ν / 2 = ν := by ring
-  have hP : couplingP !![l] A B (2 * ν) =
-      B.toBlocks₁₂ * (B.toBlocks₂₁ * ThreeStateCore.lamInv l ν) := by
-    rw [couplingP, hup, hum, h2, sylv_fin_one hD]
-    simp
-  have hN : couplingN !![l] A B (2 * ν) =
-      B.toBlocks₁₂ * (!![ρ * a / 2, 0] * ThreeStateCore.lamInv l (-ν)) := by
-    rw [couplingN, hup, hlm, h2, sylv_fin_one hD']
-    simp
-  have hpump : Element.pump A.toBlocks₁₁ TwoToOne.left TwoToOne.right = (a : ℂ) * I / 2 := by
-    rw [TwoToOne.pump_base]; simp [hA]; ring
-  have hanti : ‖SecondOrder.antiPump A.toBlocks₁₁‖ ^ 2 = a ^ 2 / 4 := by
-    have h : SecondOrder.antiPump A.toBlocks₁₁ = -((a : ℂ) * I / 2) := by
-      rw [SecondOrder.antiPump_eq]; simp [hA]; ring
-    rw [h, norm_neg, Weak.norm_sq_mul_I_half]
-  have hκ : fundSkew A.toBlocks₁₁ = ((a / 2 : ℝ) : ℂ) := by simp [fundSkew, hA]
-  have hn : antiShift B.toBlocks₁₁ = ⟨s, -d⟩ := by
-    apply Complex.ext <;> simp [antiShift, hB] <;> ring
-  have hsr : shiftRe B = -s := by simp [shiftRe, hB]; ring
-  have hsi : shiftIm B = -d := by simp [shiftIm, hB]; ring
-  have hpc : projC (B.toBlocks₁₂ * (B.toBlocks₂₁ * ThreeStateCore.lamInv l ν)) =
-      ⟨b * ρ * (d * ν - s * l) / (l ^ 2 + ν ^ 2),
-        -(b * ρ * (d * l + s * ν) / (l ^ 2 + ν ^ 2))⟩ := by
-    apply Complex.ext <;> simp only [projC] <;>
-      simp only [Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one] <;>
-      simp [hB, ThreeStateCore.lamInv, NormalForm.quarter] <;>
-      field_simp <;> ring
-  have hac : antiShift (B.toBlocks₁₂ * (!![ρ * a / 2, 0] * ThreeStateCore.lamInv l (-ν))) =
-      ⟨-(b * ρ * a * ν / (4 * (l ^ 2 + ν ^ 2))), b * ρ * a * l / (4 * (l ^ 2 + ν ^ 2))⟩ := by
-    apply Complex.ext <;> simp only [antiShift] <;>
-      simp only [Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one] <;>
-      simp [hB, ThreeStateCore.lamInv, NormalForm.quarter] <;>
-      field_simp <;> ring
-  rw [blockMixed, hP, hN, critMixed, hpc, Weak.re_mul_mk, hac, hpump, re_quarter_star, hanti,
-    hκ, hn,
-    Weak.re_crit, Weak.norm_sq_mk, hsr, hsi]
-  field_simp
-  ring
-
 /-- The data of the driven-field family: the angle drives the field at order one (`K₄` fixed),
 the field acts on the torque at order `ε` (`K₂ = εK̂₂`); damping `εD̂`, detuning `εd̂`, depth
 `εη̂`. -/
@@ -975,7 +899,7 @@ multiplier inside the unit circle and `d' > 0` gives Floquet instability. The re
 the field mode (`(λ₃ ∓ jν)⁻¹`, through the constant and the modulated coupling of the field) are
 proportional to `s'² + d'² − |g/2|²` and cancel exactly on the boundary: beyond its first-order
 torque the field mode does not move the boundary at second order, and the verdict is the
-Mathieu-type sign of `−d'`. -/
+Mathieu-type sign of `−d'` (`BlockCoreClosedForm.sameRow_blockMixed`). -/
 @[tmio M, powerlib_domain] theorem secondOrder_boundary (hH : 0 < f.H) (hω : f.ω₀ ≠ 0)
     (hν : 0 < f.ν) (hτ : 0 < f.K₃ * f.Td0) (hs : 0 < f.sD)
     (hb : f.sD ^ 2 + f.dD ^ 2 = (f.ηh * f.ν) ^ 2 / 16) :

@@ -82,6 +82,8 @@ Results.
 * `stableRes`, `sylv_mulVec_right`, `sylv_mulVec_star_right`, `projC_couplingP`,
   `antiShift_couplingN` — the couplings through the complex resolvents `(A_s ∓ jω/2)⁻¹`,
   `(A_s − 3jω/2)⁻¹`.
+* `sameRow_blockMixed` — a core perturbed and pumped through one equation: the resolvent terms
+  are proportional to `s'² + d'² − |g/2|²` and cancel on the boundary.
 
 Corrections.
 * Of the resolvents at `∓3jω/2` only `(A_s − 3jω/2)⁻¹` occurs (its conjugate through the real
@@ -1181,5 +1183,108 @@ omit [Fintype Y] [DecidableEq Y] in
   simp only [smul_eq_mul]
 
 end Resolvent
+
+/-! ## Cores perturbed through one equation -/
+
+section SameRow
+
+@[tmio T, powerlib_foundation] private theorem sr_norm_sq_half (c : ℝ) :
+    ‖(c : ℂ) * I / 2‖ ^ 2 = c ^ 2 / 4 := by
+  rw [Complex.sq_norm, Complex.normSq_apply]; simp; ring
+
+@[tmio T, powerlib_foundation] private theorem sr_re_mul_mk (a b p q : ℝ) :
+    (((a : ℂ) - (b : ℂ) * I) * (⟨p, q⟩ : ℂ)).re = a * p + b * q := by
+  simp [Complex.mul_re]
+
+@[tmio T, powerlib_foundation] private theorem sr_re_crit (a c x y : ℝ) :
+    ((a : ℂ) * ((c : ℂ) * I / 2 / 2) * star (⟨x, y⟩ : ℂ)).re = a * c * y / 4 := by
+  simp [Complex.mul_re, Complex.mul_im]; ring
+
+@[tmio T, powerlib_foundation] private theorem sr_norm_sq_mk (x y : ℝ) :
+    ‖(⟨x, y⟩ : ℂ)‖ ^ 2 = x ^ 2 + y ^ 2 := by
+  rw [Complex.sq_norm, Complex.normSq_mk]; ring
+
+@[tmio T, powerlib_foundation] private theorem sr_re_quarter_star (c x y : ℝ) :
+    ((c : ℂ) * I / 2 / 2 * star (⟨x, y⟩ : ℂ)).re = c * y / 4 := by
+  simp [Complex.mul_re, Complex.mul_im]; ring
+
+set_option maxHeartbeats 1000000 in
+/-- **A core whose perturbation and modulation act through one equation.** When the constant
+perturbation and the modulation of a three-state core both enter one physical equation (rank one
+with the same row, e.g. the torque equation of a machine) and the stable mode is driven by the
+pair, the modal blocks take the form `B₁₁ = [[0, 0], [−2d, −2s]]` (first-order damping `s`,
+detuning `d`), `β = (0, b)ᵀ`, `γ = ρ(−2d, −2s)`, `B₂₂ = ρb`, `A₁₁ = [[0, 0], [a, 0]]`
+(`g = ja`), `A₂₁ = ρ(a, 0)`, `A₁₂ = 0`, with one real stable mode `l`. Then
+`blockMixed = d(s² + d² − 3a²/32)/ν − 2bρl(s² + d² − a²/16)/(l² + ν²)`: the constant and the
+modulated coupling terms through the resolvent `(l − jν)⁻¹` add up to a multiple of
+`s² + d² − |g/2|²` and vanish on the first-order boundary, where the verdict is the sign of
+`−d`. -/
+@[tmio T, powerlib_foundation] theorem sameRow_blockMixed (s d a b ρ l ν : ℝ)
+    (hν : 0 < ν) :
+    blockMixed 0 0 (2 * ν) !![l]
+        (fromBlocks !![0, 0; (a : ℂ), 0] 0 !![((ρ * a : ℝ) : ℂ), 0] 0)
+        (fromBlocks !![0, 0; -(2 * d), -(2 * s)] !![0; b] !![-(2 * ρ * d), -(2 * ρ * s)]
+          !![ρ * b]) =
+      d * (s ^ 2 + d ^ 2 - 3 * a ^ 2 / 32) / ν -
+        2 * b * ρ * l * (s ^ 2 + d ^ 2 - a ^ 2 / 16) / (l ^ 2 + ν ^ 2) := by
+  set A : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℂ :=
+    fromBlocks !![0, 0; (a : ℂ), 0] 0 !![((ρ * a : ℝ) : ℂ), 0] 0 with hA
+  set B : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ :=
+    fromBlocks !![0, 0; -(2 * d), -(2 * s)] !![0; b] !![-(2 * ρ * d), -(2 * ρ * s)] !![ρ * b]
+    with hB
+  have hA12 : A.toBlocks₁₂ = 0 := toBlocks_fromBlocks₁₂ _ _ _ _
+  have hup : upPlus A = 0 := by simp [upPlus, hA12]
+  have hum : upMinus A = 0 := by simp [upMinus, hA12]
+  have hre : A.toBlocks₂₁.map Complex.re = !![ρ * a, 0] := by
+    ext i j; fin_cases i; fin_cases j <;> simp [hA]
+  have him : A.toBlocks₂₁.map Complex.im = 0 := by
+    ext i j; fin_cases i; fin_cases j <;> simp [hA]
+  have hlm : lowMinus A = !![ρ * a / 2, 0] := by
+    rw [lowMinus, hre, him, Matrix.zero_mul, sub_zero]
+    ext i j; fin_cases i; fin_cases j <;> simp; ring
+  have hD : l ^ 2 + ν ^ 2 ≠ 0 := by
+    have : 0 < ν ^ 2 := by positivity
+    positivity
+  have hD' : l ^ 2 + (-ν) ^ 2 ≠ 0 := by rw [neg_sq]; exact hD
+  have h2 : 2 * ν / 2 = ν := by ring
+  have hP : couplingP !![l] A B (2 * ν) =
+      B.toBlocks₁₂ * (B.toBlocks₂₁ * ThreeStateCore.lamInv l ν) := by
+    rw [couplingP, hup, hum, h2, sylv_fin_one hD]
+    simp
+  have hN : couplingN !![l] A B (2 * ν) =
+      B.toBlocks₁₂ * (!![ρ * a / 2, 0] * ThreeStateCore.lamInv l (-ν)) := by
+    rw [couplingN, hup, hlm, h2, sylv_fin_one hD']
+    simp
+  have hpump : Element.pump A.toBlocks₁₁ TwoToOne.left TwoToOne.right = (a : ℂ) * I / 2 := by
+    rw [TwoToOne.pump_base]; simp [hA]; ring
+  have hanti : ‖SecondOrder.antiPump A.toBlocks₁₁‖ ^ 2 = a ^ 2 / 4 := by
+    have h : SecondOrder.antiPump A.toBlocks₁₁ = -((a : ℂ) * I / 2) := by
+      rw [SecondOrder.antiPump_eq]; simp [hA]; ring
+    rw [h, norm_neg, sr_norm_sq_half]
+  have hκ : fundSkew A.toBlocks₁₁ = ((a / 2 : ℝ) : ℂ) := by simp [fundSkew, hA]
+  have hn : antiShift B.toBlocks₁₁ = ⟨s, -d⟩ := by
+    apply Complex.ext <;> simp [antiShift, hB] <;> ring
+  have hsr : shiftRe B = -s := by simp [shiftRe, hB]; ring
+  have hsi : shiftIm B = -d := by simp [shiftIm, hB]; ring
+  have hpc : projC (B.toBlocks₁₂ * (B.toBlocks₂₁ * ThreeStateCore.lamInv l ν)) =
+      ⟨b * ρ * (d * ν - s * l) / (l ^ 2 + ν ^ 2),
+        -(b * ρ * (d * l + s * ν) / (l ^ 2 + ν ^ 2))⟩ := by
+    apply Complex.ext <;> simp only [projC] <;>
+      simp only [Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one] <;>
+      simp [hB, ThreeStateCore.lamInv, quarter] <;>
+      field_simp <;> ring
+  have hac : antiShift (B.toBlocks₁₂ * (!![ρ * a / 2, 0] * ThreeStateCore.lamInv l (-ν))) =
+      ⟨-(b * ρ * a * ν / (4 * (l ^ 2 + ν ^ 2))), b * ρ * a * l / (4 * (l ^ 2 + ν ^ 2))⟩ := by
+    apply Complex.ext <;> simp only [antiShift] <;>
+      simp only [Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_one] <;>
+      simp [hB, ThreeStateCore.lamInv, quarter] <;>
+      field_simp <;> ring
+  rw [blockMixed, hP, hN, critMixed, hpc, sr_re_mul_mk, hac, hpump, sr_re_quarter_star, hanti,
+    hκ, hn,
+    sr_re_crit, sr_norm_sq_mk, hsr, hsi]
+  field_simp
+  ring
+
+end SameRow
 
 end powerlib.ParametricResonance.BlockCoreClosedForm
