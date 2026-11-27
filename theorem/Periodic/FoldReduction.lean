@@ -1,4 +1,4 @@
-import theorem.Periodic.FlipReduction
+import theorem.Periodic.DegenerateFlipReduction
 
 /-! # A fixed point with a simple multiplier `+1`: reduction to the fold and cubic normal forms
 
@@ -27,17 +27,20 @@ nonlinearities and their conjugacy (`FlipReduction.coordMap_conj` for `P_μ`) se
 `μ = ±1`; the linear part `−1` of `P_μ` becomes `μ` for `P` (`coordMap_conj_at`). The invariance
 defect at `μ` is `FlipReduction.defect_expansion` read along `−μ v` and the isometry `x ↦ −μ x`
 (`defect_expansion_at`), and the expansion of the reduced map is `FlipReduction.reduced_expansion`
-itself. The centre manifold, the reduction principle and the approximation theorem with `q = 3`
-(`theorem/Map/CenterManifold.lean`, `theorem/Map/CenterReduction.lean`) give the reduced map for
+itself. The centre manifold, the reduction principle, the asymptotic phase and the approximation
+theorem with `q = 3` (`theorem/Map/CenterManifold.lean`, `theorem/Map/CenterReduction.lean`,
+`theorem/Map/AsymptoticPhase.lean`) give the reduced map for
 `|μ| = 1` (`exists_reduced_map_at`), and the scalar normal forms of
 `theorem/Periodic/CriticalMultiplier.lean` (`Map.quadratic_unstable`,
 `Map.cubic_localAsymptoticStable`, `Map.cubic_unstable`) decide it at `μ = +1`.
 
 Near `p` every fixed point of `P` lies on the centre manifold, and the reduced map fixes its centre
 coordinate. Hence fixed points accumulating at `p` force `a = b = 0`
-(`foldCoeffs_eq_zero_of_fixedPoints`): for the period map of a periodic orbit of an
-**autonomous** system the orbit itself is such a curve, the multiplier `+1` is the trivial one,
-and the reduction decides nothing (`theorem/Periodic/FoldOrbit.lean`).
+(`foldCoeffs_eq_zero_of_fixedPoints`), and a curve of fixed points transverse to `ker w` makes the
+reduced map the identity: `p` is Lyapunov stable, not asymptotically stable
+(`lyapunovStable_of_fixedCurve`). For the period map of a periodic orbit of an **autonomous**
+system the orbit itself is such a curve and the multiplier `+1` is the trivial one: the fold and
+pitchfork verdicts never apply (`theorem/Periodic/FoldOrbit.lean`).
 
 Scope.
 * The map semantics on `ℝⁿ = EuclideanSpace ℝ (Fin n)` (`Map.LocalAsymptoticStable`,
@@ -83,9 +86,9 @@ Results.
   `‖Lᵐ‖ < 1`), `exists_sub_apply_eq` (the homological equation `k − L k = y` is solvable),
   `eq_smul_of_apply_eq` (`μ` geometrically simple), `multipliers_of_deflateAt`.
 * **The reduction** `exists_reduced_map_at` (`|μ| = 1`): a scalar map
-  `r(x) = μ x + a x² + b x³ + O(x⁴)` whose asymptotic stability gives that of `P`, whose
-  instability gives that of `P`, and which fixes the centre coordinate of every fixed point of `P`
-  near `p`.
+  `r(x) = μ x + a x² + b x³ + O(x⁴)` whose asymptotic stability gives that of `P`, which is
+  Lyapunov stable exactly when `P` is, and which fixes the centre coordinate of every fixed point
+  of `P` near `p`.
 * At `+1`: `cubicCoeff_add_smul` (`b(k₂ + c v) = b(k₂) + 2 c a`), `specProj_sub_deflateAt`;
   **the theorems** `unstable_of_foldCoeff_ne_zero` (`a ≠ 0`: unstable),
   `localAsymptoticStable_of_cubicCoeff_neg` (`a = 0`, `b < 0`: locally asymptotically, not
@@ -93,7 +96,9 @@ Results.
   matrix forms `unstable_of_foldCoeff_ne_zero_matrix`,
   `localAsymptoticStable_of_cubicCoeff_neg_matrix`, `unstable_of_cubicCoeff_pos_matrix`.
 * `not_localAsymptoticStable_of_fixedPoints` (fixed points accumulating at `p` exclude local
-  asymptotic stability), `foldCoeffs_eq_zero_of_fixedPoints` — they force `a = 0`, `b = 0`.
+  asymptotic stability), `foldCoeffs_eq_zero_of_fixedPoints` — they force `a = 0`, `b = 0`;
+  `lyapunovStable_of_fixedCurve` — a curve of fixed points transverse to `ker w` makes `p`
+  Lyapunov stable, not asymptotically stable (the reduced map is the identity).
 
 Corrections.
 None: an extension (the critical multiplier `+1` of a periodic solution of a non-autonomous
@@ -300,7 +305,8 @@ spectral projection `Q e = e − (w e) v` (so `w k₂ = 0` and `(I − M) k₂ =
 is a map `r : ℝ¹ → ℝ¹` (the map restricted to a centre manifold, in the coordinate `w`) with
 `r(x) = μ x + a x² + b x³ + O(x⁴)`, `a = w P₂(v, v)`,
 `b = w P₃(v, v, v) + w (P₂(v, k₂) + P₂(k₂, v))`, whose local asymptotic stability gives that of
-`P` at `p` and whose instability gives that of `P`; and near `p` every fixed point `p + e` of `P`
+`P` at `p` and which is Lyapunov stable exactly when `P` is (the asymptotic phase,
+`Map.CenterManifold.lyapunovStable_iff`); and near `p` every fixed point `p + e` of `P`
 lies on the centre manifold: its coordinate `w e` is a fixed point of `r`, and it is `p` when
 `w e = 0`. -/
 @[tmio T, powerlib_foundation] theorem exists_reduced_map_at {P : ℝⁿ → ℝⁿ} {p : ℝⁿ}
@@ -315,7 +321,7 @@ lies on the centre manifold: its coordinate `w e` is a fixed point of `r`, and i
         |r y 0 - (μ * y 0 + w (P₂ v v) * y 0 ^ 2 +
           (w (P₃ (fun _ => v)) + w (P₂ v k₂ + P₂ k₂ v)) * y 0 ^ 3)| ≤ K' * |y 0| ^ 4) ∧
       (Map.LocalAsymptoticStable r 0 → Map.LocalAsymptoticStable P p) ∧
-      (Map.Unstable r 0 → Map.Unstable P p) ∧
+      (Map.LyapunovStable r 0 ↔ Map.LyapunovStable P p) ∧
       ∃ ρ' > 0, ∀ e, ‖e‖ < ρ' → P (p + e) = p + e →
         r (centreCoord w e) = centreCoord w e ∧ (w e = 0 → e = 0) := by
   have hμ0 : μ ≠ 0 := by rintro rfl; simp at hμ
@@ -490,8 +496,11 @@ lies on the centre manifold: its coordinate `w e` is a fixed point of `r`, and i
     fun hr => localAsymptoticStable_of_translate
       (Map.CenterManifold.localAsymptoticStable_of_reduced hB hθ0.le hfl hgl hθ2 hh hh0 hinv
         (coordInv_coordMap hm θ) hρ₁ hG hr),
-    fun hr hLS => Map.CenterManifold.unstable_of_reduced hh hh0 hinv hgraph hρ₁ hG hr
-      (lyapunovStable_translate hLS), ρ₁, hρ₁, fun e he hfix => ?_⟩
+    ⟨fun hr => lyapunovStable_of_translate
+      (Map.CenterManifold.lyapunovStable_of_reduced hAs hA hB hθ0.le hfl hgl
+        (by simpa using hgap) hθ2 hh hh0 hinv (coordInv_coordMap hm θ) hρ₁ hG hr),
+    fun hLS => Map.CenterManifold.lyapunovStable_reduced hh hh0 hinv hgraph hρ₁ hG
+      (lyapunovStable_translate hLS)⟩, ρ₁, hρ₁, fun e he hfix => ?_⟩
   · have := hCb (show dist y 0 < r₀ by rw [dist_zero_right]; linarith)
     rw [Real.norm_eq_abs, norm_pow, norm_norm, NormalForm.norm_state1] at this
     exact this
@@ -630,7 +639,7 @@ the deflated equation `k − (M − v wᵀ) k = Q P₂(v, v)` of `exists_reduced
         |r y 0 - (y 0 + w (P₂ v v) * y 0 ^ 2 + (w (P₃ (fun _ => v)) + w (P₂ v k₂ + P₂ k₂ v) -
           2 * w k₂ * w (P₂ v v)) * y 0 ^ 3)| ≤ K' * |y 0| ^ 4) ∧
       (Map.LocalAsymptoticStable r 0 → Map.LocalAsymptoticStable P p) ∧
-      (Map.Unstable r 0 → Map.Unstable P p) ∧
+      (Map.LyapunovStable r 0 ↔ Map.LyapunovStable P p) ∧
       ∃ ρ' > 0, ∀ e, ‖e‖ < ρ' → P (p + e) = p + e →
         r (centreCoord w e) = centreCoord w e ∧ (w e = 0 → e = 0) := by
   obtain ⟨r, ⟨ρ, K', hρ, hb⟩, hS, hU, hfix⟩ := exists_reduced_map_at (μ := 1) (by simp) hP hPp
@@ -662,7 +671,8 @@ expansion `P(p + e) = p + M e + P₂ e e + P₃(e, e, e) + O(‖e‖⁴)`. If th
   obtain ⟨r, ⟨ρ, K', hρ, hb⟩, -, hU, -⟩ := exists_reduced_map_at (μ := 1) (by simp) hP hPp
     (by rw [hv, one_smul]) (fun e => by rw [hw, one_mul]) hwv hm hLm hρ₀ hTay hk₀
   set b := w (P₃ (fun _ => v)) + w (P₂ v k₀ + P₂ k₀ v) with hbdef
-  refine hU (Map.quadratic_unstable (K := |b| + |K'| * ρ) hρ ha fun y hy => ?_)
+  refine fun hLS => Map.quadratic_unstable (K := |b| + |K'| * ρ) hρ ha (fun y hy => ?_)
+    (hU.2 hLS)
   have h1 := hb y hy
   have hy0 : |y 0| ≤ ρ := by rw [← NormalForm.norm_state1]; exact hy
   set u := y 0 with hu
@@ -719,7 +729,7 @@ exponentially stable (the multiplier `+1`). -/
     (hb : 0 < w (P₃ (fun _ => v)) + w (P₂ v k₂ + P₂ k₂ v)) : Map.Unstable P p := by
   obtain ⟨r, ⟨ρ, K', hρ, hr⟩, -, hU, -⟩ :=
     exists_reduced_map_one hP hPp hv hw hwv hm hLm hρ₀ hTay hk₂
-  refine hU (Map.cubic_unstable (K := K') hρ hb fun y hy => ?_)
+  refine fun hLS => Map.cubic_unstable (K := K') hρ hb (fun y hy => ?_) (hU.2 hLS)
   have := hr y hy
   rw [ha] at this
   convert this using 3
@@ -909,5 +919,46 @@ map fixes their centre coordinates. -/
   have := (key k₂ hk₂).2
   rw [ha, mul_zero, sub_zero] at this
   exact this
+
+/-- **A curve of fixed points through `p`: Lyapunov stable, not asymptotically stable.** Under
+the hypotheses of `unstable_of_foldCoeff_ne_zero` (a simple multiplier `+1` with stable
+complement), let the fixed points of `P` near `p` realize every small value of the centre
+coordinate: for every `δ > 0` there is `η > 0` such that each `u` with `|u| < η` is `w e` for a
+fixed point `p + e`, `‖e‖ < δ` (a curve of fixed points transverse to `ker w`, such as a periodic
+orbit of an autonomous system read through its period map). Then the reduced map is the identity
+near `0`, so `p` is Lyapunov stable (`exists_reduced_map_at`, through the asymptotic phase), and
+not locally asymptotically stable. -/
+@[tmio T, powerlib_foundation] theorem lyapunovStable_of_fixedCurve {P : ℝⁿ → ℝⁿ} {p : ℝⁿ}
+    (hP : HasStrictFDerivAt P M p) (hPp : P p = p) (hv : M v = v) (hw : ∀ e, w (M e) = w e)
+    (hwv : w v = 1) {m : ℕ} (hm : 0 < m) (hLm : ‖deflateAt M v w 1 ^ m‖ < 1)
+    {P₂ : ℝⁿ →L[ℝ] ℝⁿ →L[ℝ] ℝⁿ}
+    {P₃ : ContinuousMultilinearMap ℝ (fun _ : Fin 3 => EuclideanSpace ℝ (Fin n))
+      (EuclideanSpace ℝ (Fin n))} {K ρ₀ : ℝ} (hρ₀ : 0 < ρ₀)
+    (hTay : ∀ e, ‖e‖ ≤ ρ₀ → ‖P (p + e) - p - M e - P₂ e e - P₃ (fun _ => e)‖ ≤ K * ‖e‖ ^ 4)
+    (hcurve : ∀ δ > 0, ∃ η > 0, ∀ u : ℝ, |u| < η →
+      ∃ e, ‖e‖ < δ ∧ P (p + e) = p + e ∧ w e = u) :
+    Map.LyapunovStable P p ∧ ¬ Map.LocalAsymptoticStable P p := by
+  obtain ⟨k₀, hk₀⟩ := exists_sub_apply_eq hLm (specProj v w (P₂ v v))
+  obtain ⟨r, -, -, hLy, ρ', hρ', hfr⟩ := exists_reduced_map_at (μ := 1) (by simp) hP hPp
+    (by rw [hv, one_smul]) (fun e => by rw [hw, one_mul]) hwv hm hLm hρ₀ hTay hk₀
+  obtain ⟨η, hη, hcη⟩ := hcurve ρ' hρ'
+  have hid : ∀ y : ℝ¹, ‖y‖ < η → r y = y := fun y hy => by
+    obtain ⟨e, he, hfix, hwe⟩ := hcη (y 0) (by rwa [← NormalForm.norm_state1])
+    have hcc : centreCoord w e = y := by
+      rw [eq_smul_single y]
+      simp [centreCoord, hwe]
+    rw [← hcc]
+    exact (hfr e he hfix).1
+  refine ⟨hLy.1 fun ε hε => ⟨min ε η, lt_min hε hη, fun y hy k => ?_⟩, ?_⟩
+  · rw [sub_zero] at hy ⊢
+    rw [Function.iterate_fixed (hid y (hy.trans_le (min_le_right _ _))) k]
+    exact hy.trans_le (min_le_left _ _)
+  · refine not_localAsymptoticStable_of_fixedPoints fun δ hδ => ?_
+    obtain ⟨η₁, hη₁, hc₁⟩ := hcurve δ hδ
+    obtain ⟨e, he, hfix, hwe⟩ := hc₁ (η₁ / 2) (by rw [abs_of_pos (by positivity)]; linarith)
+    refine ⟨p + e, hfix, fun h0 => ?_, by rwa [add_sub_cancel_left]⟩
+    have : e = 0 := by simpa using h0
+    rw [this, map_zero] at hwe
+    linarith
 
 end powerlib.Periodic.FoldReduction

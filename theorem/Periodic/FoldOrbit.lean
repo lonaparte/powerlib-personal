@@ -28,9 +28,11 @@ multiplier of every nonconstant periodic orbit, with the velocity `f(x_*(0))` as
 fixed points accumulate at `x_*(0)`, the period map is never locally asymptotically stable there,
 and both coefficients vanish identically, `a = b = 0`, whenever `+1` is simple with stable
 complement (`autonomous_trivial_multiplier`, through
-`FoldReduction.foldCoeffs_eq_zero_of_fixedPoints`): the reduction decides nothing. The question
-for an autonomous orbit is orbital stability, through a Poincaré section transverse to the orbit,
-which is not treated here.
+`FoldReduction.foldCoeffs_eq_zero_of_fixedPoints`): the reduction decides nothing. What it does
+give there is the reduced map itself, the identity, so the period map and the periodic solution
+are Lyapunov stable (`FoldReduction.lyapunovStable_of_fixedCurve`, the Andronov–Witt theorem
+without its orbital attraction). Orbital asymptotic stability, through a Poincaré section
+transverse to the orbit, is not treated here.
 
 Scope.
 * As in `theorem/Periodic/FlipOrbit.lean`: solutions in `ℝ^{Fin n}` with the sup norm, the map
@@ -46,7 +48,8 @@ Scope.
   three verdicts; `autonomous_trivial_multiplier` shows that they are then vacuous for a
   nonconstant orbit (`a = b = 0`).
 * The solution statements concern the initial time `0` (solutions on `[0, ∞)`); `a = b = 0` is
-  not decided; orbital stability of autonomous orbits is not treated.
+  not decided for non-autonomous systems; orbital asymptotic stability of autonomous orbits is
+  not treated.
 * Generic mathematics; no model family.
 
 Source: Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), Ch. 4 and Ch. 9 (the fold
@@ -54,7 +57,9 @@ and the cusp of fixed points of maps), §5.4 (the Poincaré map of a periodic or
 the monodromy matrix, its Taylor coefficients from the variational equations) and §1.5 (Poincaré
 maps: the trivial multiplier `+1` of a cycle of an autonomous system, and the period map of a
 periodically forced system); Hartman, *Ordinary Differential Equations*, Ch. V (the first
-variation); the open items of
+variation); the Andronov–Witt theorem (a periodic orbit of an autonomous system whose nontrivial
+multipliers lie inside the unit circle is orbitally stable, the periodic solution Lyapunov stable);
+the open items of
 `theorem/Periodic/FlipOrbit.lean` (Scope: "Only the multiplier `−1` is reduced") and
 `theorem/Periodic/CriticalMultiplier.lean` (Scope: "The multiplier `+1` of a nonconstant orbit is
 not reduced").
@@ -63,7 +68,8 @@ Results.
 * `coords_at` — the projector data of a simple multiplier `μ` and the cubic expansion of a map of
   `Fin n → ℝ`, read on `ℝⁿ` (the hypotheses of `FoldReduction`).
 * `periodMap_data` — the strict derivative, the fixed point and the cubic expansion of the period
-  map of a periodic solution, from the field.
+  map of a periodic solution, from the field; `solution_lyapunovStable_of_map` — Lyapunov
+  stability of the period map gives that of the periodic solution.
 * **The theorems**: `orbit_unstable_of_foldCoeff_ne_zero` (`a ≠ 0`: the period map and `x_*` are
   unstable), `orbit_stable_of_cubicCoeff_neg` (`a = 0`, `b < 0`: the period map is locally
   asymptotically, not exponentially, stable, and `x_*` is Lyapunov stable and attracting),
@@ -72,8 +78,9 @@ Results.
   `orbit_unstable_of_cubicCoeff_pos_of_contDiff`.
 * Autonomous systems: `periodMap_autonomous_orbit` (every point of the orbit is a fixed point of
   the period map), `autonomous_trivial_multiplier` (the trivial multiplier `+1` with the velocity
-  as eigenvector; the period map is not locally asymptotically stable; `a = b = 0` for every
-  projector data of a simple `+1` with stable complement).
+  as eigenvector; the period map is not locally asymptotically stable; for every projector data
+  of a simple `+1` with stable complement `a = b = 0`, and the period map and `x_*` are Lyapunov
+  stable).
 
 Corrections.
 None: an extension (`FoldReduction` for the period map of a periodic system, with its regularity
@@ -381,6 +388,53 @@ those starting within some `δ` converge to it. -/
     hwv' hL hS hρ' hTay'' (hk' hk) (by rw [ha']; exact ha) (by rw [hb']; exact hb)
   exact ⟨hmap, solution_unstable_of_map hGc hK hT hGper hxs hfix hmap⟩
 
+/-- **From the period map to the solutions: Lyapunov stability.** For a `T`-periodic field and a
+solution `x_*` with `x_*(T) = x_*(0)`: if the period map (read on `ℝⁿ`) is Lyapunov stable at
+`x_*(0)`, then `x_*` is Lyapunov stable from the initial time `0`: solutions on `[0, ∞)` that start
+close stay close (the Lyapunov half of `FlipOrbit.solution_stable_of_map`, which assumes local
+asymptotic stability; by `FlipOrbit.norm_sub_le_iterate`). -/
+@[tmio T, powerlib_foundation] theorem solution_lyapunovStable_of_map
+    (hGc : Continuous (uncurry G)) (hK : ∀ t, LipschitzWith K (G t)) {T : ℝ} (hT : 0 < T)
+    (hGper : Periodic G T) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (G t (xs t)) t)
+    (hfix : xs T = xs 0)
+    (h : Map.LyapunovStable (euclidMap (periodMap hGc hK T))
+      ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0))) :
+    ∀ ε, 0 < ε → ∃ δ, 0 < δ ∧ ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x G (Ici 0) →
+      ‖x 0 - xs 0‖ < δ → ∀ t, 0 ≤ t → ‖x t - xs t‖ < ε := by
+  set E := EuclideanSpace.equiv (Fin n) ℝ with hE
+  set εL : ℝⁿ →L[ℝ] (Fin n → ℝ) := (E : ℝⁿ →L[ℝ] (Fin n → ℝ)) with hεL
+  set εS : (Fin n → ℝ) →L[ℝ] ℝⁿ := (E.symm : (Fin n → ℝ) →L[ℝ] ℝⁿ) with hεS
+  set P := periodMap hGc hK T with hP
+  set pE := E.symm (xs 0) with hpE
+  have hle : ∀ (ξ : Fin n → ℝ) (j : ℕ),
+      ‖P^[j] ξ - xs 0‖ ≤ ‖εL‖ * ‖(euclidMap P)^[j] (E.symm ξ) - pE‖ := fun ξ j => by
+    have hdev : P^[j] ξ - xs 0 = E ((euclidMap P)^[j] (E.symm ξ) - pE) := by
+      rw [iterate_euclidMap, map_sub, ContinuousLinearEquiv.apply_symm_apply,
+        ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+    rw [hdev]; exact εL.le_opNorm _
+  have hstart : ∀ ξ : Fin n → ℝ, ‖E.symm ξ - pE‖ ≤ ‖εS‖ * ‖ξ - xs 0‖ := fun ξ => by
+    rw [hpE, ← map_sub]; exact εS.le_opNorm _
+  intro ε hε
+  set c := Real.exp (K * T) * ‖εL‖ with hc
+  have hc0 : 0 ≤ c := by positivity
+  obtain ⟨δ₁, hδ₁, hb⟩ := h (ε / (c + 1)) (by positivity)
+  refine ⟨δ₁ / (‖εS‖ + 1), by positivity, fun x hx hx0 t ht => ?_⟩
+  have hy : ‖E.symm (x 0) - pE‖ < δ₁ := by
+    refine (hstart _).trans_lt ?_
+    rw [lt_div_iff₀ (by positivity)] at hx0
+    nlinarith [norm_nonneg εS, norm_nonneg (x 0 - xs 0)]
+  have h1 := norm_sub_le_iterate hGc hK hT hGper hxs hfix hx ht
+  have h2 := hle (x 0) ⌊t / T⌋₊
+  have h3 := hb _ hy ⌊t / T⌋₊
+  have h4 : c * (ε / (c + 1)) < ε := by
+    rw [mul_div_assoc', div_lt_iff₀ (by positivity)]; nlinarith
+  calc ‖x t - xs t‖ ≤ Real.exp (K * T) * ‖P^[⌊t / T⌋₊] (x 0) - xs 0‖ := h1
+    _ ≤ Real.exp (K * T) * (‖εL‖ * ‖(euclidMap P)^[⌊t / T⌋₊] (E.symm (x 0)) - pE‖) := by
+        gcongr
+    _ = c * ‖(euclidMap P)^[⌊t / T⌋₊] (E.symm (x 0)) - pE‖ := by rw [hc]; ring
+    _ ≤ c * (ε / (c + 1)) := by gcongr
+    _ < ε := h4
+
 /-- **Fields of class `C⁴`, fold type.** `orbit_unstable_of_foldCoeff_ne_zero` for a field with
 `G(t, ·)` of class `C⁴`, `D_x²G`, `D_x³G` continuous along `x_*` and `‖D_x⁴G‖ ≤ B₄` on the tube of
 radius `ρ` about `x_*`: the Taylor coefficients are `Q₂ = D_x²G/2 = taylor2 G x_*` and
@@ -512,12 +566,16 @@ with `f` of class `C⁴` and `K`-Lipschitz, and a nonconstant `T`-periodic solut
 (`f(x_*(0)) ≠ 0`): the velocity `f(x_*(0))` is an eigenvector of the monodromy `M` with
 multiplier `1` (`monodromy_mulVec_velocity`, `one_mem_spectrum_monodromy`); the period map is not
 locally asymptotically stable at `x_*(0)`, since the orbit consists of fixed points accumulating
-at `x_*(0)`; and for every projector data of a simple multiplier `+1` with stable complement
+at `x_*(0)`. For every projector data of a simple multiplier `+1` with stable complement
 (`M vm = vm`, `wmᵀ M = wmᵀ`, `wm ⬝ vm = 1`, `M − vm wmᵀ` Schur stable — an orbitally hyperbolic
 orbit) the fold coefficient `a = wm ⬝ P₂(vm, vm)` and the cubic coefficient `b` vanish
-(`FoldReduction.foldCoeffs_eq_zero_of_fixedPoints`). So for autonomous systems the reduction at
-`+1` never applies; their periodic orbits call for orbital stability (a Poincaré section), not for
-the fold and pitchfork verdicts of a non-autonomous periodic solution. -/
+(`FoldReduction.foldCoeffs_eq_zero_of_fixedPoints`), and, the orbit being a curve of fixed points
+transverse to `ker wm` (its tangent is the velocity, a nonzero multiple of `vm`), the reduced map
+is the identity: the period map is Lyapunov stable at `x_*(0)` and `x_*` is a Lyapunov stable
+solution from the initial time `0` (`FoldReduction.lyapunovStable_of_fixedCurve`; the
+Andronov–Witt theorem without its orbital attraction). So for autonomous systems the fold and
+pitchfork verdicts never apply; the remaining question, orbital asymptotic stability, needs a
+Poincaré section transverse to the orbit. -/
 @[tmio T, powerlib_foundation] theorem autonomous_trivial_multiplier (hf : ContDiff ℝ 4 f)
     (hfK : LipschitzWith K f) {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t)
     {T : ℝ} (hT : 0 < T) (hper : Periodic xs T) (hne : f (xs 0) ≠ 0) :
@@ -530,14 +588,19 @@ the fold and pitchfork verdicts of a non-autonomous periodic solution. -/
       wm ᵥ* monodromy (variationalMatrix f xs) T 0 = wm → wm ⬝ᵥ vm = 1 →
       LTI.SchurStable (monodromy (variationalMatrix f xs) T 0 - vecMulVec vm wm) →
       wm ⬝ᵥ secondVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs) 0 T vm vm = 0 ∧
-      ∀ k : Fin n → ℝ, k - monodromy (variationalMatrix f xs) T 0 *ᵥ k =
+      (∀ k : Fin n → ℝ, k - monodromy (variationalMatrix f xs) T 0 *ᵥ k =
           secondVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs) 0 T vm vm -
             (wm ⬝ᵥ secondVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs) 0 T
               vm vm) • vm →
         wm ⬝ᵥ thirdVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs)
             (taylor3 (fun _ => f) xs) 0 T (fun _ => vm) +
           wm ⬝ᵥ (secondVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs) 0 T vm k +
-            secondVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs) 0 T k vm) = 0 := by
+            secondVariation (variationalMatrix f xs) (taylor2 (fun _ => f) xs) 0 T k vm) = 0) ∧
+      Map.LyapunovStable
+        (euclidMap (periodMap (G := fun _ => f) (hfK.continuous.comp continuous_snd)
+          (fun _ => hfK) T)) ((EuclideanSpace.equiv (Fin n) ℝ).symm (xs 0)) ∧
+      ∀ ε, 0 < ε → ∃ δ, 0 < δ ∧ ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x (fun _ => f) (Ici 0) →
+        ‖x 0 - xs 0‖ < δ → ∀ t, 0 ≤ t → ‖x t - xs t‖ < ε := by
   have hf1 : ContDiff ℝ 1 f := hf.of_le (by norm_num)
   have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
   set hGc : Continuous (uncurry fun (_ : ℝ) => f) := hfK.continuous.comp continuous_snd
@@ -592,7 +655,75 @@ the fold and pitchfork verdicts of a non-autonomous periodic solution. -/
   rw [← jacobianAlong_const, hL] at hLm
   obtain ⟨ha, hb, -⟩ := foldCoeffs_eq_zero_of_fixedPoints hP' hPp' hv'
     (fun e => by rw [hw', one_mul]) hwv' hm hLm hρ' hTay' hacc
-  refine ⟨ha'.symm.trans ha, fun k hk => ?_⟩
+  -- the velocity is a nonzero multiple of `v`: the orbit is transverse to `ker w`
+  have hvel : Linear.op (monodromy (jacobianAlong (fun _ => f) xs) T 0) (E.symm (f (xs 0))) =
+      (1 : ℝ) • E.symm (f (xs 0)) := by
+    rw [one_smul]
+    show E.symm (monodromy (jacobianAlong (fun _ => f) xs) T 0 *ᵥ E (E.symm (f (xs 0)))) = _
+    rw [ContinuousLinearEquiv.apply_symm_apply]
+    exact congrArg E.symm (monodromy_mulVec_velocity hf1 hxs hT hper)
+  have hc : wE (E.symm (f (xs 0))) ≠ 0 := by
+    intro h0
+    have := eq_smul_of_apply_eq (μ := 1) (by simp) (by rw [one_smul]; exact hv') hwv' hLm hvel
+    rw [h0, zero_smul] at this
+    exact hne (E.symm.injective (this.trans (map_zero E.symm).symm))
+  -- the centre coordinate along the orbit, `φ(s) = w (x_*(s) − x_*(0))`, covers an interval
+  set φ : ℝ → ℝ := fun s => wE (E.symm (xs s) - E.symm (xs 0)) with hφ
+  have hφc : Continuous φ := wE.continuous.comp ((E.symm.continuous.comp hxc).sub continuous_const)
+  have hφ0 : φ 0 = 0 := by simp [hφ]
+  have hφd : HasDerivAt φ (wE (E.symm (f (xs 0)))) 0 := by
+    have h1 := (wE.comp εS).hasFDerivAt.comp_hasDerivAt (0 : ℝ) ((hxs 0).sub_const (xs 0))
+    convert h1 using 1
+    · funext s
+      simp [hφ, hεS, map_sub]
+    · rfl
+  have hcurve : ∀ δ > 0, ∃ η > 0, ∀ u : ℝ, |u| < η → ∃ e, ‖e‖ < δ ∧
+      euclidMap P (E.symm (xs 0) + e) = E.symm (xs 0) + e ∧ wE e = u := by
+    intro δ hδ
+    set c := wE (E.symm (f (xs 0))) with hcdef
+    have hc0 : 0 < |c| := abs_pos.mpr hc
+    have hev1 : ∀ᶠ s in 𝓝 (0 : ℝ), ‖E.symm (xs s) - E.symm (xs 0)‖ < δ := by
+      filter_upwards [(E.symm.continuous.comp hxc).continuousAt.eventually
+        (Metric.ball_mem_nhds (E.symm (xs 0)) hδ)] with s hs
+      rwa [← dist_eq_norm]
+    have hev2 : ∀ᶠ s in 𝓝 (0 : ℝ), |φ s - s * c| ≤ |c| / 2 * |s| := by
+      have := (hasDerivAt_iff_isLittleO_nhds_zero.mp hφd).def (half_pos hc0)
+      filter_upwards [this] with s hs
+      simpa [hφ0, Real.norm_eq_abs] using hs
+    obtain ⟨r, hr, hrb⟩ := Metric.eventually_nhds_iff.mp (hev1.and hev2)
+    set s₀ := r / 2 with hs₀def
+    have hs₀ : 0 < s₀ := half_pos hr
+    have hbp := (hrb (show dist s₀ 0 < r by
+      rw [Real.dist_eq, sub_zero, abs_of_pos hs₀]; linarith)).2
+    have hbm := (hrb (show dist (-s₀) 0 < r by
+      rw [Real.dist_eq, sub_zero, abs_neg, abs_of_pos hs₀]; linarith)).2
+    rw [abs_of_pos hs₀] at hbp
+    rw [abs_neg, abs_of_pos hs₀] at hbm
+    refine ⟨|c| * s₀ / 2, by positivity, fun u hu => ?_⟩
+    have hmem : u ∈ Set.uIcc (φ (-s₀)) (φ s₀) := by
+      rw [Set.mem_uIcc]
+      obtain ⟨hpl, hpr⟩ := abs_le.mp hbp
+      obtain ⟨hml, hmr⟩ := abs_le.mp hbm
+      obtain ⟨hul, hur⟩ := abs_lt.mp hu
+      rcases lt_or_gt_of_ne hc with hneg | hpos
+      · rw [abs_of_neg hneg] at hpl hpr hml hmr hul hur
+        right; constructor <;> linarith
+      · rw [abs_of_pos hpos] at hpl hpr hml hmr hul hur
+        left; constructor <;> linarith
+    obtain ⟨s, hs, hsu⟩ := intermediate_value_uIcc hφc.continuousOn hmem
+    have hs' : dist s 0 < r := by
+      rw [Set.mem_uIcc] at hs
+      rw [Real.dist_eq, sub_zero, abs_lt]
+      constructor <;> rcases hs with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> linarith
+    refine ⟨E.symm (xs s) - E.symm (xs 0), (hrb hs').1, ?_, hsu⟩
+    rw [add_sub_cancel]
+    show E.symm (P (E (E.symm (xs s)))) = E.symm (xs s)
+    rw [ContinuousLinearEquiv.apply_symm_apply, hPdef,
+      periodMap_autonomous_orbit hfK hxs hT.le hper s]
+  obtain ⟨hLS, -⟩ := lyapunovStable_of_fixedCurve hP' hPp' hv' (fun e => by rw [hw', one_mul])
+    hwv' hm hLm hρ' hTay' hcurve
+  refine ⟨ha'.symm.trans ha, fun k hk => ?_, hLS,
+    solution_lyapunovStable_of_map hGc (fun _ => hfK) hT (fun _ => rfl) hxs hfix hLS⟩
   obtain ⟨hk', hb'⟩ := hkb k
   exact hb'.symm.trans (hb _ (hk' hk))
 
