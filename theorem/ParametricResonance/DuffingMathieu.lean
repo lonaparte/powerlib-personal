@@ -32,7 +32,10 @@ Scope.
   `ODE_solution_unique_of_mem_Icc_right`) transfer the estimate to every solution of the
   unclamped field on `[0, L/ε]` (`averaging_valid`, `oscillator_averaging`). Only averaged
   solutions that stay in a disc `|z̄| ≤ R` up to `L/ε` are covered (e.g. a phase-locked state),
-  and the estimate is the KBM `O(ε)` on the time scale `1/ε`, not uniform in time.
+  and the estimate is the KBM `O(ε)` on the time scale `1/ε`, not uniform in time (periodic
+  orbits near hyperbolic equilibria of the averaged field and validity on `[0, ∞)` in the
+  attraction case: `theorem/Averaging/PeriodicOrbits.lean`, `exists_periodic_orbit`;
+  `theorem/Averaging/PeriodicOrbitStability.lean`, `averaging_valid_forever`).
 * Generic mathematics, no model family.
 
 Source: first-order averaging of the parametrically excited Duffing oscillator (Nayfeh–Mook,

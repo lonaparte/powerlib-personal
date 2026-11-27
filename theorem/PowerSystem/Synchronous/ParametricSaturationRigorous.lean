@@ -18,7 +18,8 @@ Model boundary.
   `Params.toSwing` with `K_s` frozen at `K_s(t) = K_s(1 + ε cos 2νt)` (`ParametricSaturation.modKs`,
   pump frequency `Ω = 2ν`, `ν > 0`), state `(δ, δ̇)`, continuous time, `δ` from the unloaded
   equilibrium `δ = 0` (rad), `Params.Pos`. Solutions are global `C²` curves (derivatives for all
-  `t`); only the window `[0, L/ε]` is used.
+  `t`); only the window `[0, L/ε]` is used (the periodic subharmonic orbit and its stability for
+  all `t` are `theorem/PowerSystem/Synchronous/SubharmonicOrbit.lean`).
 * The weakly nonlinear scaling: the relative depth `ε > 0` is the small parameter, the damping
   and the detuning are of its order, `2ξω_n = εb` and `ω_n² = ν² − εd` (`ξ` the damping ratio
   (3-11), `ω_n = √(ω₀K_s/(2H))`), and the oscillation has amplitude of order `√ε`

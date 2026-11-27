@@ -43,7 +43,10 @@ Not formalized.
   domain-restricted version (local Lipschitz, `x̄` staying in a set with margin) with an additive
   perturbation is `theorem/Averaging/KBMPerturbed.lean` (`kbm_perturbed_local`,
   `kbm_perturbed_sq`); a second-order averaging with quadratic stiffness is
-  `ParametricResonance.QuadraticCubic.second_order_averaging`.
+  `ParametricResonance.QuadraticCubic.second_order_averaging`. Periodic orbits near hyperbolic
+  equilibria of the averaged field (Bogoliubov's second theorem), their stability and validity on
+  `[0, ∞)` in the attraction case are `theorem/Averaging/PeriodicOrbits.lean` and
+  `theorem/Averaging/PeriodicOrbitStability.lean`.
 -/
 
 noncomputable section

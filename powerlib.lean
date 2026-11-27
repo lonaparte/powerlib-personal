@@ -26,6 +26,8 @@ import theorem.Averaging.StateSpaceAveraging
 import theorem.Averaging.SwitchedStability
 import theorem.Averaging.SwitchedFamily
 import theorem.Averaging.KBMPerturbed
+import theorem.Averaging.PeriodicOrbits
+import theorem.Averaging.PeriodicOrbitStability
 import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
@@ -502,6 +504,7 @@ import theorem.PowerSystem.Synchronous.ParametricSaturation
 import theorem.PowerSystem.Synchronous.LoadedSwing
 import theorem.PowerSystem.Synchronous.ParametricSaturationRigorous
 import theorem.PowerSystem.Synchronous.LoadedSwingConstantPower
+import theorem.PowerSystem.Synchronous.SubharmonicOrbit
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

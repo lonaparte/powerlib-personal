@@ -34,7 +34,11 @@ Model boundary.
   remainder with its bound (`accel_eq_duffing`, `abs_remainder_le`), the exact van der Pol form
   with that remainder (`hasDerivAt_vdp`) and the exact period average of the truncated field
   (`averaged_swing`). The amplitudes and their stability are statements about the averaged,
-  truncated amplitude equation (the averaged level L2 with a cubic nonlinearity). The averaging
+  truncated amplitude equation (the averaged level L2 with a cubic nonlinearity); that each
+  nondegenerate locked state is a genuine `2π/ν`-periodic solution of the swing model, stable or
+  unstable as its averaged Jacobian, is
+  `theorem/PowerSystem/Synchronous/SubharmonicOrbit.lean` (`subharmonic_orbit`,
+  `subharmonic_orbit_stable`, `subharmonic_orbit_unstable`). The averaging
   step itself is rigorous for the truncated (Duffing–Mathieu) model on bounded sets and times
   `O(1/ε)` (`DuffingMathieu.averaging_valid`, `DuffingMathieu.oscillator_averaging`, with `ξ`,
   `d` and `ε` small of one order and amplitudes of the order of their square root,
