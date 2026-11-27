@@ -35,10 +35,11 @@ Scope.
   shadowing at any rate below `a − ε` (`eq_asymptoticPhase`), and the phase map is continuous
   (`continuous_asymptoticPhase`), the identity on the graph, and within
   `ε ‖p₂ − h(p₁)‖/(a − b − 3ε)` of the centre coordinate.
-* Lipschitz dependence of the phase on `p` is not proved: with merely Lipschitz nonlinearities
-  the strong stable fibres of a centre manifold are in general only Hölder continuous, and
-  Lipschitz (or `C¹`) fibres need smoothness and a bunching condition. Continuity, `φ(0) = 0` and
-  the linear bound at the graph are what the stability transfers use.
+* Lipschitz dependence of the phase on `p` is not proved: the finite-horizon phases are Lipschitz
+  only with constants growing like `((‖A‖ + ε)/(a − ε))^N`, and Lipschitz (or `C¹`) stable
+  fibres are known under smoothness and bunching hypotheses that are not assumed here (stable
+  foliations are in general only Hölder continuous). Continuity, `φ(0) = 0` and the linear bound
+  at the graph are what the stability transfers use.
 * The local form (`exists_local_asymptoticPhase`): for nonlinearities with strict derivative `0`
   at `0`, the cut-off of `exists_local_centreManifold`; every orbit of the original map that stays
   in the ball `‖p‖ ≤ ρ` is shadowed by an orbit of the cut-off map on the graph.
@@ -52,9 +53,10 @@ Carr, *Applications of Centre Manifold Theory* (1981), Ch. 2 (Theorem 2 and the 
 asymptotic phase, used for the full reduction principle); Kelley, "The stable, center-stable,
 center, center-unstable and unstable manifolds", J. Differential Equations 3 (1967); Pliss, "A
 reduction principle in the theory of stability of motion" (1964); Hirsch, Pugh and Shub,
-*Invariant Manifolds* (LNM 583, 1977) (Hölder, not Lipschitz, regularity of stable foliations);
-the open item of `theorem/Map/CenterReduction.lean` (Scope: "`r` Lyapunov stable (not
-asymptotically) ⇒ `G` Lyapunov stable" needs the asymptotic phase).
+*Invariant Manifolds* (LNM 583, 1977); Hasselblatt and Wilkinson, "Prevalence of non-Lipschitz
+Anosov foliations", Ergodic Theory Dynam. Systems 19 (1999) (stable foliations need not be
+Lipschitz); the open item of `theorem/Map/CenterReduction.lean` (Scope: "`r` Lyapunov stable
+(not asymptotically) ⇒ `G` Lyapunov stable" needs the asymptotic phase).
 
 Results.
 * Maps: `phaseApprox` (`φ_N(p) = r^{−N}((F^N p)₁)`), `asymptoticPhase` (`φ`, their limit).
