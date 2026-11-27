@@ -25,7 +25,10 @@ both sides are `2πξ(1 + O(ξ + ε))`: the L2 threshold on the jump at the exac
 `ω = 2ω₀`. Combined with the exact cone `DutyCycle.centre_threshold_ratio` this is the duty-`δ`
 analogue of `SquareWave.centre_levels_agree`: for every `η > 0` and all small `ξ`, `ε`, the
 exact (L1) and averaged (L2) verdicts at the exact centre agree outside the cone
-`|(ε + ε') sin πδ − 2πξ| ≤ ηξ`.
+`|(ε + ε') sin πδ − 2πξ| ≤ ηξ`. As a function of the damping, the exact centre threshold
+`ε_c(ξ; δ)` (infimum of the unstable depths along the centre-following family, zero mean, unit
+`ω₀`) satisfies `ε_c(ξ; δ)/ξ → 2π(1 − δ)/sin(πδ)` as `ξ → 0⁺` (`π` at `δ = 1/2`, the value of
+`CentreThreshold.tendsto_centreThreshold_div`).
 
 Scope.
 * The scalar oscillator in the state `(x, ẋ)` with the duty-`δ` square-wave stiffness of
@@ -38,12 +41,18 @@ Scope.
   (`ν_i > 0`). The detuning identity holds for every duty ratio and every pair of levels; the
   band and the cone use the zero-mean normalization `δε = (1 − δ)ε'`, `ε ≥ 0`, and for the cone
   a fixed `δ ∈ (0, 1)` and small `ξ`, `ε` (existential bound `ρ`).
+* `dutyCentreThreshold δ ξ` is a real-valued function (an infimum over depths, unit `ω₀`,
+  centre-following period `T = π/(δν₁ + (1 − δ)ν₂)`); its band and limit are proved for small
+  `ξ` from the cone alone. Unlike `CentreThreshold.centre_unstable_iff_threshold` for `δ = 1/2`,
+  no monotonicity in the depth (instability exactly above `ε_c`) is claimed.
 * Generic mathematics; no model family.
 
 Source: the duty-cycle model, its exact centre criterion and cone
 `DutyCycle.centre_threshold_ratio` and its averaged threshold `DutyCycle.averaged_threshold`
 (`theorem/ParametricResonance/DutyCycle.lean`); the symmetric-wave pattern
-`SquareWave.centre_levels_agree` (`theorem/ParametricResonance/SquareWaveAveraging.lean`);
+`SquareWave.centre_levels_agree` (`theorem/ParametricResonance/SquareWaveAveraging.lean`) and the
+threshold function `CentreThreshold.tendsto_centreThreshold_div`
+(`theorem/ParametricResonance/CentreThreshold.lean`);
 first-order averaging of the damped Hill equation (Nayfeh–Mook, *Nonlinear Oscillations*,
 parametrically excited systems; Richards, *Analysis of Periodically Time-Varying Systems*, 1983).
 
@@ -56,6 +65,9 @@ Results.
 * `centre_levels_agree` — fixed `δ ∈ (0, 1)`, every `η > 0`, small `ξ`, `ε`, zero mean, exact
   centre: `(ε + ε') sin πδ > (2π + η)ξ` gives L1 Floquet instability and L2 instability,
   `(ε + ε') sin πδ < (2π − η)ξ` gives L1 Schur stability and L2 Hurwitz.
+* `dutyCentreThreshold` — `ε_c(ξ; δ)`; `dutyCentreThreshold_band` — for small `ξ`,
+  `(2π ∓ η)ξ(1 − δ)/sin(πδ)` bound `ε_c(ξ; δ)`; `tendsto_dutyCentreThreshold_div` —
+  `ε_c(ξ; δ)/ξ → 2π(1 − δ)/sin(πδ)` as `ξ → 0⁺`.
 -/
 
 noncomputable section
@@ -333,5 +345,159 @@ of `η`. -/
         mul_le_mul_of_nonneg_right e1 hξ.le
       linarith
     linarith
+
+/-! ## The duty-`δ` centre threshold as a function of the damping -/
+
+section Threshold
+
+open Filter Topology
+
+/-- **The duty-`δ` centre threshold** `ε_c(ξ; δ)`. Zero-mean normalization `ε' = rε`,
+`r = δ/(1 − δ)`, unit `ω₀ = 1`, damping ratio `ξ`, centre-following period
+`T = π/(δν₁ + (1 − δ)ν₂)`, `ν₁ = √(1 + ε − ξ²)`, `ν₂ = √(1 − rε − ξ²)`: the infimum of the depths
+`ε ≥ 0` with both levels oscillatory at which the exact duty-`δ` monodromy has a multiplier of
+modulus `> 1`. -/
+def dutyCentreThreshold (δ ξ : ℝ) : ℝ :=
+  sInf {ε : ℝ | 0 ≤ ε ∧ δ / (1 - δ) * ε + ξ ^ 2 < 1 ∧
+    ∃ μ ∈ spectrum ℂ ((dutyMonodromy ξ (1 + ε) (1 - δ / (1 - δ) * ε) δ
+      (Real.pi / (δ * √(1 + ε - ξ ^ 2) + (1 - δ) * √(1 - δ / (1 - δ) * ε - ξ ^ 2)))).map
+        (algebraMap ℝ ℂ)), 1 < ‖μ‖}
+
+/-- **The band of the duty-`δ` centre threshold.** Fix `δ ∈ (0, 1)`. For every `η > 0` there is
+`ξ₁ > 0` such that for `0 < ξ < ξ₁`:
+`(2π − η) ξ (1 − δ)/sin(πδ) ≤ ε_c(ξ; δ) ≤ (2π + η) ξ (1 − δ)/sin(πδ)`, i.e. the exact threshold
+on the jump `ε + ε' = ε/(1 − δ)` is `2πξ/sin(πδ) (1 + o(1))` (`DutyCycle.centre_threshold_ratio`:
+the instability set contains every depth above the upper value and none below the lower value). -/
+@[tmio T, powerlib_foundation] theorem dutyCentreThreshold_band {δ η : ℝ} (hδ0 : 0 < δ)
+    (hδ1 : δ < 1) (hη : 0 < η) :
+    ∃ ξ₁ > 0, ∀ ξ, 0 < ξ → ξ < ξ₁ →
+      (2 * Real.pi - η) * ξ * (1 - δ) / Real.sin (Real.pi * δ) ≤ dutyCentreThreshold δ ξ ∧
+      dutyCentreThreshold δ ξ ≤ (2 * Real.pi + η) * ξ * (1 - δ) / Real.sin (Real.pi * δ) := by
+  have hπ := Real.pi_pos
+  have hs : 0 < Real.sin (Real.pi * δ) :=
+    Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith)
+  set s := Real.sin (Real.pi * δ) with hsdef
+  have h1δ : 0 < 1 - δ := by linarith
+  set r := δ / (1 - δ) with hr
+  have hr0 : 0 < r := by positivity
+  have hr1 : 1 + r = 1 / (1 - δ) := by rw [hr]; field_simp; ring
+  obtain ⟨ρ, hρ, hL1⟩ := DutyCycle.centre_threshold_ratio hδ0 hδ1 (half_pos hη)
+  set C := (2 * Real.pi + η) * (1 - δ) / s with hC
+  have hC0 : 0 < C := by positivity
+  set ρ' := min ρ (1 / 2) with hρ'
+  have hρ'0 : 0 < ρ' := lt_min hρ (by norm_num)
+  have hρ'1 : ρ' ≤ ρ := min_le_left _ _
+  have hρ'2 : ρ' ≤ 1 / 2 := min_le_right _ _
+  refine ⟨min ρ' (ρ' / ((1 + r) * C)), lt_min hρ'0 (by positivity), fun ξ hξ hξ₁ => ?_⟩
+  have hξρ' : ξ < ρ' := hξ₁.trans_le (min_le_left _ _)
+  have hξC : (1 + r) * C * ξ < ρ' := by
+    have := hξ₁.trans_le (min_le_right _ _)
+    rwa [lt_div_iff₀ (by positivity), mul_comm] at this
+  have hξ2 : ξ ^ 2 < 1 / 4 := by nlinarith
+  -- the cone at unit `ω₀`, zero mean, centre-following period
+  have cone : ∀ ε, 0 ≤ ε → (1 + r) * ε < ρ' →
+      ((2 * Real.pi + η / 2) * ξ < ε / (1 - δ) * s →
+        ∃ μ ∈ spectrum ℂ ((dutyMonodromy ξ (1 + ε) (1 - r * ε) δ
+          (Real.pi / (δ * √(1 + ε - ξ ^ 2) + (1 - δ) * √(1 - r * ε - ξ ^ 2)))).map
+            (algebraMap ℝ ℂ)), 1 < ‖μ‖) ∧
+      (ε / (1 - δ) * s < (2 * Real.pi - η / 2) * ξ →
+        LTI.SchurStable (dutyMonodromy ξ (1 + ε) (1 - r * ε) δ
+          (Real.pi / (δ * √(1 + ε - ξ ^ 2) + (1 - δ) * √(1 - r * ε - ξ ^ 2))))) := by
+    intro ε hε hεr
+    have hrε : 0 ≤ r * ε := by positivity
+    have hερ : ε < ρ := by nlinarith
+    have hrερ : r * ε < ρ := by nlinarith
+    have hp1 : 0 < 1 + ε - ξ ^ 2 := by nlinarith
+    have hp2 : 0 < 1 - r * ε - ξ ^ 2 := by nlinarith
+    have hν₁ := Real.sqrt_pos.mpr hp1
+    have hν₂ := Real.sqrt_pos.mpr hp2
+    have hM : 0 < δ * √(1 + ε - ξ ^ 2) + (1 - δ) * √(1 - r * ε - ξ ^ 2) := by positivity
+    have hmean : δ * ε = (1 - δ) * (r * ε) := by rw [hr]; field_simp
+    obtain ⟨hU, hS⟩ := hL1 1 ξ ε (r * ε) _ _
+      (Real.pi / (δ * √(1 + ε - ξ ^ 2) + (1 - δ) * √(1 - r * ε - ξ ^ 2))) one_pos hξ
+      (hξρ'.trans_le hρ'1) hε hερ hrε hrερ (by rw [Real.sq_sqrt hp1.le]; ring)
+      (by rw [Real.sq_sqrt hp2.le]; ring) hν₁ hν₂ (by field_simp)
+    have hJ : (ε + r * ε) * s = ε / (1 - δ) * s := by
+      rw [show ε + r * ε = (1 + r) * ε by ring, hr1]; ring
+    simp only [mul_one, one_pow, one_mul] at hU hS
+    rw [hJ] at hU hS
+    exact ⟨hU, hS⟩
+  -- the depth `ε* = C ξ` is unstable
+  set ε₀ := C * ξ with hε₀
+  have hε₀0 : 0 ≤ ε₀ := by positivity
+  have hε₀r : (1 + r) * ε₀ < ρ' := by rw [hε₀]; linarith
+  have hmem : ε₀ ∈ {ε : ℝ | 0 ≤ ε ∧ δ / (1 - δ) * ε + ξ ^ 2 < 1 ∧
+      ∃ μ ∈ spectrum ℂ ((dutyMonodromy ξ (1 + ε) (1 - δ / (1 - δ) * ε) δ
+        (Real.pi / (δ * √(1 + ε - ξ ^ 2) + (1 - δ) * √(1 - δ / (1 - δ) * ε - ξ ^ 2)))).map
+          (algebraMap ℝ ℂ)), 1 < ‖μ‖} := by
+    refine ⟨hε₀0, by rw [← hr]; nlinarith, ?_⟩
+    rw [← hr]
+    refine (cone ε₀ hε₀0 hε₀r).1 ?_
+    have e : ε₀ / (1 - δ) * s = (2 * Real.pi + η) * ξ := by
+      rw [hε₀, hC]; field_simp
+    rw [e]
+    nlinarith
+  refine ⟨le_csInf ⟨ε₀, hmem⟩ fun ε hε => ?_, ?_⟩
+  · obtain ⟨hε0, -, μ, hμ, hμ1⟩ := hε
+    by_contra hlt
+    push Not at hlt
+    have hlo : (2 * Real.pi - η) * ξ * (1 - δ) / s ≤ ε₀ := by
+      rw [hε₀, hC, div_mul_eq_mul_div, div_le_div_iff_of_pos_right hs]
+      nlinarith [mul_pos (mul_pos hη h1δ) hξ]
+    have hεr : (1 + r) * ε < ρ' := by
+      have : (1 + r) * ε ≤ (1 + r) * ε₀ :=
+        mul_le_mul_of_nonneg_left (hlt.le.trans hlo) (by positivity)
+      linarith
+    have hst : ε / (1 - δ) * s < (2 * Real.pi - η / 2) * ξ := by
+      have h1 : ε / (1 - δ) * s < (2 * Real.pi - η) * ξ * (1 - δ) / s / (1 - δ) * s := by
+        have := div_lt_div_of_pos_right hlt h1δ
+        exact mul_lt_mul_of_pos_right this hs
+      have e : (2 * Real.pi - η) * ξ * (1 - δ) / s / (1 - δ) * s = (2 * Real.pi - η) * ξ := by
+        field_simp
+      nlinarith
+    have hSS := (cone ε hε0 hεr).2 hst
+    rw [← hr] at hμ
+    obtain ⟨v, hv, hMv⟩ := LTI.mem_spectrum_iff_exists_eigvec.mp hμ
+    exact absurd (hSS μ v hv hMv) (not_lt.mpr hμ1.le)
+  · refine (csInf_le ⟨0, fun ε hε => hε.1⟩ hmem).trans_eq ?_
+    rw [hε₀, hC]; ring
+
+/-- **`ε_c(ξ; δ)/ξ → 2π(1 − δ)/sin(πδ)` as `ξ → 0⁺`.** For fixed `δ ∈ (0, 1)` the exact duty-`δ`
+centre threshold on the depth `ε` (zero mean, `ε' = δε/(1 − δ)`) is asymptotically
+`2πξ(1 − δ)/sin(πδ)`, i.e. `(ε + ε') sin(πδ) = 2πξ`: the averaged (L2) value of
+`DutyCycle.averaged_centre_threshold` is the exact leading term. For `δ = 1/2` the limit is `π`, the
+value of `CentreThreshold.tendsto_centreThreshold_div`. -/
+@[tmio T, powerlib_foundation] theorem tendsto_dutyCentreThreshold_div {δ : ℝ} (hδ0 : 0 < δ)
+    (hδ1 : δ < 1) :
+    Tendsto (fun ξ => dutyCentreThreshold δ ξ / ξ) (𝓝[>] 0)
+      (𝓝 (2 * Real.pi * (1 - δ) / Real.sin (Real.pi * δ))) := by
+  have hπ := Real.pi_pos
+  have hs : 0 < Real.sin (Real.pi * δ) :=
+    Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith)
+  set s := Real.sin (Real.pi * δ) with hsdef
+  have h1δ : 0 < 1 - δ := by linarith
+  rw [Metric.tendsto_nhdsWithin_nhds]
+  intro e he
+  obtain ⟨ξ₁, hξ₁, hB⟩ := dutyCentreThreshold_band hδ0 hδ1
+    (η := e * s / (2 * (1 - δ))) (by positivity)
+  refine ⟨ξ₁, hξ₁, fun ξ hξ hdist => ?_⟩
+  have hξ0 : 0 < ξ := hξ
+  rw [Real.dist_eq, sub_zero, abs_of_pos hξ0] at hdist
+  obtain ⟨hlo, hhi⟩ := hB ξ hξ0 hdist
+  have key : |dutyCentreThreshold δ ξ / ξ - 2 * Real.pi * (1 - δ) / s| ≤ e / 2 := by
+    rw [abs_le]
+    have e1 : (2 * Real.pi - e * s / (2 * (1 - δ))) * ξ * (1 - δ) / s / ξ =
+        2 * Real.pi * (1 - δ) / s - e / 2 := by field_simp
+    have e2 : (2 * Real.pi + e * s / (2 * (1 - δ))) * ξ * (1 - δ) / s / ξ =
+        2 * Real.pi * (1 - δ) / s + e / 2 := by field_simp
+    have l1 := div_le_div_of_nonneg_right hlo hξ0.le
+    have l2 := div_le_div_of_nonneg_right hhi hξ0.le
+    rw [e1] at l1
+    rw [e2] at l2
+    constructor <;> linarith
+  rw [Real.dist_eq]
+  linarith
+
+end Threshold
 
 end powerlib.ParametricResonance.DutyCycleLevels
