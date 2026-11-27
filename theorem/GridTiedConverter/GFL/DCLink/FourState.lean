@@ -78,7 +78,9 @@ Results.
   `det A₀ = γ k_i k_iv V₀² cos 2θ₀`. The PLL–DC model's Jacobian at the image has the same quartic
   (`det_characteristicMatrix_jacobian`).
 * Angle input: in error-angle coordinates `θ_g` enters only additively through `−θ̇_g`, so
-  the state Jacobian does not depend on the input (`A₁^GFL = 0`, `b(jω_p) = −jω_p e_θ`).
+  the state Jacobian does not depend on the input (`A₁^GFL = 0`, `b(jω_p) = −jω_p e_θ`). This is
+  the explicit input dependence only: along the forced trajectory the Jacobian is modulated,
+  `A₁ = D_x J[z⁽¹⁾] ≠ 0`, computed in `GFL.Parametric.AngleModulation` (`smA1_afield`).
 
 Connection conclusions (readings into the PLL–DC model).
 The four-state closed forms read the PLL–DC model's requirements at the image: the equilibrium
