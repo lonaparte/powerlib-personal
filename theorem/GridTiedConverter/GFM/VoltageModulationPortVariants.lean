@@ -60,6 +60,7 @@ None: an extension.
 Family and connection conclusions.
 * The synchronizing core is `VoltageModulationPort`; the GFL converter is
   `GFL.Parametric.PortModulation`. All models share the charts and the Thevenin amplitudes.
+* The VI and PQV corollaries of every theorem here are in `VoltageModulationPortVariantsVIPQV`.
 -/
 
 noncomputable section

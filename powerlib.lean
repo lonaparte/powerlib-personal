@@ -210,6 +210,7 @@ import theorem.GridTiedConverter.GFM.VoltageModulationSmooth
 import theorem.GridTiedConverter.GFM.VoltageModulationPhasor
 import theorem.GridTiedConverter.GFM.VoltageModulationPort
 import theorem.GridTiedConverter.GFM.VoltageModulationPortVariants
+import theorem.GridTiedConverter.GFM.VoltageModulationPortVariantsVIPQV
 import theorem.GridTiedConverter.GFM.DroopVoltageOrbit
 import theorem.GridTiedConverter.GFM.MatchingVoltageOrbit
 import theorem.GridTiedConverter.GFM.GFMOrbitStability
@@ -344,6 +345,7 @@ import theorem.ParametricResonance.StableHurwitz
 import theorem.ParametricResonance.HurwitzForcedOrbit
 import theorem.ParametricResonance.SmoothForcedOrbitVec
 import theorem.ParametricResonance.PortDisturbance
+import theorem.ParametricResonance.PortDisturbanceVIPQV
 import theorem.ParametricResonance.SmoothOrbitStability
 import theorem.ParametricResonance.FieldTransfer
 import theorem.ParametricResonance.TongueQuadratic

@@ -28,15 +28,16 @@ Results.
 * `hz_ppfield`, `smA1V_ppfield` — the forced response and `A₁` of a chart disturbance.
 * `orbit_chart_stable`, `orbit_chart_unstable`, `orbit_chart_exp_stable` — end-to-end Floquet
   statements and exponential stability for every chart.
-* `orbit_port_stable`, `orbit_port_unstable` — the VI chart.
-* `orbit_pqv_stable`, `orbit_pqv_unstable` — the PQV chart.
+* `orbit_port_stable`, `orbit_port_unstable`, `orbit_port_exp_stable` — the VI chart.
+* `orbit_pqv_stable`, `orbit_pqv_unstable`, `orbit_pqv_exp_stable` — the PQV chart.
 
 Corrections.
 None: an extension.
 
 Family and connection conclusions.
 * The GFL counterpart is `GFL.Parametric.PortModulation`; the other GFM models are in
-  `GFM.VoltageModulationPortVariants`.
+  `GFM.VoltageModulationPortVariants` (any chart) and `GFM.VoltageModulationPortVariantsVIPQV`
+  (the VI and PQV charts).
 -/
 
 noncomputable section
@@ -287,6 +288,33 @@ stability. -/
   c.orbit_chart_unstable hP pt.contDiff_eth.contDiffAt hN hV hΩ hω0 hH hd2 hH1 hH2 hPδ hPV
     hPδδ hPδV (pt.linCV_polarAbs hN hV w) A0' hg
 
+/-- The GFM synchronizing core under the VI port disturbance, end-to-end with local exponential
+orbital stability of the forced orbit. -/
+@[tmio M, powerlib_domain] theorem orbit_port_exp_stable (hP : ContDiff ℝ 3 P) (pt : Port)
+    (hN : pt.eth 0 = pt.V0) (hV : 0 < pt.V0) {Ω : ℝ} (hΩ : 0 < Ω)
+    (hω0 : c.ω0 ≠ 0) (hH : c.H ≠ 0) (hd2 : 0 < c.d2) (hH1 : c.a * c.ωc = (Ω : ℂ) ^ 2)
+    (hH2 : c.d0 = (c.a + c.ωc) * (Ω : ℂ) ^ 2) (hPδ : Pd P (δ0, pt.V0) = c.Pδ)
+    (hPV : fderiv ℝ P (δ0, pt.V0) (0, 1) = c.PV)
+    (hPδδ : fderiv ℝ (Pd P) (δ0, pt.V0) (1, 0) = c.Pδδ)
+    (hPδV : fderiv ℝ (Pd P) (δ0, pt.V0) (0, 1) = c.PδV) (w : Fin 4 → ℂ)
+    (A0' : Matrix (Fin 3) (Fin 3) ℝ)
+    (hs : (c.left (Ω * I) ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ c.right (Ω * I))).re < 0)
+    (hg : ‖Element.pump (c.A1 (c.forcedVδ (2 * Ω * I) (pt.V0 * pt.effV w) +
+        c.forcedθδ (2 * Ω * I) (pt.effθ w)) (pt.V0 * pt.effV w))
+        (c.left (Ω * I)) (c.right (Ω * I)) / 2‖ ^ 2 <
+      ‖c.left (Ω * I) ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ c.right (Ω * I))‖ ^ 2) :
+    ∃ k, 0 ≤ k ∧ ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 3 → ℝ,
+      (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ k * ε) ∧
+      (∀ t, HasDerivAt y (c.ppfield P δ0 pt.V0 pt.eth (sxeq P δ0 pt.V0 + y t,
+        0 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → Fin 3 → ℝ),
+        IsIntegralCurveOn x (fun t a => c.ppfield P δ0 pt.V0 pt.eth (sxeq P δ0 pt.V0 + a,
+          0 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ a)) (Set.Ici s) →
+        ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+          ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖ :=
+  c.orbit_chart_exp_stable hP pt.contDiff_eth.contDiffAt hN hV hΩ hω0 hH hd2 hH1 hH2 hPδ hPV
+    hPδδ hPδV (pt.linCV_polarAbs hN hV w) A0' hs hg
+
 /-- The GFM synchronizing core under the PQV port disturbance `ŵ = (ê, θ̂, P̂, Q̂)`, end-to-end,
 stability. -/
 @[tmio M, powerlib_domain] theorem orbit_pqv_stable (hP : ContDiff ℝ 3 P) (pq : PQVPort)
@@ -345,6 +373,33 @@ instability. -/
           (2 * Ω) A0' ε t (y t)) (2 * Real.pi / (2 * Ω)) :=
   c.orbit_chart_unstable hP pq.contDiff_eth.contDiffAt hN hV hΩ hω0 hH hd2 hH1 hH2 hPδ hPV
     hPδδ hPδV (pq.linCV_polarAbs hN hV hU w) A0' hg
+
+/-- The GFM synchronizing core under the PQV port disturbance, end-to-end with local exponential
+orbital stability of the forced orbit. -/
+@[tmio M, powerlib_domain] theorem orbit_pqv_exp_stable (hP : ContDiff ℝ 3 P) (pq : PQVPort)
+    (hN : pq.eth 0 = pq.V0) (hV : 0 < pq.V0) (hU : pq.U0 ≠ 0) {Ω : ℝ} (hΩ : 0 < Ω)
+    (hω0 : c.ω0 ≠ 0) (hH : c.H ≠ 0) (hd2 : 0 < c.d2) (hH1 : c.a * c.ωc = (Ω : ℂ) ^ 2)
+    (hH2 : c.d0 = (c.a + c.ωc) * (Ω : ℂ) ^ 2) (hPδ : Pd P (δ0, pq.V0) = c.Pδ)
+    (hPV : fderiv ℝ P (δ0, pq.V0) (0, 1) = c.PV)
+    (hPδδ : fderiv ℝ (Pd P) (δ0, pq.V0) (1, 0) = c.Pδδ)
+    (hPδV : fderiv ℝ (Pd P) (δ0, pq.V0) (0, 1) = c.PδV) (w : Fin 4 → ℂ)
+    (A0' : Matrix (Fin 3) (Fin 3) ℝ)
+    (hs : (c.left (Ω * I) ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ c.right (Ω * I))).re < 0)
+    (hg : ‖Element.pump (c.A1 (c.forcedVδ (2 * Ω * I) (pq.V0 * pq.effV w) +
+        c.forcedθδ (2 * Ω * I) (pq.effθ w)) (pq.V0 * pq.effV w))
+        (c.left (Ω * I)) (c.right (Ω * I)) / 2‖ ^ 2 <
+      ‖c.left (Ω * I) ⬝ᵥ (A0'.map (algebraMap ℝ ℂ) *ᵥ c.right (Ω * I))‖ ^ 2) :
+    ∃ k, 0 ≤ k ∧ ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∃ y : ℝ → Fin 3 → ℝ,
+      (∀ t, y (t + 2 * Real.pi / (2 * Ω)) = y t) ∧ (∀ t, ‖y t‖ ≤ k * ε) ∧
+      (∀ t, HasDerivAt y (c.ppfield P δ0 pq.V0 pq.eth (sxeq P δ0 pq.V0 + y t,
+        0 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ y t)) t) ∧
+      ∃ δ K β : ℝ, 0 < δ ∧ 0 < β ∧ ∀ (s : ℝ) (x : ℝ → Fin 3 → ℝ),
+        IsIntegralCurveOn x (fun t a => c.ppfield P δ0 pq.V0 pq.eth (sxeq P δ0 pq.V0 + a,
+          0 + ε • harm w (2 * Ω) t) + ε • (A0' *ᵥ a)) (Set.Ici s) →
+        ‖x s - y s‖ ≤ δ → ∀ t, s ≤ t →
+          ‖x t - y t‖ ≤ K * Real.exp (-(β * (t - s))) * ‖x s - y s‖ :=
+  c.orbit_chart_exp_stable hP pq.contDiff_eth.contDiffAt hN hV hΩ hω0 hH hd2 hH1 hH2 hPδ hPV
+    hPδδ hPδV (pq.linCV_polarAbs hN hV hU w) A0' hs hg
 
 end Core
 end VoltageModulation
