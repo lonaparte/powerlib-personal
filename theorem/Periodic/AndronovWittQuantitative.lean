@@ -8,8 +8,8 @@ exponentially stable with asymptotic phase, with constants `δ`, `C`, `λ` that 
 (the return time of a section from the implicit function theorem, and a non-quantitative
 contraction of the Poincaré map). This module gives `δ`, `C`, `λ` as closed-form expressions in
 the data `K` (Lipschitz constant of `f`), `L₂` (Lipschitz constant of `Df`), `T`, `V = ‖f(p)‖`,
-`W = ∑ᵢ |wᵢ|` (the dual norm of `w`, `W ≤ n ‖w‖`), and a **contraction datum** `‖D^N‖ ≤ q < 1`,
-`N ≥ 1`, which holds for some `N` exactly when `D` is Schur stable
+any `W ≥ ∑ᵢ |wᵢ|` (the dual norm of `w`; e.g. `W = n ‖w‖`), and a **contraction datum**
+`‖D^N‖ ≤ q < 1`, `N ≥ 1`, which holds for some `N` exactly when `D` is Schur stable
 (`schurStable_iff_exists_pow_norm_lt_one`). With `q' = (1 + q)/2`:
 
 * `B = V e^{KT}` (`speed`: `‖f(x_*(t))‖ ≤ B`), `a = e^{3KT/2} + B W` (`growth`),
@@ -99,7 +99,7 @@ variable {n : ℕ} {f : (Fin n → ℝ) → Fin n → ℝ} {K L₂ : NNReal}
 /-- The speed bound `B = V e^{KT}` of the orbit (`V = ‖f(p)‖`). -/
 def speed (K T V : ℝ) : ℝ := V * Real.exp (K * T)
 
-/-- The one-step growth factor `a = e^{3KT/2} + B W` (`W = ∑ᵢ |wᵢ|`). -/
+/-- The one-step growth factor `a = e^{3KT/2} + B W` (`W ≥ ∑ᵢ |wᵢ|`). -/
 def growth (K T V W : ℝ) : ℝ := Real.exp (K * (3 * T / 2)) + speed K T V * W
 
 /-- The second-order constant `c₂ = L₂ T e^{3KT} + K W a`. -/
@@ -206,31 +206,31 @@ def returnTime (T : ℝ) (w p : Fin n → ℝ) (ξ : Fin n → ℝ) : ℝ := T -
 
 /-- **One step of the time-shift map, with explicit constants.** Let `F(ξ) = x(τ(ξ); ξ)` be the
 solution from `ξ` read at the explicit time `τ(ξ) = T − w ⬝ (ξ − p)`, `p = x_*(0)`
-(`PoincareSection.poincareMap` with this return time). If `W ‖ξ − p‖ ≤ T/2`, `W = ∑ᵢ |wᵢ|`, then
+(`PoincareSection.poincareMap` with this return time). If `W ‖ξ − p‖ ≤ T/2`, `W ≥ ∑ᵢ |wᵢ|`, then
 `|τ(ξ) − T| ≤ W ‖ξ − p‖`, `‖F(ξ) − p‖ ≤ a ‖ξ − p‖` and the second-order remainder
 `‖F(ξ) − p − D(ξ − p)‖ ≤ c₂ ‖ξ − p‖²` of the deflated monodromy `D = M − f(p) wᵀ` hold, with
 `a = growth`, `c₂ = curvature`. -/
 @[tmio T, powerlib_foundation] theorem step_bounds (hfd : Differentiable ℝ f)
     (hfK : LipschitzWith K f) (hL : LipschitzWith L₂ (fderiv ℝ f)) {xs : ℝ → Fin n → ℝ}
     (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T) (hper : Periodic xs T)
-    (w : Fin n → ℝ) {ξ : Fin n → ℝ} (hξ : (∑ i, |w i|) * ‖ξ - xs 0‖ ≤ T / 2) :
-    |returnTime T w (xs 0) ξ - T| ≤ (∑ i, |w i|) * ‖ξ - xs 0‖ ∧
+    (w : Fin n → ℝ) {W : ℝ} (hW : ∑ i, |w i| ≤ W) {ξ : Fin n → ℝ}
+    (hξ : W * ‖ξ - xs 0‖ ≤ T / 2) :
+    |returnTime T w (xs 0) ξ - T| ≤ W * ‖ξ - xs 0‖ ∧
     ‖poincareMap hfK (returnTime T w (xs 0)) ξ - xs 0‖ ≤
-      growth K T ‖f (xs 0)‖ (∑ i, |w i|) * ‖ξ - xs 0‖ ∧
+      growth K T ‖f (xs 0)‖ W * ‖ξ - xs 0‖ ∧
     ‖poincareMap hfK (returnTime T w (xs 0)) ξ - xs 0 -
         (monodromy (variationalMatrix f xs) T 0 - vecMulVec (f (xs 0)) w) *ᵥ (ξ - xs 0)‖ ≤
-      curvature K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) * ‖ξ - xs 0‖ ^ 2 := by
+      curvature K L₂ T ‖f (xs 0)‖ W * ‖ξ - xs 0‖ ^ 2 := by
   have hf : ContDiff ℝ 1 f := contDiff_one_iff_fderiv.2 ⟨hfd, hL.continuous⟩
   have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
   set p := xs 0 with hp
   set v := f p with hv
-  set W := ∑ i, |w i| with hW
   set e := ξ - p with he
   set τ := returnTime T w p with hτdef
   set B := speed K T ‖v‖ with hB
   set E := Real.exp (K * (3 * T / 2)) with hE
   have hB0 : 0 ≤ B := by rw [hB, speed]; positivity
-  have hW0 : 0 ≤ W := Finset.sum_nonneg fun i _ => abs_nonneg _
+  have hW0 : 0 ≤ W := (Finset.sum_nonneg fun i _ => abs_nonneg _).trans hW
   have hGc : Continuous (uncurry fun _ : ℝ => f) := hfK.continuous.comp continuous_snd
   set φ := flow (G := fun _ => f) hGc (fun _ => hfK) 0 ξ with hφdef
   have hφ : IsIntegralCurveOn φ (fun _ => f) (Ici 0) := flow_solution _ _ 0 ξ
@@ -239,7 +239,8 @@ solution from `ξ` read at the explicit time `τ(ξ) = T − w ⬝ (ξ − p)`, 
   have hτT : τ ξ - T = -(w ⬝ᵥ e) := by
     simp only [hτdef, returnTime]; ring
   have hs : |τ ξ - T| ≤ W * ‖e‖ := by
-    rw [hτT, abs_neg]; exact abs_dot_le w e
+    rw [hτT, abs_neg]
+    exact (abs_dot_le w e).trans (mul_le_mul_of_nonneg_right hW (norm_nonneg _))
   have hτ1 : T / 2 ≤ τ ξ := by have := (abs_le.1 (hs.trans hξ)).1; linarith
   have hτ2 : τ ξ ≤ 3 * T / 2 := by have := (abs_le.1 (hs.trans hξ)).2; linarith
   have hxsI : ∀ a b : ℝ, IsIntegralCurveOn xs (fun _ => f) (Icc a b) :=
@@ -780,7 +781,7 @@ Bernoulli's inequality `1 − ϑ^N ≤ N (1 − ϑ)` and `ϑ ≥ ϑ^N`. -/
 /-- **The Andronov–Witt theorem with explicit constants, from `x_*(0)`.** Let `x_*` be a
 `T`-periodic solution of `ẋ = f(x)` on `ℝ^{Fin n}` (sup norm), `f` differentiable and globally
 `K`-Lipschitz with `Df` globally `L₂`-Lipschitz, `p = x_*(0)`, `V = ‖f(p)‖`, `w ⬝ f(p) = 1`,
-`W = ∑ᵢ |wᵢ|`, `M` the monodromy, and let the deflated monodromy `D = M − f(p) wᵀ` satisfy the
+`W ≥ ∑ᵢ |wᵢ|`, `M` the monodromy, and let the deflated monodromy `D = M − f(p) wᵀ` satisfy the
 contraction datum `‖D^N‖ ≤ q < 1` for some `N ≥ 1`. Then every solution `x` on `[0, ∞)` with
 `‖x(0) − p‖ ≤ δ`, `δ = radius = (1 − q) T / (2 a^{2N} (W + N T c₂))`, has an asymptotic phase
 `θ`, `|θ| ≤ C ‖x(0) − p‖`, with `‖x(t) − x_*(t + θ)‖ ≤ C e^{−λt} ‖x(0) − p‖` for all `t ≥ 0`,
@@ -788,18 +789,18 @@ where `C = gain`, `λ = rate = −log((1 + q)/2)/(N · 3T/2)`. -/
 @[tmio T, powerlib_foundation] theorem asymptoticPhase_explicit (hfd : Differentiable ℝ f)
     (hfK : LipschitzWith K f) (hL : LipschitzWith L₂ (fderiv ℝ f)) {xs : ℝ → Fin n → ℝ}
     (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T) (hper : Periodic xs T)
-    {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {N : ℕ} (hN : 1 ≤ N) {q : ℝ} (hq : q < 1)
+    {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {W : ℝ} (hW : ∑ i, |w i| ≤ W) {N : ℕ}
+    (hN : 1 ≤ N) {q : ℝ} (hq : q < 1)
     (hDN : ‖(monodromy (variationalMatrix f xs) T 0 - vecMulVec (f (xs 0)) w) ^ N‖ ≤ q)
     {x : ℝ → Fin n → ℝ} (hx : IsIntegralCurveOn x (fun _ => f) (Ici 0))
-    (hx0 : ‖x 0 - xs 0‖ ≤ radius K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) N q) :
-    ∃ θ : ℝ, |θ| ≤ gain K T ‖f (xs 0)‖ (∑ i, |w i|) N q * ‖x 0 - xs 0‖ ∧
+    (hx0 : ‖x 0 - xs 0‖ ≤ radius K L₂ T ‖f (xs 0)‖ W N q) :
+    ∃ θ : ℝ, |θ| ≤ gain K T ‖f (xs 0)‖ W N q * ‖x 0 - xs 0‖ ∧
       ∀ t, 0 ≤ t → ‖x t - xs (t + θ)‖ ≤
-        gain K T ‖f (xs 0)‖ (∑ i, |w i|) N q * Real.exp (-(rate T N q * t)) * ‖x 0 - xs 0‖ := by
+        gain K T ‖f (xs 0)‖ W N q * Real.exp (-(rate T N q * t)) * ‖x 0 - xs 0‖ := by
   have hf : ContDiff ℝ 1 f := contDiff_one_iff_fderiv.2 ⟨hfd, hL.continuous⟩
   have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
   set p := xs 0 with hp
   set v := f p with hv
-  set W := ∑ i, |w i| with hW
   set V := ‖v‖ with hV
   set a := growth K T V W with ha
   set c₂ := curvature K L₂ T V W with hc₂
@@ -816,9 +817,11 @@ where `C = gain`, `λ = rate = −log((1 + q)/2)/(N · 3T/2)`. -/
   have hq'0 : 0 < q' := by rw [hq']; linarith
   have hq'1 : q' < 1 := by rw [hq']; linarith
   have hN0 : 0 < N := hN
-  have hW0 : 0 ≤ W := Finset.sum_nonneg fun i _ => abs_nonneg _
+  have hW0 : 0 ≤ W := (Finset.sum_nonneg fun i _ => abs_nonneg _).trans hW
+  have hdot : ∀ y, |w ⬝ᵥ y| ≤ W * ‖y‖ := fun y =>
+    (abs_dot_le w y).trans (mul_le_mul_of_nonneg_right hW (norm_nonneg _))
   have hWV : 1 ≤ W * V := by
-    have h := abs_dot_le w v
+    have h := hdot v
     rwa [hw, abs_one] at h
   have hWpos : 0 < W := by
     rcases hW0.eq_or_lt with h | h
@@ -837,7 +840,7 @@ where `C = gain`, `λ = rate = −log((1 + q)/2)/(N · 3T/2)`. -/
     have hM := norm_monodromy_mulVec_le hf hfK hxc hT.le e
     have h1 : ‖(w ⬝ᵥ e) • v‖ ≤ W * ‖e‖ * V := by
       rw [norm_smul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_right (abs_dot_le w e) hV0
+      exact mul_le_mul_of_nonneg_right (hdot e) hV0
     have h2 : W * V ≤ B * W := by
       rw [hB, speed]
       have h := Real.one_le_exp (mul_nonneg K.2 hT.le)
@@ -858,7 +861,7 @@ where `C = gain`, `λ = rate = −log((1 + q)/2)/(N · 3T/2)`. -/
     have h : W * ‖ζ - p‖ ≤ T / 2 := by
       rw [le_div_iff₀ (by positivity)] at hζ
       linarith
-    have h3 := step_bounds hfd hfK hL hxs hT hper w h
+    have h3 := step_bounds hfd hfK hL hxs hT hper w hW h
     exact ⟨h3.2.1, h3.2.2⟩
   obtain ⟨hδρ, hδq⟩ := radius_le (N := N) K.coe_nonneg L₂.coe_nonneg hT hV0 hWpos hq0 hq
   rw [← ha, ← hδ] at hδρ
@@ -877,7 +880,7 @@ where `C = gain`, `λ = rate = −log((1 + q)/2)/(N · 3T/2)`. -/
     rw [le_div_iff₀ (by positivity)] at h2
     nlinarith [mul_le_mul_of_nonneg_left ((hball k).trans h1) hW0]
   have hτT : ∀ k : ℕ, |τ (F^[k] ξ) - T| ≤ W * ‖F^[k] ξ - p‖ := fun k =>
-    (step_bounds hfd hfK hL hxs hT hper w (hdom k)).1
+    (step_bounds hfd hfK hL hxs hT hper w hW (hdom k)).1
   have hτpos : ∀ k : ℕ, T / 2 ≤ τ (F^[k] ξ) := fun k => by
     have := (abs_le.1 ((hτT k).trans (hdom k))).1; linarith
   have hτup : ∀ k : ℕ, τ (F^[k] ξ) ≤ 3 * T / 2 := fun k => by
@@ -927,30 +930,29 @@ asymptotic phase `θ`, `|θ| ≤ C' ‖x(0) − x_*(σ)‖`, with
 @[tmio T, powerlib_foundation] theorem asymptoticPhase_uniform_explicit
     (hfd : Differentiable ℝ f) (hfK : LipschitzWith K f) (hL : LipschitzWith L₂ (fderiv ℝ f))
     {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
-    (hper : Periodic xs T) {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {N : ℕ} (hN : 1 ≤ N)
-    {q : ℝ} (hq : q < 1)
+    (hper : Periodic xs T) {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {W : ℝ}
+    (hW : ∑ i, |w i| ≤ W) {N : ℕ} (hN : 1 ≤ N) {q : ℝ} (hq : q < 1)
     (hDN : ‖(monodromy (variationalMatrix f xs) T 0 - vecMulVec (f (xs 0)) w) ^ N‖ ≤ q)
     (σ : ℝ) {x : ℝ → Fin n → ℝ} (hx : IsIntegralCurveOn x (fun _ => f) (Ici 0))
-    (hx0 : ‖x 0 - xs σ‖ ≤ orbitRadius K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) N q) :
-    ∃ θ : ℝ, |θ| ≤ orbitGain K T ‖f (xs 0)‖ (∑ i, |w i|) N q * ‖x 0 - xs σ‖ ∧
-      ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ orbitGain K T ‖f (xs 0)‖ (∑ i, |w i|) N q *
+    (hx0 : ‖x 0 - xs σ‖ ≤ orbitRadius K L₂ T ‖f (xs 0)‖ W N q) :
+    ∃ θ : ℝ, |θ| ≤ orbitGain K T ‖f (xs 0)‖ W N q * ‖x 0 - xs σ‖ ∧
+      ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ orbitGain K T ‖f (xs 0)‖ W N q *
         Real.exp (-(rate T N q * t)) * ‖x 0 - xs σ‖ := by
   set V := ‖f (xs 0)‖ with hV
-  set W := ∑ i, |w i| with hW
   set C₀ := gain K T V W N q with hC₀def
   set lam := rate T N q with hlamdef
   set B := speed K T V with hBdef
   set δ₀ := radius K L₂ T V W N q with hδ₀
   have hq0 : 0 ≤ q := (norm_nonneg _).trans hDN
   have hV0 : 0 ≤ V := norm_nonneg _
-  have hW0 : 0 ≤ W := Finset.sum_nonneg fun i _ => abs_nonneg _
+  have hW0 : 0 ≤ W := (Finset.sum_nonneg fun i _ => abs_nonneg _).trans hW
   have hC₀ : 0 ≤ C₀ := gain_nonneg K.coe_nonneg hT.le hV0 hW0 hq0 hq
   have hlam : 0 < lam := rate_pos hT hN (by linarith) hq
   have hB0 : 0 ≤ B := speed_nonneg hV0
   have hB := norm_sub_le_speed hfd hfK hxs hT hper
   have hmain := fun {y : ℝ → Fin n → ℝ} (hy : IsIntegralCurveOn y (fun _ => f) (Ici 0))
       (hy0 : ‖y 0 - xs 0‖ ≤ δ₀) =>
-    asymptoticPhase_explicit hfd hfK hL hxs hT hper hw hN hq hDN hy hy0
+    asymptoticPhase_explicit hfd hfK hL hxs hT hper hw hW hN hq hDN hy hy0
   set E := Real.exp (K * T) with hE
   have hE1 : 1 ≤ E := Real.one_le_exp (mul_nonneg K.2 hT.le)
   have hE0 : 0 < E := by linarith
@@ -1072,20 +1074,20 @@ of `x_*`), with `δ' = orbitRadius`, `C' = orbitGain`, `λ = rate`. -/
 @[tmio T, powerlib_foundation] theorem infDist_orbit_le_explicit
     (hfd : Differentiable ℝ f) (hfK : LipschitzWith K f) (hL : LipschitzWith L₂ (fderiv ℝ f))
     {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
-    (hper : Periodic xs T) {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {N : ℕ} (hN : 1 ≤ N)
-    {q : ℝ} (hq : q < 1)
+    (hper : Periodic xs T) {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {W : ℝ}
+    (hW : ∑ i, |w i| ≤ W) {N : ℕ} (hN : 1 ≤ N) {q : ℝ} (hq : q < 1)
     (hDN : ‖(monodromy (variationalMatrix f xs) T 0 - vecMulVec (f (xs 0)) w) ^ N‖ ≤ q)
     {x : ℝ → Fin n → ℝ} (hx : IsIntegralCurveOn x (fun _ => f) (Ici 0))
-    (hx0 : Metric.infDist (x 0) (range xs) ≤ orbitRadius K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) N q)
+    (hx0 : Metric.infDist (x 0) (range xs) ≤ orbitRadius K L₂ T ‖f (xs 0)‖ W N q)
     (t : ℝ) (ht : 0 ≤ t) :
-    Metric.infDist (x t) (range xs) ≤ orbitGain K T ‖f (xs 0)‖ (∑ i, |w i|) N q *
+    Metric.infDist (x t) (range xs) ≤ orbitGain K T ‖f (xs 0)‖ W N q *
       Real.exp (-(rate T N q * t)) * Metric.infDist (x 0) (range xs) := by
   have hxc : Continuous xs := continuous_iff_continuousAt.2 fun t => (hxs t).continuousAt
   obtain ⟨_, ⟨σ, rfl⟩, hσ⟩ :=
     (hper.compact_of_continuous hT.ne' hxc).exists_infDist_eq_dist (range_nonempty xs) (x 0)
   rw [dist_eq_norm] at hσ
   obtain ⟨θ, -, hθ⟩ :=
-    asymptoticPhase_uniform_explicit hfd hfK hL hxs hT hper hw hN hq hDN σ hx (hσ ▸ hx0)
+    asymptoticPhase_uniform_explicit hfd hfK hL hxs hT hper hw hW hN hq hDN σ hx (hσ ▸ hx0)
   rw [hσ]
   calc Metric.infDist (x t) (range xs) ≤ dist (x t) (xs (t + σ + θ)) :=
         Metric.infDist_le_dist_of_mem (mem_range_self _)
@@ -1104,32 +1106,32 @@ solution starting within `δ'` of the orbit satisfies
 @[tmio T, powerlib_foundation] theorem andronov_witt_explicit
     (hfd : Differentiable ℝ f) (hfK : LipschitzWith K f) (hL : LipschitzWith L₂ (fderiv ℝ f))
     {xs : ℝ → Fin n → ℝ} (hxs : ∀ t, HasDerivAt xs (f (xs t)) t) {T : ℝ} (hT : 0 < T)
-    (hper : Periodic xs T) {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {N : ℕ} (hN : 1 ≤ N)
-    {q : ℝ} (hq : q < 1)
+    (hper : Periodic xs T) {w : Fin n → ℝ} (hw : w ⬝ᵥ f (xs 0) = 1) {W : ℝ}
+    (hW : ∑ i, |w i| ≤ W) {N : ℕ} (hN : 1 ≤ N) {q : ℝ} (hq : q < 1)
     (hDN : ‖(monodromy (variationalMatrix f xs) T 0 - vecMulVec (f (xs 0)) w) ^ N‖ ≤ q) :
-    0 < orbitRadius K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) N q ∧ 0 < rate T N q ∧
+    0 < orbitRadius K L₂ T ‖f (xs 0)‖ W N q ∧ 0 < rate T N q ∧
     (∀ (σ : ℝ) (x : ℝ → Fin n → ℝ), IsIntegralCurveOn x (fun _ => f) (Ici 0) →
-      ‖x 0 - xs σ‖ ≤ orbitRadius K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) N q →
-      ∃ θ : ℝ, |θ| ≤ orbitGain K T ‖f (xs 0)‖ (∑ i, |w i|) N q * ‖x 0 - xs σ‖ ∧
-        ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ orbitGain K T ‖f (xs 0)‖ (∑ i, |w i|) N q *
+      ‖x 0 - xs σ‖ ≤ orbitRadius K L₂ T ‖f (xs 0)‖ W N q →
+      ∃ θ : ℝ, |θ| ≤ orbitGain K T ‖f (xs 0)‖ W N q * ‖x 0 - xs σ‖ ∧
+        ∀ t, 0 ≤ t → ‖x t - xs (t + σ + θ)‖ ≤ orbitGain K T ‖f (xs 0)‖ W N q *
           Real.exp (-(rate T N q * t)) * ‖x 0 - xs σ‖) ∧
     ∀ x : ℝ → Fin n → ℝ, IsIntegralCurveOn x (fun _ => f) (Ici 0) →
-      Metric.infDist (x 0) (range xs) ≤ orbitRadius K L₂ T ‖f (xs 0)‖ (∑ i, |w i|) N q →
+      Metric.infDist (x 0) (range xs) ≤ orbitRadius K L₂ T ‖f (xs 0)‖ W N q →
       ∀ t, 0 ≤ t → Metric.infDist (x t) (range xs) ≤
-        orbitGain K T ‖f (xs 0)‖ (∑ i, |w i|) N q * Real.exp (-(rate T N q * t)) *
+        orbitGain K T ‖f (xs 0)‖ W N q * Real.exp (-(rate T N q * t)) *
           Metric.infDist (x 0) (range xs) := by
   have hq0 : 0 ≤ q := (norm_nonneg _).trans hDN
-  have hW0 : 0 ≤ ∑ i, |w i| := Finset.sum_nonneg fun i _ => abs_nonneg _
-  have hWV : 1 ≤ (∑ i, |w i|) * ‖f (xs 0)‖ := by
-    have h := abs_dot_le w (f (xs 0))
+  have hW0 : 0 ≤ W := (Finset.sum_nonneg fun i _ => abs_nonneg _).trans hW
+  have hWV : 1 ≤ W * ‖f (xs 0)‖ := by
+    have h := (abs_dot_le w (f (xs 0))).trans (mul_le_mul_of_nonneg_right hW (norm_nonneg _))
     rwa [hw, abs_one] at h
-  have hWpos : 0 < ∑ i, |w i| := by
+  have hWpos : 0 < W := by
     rcases hW0.eq_or_lt with h | h
     · rw [← h, zero_mul] at hWV; linarith
     · exact h
   refine ⟨div_pos (radius_pos N K.coe_nonneg L₂.coe_nonneg hT (norm_nonneg _) hWpos hq)
       (Real.exp_pos _), rate_pos hT hN (by linarith) hq,
-    fun σ x hx hx0 => asymptoticPhase_uniform_explicit hfd hfK hL hxs hT hper hw hN hq hDN σ hx hx0,
-    fun x hx hx0 t ht => infDist_orbit_le_explicit hfd hfK hL hxs hT hper hw hN hq hDN hx hx0 t ht⟩
+    fun σ x hx hx0 => asymptoticPhase_uniform_explicit hfd hfK hL hxs hT hper hw hW hN hq hDN σ hx hx0,
+    fun x hx hx0 t ht => infDist_orbit_le_explicit hfd hfK hL hxs hT hper hw hW hN hq hDN hx hx0 t ht⟩
 
 end powerlib.Periodic.AndronovWittQuantitative
