@@ -398,6 +398,9 @@ import theorem.ParametricResonance.BlockCoreClosedForm
 import theorem.ParametricResonance.ThirdOrderClosedForm
 import theorem.ParametricResonance.BlockCriticalExponent
 import theorem.ParametricResonance.ForcedOrbitCriticalMultipliers
+import theorem.ParametricResonance.BlockDecoupling
+import theorem.ParametricResonance.ClusterMultiplicity
+import theorem.ParametricResonance.ForcedOrbitClusterMultiplicity
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability

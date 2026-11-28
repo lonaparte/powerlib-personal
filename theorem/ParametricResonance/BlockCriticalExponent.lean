@@ -44,10 +44,10 @@ Scope.
 * Cores: `BlockAveraging.fullN s d ω A_s A₁ ε` and `BlockAveraging.fullB … B ε`, `ω > 0`,
   `T = 2π/ω`, on the first-order boundary with positive first-order damping, as in
   `BlockBoundary.averagingN_boundary`, `averagingB_boundary`.
-* Not covered: the multiplicity inside each cluster (that exactly one eigenvalue, simple, lies
-  within `Kε³` of `−1 − (mixedDet(M, N_eff)/tr M) ε²` is not proved: existence, distinctness of
-  `μ_c` and `μ_o` and the exclusion of every other eigenvalue near `−1` from outside the two
-  clusters are); the localization of the remaining multipliers is pseudospectral, not
+* Not covered here: the multiplicity inside each cluster (exactly one eigenvalue, simple, in
+  each cluster: `theorem/ParametricResonance/ClusterMultiplicity.lean`, `block_cluster_simple`,
+  `frame_cluster_simple`, `averagingN_cluster_simple`, `averagingB_cluster_simple`, through the
+  exact decoupling of `theorem/ParametricResonance/BlockDecoupling.lean`); the localization of the remaining multipliers is pseudospectral, not
   `dist(μ, σ(E)) = O(ε)`, which is false for a non-diagonalizable `E` (the eigenvalues of
   `E + O(ε)` are in general only `O(ε^{1/k})`-close, `k` the size of a Jordan block); the forced
   orbits of `theorem/ParametricResonance/SmoothForcedOrbitSecond.lean` are not instantiated here

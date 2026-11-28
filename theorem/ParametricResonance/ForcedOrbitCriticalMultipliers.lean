@@ -42,9 +42,11 @@ Scope.
   (`F : ℝ^X × ℝ → ℝ^X` of class `C⁴` at `q₀`, `F(q₀) = 0`, scalar drive `w₀ + εV̂ cos ωt`, state
   perturbation `εA₀'`, deviation coordinates). Statements for all sufficiently small `ε > 0`,
   constants existential; eigenvalues of the complexified monodromy (spectrum).
-* Not covered, as in `BlockCriticalExponent`: the multiplicity inside each cluster (existence,
-  distinctness of `μ_c`, `μ_o` and the exclusion of every other multiplier near `−1` are
-  proved); the localization away from `−1` is pseudospectral. `Δ = 0` (next order). The
+* Not covered here: the multiplicity inside each cluster (exactly one simple multiplier in each,
+  at every level: `theorem/ParametricResonance/ForcedOrbitClusterMultiplicity.lean`); the
+  localization away from `−1` is pseudospectral. `Δ = 0` (next order: the generic block
+  criterion is `BlockDecoupling.block_boundary_third`; the third-order block expansions of these
+  monodromies are not derived). The
   nonlinear (level L0) consequences beyond the verdict of
   `ForcedOrbitSecond.smooth_orbit_boundary` (e.g. the rate of attraction) are not stated.
 * Generic mathematics; no model family.
