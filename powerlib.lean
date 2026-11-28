@@ -445,6 +445,9 @@ import theorem.Periodic.PoincareSection
 import theorem.Periodic.AndronovWitt
 import theorem.Periodic.JetVariationHigher
 import theorem.Periodic.AndronovWittQuantitative
+import theorem.Periodic.AndronovWittRate
+import theorem.Periodic.AndronovWittCritical
+import theorem.Periodic.CriticalCycles
 import theorem.PhasePlane.Adler
 import theorem.PhasePlane.Classification
 import theorem.PhasePlane.Conservative
