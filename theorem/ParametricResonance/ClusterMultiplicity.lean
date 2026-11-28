@@ -28,6 +28,10 @@ one multiplier, and it is simple. This is carried to
 * the forced-orbit levels of `theorem/ParametricResonance/ForcedOrbitCriticalMultipliers.lean`:
   `theorem/ParametricResonance/ForcedOrbitClusterMultiplicity.lean`.
 
+The same decoupling shows that the instability decided at third order
+(`BlockDecoupling.block_boundary_third`, `K_eff < 0`) is a flip: a real multiplier below `−1`
+(`block_boundary_third_flip`).
+
 Scope.
 * Generic: real block matrices on `Fin 2 ⊕ Y` (`Y` finite) with the operator `L∞` norm, the
   hypotheses of `BlockCritical.block_boundary_multipliers` (constants `C` uniform in `ε`,
@@ -56,6 +60,9 @@ Results.
 * `block_cluster_simple` — the block level: exactly two simple multipliers in `|μ + 1| ≤ r`.
 * `frame_cluster_simple`, `averagingN_cluster_simple`, `averagingB_cluster_simple` — frames and
   cores.
+* `block_boundary_third_flip` — on the third-order boundary (`mixedDet(M, N_eff) = 0`,
+  `K_eff < 0`, `BlockDecoupling.block_boundary_third`) the unstable multiplier is real and
+  `< −1`.
 
 Corrections.
 None: an extension (the multiplicity left open by `BlockCritical.block_critical_localization`).
@@ -456,5 +463,110 @@ only Floquet multipliers in `|μ + 1| ≤ r`, real, distinct and simple. -/
   exact h
 
 end Core
+
+/-! ## The third-order instability is a flip -/
+
+section Flip
+
+variable {Y : Type*} [Fintype Y] [DecidableEq Y]
+
+set_option maxHeartbeats 1000000 in
+/-- **The third-order instability of the boundary is a flip: a real multiplier below `−1`.** Let
+`P = −(I + εT M + ε² N + ε³ N₃) + O(ε⁴)`, `Q = εQ₁ + ε²Q₂ + O(ε³)`, `R = εR₁ + ε²R₂ + O(ε³)`,
+`S = E + εS₁ + O(ε²)` (`T ≥ 0`, constant `C`), `ρ(E) < 1`, `det M = 0` and
+`mixedDet(M, N_eff) = 0`. If `K_eff = det N_eff + T mixedDet(M, N_eff3) < 0`
+(`N_eff3 = BlockDecoupling.effThird T M N₃ Q₁ Q₂ R₁ R₂ E S₁`), then for all small `ε > 0` the
+block matrix has a real eigenvalue `μ < −1`: the instability of
+`BlockDecoupling.block_boundary_third` is a period-doubling (2:1) one, as at second order
+(`BlockBoundary.block_boundary_unstable`). (For the decoupled block `Φ_c = P − Q X`,
+`det(−Φ_c − I) = K_eff ε⁴ + O(ε⁵) < 0` by `ThirdOrder.det_expansion_four`, so the real quadratic
+`det(x I + Φ_c)` is negative at `x = 1` and has a root `x > 1`; `−x` is a root of
+`charpoly Φ = charpoly Φ_c · charpoly(S + X Q)`, `BlockDecoupling.charpoly_decoupled`.) -/
+@[tmio T, powerlib_foundation] theorem block_boundary_third_flip {T : ℝ} (hT : 0 ≤ T)
+    {M N N₃ : Matrix (Fin 2) (Fin 2) ℝ} {Q₁ Q₂ : Matrix (Fin 2) Y ℝ}
+    {R₁ R₂ : Matrix Y (Fin 2) ℝ} {E S₁ : Matrix Y Y ℝ}
+    (hρ : spectralRadius ℂ (E.map (algebraMap ℝ ℂ)) < 1) (hdet : M.det = 0)
+    (hmix : mixedDet M (N + Q₁ * (1 + E)⁻¹ * R₁) = 0) {C : ℝ} (hC : 0 ≤ C)
+    (hK : (N + Q₁ * (1 + E)⁻¹ * R₁).det +
+      T * mixedDet M (BlockDecoupling.effThird T M N₃ Q₁ Q₂ R₁ R₂ E S₁) < 0) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ (P : Matrix (Fin 2) (Fin 2) ℝ) (Q : Matrix (Fin 2) Y ℝ)
+      (R : Matrix Y (Fin 2) ℝ) (S : Matrix Y Y ℝ),
+      ‖P + 1 + (ε * T) • M + ε ^ 2 • N + ε ^ 3 • N₃‖ ≤ C * ε ^ 4 →
+      ‖Q - ε • Q₁ - ε ^ 2 • Q₂‖ ≤ C * ε ^ 3 → ‖R - ε • R₁ - ε ^ 2 • R₂‖ ≤ C * ε ^ 3 →
+      ‖S - E - ε • S₁‖ ≤ C * ε ^ 2 →
+      ∃ μ : ℝ, μ < -1 ∧
+        (μ • (1 : Matrix (Fin 2 ⊕ Y) (Fin 2 ⊕ Y) ℝ) - fromBlocks P Q R S).det = 0 := by
+  classical
+  set Neff := N + Q₁ * (1 + E)⁻¹ * R₁ with hNeff
+  set N3 := BlockDecoupling.effThird T M N₃ Q₁ Q₂ R₁ R₂ E S₁ with hN3
+  set κ := Neff.det + T * mixedDet M N3 with hκ
+  obtain ⟨K, hK0, hdec⟩ := BlockDecoupling.decoupled_block_third (Z := Fin 2) (T := T) (M := M)
+    (N := N) (N₃ := N₃) (Q₁ := Q₁) (Q₂ := Q₂) (R₁ := R₁) (R₂ := R₂) (S₁ := S₁) hρ hC
+  set C₅ := 2 * (‖N3‖ + K) ^ 2 + 4 * ‖Neff‖ * (‖N3‖ + K) + 4 * T * ‖M‖ * K with hC₅
+  have hC₅0 : 0 ≤ C₅ := by positivity
+  filter_upwards [hdec, BlockAveraging.eventually_lt_nhdsGT
+    (show 0 < min 1 (-κ / (C₅ + 1)) from lt_min one_pos (div_pos (by linarith) (by positivity)))]
+    with ε hε ⟨h0, hlt⟩
+  intro P Q R S hP hQ hR hS
+  have hε1 : ε ≤ 1 := (hlt.trans_le (min_le_left _ _)).le
+  have hεκ : ε < -κ / (C₅ + 1) := hlt.trans_le (min_le_right _ _)
+  obtain ⟨X, hX, -, -, hc⟩ := hε P Q R S hP hQ hR hS
+  set Pc := -(P - Q * X) with hPc
+  set Rm := Pc - 1 - (ε * T) • M - ε ^ 2 • Neff - ε ^ 3 • N3 with hRm
+  have hRmb : ‖Rm‖ ≤ K * ε ^ 4 := by
+    rw [hRm, hPc, show -(P - Q * X) - 1 - (ε * T) • M - ε ^ 2 • Neff - ε ^ 3 • N3 =
+      -(P - Q * X + 1 + (ε * T) • M + ε ^ 2 • Neff + ε ^ 3 • N3) by abel, norm_neg]
+    exact hc
+  have hexp := ThirdOrder.det_expansion_four (M := M) (N₂ := Neff) (N₃ := N3) hT hK0 h0.le hε1
+    hRmb
+  have e1 : (ε * T) • M + ε ^ 2 • Neff + ε ^ 3 • N3 + Rm = Pc - 1 := by rw [hRm]; abel
+  rw [e1, hdet, hmix, ← hκ, ← hC₅] at hexp
+  simp only [mul_zero, zero_mul, zero_add] at hexp
+  -- `det(Pc − I) < 0`
+  have hneg : (Pc - 1).det < 0 := by
+    have h := (abs_le.mp hexp).2
+    rw [lt_div_iff₀ (by positivity)] at hεκ
+    have h5 : C₅ * ε ^ 5 ≤ C₅ * ε * ε ^ 4 := le_of_eq (by ring)
+    have h6 : (C₅ * ε + κ) * ε ^ 4 < 0 := by
+      apply mul_neg_of_neg_of_pos _ (by positivity)
+      nlinarith
+    nlinarith
+  -- the quadratic `q(x) = det(x I − Pc)` has a root `x > 1`
+  have hq : ∀ x : ℝ, (x • (1 : Matrix (Fin 2) (Fin 2) ℝ) - Pc).det =
+      x ^ 2 - x * Pc.trace + Pc.det := fun x => by
+    simp [Matrix.det_fin_two, Matrix.trace_fin_two]; ring
+  have hq1 : ((1 : ℝ) • (1 : Matrix (Fin 2) (Fin 2) ℝ) - Pc).det < 0 := by
+    rw [one_smul, show (1 : Matrix (Fin 2) (Fin 2) ℝ) - Pc = -(Pc - 1) by abel, Matrix.det_neg]
+    simpa using hneg
+  set x₁ := 1 + |Pc.trace| + |Pc.det| with hx₁
+  have hq₁ : 0 < (x₁ • (1 : Matrix (Fin 2) (Fin 2) ℝ) - Pc).det := by
+    rw [hq]
+    have ht := neg_abs_le Pc.trace
+    have ht' := le_abs_self Pc.trace
+    have hd := neg_abs_le Pc.det
+    have hx1 : 1 ≤ x₁ := by rw [hx₁]; linarith [abs_nonneg Pc.trace, abs_nonneg Pc.det]
+    have : x₁ * Pc.trace ≤ x₁ * |Pc.trace| := mul_le_mul_of_nonneg_left ht' (by linarith)
+    nlinarith [abs_nonneg Pc.trace, abs_nonneg Pc.det]
+  have hx1 : (1 : ℝ) ≤ x₁ := by rw [hx₁]; linarith [abs_nonneg Pc.trace, abs_nonneg Pc.det]
+  obtain ⟨z, hz, hz0⟩ := BlockAveraging.exists_zero_of_mul_neg hx1
+    (BlockAveraging.continuous_det_sub Pc).continuousOn (mul_neg_of_neg_of_pos hq1 hq₁)
+  have hz1 : 1 < z := by
+    rcases eq_or_lt_of_le hz.1 with h | h
+    · rw [← h] at hz0; linarith
+    · exact h
+  refine ⟨-z, by linarith, ?_⟩
+  -- `−z` is a root of `charpoly Φ = charpoly(P − Q X) · charpoly(S + X Q)`
+  have hc0 : (P - Q * X).charpoly.eval (-z) = 0 := by
+    rw [Matrix.eval_charpoly, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal,
+      show (-z) • (1 : Matrix (Fin 2) (Fin 2) ℝ) - (P - Q * X) =
+        -(z • (1 : Matrix (Fin 2) (Fin 2) ℝ) - Pc) by rw [hPc, neg_smul]; abel,
+      Matrix.det_neg, hz0]
+    simp
+  have h := Matrix.eval_charpoly (fromBlocks P Q R S) (-z)
+  rw [BlockDecoupling.charpoly_decoupled P Q R S hX, Polynomial.eval_mul, hc0, zero_mul,
+    Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal] at h
+  exact h.symm
+
+end Flip
 
 end powerlib.ParametricResonance.ClusterMultiplicity
