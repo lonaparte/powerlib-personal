@@ -56,6 +56,7 @@ Sharpenings.
 Results.
 * `periodic_fieldAverage_le`, `perturbed_periodic_fieldAverage_le` — a solution that returns
   after one period starts near the zero set: `T‖f̄(x(τ))‖ ≤ εC_S`, resp. `εT‖f̄(x(τ))‖ ≤ ηC_S`.
+* `zeros_finite_of_isCompact` — nondegenerate zeros on a compact set are finitely many.
 * `lower_bound_of_isCompact` — finitely many nondegenerate zeros on a compact set:
   `c · min(ρ_K, min_i ‖y − y_i*‖) ≤ ‖F(y)‖` for some `c, ρ_K > 0`.
 * `periodic_orbit_classification` — explicit smallness conditions: the orbits `x_i` of
@@ -136,6 +137,66 @@ section LowerBound
   obtain ⟨C, hC⟩ := (Set.finite_range g).bddAbove
   exact ⟨max C 0, le_max_right _ _, fun i => (hC ⟨i, rfl⟩).trans (le_max_left _ _)⟩
 
+/-- The linear lower bound near a zero with a left-invertible derivative. -/
+@[tmio T, powerlib_foundation] private theorem local_lower_bound {F : E → E} {y₀ : E}
+    {A B : E →L[ℝ] E} (h0 : F y₀ = 0) (hA : HasFDerivAt F A y₀) (hBA : ∀ v, B (A v) = v)
+    {C : ℝ} (hC : ‖B‖ + 1 ≤ C) :
+    ∃ δ > 0, ∀ y, ‖y - y₀‖ < δ → 1 / (2 * C) * ‖y - y₀‖ ≤ ‖F y‖ := by
+  have hC0 : 0 < C := by linarith [norm_nonneg B]
+  set c₁ := 1 / (2 * C) with hc₁
+  have hc₁0 : 0 < c₁ := by positivity
+  have hCc : C * c₁ = 1 / 2 := by rw [hc₁]; field_simp
+  obtain ⟨δ, hδ, hδ'⟩ := Metric.eventually_nhds_iff.mp (hA.isLittleO.def hc₁0)
+  refine ⟨δ, hδ, fun y hy => ?_⟩
+  have h1 := hδ' (show dist y y₀ < δ by rwa [dist_eq_norm])
+  simp only [h0, sub_zero] at h1
+  have h2 : ‖y - y₀‖ ≤ C * ‖A (y - y₀)‖ := by
+    calc ‖y - y₀‖ = ‖B (A (y - y₀))‖ := by rw [hBA]
+      _ ≤ ‖B‖ * ‖A (y - y₀)‖ := B.le_opNorm _
+      _ ≤ C * ‖A (y - y₀)‖ := mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
+  have h3 : ‖A (y - y₀)‖ ≤ ‖F y‖ + ‖F y - A (y - y₀)‖ := by
+    have := norm_sub_le (F y) (F y - A (y - y₀))
+    rwa [sub_sub_cancel] at this
+  have h4 : ‖y - y₀‖ ≤ 2 * C * ‖F y‖ := by
+    have h5 : ‖y - y₀‖ ≤ C * ‖F y‖ + C * c₁ * ‖y - y₀‖ := by
+      calc ‖y - y₀‖ ≤ C * ‖A (y - y₀)‖ := h2
+        _ ≤ C * (‖F y‖ + c₁ * ‖y - y₀‖) :=
+            mul_le_mul_of_nonneg_left (h3.trans (by linarith)) hC0.le
+        _ = C * ‖F y‖ + C * c₁ * ‖y - y₀‖ := by ring
+    rw [hCc] at h5
+    linarith
+  calc c₁ * ‖y - y₀‖ ≤ c₁ * (2 * C * ‖F y‖) := mul_le_mul_of_nonneg_left h4 hc₁0.le
+    _ = ‖F y‖ := by rw [hc₁]; field_simp
+
+/-- **Nondegenerate zeros on a compact set are finitely many.** If `F` is continuous on a compact
+set `K` and has at each of its zeros in `K` a derivative with a left inverse, then `F` has only
+finitely many zeros in `K` (each is isolated by the linear lower bound near it). -/
+@[tmio T, powerlib_foundation] theorem zeros_finite_of_isCompact {F : E → E} {K : Set E}
+    (hK : IsCompact K) (hFc : ContinuousOn F K)
+    (hnd : ∀ y ∈ K, F y = 0 → ∃ A B : E →L[ℝ] E, HasFDerivAt F A y ∧ ∀ v, B (A v) = v) :
+    {y | y ∈ K ∧ F y = 0}.Finite := by
+  set S : Set E := {y | y ∈ K ∧ F y = 0} with hS
+  have hSc : IsClosed S := hFc.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton
+  have hSk : IsCompact S := hK.of_isClosed_subset hSc fun y hy => hy.1
+  have hloc : ∀ y : S, ∃ δ > 0, ∀ y' : E, ‖y' - (y : E)‖ < δ → F y' = 0 → y' = y := by
+    rintro ⟨y, hyK, hy0⟩
+    obtain ⟨A, B, hA, hBA⟩ := hnd y hyK hy0
+    obtain ⟨δ, hδ, hδl⟩ := local_lower_bound hy0 hA hBA (le_refl (‖B‖ + 1))
+    refine ⟨δ, hδ, fun y' hy' hF => ?_⟩
+    have h := hδl y' hy'
+    rw [hF, norm_zero] at h
+    have hC : 0 < 1 / (2 * (‖B‖ + 1)) := by positivity
+    have : ‖y' - y‖ = 0 := le_antisymm (by nlinarith [norm_nonneg (y' - y)]) (norm_nonneg _)
+    exact sub_eq_zero.mp (norm_eq_zero.mp this)
+  choose δ hδ hδl using hloc
+  obtain ⟨t, ht⟩ := hSk.elim_finite_subcover (fun y : S => Metric.ball (y : E) (δ y))
+    (fun _ => Metric.isOpen_ball)
+    (fun y hy => mem_iUnion.2 ⟨⟨y, hy⟩, Metric.mem_ball_self (hδ _)⟩)
+  refine ((t.finite_toSet).image Subtype.val).subset fun y hy => ?_
+  obtain ⟨i, hi⟩ := mem_iUnion₂.mp (ht hy)
+  rw [Metric.mem_ball, dist_eq_norm] at hi
+  exact ⟨i, by simpa using hi.1, (hδl i y hi.2 hy.2).symm⟩
+
 /-- **Nondegenerate zeros on a compact set give a linear lower bound.** Let `K` be compact, `F`
 continuous on `K`, and let the zeros of `F` in `K` be among finitely many points `y_i*`, each a
 zero of `F` with a derivative `A(i)` that has a left inverse `B(i)`. Then there are `c, ρ_K > 0`
@@ -153,32 +214,9 @@ with `c ρ_K ≤ ‖F(y)‖` or `c ‖y − y_i*‖ ≤ ‖F(y)‖` for some `i`
   have hC0 : 0 < C := by positivity
   set c₁ := 1 / (2 * C) with hc₁
   have hc₁0 : 0 < c₁ := by positivity
-  have hCc : C * c₁ = 1 / 2 := by rw [hc₁]; field_simp
   -- the linear lower bound near each zero
-  have hloc : ∀ i, ∃ δ > 0, ∀ y, ‖y - ystar i‖ < δ → c₁ * ‖y - ystar i‖ ≤ ‖F y‖ := by
-    intro i
-    obtain ⟨δ, hδ, hδ'⟩ := Metric.eventually_nhds_iff.mp ((hA i).isLittleO.def hc₁0)
-    refine ⟨δ, hδ, fun y hy => ?_⟩
-    have h1 := hδ' (show dist y (ystar i) < δ by rwa [dist_eq_norm])
-    simp only [h0 i, sub_zero] at h1
-    have h2 : ‖y - ystar i‖ ≤ C * ‖A i (y - ystar i)‖ := by
-      calc ‖y - ystar i‖ = ‖B i (A i (y - ystar i))‖ := by rw [hBA]
-        _ ≤ ‖B i‖ * ‖A i (y - ystar i)‖ := (B i).le_opNorm _
-        _ ≤ C * ‖A i (y - ystar i)‖ :=
-            mul_le_mul_of_nonneg_right ((hCB i).trans (by linarith)) (norm_nonneg _)
-    have h3 : ‖A i (y - ystar i)‖ ≤ ‖F y‖ + ‖F y - A i (y - ystar i)‖ := by
-      have := norm_sub_le (F y) (F y - A i (y - ystar i))
-      rwa [sub_sub_cancel] at this
-    have h4 : ‖y - ystar i‖ ≤ 2 * C * ‖F y‖ := by
-      have h5 : ‖y - ystar i‖ ≤ C * ‖F y‖ + C * c₁ * ‖y - ystar i‖ := by
-        calc ‖y - ystar i‖ ≤ C * ‖A i (y - ystar i)‖ := h2
-          _ ≤ C * (‖F y‖ + c₁ * ‖y - ystar i‖) :=
-              mul_le_mul_of_nonneg_left (h3.trans (by linarith)) hC0.le
-          _ = C * ‖F y‖ + C * c₁ * ‖y - ystar i‖ := by ring
-      rw [hCc] at h5
-      linarith
-    calc c₁ * ‖y - ystar i‖ ≤ c₁ * (2 * C * ‖F y‖) := mul_le_mul_of_nonneg_left h4 hc₁0.le
-      _ = ‖F y‖ := by rw [hc₁]; field_simp
+  have hloc : ∀ i, ∃ δ > 0, ∀ y, ‖y - ystar i‖ < δ → c₁ * ‖y - ystar i‖ ≤ ‖F y‖ := fun i =>
+    local_lower_bound (h0 i) (hA i) (hBA i) (by rw [hC]; linarith [hCB i])
   choose δ hδ hδl using hloc
   -- a common radius
   obtain ⟨ρK, hρK0, hρK⟩ := exists_le_all fun i => half_pos (hδ i)
