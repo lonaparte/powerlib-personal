@@ -66,6 +66,8 @@ Results.
 * `input_classification` — the amplitude equation with a small input: the clamped solutions
   starting in the disc `‖w(0)‖ ≤ R` and returning after one period are the orbits of the zeros
   of `secondAmp` in the disc `|w*| ≤ R + 1`, each unique within `r₀` of its zero.
+* `loadedAmp_zeros`, `loadedAmp_ncard` — the zeros of `loadedAmp`: `0` and the pairs `±w*` on
+  the amplitudes `(d/(2ν) ± s)/β⁰`; `1 + 2N` of them in the disc `|w| ≤ R`.
 * `loadedJac_det_ne_zero` — off the first-order boundary and the fold every zero of `loadedAmp`
   is nondegenerate.
 * `loaded_classification` — **all small periodic solutions of the loaded swing**: the operating
@@ -566,6 +568,61 @@ shift `β⁰ = −(ν/48)(3 + 5 tan²δ₀)` never vanishes). -/
   rcases (Saturation.shift_det_eq_zero_iff hβ hw).mp h with h' | h'
   · rw [hc] at h'; exact hlin h'.2
   · rw [hc] at h'; exact hfold h'.2
+
+/-- **The zeros of the averaged limit field of the loaded swing.** Every zero of `loadedAmp` is
+the trivial state or a locked state with `|w*|² = (d/(2ν) ± s)/β⁰`, `s = √(ν²/16 − b²/4)`,
+`β⁰ = −(ν/48)(3 + 5 tan²δ₀)` (`b² ≤ ν²/4`); each of these amplitudes that is positive carries
+exactly the pair `w*`, `−w*` (`Saturation.shift_zeros`). -/
+@[tmio M, powerlib_domain] theorem loadedAmp_zeros {b d ν δ₀ : ℝ} (hν : 0 < ν) :
+    (∀ w : ℂ, loadedAmp b d ν δ₀ w = 0 → w = 0 ∨ ((b / 2) ^ 2 ≤ (ν / 4) ^ 2 ∧
+      (‖w‖ ^ 2 = (d / (2 * ν) + √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+          (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ∨
+        ‖w‖ ^ 2 = (d / (2 * ν) - √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+          (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2))))) ∧
+    ∀ A : ℝ, 0 < A → (b / 2) ^ 2 ≤ (ν / 4) ^ 2 →
+      (A = (d / (2 * ν) + √((ν / 4) ^ 2 - (b / 2) ^ 2)) / (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ∨
+        A = (d / (2 * ν) - √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+          (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2))) →
+      ∃ w : ℂ, ‖w‖ ^ 2 = A ∧ w ≠ -w ∧
+        ∀ z : ℂ, (‖z‖ ^ 2 = A ∧ loadedAmp b d ν δ₀ z = 0) ↔ (z = w ∨ z = -w) := by
+  have hβ : -(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2) ≠ 0 := by
+    have : 0 < 3 + 5 * Real.tan δ₀ ^ 2 := by positivity
+    have : 0 < ν / 48 := by positivity
+    intro h; nlinarith
+  have hc0 : I * ((ν / 4 : ℝ) : ℂ) ≠ 0 :=
+    mul_ne_zero I_ne_zero (by exact_mod_cast (by positivity : ν / 4 ≠ 0))
+  have hc : ‖I * ((ν / 4 : ℝ) : ℂ)‖ = ν / 4 := by
+    rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+  obtain ⟨h1, h2⟩ := Saturation.shift_zeros (σ := b / 2) (Δ := d / (2 * ν)) hc0 hβ
+  rw [hc] at h1 h2
+  exact ⟨h1, h2⟩
+
+/-- **The number of zeros of the averaged limit field of the loaded swing in the disc
+`|w| ≤ R`**: off the fold (`(b/2)² < (ν/4)²`), the trivial state and two locked states for each
+of the amplitudes `(d/(2ν) ± s)/β⁰` in `(0, R²]` (`Saturation.shift_zeros_ncard`). -/
+@[tmio M, powerlib_domain] theorem loadedAmp_ncard {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (hb : (b / 2) ^ 2 < (ν / 4) ^ 2) {R : ℝ} (hR : 0 ≤ R) :
+    {w : ℂ | loadedAmp b d ν δ₀ w = 0 ∧ ‖w‖ ≤ R}.ncard =
+      1 + 2 * ((if 0 < (d / (2 * ν) + √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ∧
+          (d / (2 * ν) + √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ≤ R ^ 2 then 1 else 0) +
+        (if 0 < (d / (2 * ν) - √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ∧
+          (d / (2 * ν) - √((ν / 4) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ≤ R ^ 2 then 1 else 0)) := by
+  have hβ : -(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2) ≠ 0 := by
+    have : 0 < 3 + 5 * Real.tan δ₀ ^ 2 := by positivity
+    have : 0 < ν / 48 := by positivity
+    intro h; nlinarith
+  have hc0 : I * ((ν / 4 : ℝ) : ℂ) ≠ 0 :=
+    mul_ne_zero I_ne_zero (by exact_mod_cast (by positivity : ν / 4 ≠ 0))
+  have hc : ‖I * ((ν / 4 : ℝ) : ℂ)‖ = ν / 4 := by
+    rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+  have h := Saturation.shift_zeros_ncard (σ := b / 2) (Δ := d / (2 * ν)) hc0 hβ
+    (by rw [hc]; exact hb) hR
+  rw [hc] at h
+  exact h
 
 set_option maxHeartbeats 1000000 in
 /-- **All `2π/ν`-periodic oscillations of small amplitude of the loaded swing.** Let every zero of
