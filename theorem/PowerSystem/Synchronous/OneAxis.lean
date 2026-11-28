@@ -48,7 +48,11 @@ Results.
   Heffron–Phillips coefficients at `(δ, E'_q)`; `Machine.contDiff_field`,
   `Machine.hasFDerivAt_field`, `Machine.fderiv_field` (the Jacobian is
   `(linParams δ E'_q).stateMatrix`: the coefficients are the partial derivatives); `Machine.K₂_pos`,
-  `Machine.K₄_pos` (`0 < δ < π`, `V > 0`, `X_d > X'_d`); `Machine.fluxTorque_eq`.
+  `Machine.K₄_pos` (`0 < δ < π`, `V > 0`, `X_d > X'_d`); `Machine.fluxTorque_eq`;
+  `Machine.steadyE`, `Machine.fieldEMF_steadyE`, `Machine.hasDerivAt_steadyTorque` (the
+  steady-state synchronizing coefficient `K₁ − K₂K₃K₄` is the slope of the torque along the
+  field-EMF balance at constant field voltage: the Routh condition `a₀ > 0` is the classical
+  steady-state stability limit).
 * `Model`, `Model.point`, `Model.field`, `Model.linearization` (a member of
   `Synchronous.FluxDecay.family`), `Model.field_point_eq_zero_iff` (an equilibrium is torque and
   field-EMF balance).
@@ -277,6 +281,41 @@ steady-state synchronizing coefficient `K₁ − K₂K₃K₄` is at most `K₁`
       (q.Xd - q.Xd') * q.V ^ 2 * Real.sin δ ^ 2 / ((q.Xd' + q.Xe) * (q.Xd + q.Xe)) := by
   simp only [K₂, K₃, K₄]
   field_simp
+
+/-- The transient voltage at field-EMF balance, `E'_q(δ)` with `E'_q + (X_d − X'_d) i_d = E_fd`:
+`E'_q(δ) = (E_fd(X'_d + X_e) + (X_d − X'_d)V cos δ)/(X_d + X_e)`. -/
+def steadyE (δ : ℝ) : ℝ :=
+  (q.Efd * (q.Xd' + q.Xe) + (q.Xd - q.Xd') * q.V * Real.cos δ) / (q.Xd + q.Xe)
+
+@[tmio M, powerlib_domain] theorem fieldEMF_steadyE (hd : q.Xd' + q.Xe ≠ 0)
+    (hX : q.Xd + q.Xe ≠ 0) (δ : ℝ) : q.fieldEMF δ (q.steadyE δ) = q.Efd := by
+  rw [q.fieldEMF_eq hd, steadyE]
+  field_simp
+  ring
+
+/-- **The steady-state synchronizing coefficient is the slope of the steady-state torque.** Along
+the field-EMF balance (constant field voltage, `E'_q = E'_q(δ)`), the torque `T_e(δ, E'_q(δ))` has
+the derivative `K₁ − K₂K₃K₄`: the Routh condition `a₀ > 0` of the linearization is the positive
+slope of the steady-state power-angle curve, the classical steady-state stability limit. -/
+@[tmio M, powerlib_domain] theorem hasDerivAt_steadyTorque (hd : q.Xd' + q.Xe ≠ 0)
+    (hq : q.Xq + q.Xe ≠ 0) (hX : q.Xd + q.Xe ≠ 0) (δ : ℝ) :
+    HasDerivAt (fun θ => q.torque θ (q.steadyE θ))
+      (q.K₁ δ (q.steadyE δ) - q.K₂ δ * q.K₃ * q.K₄ δ) δ := by
+  have hE : HasDerivAt q.steadyE (-((q.Xd - q.Xd') * q.V * Real.sin δ) / (q.Xd + q.Xe)) δ := by
+    have h := (((Real.hasDerivAt_cos δ).const_mul ((q.Xd - q.Xd') * q.V)).const_add
+      (q.Efd * (q.Xd' + q.Xe))).div_const (q.Xd + q.Xe)
+    exact (show HasDerivAt q.steadyE _ δ from h).congr_deriv (by ring)
+  have hT := ((hE.fun_mul (Real.hasDerivAt_sin δ)).const_mul (q.V / (q.Xd' + q.Xe))).fun_sub
+    (((hasDerivAt_id' δ).const_mul 2).sin.const_mul
+      ((q.Xq - q.Xd') * q.V ^ 2 / (2 * ((q.Xq + q.Xe) * (q.Xd' + q.Xe)))))
+  refine (hT.congr_of_eventuallyEq (Filter.Eventually.of_forall fun θ => ?_)).congr_deriv ?_
+  · simp only
+    rw [q.torque_eq hd hq]
+    ring
+  · rw [q.fluxTorque_eq hd hX]
+    simp only [K₁]
+    field_simp
+    ring
 
 end Machine
 

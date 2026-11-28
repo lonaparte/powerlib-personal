@@ -33,8 +33,11 @@ under a condition.
   constant-flux machine is attractive (`swing_mem_den_of_steadySync_neg`).
 * What survives of `T'_{d0} → ∞` (`exists_Td0_mem_den_iff_constantFlux`): away from the
   degenerate coefficients (`D ≠ 0`, `K₁ ≠ 0`) and with `K₂K₃K₄ < K₁` whenever `D > 0`, `K₁ > 0`,
-  a slow enough field gives the constant-flux verdict; the two witnesses show that neither
-  condition can be dropped, for any `T'_{d0}`.
+  a slow enough field gives the constant-flux verdict. None of the conditions can be dropped, for
+  any `T'_{d0}`: `D = 0` (`mem_den_not_swing_of_undamped`), `0 < K₁ < K₂K₃K₄`
+  (`swing_mem_den_of_steadySync_neg`), `K₁ = 0` (`mem_den_not_swing_of_flat`: with
+  `K₂K₃K₄ < 0`, `D > 0` and `D² + 2Hω₀K₂K₃K₄ ≥ 0` the machine is attractive while its constant-flux
+  machine has no synchronizing coefficient).
 * The parametric families of `theorem/PowerSystem/Synchronous/FluxDecayParametric.lean` and
   `theorem/PowerSystem/Synchronous/FluxDecayConverse.lean` at `ε = 0` lie in the decoupled context
   (`weakModel_zero_decoupled`, `drivenModel_zero_decoupled`, `converseModel_zero_decoupled`).
@@ -54,11 +57,12 @@ Model boundary.
   are not transferred (each family keeps its own laws).
 
 Source: Agda scaffold `theorem/PowerSystem/Synchronous/FluxDecaySwing.agda` (the families, the
-matching, the decoupled context, the obligations Lean proves, the reading on the context and the
-two boundary witnesses); F. P. deMello, C. Concordia, "Concepts of synchronous machine stability
-as affected by excitation control", IEEE Trans. PAS-88 (1969) (the constant-flux machine and the
-flux-decay torque `−K₂K₃K₄/(1 + sK₃T'_{d0}) Δδ`); P. Kundur, *Power System Stability and Control*
-(1994) §12.3; the classical machine `theorem/PowerSystem/Synchronous/Swing.lean`.
+matching, the decoupled context, the obligations Lean proves, the reading on the context, the
+three boundary witnesses and the slow-field threshold); F. P. deMello, C. Concordia, "Concepts
+of synchronous machine stability as affected by excitation control", IEEE Trans. PAS-88 (1969)
+(the constant-flux machine and the flux-decay torque `−K₂K₃K₄/(1 + sK₃T'_{d0}) Δδ`); P. Kundur,
+*Power System Stability and Control* (1994) §12.3; the classical machine
+`theorem/PowerSystem/Synchronous/Swing.lean`.
 
 Results.
 * `constantFlux`, `constantFlux_matches` — the constant-flux machine of a flux-decay machine.
@@ -77,7 +81,8 @@ Family and connection conclusions.
   angle): local exponential stability of the flux-decay machine is that of the nonlinear swing
   machine.
 * Boundary witnesses (two families, off the context, every `T'_{d0} > 0`):
-  `mem_den_not_swing_of_undamped`, `swing_mem_den_of_steadySync_neg`. So the field is not
+  `mem_den_not_swing_of_undamped`, `swing_mem_den_of_steadySync_neg`, `mem_den_not_swing_of_flat`.
+  So the field is not
   decoupled by a slow field: `T'_{d0} → ∞` does not give the constant-flux machine, since the
   steady-state synchronizing coefficient `K₁ − K₂K₃K₄` does not depend on `T'_{d0}` and, without
   other damping, the flux decay's damping torque decides for every `T'_{d0}`.
@@ -277,6 +282,37 @@ satisfies the attractive sentences. -/
   refine (m.p.isHurwitz_jacobian_iff hM0 m.δ).mpr ⟨?_, by rw [hK]; exact hK₁⟩
   rw [hD]
   exact div_pos hD0 x.ω₀_pos
+
+/-- **A flat constant-flux curve, for every `T'_{d0}`.** With `K₁ = 0`, a damped machine whose
+flux decay supplies a steady-state synchronizing torque (`K₂K₃K₄ < 0`) and does not undo the
+damping (`D² + 2Hω₀K₂K₃K₄ ≥ 0`) satisfies the attractive sentences, while no matching swing
+machine does (its synchronizing coefficient vanishes). -/
+@[tmio TM, powerlib_domain] theorem mem_den_not_swing_of_flat (x : Model) (m : Swing.Model)
+    (hM : m.p.M = 2 * x.p.H / x.p.ω₀) (hK : m.p.syncCoeff m.δ = x.p.K₁) (hK₁ : x.p.K₁ = 0)
+    (hD0 : 0 < x.p.D) (hs : x.p.K₂ * x.p.K₃ * x.p.K₄ < 0)
+    (hd : 0 ≤ x.p.D ^ 2 + 2 * x.p.H * x.p.ω₀ * (x.p.K₂ * x.p.K₃ * x.p.K₄)) {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (x ∈ family.den (.flow P) ∧ m ∉ Swing.Linearized.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  have hH := x.H_pos; have hω := x.ω₀_pos; have hK3 := x.K₃_pos; have hT := x.Td0_pos
+  refine ⟨(connection_proof% mem_den_attractive_iff x hP).mpr ⟨by positivity, by linarith, ?_⟩,
+    fun h => ?_⟩
+  · rw [hK₁]
+    have e : x.p.D * (2 * x.p.H + x.p.D * x.p.K₃ * x.p.Td0 + x.p.ω₀ * 0 * x.p.K₃ ^ 2 *
+        x.p.Td0 ^ 2) + 2 * x.p.H * x.p.ω₀ * x.p.K₂ * x.p.K₃ ^ 2 * x.p.K₄ * x.p.Td0 =
+        2 * x.p.H * x.p.D + x.p.K₃ * x.p.Td0 *
+          (x.p.D ^ 2 + 2 * x.p.H * x.p.ω₀ * (x.p.K₂ * x.p.K₃ * x.p.K₄)) := by ring
+    rw [e]
+    have : 0 ≤ x.p.K₃ * x.p.Td0 *
+        (x.p.D ^ 2 + 2 * x.p.H * x.p.ω₀ * (x.p.K₂ * x.p.K₃ * x.p.K₄)) :=
+      mul_nonneg (by positivity) hd
+    have : 0 < 2 * x.p.H * x.p.D := by positivity
+    linarith
+  · have hM0 : 0 < m.p.M := by rw [hM]; positivity
+    rw [(connection_proof% Swing.Linearized.family_isLinear.mem_den_hurwitz hP)] at h
+    have := ((m.p.isHurwitz_jacobian_iff hM0 m.δ).mp h).2
+    rw [hK, hK₁] at this
+    exact lt_irrefl 0 this
 
 /-! ## The parametric families at `ε = 0` -/
 

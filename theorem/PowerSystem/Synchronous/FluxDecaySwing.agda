@@ -27,7 +27,10 @@ module theorem.PowerSystem.Synchronous.FluxDecaySwing where
 -- depend on `T'_{d0}`). What survives of `T'_{d0} → ∞` is a threshold: for coefficients with
 -- `D ≠ 0`, `K₁ ≠ 0` and `K₂K₃K₄ < K₁` when `D, K₁ > 0` (`SlowCondition`) there is `τ > 0` above
 -- which every machine with these coefficients is Hurwitz exactly when its constant-flux machine is
--- (`slow-hurwitz`), so the two agree on the Hurwitzian sentences (`slow-reading`).
+-- (`slow-hurwitz`), so the two agree on the Hurwitzian sentences (`slow-reading`). The condition
+-- `K₁ ≠ 0` cannot be dropped either: with `K₁ = 0`, `D > 0`, `K₂K₃K₄ < 0` and
+-- `D² + 2Hω₀K₂K₃K₄ ≥ 0` the machine is attractive for every `T'_{d0}` while its swing machines are
+-- not (`flat-witness`, `no-reading-flat`).
 -- Instability, Lyapunov stability, conservation, decay rates and passivity are not compared, and
 -- the requirement languages take no part (they are left empty here). Lean: `flux-linear` and
 -- `swing-linear` are `Family.IsLinear.mem_den_hurwitz` (`Synchronous.FluxDecay.family_isLinear`,
@@ -44,7 +47,8 @@ module theorem.PowerSystem.Synchronous.FluxDecaySwing where
 -- `undamped-witness` is `Synchronous.FluxDecay.mem_den_not_swing_of_undamped` (from
 -- `Synchronous.FluxDecay.mem_den_undamped_iff`), `aperiodic-witness` is
 -- `Synchronous.FluxDecay.swing_mem_den_of_steadySync_neg` (from
--- `Synchronous.FluxDecay.mem_den_unstable`), `unstable-excludes` is
+-- `Synchronous.FluxDecay.mem_den_unstable`), `flat-witness` is
+-- `Synchronous.FluxDecay.mem_den_not_swing_of_flat`, `unstable-excludes` is
 -- `GloballyExponentiallyStable.lyapunovStable`; `slow-hurwitz` is the step of the proof of
 -- `Synchronous.FluxDecay.exists_Td0_mem_den_iff_constantFlux` through
 -- `Synchronous.FluxDecay.mem_den_attractive_iff` (the Routh quantity a quadratic in `T'_{d0}`),
@@ -155,6 +159,10 @@ module _ (Sc : Scalars) where
             0r < K₂ x * K₄ x → K₂ x * K₃ x * K₄ x < K₁ x → den flux ges x × (¬ den lin ges m)
           aperiodic-witness : (x : FluxMachine) (m : SwingModel) → Matches x m → 0r < D x →
             0r < K₁ x → K₁ x < K₂ x * K₃ x * K₄ x → den lin ges m × den flux unstable x
+          flat-witness : (x : FluxMachine) (m : SwingModel) → Matches x m → K₁ x ≡ 0r →
+            0r < D x → K₂ x * K₃ x * K₄ x < 0r →
+            0r ≤ D x * D x + ((H x + H x) * ω₀ x) * (K₂ x * K₃ x * K₄ x) →
+            den flux ges x × (¬ den lin ges m)
           slow-hurwitz : (k : Coefficients) → SlowCondition k →
             Σ[ τ ∈ ℝ ] (0r < τ) × ((x : FluxMachine) → coefficientsOf x ≡ k → τ < Td0 x →
               HurwitzF x ↔ HurwitzJ (constantFlux x))
@@ -196,6 +204,16 @@ module _ (Sc : Scalars) where
           unstable-excludes x (snd w) (snd (r ges ges-hurwitzian) (fst w))
           where
             w = aperiodic-witness x m p d k a
+
+        -- And the flat constant-flux curve.
+        no-reading-flat : (x : FluxMachine) (m : SwingModel) → Matches x m → K₁ x ≡ 0r →
+          0r < D x → K₂ x * K₃ x * K₄ x < 0r →
+          0r ≤ D x * D x + ((H x + H x) * ω₀ x) * (K₂ x * K₃ x * K₄ x) →
+          ¬ ((s : Sentence) → Hurwitzian s → den flux s x ↔ den lin s m)
+        no-reading-flat x m p z d n q r =
+          snd w (fst (r ges ges-hurwitzian) (fst w))
+          where
+            w = flat-witness x m p z d n q
 
         -- What survives of a slow field: a threshold above which the constant-flux verdict holds.
         slow-reading : (k : Coefficients) → SlowCondition k →
