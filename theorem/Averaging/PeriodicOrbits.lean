@@ -52,7 +52,9 @@ Results.
 * `exists_periodic_orbit` — **Bogoliubov's second theorem**: under explicit smallness conditions
   on `ε` and `r₀`, a `T`-periodic solution with `‖x_ε(t) − y*‖ ≤ ε(2‖B‖C_S/T + (M + M_r)T)` for all
   `t`, unique among solutions with `x(T) = x(0)`, `‖x(0) − y*‖ ≤ r₀`. Its stability and the
-  validity of averaging on `[0, ∞)` are in `theorem/Averaging/PeriodicOrbitStability.lean`.
+  validity of averaging on `[0, ∞)` are in `theorem/Averaging/PeriodicOrbitStability.lean`; all
+  periodic solutions starting in a region are classified in
+  `theorem/Averaging/PeriodicOrbitClassification.lean`.
 -/
 
 noncomputable section

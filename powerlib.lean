@@ -34,6 +34,7 @@ import theorem.Averaging.NearIdentity
 import theorem.Averaging.ValidForeverConstants
 import theorem.Averaging.NearIdentityInverse
 import theorem.Averaging.NearIdentityLocal
+import theorem.Averaging.PeriodicOrbitClassification
 import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
@@ -403,6 +404,7 @@ import theorem.ParametricResonance.BlockDecoupling
 import theorem.ParametricResonance.ClusterMultiplicity
 import theorem.ParametricResonance.ForcedOrbitClusterMultiplicity
 import theorem.ParametricResonance.DutyCycleThresholdExplicit
+import theorem.ParametricResonance.LockedStatePairs
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
@@ -547,6 +549,9 @@ import theorem.PowerSystem.Synchronous.ConstantPowerSubharmonicOrbit
 import theorem.PowerSystem.Synchronous.FluxDecay
 import theorem.PowerSystem.Synchronous.FluxDecaySwing
 import theorem.PowerSystem.Synchronous.OneAxis
+import theorem.PowerSystem.Synchronous.SubharmonicClassification
+import theorem.PowerSystem.Synchronous.LoadedSubharmonicClassification
+import theorem.PowerSystem.Synchronous.ConstantPowerSubharmonicClassification
 import theorem.GridTiedConverter.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance

@@ -15,8 +15,11 @@ Model boundary.
   `(δ, δ̇)`, continuous time, in the weakly nonlinear scaling `2ξω_n = εb`, `ω_n² = ν² − εd`.
 * The tube is measured in the phase-plane norm `‖vdp ν t δ δ̇ − √ε w*‖ =
   |δ − jδ̇/ν − √ε w* e^{jνt}|` of the van der Pol amplitude, for all `t`; the radius `√ε r₀`
-  (`r₀ > 0` depending on `b, d, ν, w*` only) is of the order of the amplitude. Uniqueness among
-  all periodic solutions of other periods or outside the tube is not claimed.
+  (`r₀ > 0` depending on `b, d, ν, w*` only) is of the order of the amplitude. Periodic solutions
+  of other periods are not considered; all `2π/ν`-periodic solutions starting in a phase-plane
+  disc of radius `√ε R` (any `R`) are classified in
+  `theorem/PowerSystem/Synchronous/SubharmonicClassification.lean`
+  (`SubharmonicOrbit.subharmonic_classification`).
 * Excluded as in `SubharmonicOrbit`: a loaded operating point (its uniqueness is
   `LoadedSubharmonicOrbitUnique.loaded_orbit_unique`), AVR/PSS, network and multi-machine
   dynamics, a modulation of `K_d`.

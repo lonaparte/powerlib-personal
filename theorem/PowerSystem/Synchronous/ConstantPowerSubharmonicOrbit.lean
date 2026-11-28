@@ -46,7 +46,10 @@ Model boundary.
   including its damping-induced imaginary part, is carried by the remainder, as are the `O(ε)`
   changes of `α₂`, `α₃` (`LoadedSubharmonicOrbit.loaded_coeff_bounds`).
 * Uniqueness is claimed among the solutions whose shifted state starts within `√ε r₀` of `√ε w*`
-  in the phase plane and which return after one period. Excluded: AVR/PSS, network and
+  in the phase plane and which return after one period. All such periodic solutions starting in
+  a disc of radius `√ε R` are classified in
+  `theorem/PowerSystem/Synchronous/ConstantPowerSubharmonicClassification.lean`
+  (`ConstantPowerOrbit.const_classification`). Excluded: AVR/PSS, network and
   multi-machine dynamics, a modulation of `K_d` or of `P_m`.
 
 Source: IEEE PES TR-110 "Forced Oscillations in Power Systems" (2023) §3.3, eqs. (3-8)–(3-11)

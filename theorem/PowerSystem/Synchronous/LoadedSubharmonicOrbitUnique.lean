@@ -35,8 +35,11 @@ Model boundary.
   `K_s(t) sin δ₀`, power-angle curve `K_s(t) sin δ`, `K_s(t) = K_s(1 + ε cos 2νt)`, `Params.Pos`,
   state `(δ, δ̇)`, continuous time — in the weakly nonlinear scaling `D/M = εb`,
   `ω_L² = ν² − εd`. Uniqueness is claimed among the solutions that start in the phase-plane ball
-  `‖vdp ν 0 (δ(0) − δ₀) δ̇(0) − √ε w*‖ ≤ √ε r₀` and return after one period, not among periodic
-  solutions of other periods or starting elsewhere. Excluded as in `LoadedSubharmonicOrbit`: a
+  `‖vdp ν 0 (δ(0) − δ₀) δ̇(0) − √ε w*‖ ≤ √ε r₀` and return after one period; the
+  `2π/ν`-periodic solutions starting in a disc of radius `√ε R` are classified in
+  `theorem/PowerSystem/Synchronous/LoadedSubharmonicClassification.lean`
+  (`LoadedSubharmonicOrbit.loaded_classification`, generic
+  `LoadedSubharmonicOrbit.input_classification`). Excluded as in `LoadedSubharmonicOrbit`: a
   constant mechanical power (`ConstantPowerSubharmonicOrbit`), AVR/PSS, network and multi-machine
   dynamics, a modulation of `K_d`.
 
