@@ -24,16 +24,16 @@ Scope.
   invariant `1`-Lipschitz graph. The constant of the bound grows linearly with a bound `Z` on
   the distances `‖p₂ − h(p₁)‖`, `‖p'₂ − h(p'₁)‖`, and the bound is stated for `‖p − p'‖ ≤ 1`
   (at large distances `φ` is within `C` of the centre coordinate, `norm_sub_asymptoticPhase_le`).
-* **Lipschitz continuity of the phase is not proved.** The two estimates available for merely
-  Lipschitz `f`, `g` (the geometric tail `C μᴺ` and the geometric Lipschitz growth `λᴺ` of the
-  finite-horizon phases) can only be balanced, which gives the exponent `θ` (equal to `1` only
-  for `λ = 1`). A Lipschitz phase needs Lipschitz bounds on the increments `φ_{N+1} − φ_N`, i.e.
-  on differences of differences of `f` along pairs of orbits; these are available for `f`, `g` of
-  class `C¹` with Lipschitz derivatives under a bunching condition of the type
-  `(b + 2ε)(α + ε) < (a − ε)²` (`μ λ < 1`), and they also need the graph `h` and the inverse of
-  the reduced map to be `C¹` with Lipschitz derivatives. The `C¹` theory of the centre manifold
-  and of its stable fibres is not formalized in the library, so no Lipschitz statement is made;
-  without bunching, stable foliations are in general only Hölder even for smooth maps.
+* For merely Lipschitz `f`, `g` the two estimates available (the geometric tail `C μᴺ` and the
+  geometric Lipschitz growth `λᴺ` of the finite-horizon phases) can only be balanced, which
+  gives the exponent `θ` (equal to `1` only for `λ = 1`), and the exponent cannot be raised to
+  `1`: the `ε`-Lipschitz kink `ε min(|x|, |y|)` has a phase that is not locally Lipschitz
+  (`not_locallyLipschitz_kink_asymptoticPhase`, `theorem/Map/AsymptoticPhaseLipschitz.lean`). For
+  `f`, `g` with bounded second differences (`C¹` with Lipschitz derivatives) and the bunching
+  condition `(b + 2ε)(α + ε) < a − ε`, the phase is Lipschitz near the graph and locally
+  Lipschitz, without smoothness of `h` (`norm_asymptoticPhase_sub_le_mul`,
+  `locallyLipschitz_asymptoticPhase` in `theorem/Map/AsymptoticPhaseLipschitz.lean`); without
+  bunching, stable foliations are in general only Hölder even for smooth maps.
 * Generic; nothing here describes a physical system (foundation).
 
 Source: Hirsch, Pugh and Shub, *Invariant Manifolds* (LNM 583, 1977) (Hölder continuity of

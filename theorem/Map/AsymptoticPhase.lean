@@ -35,12 +35,14 @@ Scope.
   shadowing at any rate below `a − ε` (`eq_asymptoticPhase`), and the phase map is continuous
   (`continuous_asymptoticPhase`), the identity on the graph, and within
   `ε ‖p₂ − h(p₁)‖/(a − b − 3ε)` of the centre coordinate.
-* Lipschitz dependence of the phase on `p` is not proved: the finite-horizon phases are Lipschitz
-  only with constants growing like `((‖A‖ + ε)/(a − ε))^N`, and Lipschitz (or `C¹`) stable
-  fibres are known under smoothness and bunching hypotheses that are not assumed here (stable
-  foliations are in general only Hölder continuous). Continuity, `φ(0) = 0` and the linear bound
-  at the graph are what the stability transfers use. Hölder continuity with an explicit exponent
-  is `theorem/Map/AsymptoticPhaseRegularity.lean` (`norm_asymptoticPhase_sub_le_rpow`).
+* Lipschitz dependence of the phase on `p` is not proved here: the finite-horizon phases are
+  Lipschitz only with constants growing like `((‖A‖ + ε)/(a − ε))^N`, and stable foliations are
+  in general only Hölder continuous. Continuity, `φ(0) = 0` and the linear bound at the graph are
+  what the stability transfers use. Hölder continuity with an explicit exponent is
+  `theorem/Map/AsymptoticPhaseRegularity.lean` (`norm_asymptoticPhase_sub_le_rpow`); Lipschitz
+  continuity for nonlinearities with Lipschitz derivatives under the bunching condition
+  `(b + 2ε)(α + ε) < a − ε`, and a Lipschitz nonlinearity with a non-Lipschitz phase, are
+  `theorem/Map/AsymptoticPhaseLipschitz.lean`.
 * The local form (`exists_local_asymptoticPhase`): for nonlinearities with strict derivative `0`
   at `0`, the cut-off of `exists_local_centreManifold`; every orbit of the original map that stays
   in the ball `‖p‖ ≤ ρ` is shadowed by an orbit of the cut-off map on the graph.

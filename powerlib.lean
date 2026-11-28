@@ -64,6 +64,8 @@ import theorem.Map.AsymptoticPhase
 import theorem.Map.DegenerateFlip
 import theorem.Map.DegenerateFlipCoefficients
 import theorem.Map.AsymptoticPhaseRegularity
+import theorem.Map.AsymptoticPhaseLipschitz
+import theorem.Map.AsymptoticPhaseLipschitzLocal
 import theorem.LTI.Oscillator2
 import theorem.LTI.SecondOrderResonance
 import theorem.LTI.BoundedForcing
