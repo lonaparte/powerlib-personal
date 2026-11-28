@@ -44,10 +44,12 @@ Scope.
 * The map semantics on `ℝⁿ = EuclideanSpace ℝ (Fin n)` is used through `FlipOrbit.euclidMap`
   (`poincareMap_stability`); the solution statements are in the sup norm. Orbital distance is
   `Metric.infDist` to the range of `x_*`.
-* The constants `δ`, `C`, `λ` are not explicit: the rate is `λ = −log q/(3T/2)` with `q < 1` a
-  geometric rate of `Π` (from the Schur stability of `DΠ(p)`), not the optimal
-  `−log ρ(DΠ(p))/T`. The critical case (a nontrivial multiplier on the unit circle, the
-  others inside) is not decided here.
+* The constants `δ`, `C`, `λ` are not explicit here: the rate is `λ = −log q/(3T/2)` with `q < 1`
+  a geometric rate of `Π` (from the Schur stability of `DΠ(p)`), not the optimal
+  `−log ρ(DΠ(p))/T`. Explicit closed-form constants, for `Df` globally Lipschitz and a
+  contraction datum `‖(M − f(p) wᵀ)^N‖ ≤ q < 1` (equivalent to the Schur stability of the
+  deflation), are in `theorem/Periodic/AndronovWittQuantitative.lean`. The critical case (a
+  nontrivial multiplier on the unit circle, the others inside) is not decided here.
 * Generic mathematics; no model family.
 
 Source: A. A. Andronov and A. A. Witt, "Zur Stabilität nach Liapounoff", Phys. Z. Sowjetunion 4
