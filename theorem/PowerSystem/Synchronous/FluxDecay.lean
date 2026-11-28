@@ -34,9 +34,10 @@ Model boundary.
 * Parameters `H > 0`, `ω₀ > 0`, `K₃ > 0`, `T'_{d0} > 0` (fields of `Model`); `K₁`, `K₂`, `K₄`, `D`
   free (heavy loading may make `K₁` or `K₄` negative; negative `D` models a negative damping
   torque of other origin).
-* Linearization about an equilibrium of the nonlinear one-axis machine; the nonlinear model and
-  the derivation of `K₁ … K₄` from the network are not formalized here (the coefficients are the
-  data of the model).
+* Linearization about an equilibrium of the nonlinear one-axis machine; here the coefficients are
+  the data of the model. The nonlinear machine on an infinite bus, whose Jacobian is this state
+  matrix with `K₁ … K₄` the partial derivatives of the torque and the field EMF, is
+  `theorem/PowerSystem/Synchronous/OneAxis.lean`.
 
 Source: W. G. Heffron, R. A. Phillips, "Effect of a modern amplidyne voltage regulator on
 underexcited operation of large turbine generators", AIEE Trans. PAS-71 (1952); F. P. deMello,
@@ -93,7 +94,8 @@ Family and connection conclusions.
   `FluxDecayParametric.Driven.shift_eq`, `FluxDecayConverse.Converse.shift_eq`): without the
   pump, the small-signal analysis of this family and first-order averaging agree.
 * The reading through the classical swing at constant flux is
-  `theorem/PowerSystem/Synchronous/FluxDecaySwing.lean`.
+  `theorem/PowerSystem/Synchronous/FluxDecaySwing.lean`; the nonlinear one-axis machine read
+  through this family at an equilibrium is `theorem/PowerSystem/Synchronous/OneAxis.lean`.
 -/
 
 noncomputable section
