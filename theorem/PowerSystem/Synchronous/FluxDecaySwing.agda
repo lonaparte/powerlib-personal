@@ -24,7 +24,10 @@ module theorem.PowerSystem.Synchronous.FluxDecaySwing where
 -- machine with `0 < K₁ < K₂K₃K₄` is unstable while its swing machines are attractive
 -- (`aperiodic-witness`, `no-reading-aperiodic`). Neither witness constrains `T'_{d0}`: a slow
 -- field does not decouple (the steady-state synchronizing coefficient `K₁ − K₂K₃K₄` does not
--- depend on `T'_{d0}`).
+-- depend on `T'_{d0}`). What survives of `T'_{d0} → ∞` is a threshold: for coefficients with
+-- `D ≠ 0`, `K₁ ≠ 0` and `K₂K₃K₄ < K₁` when `D, K₁ > 0` (`SlowCondition`) there is `τ > 0` above
+-- which every machine with these coefficients is Hurwitz exactly when its constant-flux machine is
+-- (`slow-hurwitz`), so the two agree on the Hurwitzian sentences (`slow-reading`).
 -- Instability, Lyapunov stability, conservation, decay rates and passivity are not compared, and
 -- the requirement languages take no part (they are left empty here). Lean: `flux-linear` and
 -- `swing-linear` are `Family.IsLinear.mem_den_hurwitz` (`Synchronous.FluxDecay.family_isLinear`,
@@ -42,7 +45,10 @@ module theorem.PowerSystem.Synchronous.FluxDecaySwing where
 -- `Synchronous.FluxDecay.mem_den_undamped_iff`), `aperiodic-witness` is
 -- `Synchronous.FluxDecay.swing_mem_den_of_steadySync_neg` (from
 -- `Synchronous.FluxDecay.mem_den_unstable`), `unstable-excludes` is
--- `GloballyExponentiallyStable.lyapunovStable`. Nothing here is exported.
+-- `GloballyExponentiallyStable.lyapunovStable`; `slow-hurwitz` is the step of the proof of
+-- `Synchronous.FluxDecay.exists_Td0_mem_den_iff_constantFlux` through
+-- `Synchronous.FluxDecay.mem_den_attractive_iff` (the Routh quantity a quadratic in `T'_{d0}`),
+-- and `slow-reading` is that theorem. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
@@ -86,6 +92,21 @@ module _ (Sc : Scalars) where
   -- A balanced selected angle of a swing machine.
   Balanced : SwingModel → Type
   Balanced m = Pe (SwingModel.p m) (SwingModel.δ m) ≡ SwingParams.Pm (SwingModel.p m)
+
+  -- The coefficients of a machine other than `T'_{d0}`, and the conditions of the slow field.
+  record Coefficients : Type where
+    constructor coefficients
+    field
+      cH cD cω₀ cK₁ cK₂ cK₃ cK₄ : ℝ
+
+  coefficientsOf : FluxMachine → Coefficients
+  coefficientsOf x = coefficients (H x) (D x) (ω₀ x) (K₁ x) (K₂ x) (K₃ x) (K₄ x)
+
+  SlowCondition : Coefficients → Type
+  SlowCondition k = (0r < Coefficients.cH k) × (0r < Coefficients.cω₀ k)
+    × (0r < Coefficients.cK₃ k) × (¬ (Coefficients.cD k ≡ 0r)) × (¬ (Coefficients.cK₁ k ≡ 0r))
+    × (0r < Coefficients.cD k → 0r < Coefficients.cK₁ k →
+        Coefficients.cK₂ k * Coefficients.cK₃ k * Coefficients.cK₄ k < Coefficients.cK₁ k)
 
   -- The canonical constant-flux machine: the curve `K₁ sin δ` read at `δ* = 0`.
   constantFlux : FluxMachine → SwingModel
@@ -134,6 +155,9 @@ module _ (Sc : Scalars) where
             0r < K₂ x * K₄ x → K₂ x * K₃ x * K₄ x < K₁ x → den flux ges x × (¬ den lin ges m)
           aperiodic-witness : (x : FluxMachine) (m : SwingModel) → Matches x m → 0r < D x →
             0r < K₁ x → K₁ x < K₂ x * K₃ x * K₄ x → den lin ges m × den flux unstable x
+          slow-hurwitz : (k : Coefficients) → SlowCondition k →
+            Σ[ τ ∈ ℝ ] (0r < τ) × ((x : FluxMachine) → coefficientsOf x ≡ k → τ < Td0 x →
+              HurwitzF x ↔ HurwitzJ (constantFlux x))
 
       module _ (ob : Obligations) where
         open Obligations ob
@@ -172,3 +196,12 @@ module _ (Sc : Scalars) where
           unstable-excludes x (snd w) (snd (r ges ges-hurwitzian) (fst w))
           where
             w = aperiodic-witness x m p d k a
+
+        -- What survives of a slow field: a threshold above which the constant-flux verdict holds.
+        slow-reading : (k : Coefficients) → SlowCondition k →
+          Σ[ τ ∈ ℝ ] (0r < τ) × ((x : FluxMachine) → coefficientsOf x ≡ k → τ < Td0 x →
+            (s : Sentence) → Hurwitzian s → den flux s x ↔ den lin s (constantFlux x))
+        slow-reading k c =
+          let (τ , hτ , below) = slow-hurwitz k c
+          in τ , hτ , λ x p t s h → ↔-trans (flux-linear s h x)
+               (↔-trans (below x p t) (↔-sym (swing-linear s h (constantFlux x))))

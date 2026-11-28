@@ -31,6 +31,10 @@ under a condition.
   its constant-flux machine is not (`mem_den_not_swing_of_undamped`); a damped machine with
   `0 < K₁ < K₂K₃K₄` is unstable (negative steady-state synchronizing coefficient) while its
   constant-flux machine is attractive (`swing_mem_den_of_steadySync_neg`).
+* What survives of `T'_{d0} → ∞` (`exists_Td0_mem_den_iff_constantFlux`): away from the
+  degenerate coefficients (`D ≠ 0`, `K₁ ≠ 0`) and with `K₂K₃K₄ < K₁` whenever `D > 0`, `K₁ > 0`,
+  a slow enough field gives the constant-flux verdict; the two witnesses show that neither
+  condition can be dropped, for any `T'_{d0}`.
 * The parametric families of `theorem/PowerSystem/Synchronous/FluxDecayParametric.lean` and
   `theorem/PowerSystem/Synchronous/FluxDecayConverse.lean` at `ε = 0` lie in the decoupled context
   (`weakModel_zero_decoupled`, `drivenModel_zero_decoupled`, `converseModel_zero_decoupled`).
@@ -63,6 +67,7 @@ Results.
   of the characteristic polynomial and the Hurwitz property on the decoupled context.
 * `weakModel_zero_decoupled`, `drivenModel_zero_decoupled`, `converseModel_zero_decoupled` — the
   parametric families at `ε = 0` are decoupled.
+* `exists_Td0_mem_den_iff_constantFlux` — the slow-field threshold.
 
 Family and connection conclusions.
 * `mem_den_iff_swing`, `mem_den_iff_constantFlux` (two families, on the context `K₂K₄ = 0`): the
@@ -76,6 +81,11 @@ Family and connection conclusions.
   decoupled by a slow field: `T'_{d0} → ∞` does not give the constant-flux machine, since the
   steady-state synchronizing coefficient `K₁ − K₂K₃K₄` does not depend on `T'_{d0}` and, without
   other damping, the flux decay's damping torque decides for every `T'_{d0}`.
+* `exists_Td0_mem_den_iff_constantFlux` (two families, a threshold): the strongest form of the
+  slow-field limit — for `D ≠ 0`, `K₁ ≠ 0` and `K₂K₃K₄ < K₁` when `D, K₁ > 0` there is `τ > 0`
+  such that every machine with `T'_{d0} > τ` agrees with its constant-flux machine on the
+  attractive sentences (the Routh quantity is `aT'_{d0}² + bT'_{d0} + c` with `a = Dω₀K₁K₃²`,
+  `c = 2HD`, and `a₂ = 2H + DK₃T'_{d0}`).
 -/
 
 noncomputable section
@@ -287,5 +297,99 @@ satisfies the attractive sentences. -/
     (hω : 0 < f.ω₀) (hK : 0 < f.K₃) (hT : 0 < f.Td0) (t : ℝ) :
     (converseModel f hH hω hK hT 0 t).p.K₂ * (converseModel f hH hω hK hT 0 t).p.K₄ = 0 := by
   simp [converseModel, Converse.machine, Converse.params]
+
+/-! ## A slow field -/
+
+/-- The constant-flux machine satisfies an attractive sentence exactly when `D > 0` and
+`K₁ > 0`. -/
+@[tmio TM, powerlib_domain] private theorem constantFlux_mem_den_iff (x : Model)
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (constantFlux x ∈ Swing.Linearized.family.den (.flow P) ↔
+      0 < x.p.D ∧ 0 < x.p.K₁) := by
+  unfold powerlib.TMIO.Statement
+  obtain ⟨hM, hDs, hKs, -⟩ := constantFlux_matches x
+  have hM0 : 0 < (constantFlux x).p.M := by
+    have := x.H_pos; have := x.ω₀_pos
+    rw [hM]; positivity
+  rw [(connection_proof% Swing.Linearized.family_isLinear.mem_den_hurwitz hP)]
+  change IsHurwitz ((constantFlux x).p.jacobian (constantFlux x).δ) ↔ _
+  rw [(constantFlux x).p.isHurwitz_jacobian_iff hM0, hDs, hKs,
+    div_pos_iff_of_pos_right x.ω₀_pos]
+
+/-- **A slow field: what survives of `T'_{d0} → ∞`.** Fix `H, ω₀, K₃ > 0` and `D, K₁, K₂, K₄` with
+`D ≠ 0`, `K₁ ≠ 0`, and `K₂K₃K₄ < K₁` whenever `D > 0` and `K₁ > 0`. Then there is a `τ > 0` such
+that every flux-decay machine with these coefficients and `T'_{d0} > τ` satisfies an attractive
+sentence exactly when its constant-flux machine does. Without the conditions it fails for every
+`T'_{d0}` (`mem_den_not_swing_of_undamped`: `D = 0`; `swing_mem_den_of_steadySync_neg`:
+`0 < K₁ < K₂K₃K₄`). -/
+@[tmio TM, powerlib_domain] theorem exists_Td0_mem_den_iff_constantFlux (H D ω₀ K₁ K₂ K₃ K₄ : ℝ)
+    (hH : 0 < H) (hω : 0 < ω₀) (hK : 0 < K₃) (hD : D ≠ 0) (hK₁ : K₁ ≠ 0)
+    (hs : 0 < D → 0 < K₁ → K₂ * K₃ * K₄ < K₁) {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (∃ τ : ℝ, 0 < τ ∧ ∀ x : Model, x.p.H = H → x.p.D = D → x.p.ω₀ = ω₀ →
+      x.p.K₁ = K₁ → x.p.K₂ = K₂ → x.p.K₃ = K₃ → x.p.K₄ = K₄ → τ < x.p.Td0 →
+        (x ∈ family.den (.flow P) ↔ constantFlux x ∈ Swing.Linearized.family.den (.flow P))) := by
+  unfold powerlib.TMIO.Statement
+  -- The Routh quantity as a polynomial in `T'_{d0}`: `a T² + b T + c`.
+  set a := D * ω₀ * K₁ * K₃ ^ 2 with ha
+  set b := D ^ 2 * K₃ + 2 * H * ω₀ * K₂ * K₃ ^ 2 * K₄ with hb
+  set c := 2 * H * D with hc
+  have hR : ∀ T, D * (2 * H + D * K₃ * T + ω₀ * K₁ * K₃ ^ 2 * T ^ 2) +
+      2 * H * ω₀ * K₂ * K₃ ^ 2 * K₄ * T = T * (a * T + b) + c := fun T => by ring
+  have key : ∀ τ : ℝ, (∀ T, τ < T → ((0 < 2 * H + D * K₃ * T ∧ K₂ * K₃ * K₄ < K₁ ∧
+      0 < T * (a * T + b) + c) ↔ (0 < D ∧ 0 < K₁))) →
+      ∀ x : Model, x.p.H = H → x.p.D = D → x.p.ω₀ = ω₀ → x.p.K₁ = K₁ → x.p.K₂ = K₂ →
+        x.p.K₃ = K₃ → x.p.K₄ = K₄ → τ < x.p.Td0 →
+          (x ∈ family.den (.flow P) ↔ constantFlux x ∈ Swing.Linearized.family.den (.flow P)) := by
+    intro τ hτ x eH eD eω e1 e2 e3 e4 hT
+    rw [(connection_proof% mem_den_attractive_iff x hP), Set.mem_ofPred_eq,
+      (connection_proof% constantFlux_mem_den_iff x hP), eH, eD, eω, e1, e2, e3, e4, hR]
+    exact hτ _ hT
+  rcases lt_or_gt_of_ne hD with hDn | hDp
+  · -- `D < 0`: `a₂ = 2H + DK₃T'_{d0} < 0` for a slow field; the swing machine is not damped.
+    have hq : 0 < -D * K₃ := mul_pos (neg_pos.mpr hDn) hK
+    refine ⟨2 * H / (-D * K₃) + 1, add_pos (div_pos (by positivity) hq) one_pos, key _ ?_⟩
+    intro T hT
+    have h1 : 2 * H < T * (-D * K₃) := by
+      rw [← div_lt_iff₀ hq]
+      linarith
+    refine iff_of_false (fun h => ?_) (fun h => absurd h.1 (not_lt.2 hDn.le))
+    nlinarith [h.1]
+  rcases lt_or_gt_of_ne hK₁ with hKn | hKp
+  · -- `D > 0`, `K₁ < 0`: the Routh quantity is eventually negative.
+    have haneg : a < 0 := by
+      rw [ha]
+      have : 0 < D * ω₀ * K₃ ^ 2 := by positivity
+      nlinarith
+    have hcpos : 0 < c := by rw [hc]; positivity
+    have hq : 0 < -a := neg_pos.mpr haneg
+    refine ⟨(|b| + c) / (-a) + 1, add_pos (div_pos (by positivity) hq) one_pos, key _ ?_⟩
+    intro T hT
+    have hT1 : 1 < T := by
+      have : 0 ≤ (|b| + c) / (-a) := div_nonneg (by positivity) hq.le
+      linarith
+    have h1 : |b| + c < T * (-a) := by
+      rw [← div_lt_iff₀ hq]
+      linarith
+    have hbT : b * T ≤ |b| * T := mul_le_mul_of_nonneg_right (le_abs_self b) (by linarith)
+    have hneg : T * (a * T + b) + c < 0 := by nlinarith
+    exact iff_of_false (fun h => absurd h.2.2 (not_lt.2 hneg.le))
+      (fun h => absurd h.2 (not_lt.2 hKn.le))
+  · -- `D > 0`, `K₁ > 0`: the Routh quantity is eventually positive.
+    have hapos : 0 < a := by rw [ha]; positivity
+    have hcpos : 0 < c := by rw [hc]; positivity
+    refine ⟨|b| / a + 1, add_pos_of_nonneg_of_pos (div_nonneg (abs_nonneg b) hapos.le) one_pos,
+      key _ ?_⟩
+    intro T hT
+    have hT0 : 0 < T := by
+      have : 0 ≤ |b| / a := div_nonneg (abs_nonneg b) hapos.le
+      linarith
+    have h1 : |b| < T * a := by
+      rw [← div_lt_iff₀ hapos]
+      linarith
+    have hpos : 0 < T * (a * T + b) + c := by
+      have : 0 < a * T + b := by nlinarith [neg_abs_le b]
+      positivity
+    refine iff_of_true ⟨by positivity, hs hDp hKp, hpos⟩ ⟨hDp, hKp⟩
 
 end powerlib.Synchronous.FluxDecay

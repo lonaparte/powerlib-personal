@@ -61,7 +61,11 @@ Results.
   the parametric families `FluxDecayParametric.Weak`, `FluxDecayParametric.Driven`,
   `FluxDecayConverse.Converse` at `(ε, t)` are models (`weakModel`, `drivenModel`,
   `converseModel`), at `ε = 0` with the critical state matrix `A₀c` (`weakModel_zero_plant`,
-  `drivenModel_zero_plant`, `converseModel_zero_plant`).
+  `drivenModel_zero_plant`, `converseModel_zero_plant`); so are their unpumped machines at `ε`
+  (`weakUnpumped`, `drivenUnpumped`, `converseUnpumped`), whose Routh quantity is
+  `ε (c₁ + ε c₂)` with `c₁` a positive multiple of the first-order damping of the averaged swing
+  pair: `D̂` for `Weak`, `s'` (`Driven.sD`, `Converse.sD`) for the other two
+  (`weak_routhQuantity`, `driven_routhQuantity`, `converse_routhQuantity`).
 
 Family and connection conclusions.
 * `FluxDecay.family : Family Model Spectral.RateRequirement 3 0` (`Spectral.rateFamily`): every
@@ -81,6 +85,13 @@ Family and connection conclusions.
 * The parametric families at `ε = 0` lie on the stability boundary (`weakModel_zero_not_mem_den`,
   `drivenModel_zero_not_mem_den`, `converseModel_zero_not_mem_den`: the undamped swing pair
   `±jν` of `A₀c`).
+* Small-signal verdict of the unpumped machines (`weakUnpumped_mem_den_iff`,
+  `drivenUnpumped_mem_den_iff`, `converseUnpumped_mem_den_iff`): there is `ε₀ > 0` such that for
+  `0 < ε < ε₀` the unpumped machine satisfies an attractive sentence exactly when `D̂ > 0` (`Weak`)
+  or `s' > 0` (`Driven`, `Converse`) — the sign of the real part `−D̂/(4H)`, `−s'` of the
+  first-order shift `λ₁` of the averaged pair (`FluxDecayParametric.Weak.shift_eq`,
+  `FluxDecayParametric.Driven.shift_eq`, `FluxDecayConverse.Converse.shift_eq`): without the
+  pump, the small-signal analysis of this family and first-order averaging agree.
 * The reading through the classical swing at constant flux is
   `theorem/PowerSystem/Synchronous/FluxDecaySwing.lean`.
 -/
@@ -88,7 +99,7 @@ Family and connection conclusions.
 noncomputable section
 namespace powerlib.Synchronous.FluxDecay
 
-open Matrix LinearSystems TMIO
+open Matrix LinearSystems TMIO Filter Topology
 open powerlib.Synchronous.FluxDecayParametric (Params Weak Driven)
 open powerlib.Synchronous.FluxDecayConverse (Converse)
 
@@ -422,5 +433,170 @@ its swing pair `±jν` lies on the imaginary axis. -/
     connection% (converseModel f hH hω hK hT 0 t ∉ family.den (.flow P)) :=
   not_mem_den_of_critical _ (by simp [converseModel, Converse.machine, Converse.params])
     (by simp [converseModel, Converse.machine, Converse.params]) hP
+
+/-! ## The unpumped machines at small `ε`: the first-order damping decides -/
+
+/-- The unpumped machine of the weak-coupling family at `ε` (`FluxDecayParametric.Weak.params`:
+damping `εD̂`, couplings `εK̂₂`, `εK̂₄`, detuned `K₁`), a model of the family. -/
+def weakUnpumped (f : Weak) (hH : 0 < f.H) (hω : 0 < f.ω₀) (hK : 0 < f.K₃) (hT : 0 < f.Td0)
+    (ε : ℝ) : Model :=
+  ⟨f.params ε, hH, hω, hK, hT⟩
+
+/-- The unpumped machine of the driven-field family at `ε` (`FluxDecayParametric.Driven.params`). -/
+def drivenUnpumped (f : Driven) (hH : 0 < f.H) (hω : 0 < f.ω₀) (hK : 0 < f.K₃) (hT : 0 < f.Td0)
+    (ε : ℝ) : Model :=
+  ⟨f.params ε, hH, hω, hK, hT⟩
+
+/-- The unpumped machine of the converse family at `ε` (`FluxDecayConverse.Converse.params`). -/
+def converseUnpumped (f : Converse) (hH : 0 < f.H) (hω : 0 < f.ω₀) (hK : 0 < f.K₃)
+    (hT : 0 < f.Td0) (ε : ℝ) : Model :=
+  ⟨f.params ε, hH, hω, hK, hT⟩
+
+/-- The Routh quantity of the unpumped weak-coupling machine is `ε (2H(1 + ν²τ²) D̂ + ε c)`,
+`τ = K₃T'_{d0}`: its first-order part is the damping `D̂` alone (the couplings enter at
+`ε²`). -/
+@[tmio M, powerlib_domain] theorem weak_routhQuantity (f : Weak) (hω : f.ω₀ ≠ 0) (ε : ℝ) :
+    routhQuantity (f.params ε) = ε * (2 * f.H * (1 + f.ν ^ 2 * (f.K₃ * f.Td0) ^ 2) * f.Dh +
+      ε * (f.Dh ^ 2 * f.K₃ * f.Td0 - 4 * f.H * f.Dh * f.ν ^ 2 * f.dh * (f.K₃ * f.Td0) ^ 2 +
+        2 * f.H * f.ω₀ * f.K2h * f.K₃ ^ 2 * f.K4h * f.Td0)) := by
+  rw [routhQuantity_eq]
+  simp only [Weak.params]
+  field_simp
+  ring
+
+/-- The Routh quantity of the unpumped driven-field machine is
+`ε (8H²m s' + ε c)`, `m = 1 + ν²τ²`: its first-order part is the first-order damping
+`s' = D̂/(4H) + ω₀K₃K₄K̂₂τ/(4Hm)` of the averaged swing pair (`FluxDecayParametric.Driven.sD`,
+`FluxDecayParametric.Driven.shift_eq`). -/
+@[tmio M, powerlib_domain] theorem driven_routhQuantity (f : Driven) (hω : f.ω₀ ≠ 0)
+    (ε : ℝ) :
+    routhQuantity (f.params ε) = ε * (8 * f.H ^ 2 * f.mden * f.sD +
+      ε * (f.Dh ^ 2 * f.K₃ * f.Td0 - 4 * f.H * f.Dh * f.ν ^ 2 * f.dh * (f.K₃ * f.Td0) ^ 2)) := by
+  have hm : 1 + f.ν ^ 2 * (f.K₃ * f.Td0) ^ 2 ≠ 0 := by positivity
+  rw [routhQuantity_eq]
+  simp only [Driven.params, Driven.sD, Driven.mden, Driven.tau]
+  field_simp
+  ring
+
+/-- The Routh quantity of the unpumped converse machine is `ε (8H²m s' + ε c)` with the
+first-order damping `s' = D̂/(4H) + ω₀K₂K₃K̂₄τ/(4Hm)` (`FluxDecayConverse.Converse.sD`,
+`FluxDecayConverse.Converse.shift_eq`). -/
+@[tmio M, powerlib_domain] theorem converse_routhQuantity (f : Converse) (hω : f.ω₀ ≠ 0)
+    (ε : ℝ) :
+    routhQuantity (f.params ε) = ε * (8 * f.H ^ 2 * f.mden * f.sD +
+      ε * (f.Dh ^ 2 * f.K₃ * f.Td0 - 4 * f.H * f.Dh * f.ν ^ 2 * f.dh * (f.K₃ * f.Td0) ^ 2)) := by
+  have hm : 1 + f.ν ^ 2 * (f.K₃ * f.Td0) ^ 2 ≠ 0 := by positivity
+  rw [routhQuantity_eq]
+  simp only [Converse.params, Converse.sD, Converse.mden, Converse.tau]
+  field_simp
+  ring
+
+/-- A family of machines whose Routh quantity is `ε (c₁ + ε c₂)` with `c₁ ≠ 0`, and whose
+coefficients `a₂`, `a₀` stay positive as `ε → 0⁺`, is Hurwitz for small `ε > 0` exactly when
+`c₁ > 0`. -/
+@[tmio M, powerlib_domain] private theorem eventually_isHurwitz_iff (p : ℝ → Params)
+    (hH : ∀ ε, 0 < (p ε).H) (hK : ∀ ε, 0 < (p ε).K₃) (hT : ∀ ε, 0 < (p ε).Td0) {c₁ c₂ : ℝ}
+    (hc : c₁ ≠ 0) (hR : ∀ ε, routhQuantity (p ε) = ε * (c₁ + ε * c₂))
+    (h2 : ∀ᶠ ε in 𝓝 (0 : ℝ), 0 < coeff2 (p ε)) (h0 : ∀ᶠ ε in 𝓝 (0 : ℝ), 0 < coeff0 (p ε)) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), (IsHurwitz (p ε).stateMatrix ↔ 0 < c₁) := by
+  have hlim : Tendsto (fun ε : ℝ => c₁ + ε * c₂) (𝓝 0) (𝓝 c₁) := by
+    have h := (tendsto_const_nhds (x := c₁)).add
+      ((tendsto_id (x := 𝓝 (0 : ℝ))).mul (tendsto_const_nhds (x := c₂)))
+    simpa using h
+  have hsign : ∀ᶠ ε in 𝓝 (0 : ℝ), (0 < c₁ + ε * c₂ ↔ 0 < c₁) := by
+    rcases lt_or_gt_of_ne hc with hneg | hpos
+    · filter_upwards [hlim.eventually (gt_mem_nhds hneg)] with ε h
+      exact iff_of_false (not_lt.2 h.le) (not_lt.2 hneg.le)
+    · filter_upwards [hlim.eventually (lt_mem_nhds hpos)] with ε h
+      exact iff_of_true h hpos
+  filter_upwards [nhdsWithin_le_nhds hsign, nhdsWithin_le_nhds h2, nhdsWithin_le_nhds h0,
+    self_mem_nhdsWithin] with ε hs h2 h0 (hε : 0 < ε)
+  rw [isHurwitz_stateMatrix_iff (p ε) (hH ε) (hK ε) (hT ε), hR, mul_pos_iff_of_pos_left hε, hs]
+  exact ⟨fun h => h.2.2, fun h => ⟨h2, h0, h⟩⟩
+
+/-- `a₂` of an unpumped machine with damping `εD̂` stays positive as `ε → 0`. -/
+@[tmio M, powerlib_domain] private theorem eventually_coeff2_pos (p : ℝ → Params) {H : ℝ}
+    (hH : 0 < H) (hc : Continuous fun ε => coeff2 (p ε)) (h0 : coeff2 (p 0) = 2 * H) :
+    ∀ᶠ ε in 𝓝 (0 : ℝ), 0 < coeff2 (p ε) :=
+  (hc.tendsto 0).eventually (lt_mem_nhds (by rw [h0]; positivity))
+
+/-- `a₀` of an unpumped machine at the 2:1 resonance tends to `2Hν² > 0` as `ε → 0`. -/
+@[tmio M, powerlib_domain] private theorem eventually_coeff0_pos (p : ℝ → Params) {H ν : ℝ}
+    (hH : 0 < H) (hν : ν ≠ 0) (hc : Continuous fun ε => coeff0 (p ε))
+    (h0 : coeff0 (p 0) = 2 * H * ν ^ 2) :
+    ∀ᶠ ε in 𝓝 (0 : ℝ), 0 < coeff0 (p ε) := by
+  have : 0 < ν ^ 2 := by positivity
+  exact (hc.tendsto 0).eventually (lt_mem_nhds (by rw [h0]; positivity))
+
+/-- **The unpumped weak-coupling machine at small `ε`.** For all small `ε > 0` it satisfies an
+attractive sentence exactly when `D̂ > 0`: the sign of the first-order damping `−D̂/(4H)` of the
+averaged swing pair (`FluxDecayParametric.Weak.shift_eq`), which the field does not reach. -/
+@[tmio TM, powerlib_domain] theorem weakUnpumped_mem_den_iff (f : Weak) (hH : 0 < f.H)
+    (hω : 0 < f.ω₀) (hK : 0 < f.K₃) (hT : 0 < f.Td0) (hν : f.ν ≠ 0) (hD : f.Dh ≠ 0)
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε < ε₀ →
+      (weakUnpumped f hH hω hK hT ε ∈ family.den (.flow P) ↔ 0 < f.Dh)) := by
+  unfold powerlib.TMIO.Statement
+  have hm : 0 < 2 * f.H * (1 + f.ν ^ 2 * (f.K₃ * f.Td0) ^ 2) := by positivity
+  have hev := eventually_isHurwitz_iff (fun ε => f.params ε) (fun _ => hH) (fun _ => hK)
+    (fun _ => hT) (mul_ne_zero hm.ne' hD) (weak_routhQuantity f hω.ne')
+    (eventually_coeff2_pos _ hH (by simp only [coeff2, Weak.params]; fun_prop)
+      (by simp [coeff2, Weak.params]))
+    (eventually_coeff0_pos _ hH hν (by simp only [coeff0, Weak.params]; fun_prop)
+      (by simp only [coeff0, Weak.params]; field_simp; ring))
+  obtain ⟨ε₀, hε₀, h⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hev
+  refine ⟨ε₀, hε₀, fun ε hε hlt => ?_⟩
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz hP)]
+  change IsHurwitz (f.params ε).stateMatrix ↔ _
+  rw [h ⟨hε, hlt⟩, mul_pos_iff_of_pos_left hm]
+
+/-- **The unpumped driven-field machine at small `ε`.** For all small `ε > 0` it satisfies an
+attractive sentence exactly when the first-order damping `s' = D̂/(4H) + ω₀K₃K₄K̂₂τ/(4Hm)` of the
+averaged swing pair is positive (`FluxDecayParametric.Driven.sD`): the small-signal verdict of the
+unpumped machine is the first-order averaging verdict without pump. -/
+@[tmio TM, powerlib_domain] theorem drivenUnpumped_mem_den_iff (f : Driven) (hH : 0 < f.H)
+    (hω : 0 < f.ω₀) (hK : 0 < f.K₃) (hT : 0 < f.Td0) (hν : f.ν ≠ 0) (hs : f.sD ≠ 0)
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε < ε₀ →
+      (drivenUnpumped f hH hω hK hT ε ∈ family.den (.flow P) ↔ 0 < f.sD)) := by
+  unfold powerlib.TMIO.Statement
+  have hm : 0 < 8 * f.H ^ 2 * f.mden := by
+    have : 0 < f.mden := by unfold Driven.mden; positivity
+    positivity
+  have hev := eventually_isHurwitz_iff (fun ε => f.params ε) (fun _ => hH) (fun _ => hK)
+    (fun _ => hT) (mul_ne_zero hm.ne' hs) (driven_routhQuantity f hω.ne')
+    (eventually_coeff2_pos _ hH (by simp only [coeff2, Driven.params]; fun_prop)
+      (by simp [coeff2, Driven.params]))
+    (eventually_coeff0_pos _ hH hν (by simp only [coeff0, Driven.params]; fun_prop)
+      (by simp only [coeff0, Driven.params]; field_simp; ring))
+  obtain ⟨ε₀, hε₀, h⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hev
+  refine ⟨ε₀, hε₀, fun ε hε hlt => ?_⟩
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz hP)]
+  change IsHurwitz (f.params ε).stateMatrix ↔ _
+  rw [h ⟨hε, hlt⟩, mul_pos_iff_of_pos_left hm]
+
+/-- **The unpumped converse machine at small `ε`.** For all small `ε > 0` it satisfies an
+attractive sentence exactly when the first-order damping `s' = D̂/(4H) + ω₀K₂K₃K̂₄τ/(4Hm)` is
+positive (`FluxDecayConverse.Converse.sD`). -/
+@[tmio TM, powerlib_domain] theorem converseUnpumped_mem_den_iff (f : Converse) (hH : 0 < f.H)
+    (hω : 0 < f.ω₀) (hK : 0 < f.K₃) (hT : 0 < f.Td0) (hν : f.ν ≠ 0) (hs : f.sD ≠ 0)
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε < ε₀ →
+      (converseUnpumped f hH hω hK hT ε ∈ family.den (.flow P) ↔ 0 < f.sD)) := by
+  unfold powerlib.TMIO.Statement
+  have hm : 0 < 8 * f.H ^ 2 * f.mden := by
+    have : 0 < f.mden := by unfold Converse.mden; positivity
+    positivity
+  have hev := eventually_isHurwitz_iff (fun ε => f.params ε) (fun _ => hH) (fun _ => hK)
+    (fun _ => hT) (mul_ne_zero hm.ne' hs) (converse_routhQuantity f hω.ne')
+    (eventually_coeff2_pos _ hH (by simp only [coeff2, Converse.params]; fun_prop)
+      (by simp [coeff2, Converse.params]))
+    (eventually_coeff0_pos _ hH hν (by simp only [coeff0, Converse.params]; fun_prop)
+      (by simp only [coeff0, Converse.params]; field_simp; ring))
+  obtain ⟨ε₀, hε₀, h⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hev
+  refine ⟨ε₀, hε₀, fun ε hε hlt => ?_⟩
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz hP)]
+  change IsHurwitz (f.params ε).stateMatrix ↔ _
+  rw [h ⟨hε, hlt⟩, mul_pos_iff_of_pos_left hm]
 
 end powerlib.Synchronous.FluxDecay
