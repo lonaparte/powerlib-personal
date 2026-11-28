@@ -61,9 +61,9 @@ Scope.
 * The flip instance is stated for globally `ε`-Lipschitz nonlinearities of class `C¹` with
   Lipschitz derivatives. The cut-off of `exists_local_centreManifold` (`f₀ ∘ ballRetract ρ`, the
   radial retraction) is Lipschitz but not differentiable on the sphere `‖p‖ = ρ`, so the phase of
-  the cut-off map of a period map is not covered by this instance as such: a cut-off of class
-  `C¹` with Lipschitz derivative (a smooth bump, which needs an inner-product or smooth norm) is
-  not formalized.
+  that cut-off map is not covered by this instance as such; on finite-dimensional spaces a smooth
+  bump replaces it (`theorem/Map/AsymptoticPhaseLipschitzLocal.lean`: `exists_smooth_cutoff`,
+  `exists_local_flip_asymptoticPhase_lipschitz`, the phase is Lipschitz near the fixed point).
 * Generic; nothing here describes a physical system (foundation).
 
 Source: Pugh, Shub and Wilkinson, "Hölder foliations", Duke Math. J. 86 (1997), and "Hölder
