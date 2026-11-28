@@ -38,7 +38,8 @@ range `ξ, ε ≤ 1/4`, because for `δ = 1/2` the product `ν₁ν₂` and the 
 the depth and their derivatives can be dropped; for `δ ≠ 1/2` they need not, and the general
 bound above pays for them with the factor `1/(40π)`. The threshold constants `ε₁`, `ξ₁` of
 `CentreThreshold.centre_unstable_iff_threshold` are existential (from the cone
-`SquareWave.centre_threshold_ratio`); at `δ = 1/2` the explicit ones here apply to it.
+`SquareWave.centre_threshold_ratio`); at `δ = 1/2` the explicit ones here apply to it
+(`centre_unstable_iff_threshold_explicit`, for the Meissner monodromy itself).
 
 Scope.
 * The scalar oscillator with the duty-`δ` square-wave stiffness of `DutyCycle.dutyMonodromy`,
@@ -77,6 +78,8 @@ Results.
 * `dutyCentreThreshold_band_explicit` — `(81π/55)(1 − δ)ξ ≤ ε_c(ξ; δ) ≤ 100π(1 − δ)ξ/(9 sin(πδ))`.
 * `dutyCentreThreshold_half` — at `δ = 1/2`, `ε_c(ξ; 1/2) = CentreThreshold.centreThreshold ξ` for
   `0 < ξ < 1/(125π²)`.
+* `centre_unstable_iff_threshold_explicit` — `CentreThreshold.centre_unstable_iff_threshold` for
+  the Meissner oscillator with the explicit constants `ε₁ = 1/(40π)`, `ξ₁ = 1/(125π²)`.
 
 Corrections.
 None: the existential constants of `DutyCycleThreshold` made explicit.
@@ -816,5 +819,42 @@ its threshold constants (`CentreThreshold.centre_unstable_iff_threshold`) are ex
     have hI : (e₀ + min w ε₁) / 2 ∈ Icc 0 ε₁ := ⟨by linarith, by linarith⟩
     exact ⟨(e₀ + min w ε₁) / 2, ⟨hI.1, by linarith [hI.2], hpos _ hI (by linarith)⟩,
       by linarith⟩
+
+/-- **The symmetric-wave threshold with explicit constants.** For `0 < ξ < 1/(125π²)`:
+`0 < ε_c(ξ) < 1/(40π)` (`CentreThreshold.centreThreshold`), and for every `ω₀ > 0`, every depth
+`0 ≤ ε ≤ 1/(40π)` and the pump at the exact centre `T = 2π/(ν₁ + ν₂)` of the Meissner oscillator
+(`c = ξω₀`, `ν_{1,2}² = ω₀²(1 ± ε) − c²`): Floquet instability iff `ε_c(ξ) < ε`, Schur stability
+iff `ε < ε_c(ξ)`, and the multiplier `−1` at `ε = ε_c(ξ)`. This is
+`CentreThreshold.centre_unstable_iff_threshold` with its existential `ε₁`, `ξ₁` replaced by
+`1/(40π)`, `1/(125π²)`: the duty-`1/2` case of `duty_unstable_iff_threshold_explicit`
+(`DutyCycle.dutyMonodromy_half`, `dutyCentreThreshold_half`). -/
+@[tmio T, powerlib_foundation] theorem centre_unstable_iff_threshold_explicit {ξ : ℝ}
+    (hξ : 0 < ξ) (hξ₁ : ξ < 1 / (125 * Real.pi ^ 2)) :
+    0 < CentreThreshold.centreThreshold ξ ∧
+      CentreThreshold.centreThreshold ξ < 1 / (40 * Real.pi) ∧
+      ∀ ω₀ ε ν₁ ν₂ : ℝ, 0 < ω₀ → 0 ≤ ε → ε ≤ 1 / (40 * Real.pi) →
+        ν₁ ^ 2 = ω₀ ^ 2 * (1 + ε) - (ξ * ω₀) ^ 2 → ν₂ ^ 2 = ω₀ ^ 2 * (1 - ε) - (ξ * ω₀) ^ 2 →
+        0 < ν₁ → 0 < ν₂ →
+        ((∃ μ ∈ spectrum ℂ ((Meissner.meissnerMonodromy (ξ * ω₀) ω₀ ε
+            (2 * Real.pi / (ν₁ + ν₂))).map (algebraMap ℝ ℂ)), 1 < ‖μ‖) ↔
+          CentreThreshold.centreThreshold ξ < ε) ∧
+        (LTI.SchurStable (Meissner.meissnerMonodromy (ξ * ω₀) ω₀ ε (2 * Real.pi / (ν₁ + ν₂))) ↔
+          ε < CentreThreshold.centreThreshold ξ) ∧
+        (ε = CentreThreshold.centreThreshold ξ → (-1 : ℂ) ∈ spectrum ℂ
+          ((Meissner.meissnerMonodromy (ξ * ω₀) ω₀ ε (2 * Real.pi / (ν₁ + ν₂))).map
+            (algebraMap ℝ ℂ))) := by
+  have hπ := Real.pi_pos
+  have hs : Real.sin (Real.pi * (1 / 2)) = 1 := by
+    rw [show Real.pi * (1 / 2) = Real.pi / 2 by ring, Real.sin_pi_div_two]
+  have hξ₁' : ξ < Real.sin (Real.pi * (1 / 2)) ^ 2 / (250 * Real.pi ^ 2 * (1 - 1 / 2)) := by
+    rw [hs]; convert hξ₁ using 1; ring
+  obtain ⟨hc0, hc1, hA⟩ := duty_unstable_iff_threshold_explicit (δ := 1 / 2) (by norm_num)
+    (by norm_num) hξ hξ₁'
+  rw [dutyCentreThreshold_half hξ hξ₁] at hc0 hc1 hA
+  rw [hs] at hc1 hA
+  refine ⟨hc0, hc1, fun ω₀ ε ν₁ ν₂ hω hε hεε h1 h2 p1 p2 => ?_⟩
+  have hs12 : 0 < ν₁ + ν₂ := by linarith
+  exact hA ω₀ ε ε ν₁ ν₂ (2 * Real.pi / (ν₁ + ν₂)) hω hε hεε (by ring) h1 h2 p1 p2
+    (by field_simp; ring)
 
 end powerlib.ParametricResonance.DutyCycleThresholdExplicit
