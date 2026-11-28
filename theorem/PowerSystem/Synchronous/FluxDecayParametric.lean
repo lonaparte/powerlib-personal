@@ -53,8 +53,13 @@ Model boundary.
   the field's left eigenvector is `e₃ᵀ` there) — it is
   `theorem/PowerSystem/Synchronous/FluxDecayConverse.lean`, with the same boundary verdict
   (the sign of `−d'`); `fieldMixed = 0`, `d' = 0` (next order).
-* The machine is a data model (as `ParametricSwing`'s `Params`), not a model family: no
-  connection between families or representations is stated, so no scaffold is involved.
+* The machine is the data model of the flux-decay family `Synchronous.FluxDecay.family`
+  (`theorem/PowerSystem/Synchronous/FluxDecay.lean`: a `Params` with `H, ω₀, K₃, T'_{d0} > 0`),
+  whose members include the frozen machines `machine ε t` and the unpumped machines `params ε`
+  of `Weak` and `Driven` (`FluxDecay.weakModel`, `FluxDecay.drivenModel`,
+  `FluxDecay.weakUnpumped`, `FluxDecay.drivenUnpumped`); the statements here are Floquet
+  statements about the periodic state matrix, not sentences of that family, and state no
+  connection between families or representations, so no scaffold is involved.
 
 Source: W. G. Heffron, R. A. Phillips, "Effect of a modern amplidyne voltage regulator on
 underexcited operation of large turbine generators", AIEE Trans. PAS-71 (1952); F. P. deMello,

@@ -54,8 +54,12 @@ Model boundary.
   linear model).
 * Not covered: `d' = 0` on the boundary (next order); the location of the critical multipliers
   themselves (only the verdict inside/outside the unit circle is stated).
-* The machine is a data model (as `ParametricSwing`'s `Params`), not a model family: no connection
-  between families or representations is stated, so no scaffold is involved.
+* The machine is the data model of the flux-decay family `Synchronous.FluxDecay.family`
+  (`theorem/PowerSystem/Synchronous/FluxDecay.lean`: a `Params` with `H, ω₀, K₃, T'_{d0} > 0`),
+  whose members include the frozen machines `machine ε t` and the unpumped machines `params ε`
+  of `Converse` (`FluxDecay.converseModel`, `FluxDecay.converseUnpumped`); the statements here
+  are Floquet statements about the periodic state matrix, not sentences of that family, and
+  state no connection between families or representations, so no scaffold is involved.
 
 Source: W. G. Heffron, R. A. Phillips, "Effect of a modern amplidyne voltage regulator on
 underexcited operation of large turbine generators", AIEE Trans. PAS-71 (1952); F. P. deMello,

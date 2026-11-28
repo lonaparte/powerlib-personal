@@ -48,7 +48,10 @@ requirements, translation, published laws); the readings through it are
 `theorem/GridTiedConverter/GFM/Limiting/SaturationSwing.agda`,
 `theorem/PowerSystem/Synchronous/ClassicalMachineSwing.agda` and
 `theorem/PowerSystem/Synchronous/GeneralSwing.agda` (the swing equation with an arbitrary power law,
-`theorem/PowerSystem/Synchronous/GeneralSwing.lean`, on a sinusoid).
+`theorem/PowerSystem/Synchronous/GeneralSwing.lean`, on a sinusoid); the flux-decay machine at
+constant flux, `theorem/PowerSystem/Synchronous/FluxDecaySwing.agda`, compares its denotations
+with `Swing.Linearized.family` on `K₂K₄ = 0` and, at a balanced angle, with the hub's local
+exponential stability.
 
 Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machine.md` §1.9;
 `theory/T-transient-stability.md` §1.3, §1.4, §1.7;
