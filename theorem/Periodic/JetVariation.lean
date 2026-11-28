@@ -38,8 +38,9 @@ Scope.
   identifications hold for arbitrary matrix fields `A` and coefficient fields `Q`, `Q₂`, `Q₃`
   (no continuity, no symmetry), the combined verdict under the hypotheses of
   `DegenerateFlipOrbit.orbit_stable_of_degenerateFlip` on `ℝ^{Fin n}`.
-* Not covered: the identification at orders `≥ 4` with a closed form of the fourth and fifth
-  variations (there is none in the library besides `flowJet`); the doubly degenerate case
+* The identification at orders four and five with closed forms of the fourth and fifth
+  variations is `theorem/Periodic/JetVariationHigher.lean` (`flowJet_four`, `flowJet_five`,
+  `degenerateCoeff_jet_eq`, `orbit_flip_of_variations`). Not covered: the doubly degenerate case
   `c₂² + c₃ = 0 = c₅ + 3c₂c₄ − 2c₂⁴` (`Map.flat_jet_undecided`).
 * Generic mathematics; no model family.
 

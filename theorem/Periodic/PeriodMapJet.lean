@@ -51,7 +51,9 @@ Scope.
 * The coefficients `P_j` are those of the hierarchy written with the multilinear coefficients
   `Q_k`; their identification with `secondVariation`, `thirdVariation` of `PeriodMapTaylor`
   (where `Q₂` is a bilinear map) is not stated here; it is `theorem/Periodic/JetVariation.lean`
-  (`bilin_flowJet_two`, `flowJet_three`, `flipCoeff_jet_eq`).
+  (`bilin_flowJet_two`, `flowJet_three`, `flipCoeff_jet_eq`); at orders four and five, with the
+  closed forms `fourthVariation`, `fifthVariation`, it is
+  `theorem/Periodic/JetVariationHigher.lean` (`flowJet_four`, `flowJet_five`).
 * Generic mathematics; no model family.
 
 Source: Hartman, *Ordinary Differential Equations*, Ch. V (higher differentiability with respect
