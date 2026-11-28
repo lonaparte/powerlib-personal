@@ -59,11 +59,12 @@ Results.
 * `lower_bound_of_isCompact` — finitely many nondegenerate zeros on a compact set:
   `c · min(ρ_K, min_i ‖y − y_i*‖) ≤ ‖F(y)‖` for some `c, ρ_K > 0`.
 * `periodic_orbit_classification` — explicit smallness conditions: the orbits `x_i` of
-  `Averaging.exists_periodic_orbit` exist, and every periodic solution `z` with `z(0) ∈ K` is one
-  of them, `cT‖z(0) − y_i*‖ ≤ εC_S`.
+  `Averaging.exists_periodic_orbit` exist, each unique within `r₀(i)` of `y_i*`, and every
+  periodic solution `z` with `z(0) ∈ K` is one of them, `cT‖z(0) − y_i*‖ ≤ εC_S`.
 * `periodic_orbit_classification_compact` — compact `K`, finitely many nondegenerate zeros of
-  `f̄` in `K`: there are `ε₀ > 0`, `C ≥ 0` such that for `0 < ε ≤ ε₀` and every admissible `r`
-  the periodic solutions starting in `K` are exactly the orbits `x_i`, `‖x_i(t) − y_i*‖ ≤ Cε`.
+  `f̄` in `K`: there are `ε₀ > 0`, `C ≥ 0`, `r₀ > 0` such that for `0 < ε ≤ ε₀` and every
+  admissible `r` the periodic solutions starting in `K` are exactly the orbits `x_i`,
+  `‖x_i(t) − y_i*‖ ≤ Cε`, each the only periodic solution starting within `r₀` of `y_i*`.
 * `periodic_point_classification_perturbed`, `periodic_point_classification_perturbed_compact`
   — the fixed points in `K` of the period map of a perturbed family are its fixed points near
   the zeros, `‖y_ε − y_i*‖ ≤ Cη/ε`.
@@ -234,10 +235,10 @@ in `Averaging.exists_periodic_orbit` at each of the zeros `y_i*` (`i : ι`) of `
 and uniqueness radii `r₀(i)` (`2r₀ ≤ ρ`, `4‖B‖L₂r₀ ≤ 1`), and let `K` satisfy the lower bound
 `c ρ_K ≤ ‖f̄(y)‖ ∨ ∃ i, c ‖y − y_i*‖ ≤ ‖f̄(y)‖` on `K`. If `ε` satisfies the smallness conditions
 of `Averaging.exists_periodic_orbit` at every `y_i*` and `εC_S < cρ_K T`, `εC_S ≤ c r₀(i) T`, then
-there are `T`-periodic solutions `x_i` with `‖x_i(t) − y_i*‖ ≤ ε(2‖B(i)‖C_S/T + (M + M_r)T)`, and
-every solution `z` with `z(T) = z(0)` and `z(0) ∈ K` is one of them, `z = x_i` with
-`cT ‖z(0) − y_i*‖ ≤ εC_S` (`periodic_fieldAverage_le` and the uniqueness of
-`Averaging.exists_periodic_orbit`). -/
+there are `T`-periodic solutions `x_i` with `‖x_i(t) − y_i*‖ ≤ ε(2‖B(i)‖C_S/T + (M + M_r)T)`,
+`x_i` is the only solution with `z(T) = z(0)` and `‖z(0) − y_i*‖ ≤ r₀(i)`, and every solution `z`
+with `z(T) = z(0)` and `z(0) ∈ K` is one of them, `z = x_i` with `cT ‖z(0) − y_i*‖ ≤ εC_S`
+(`periodic_fieldAverage_le` and the uniqueness of `Averaging.exists_periodic_orbit`). -/
 @[tmio T, powerlib_foundation] theorem periodic_orbit_classification [CompleteSpace E]
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M)
@@ -263,6 +264,8 @@ every solution `z` with `z(T) = z(0)` and `z(0) ∈ K` is one of them, `z = x_i`
       (∀ i, (∀ t, HasDerivAt (x i) (ε • f (x i t) t + ε ^ 2 • r (x i t) t) t) ∧
         (∀ t, x i (t + T) = x i t) ∧
         ∀ t, ‖x i t - ystar i‖ ≤ ε * (2 * ‖B i‖ * stroboConst ℓ M Mr T / T + (M + Mr) * T)) ∧
+      (∀ z : ℝ → E, (∀ t, HasDerivAt z (ε • f (z t) t + ε ^ 2 • r (z t) t) t) → z T = z 0 →
+        ∀ i, ‖z 0 - ystar i‖ ≤ r₀ i → z = x i) ∧
       ∀ z : ℝ → E, (∀ t, HasDerivAt z (ε • f (z t) t + ε ^ 2 • r (z t) t) t) → z T = z 0 →
         z 0 ∈ K → ∃ i, z = x i ∧ c * T * ‖z 0 - ystar i‖ ≤ ε * stroboConst ℓ M Mr T := by
   have hT := hf.1
@@ -274,7 +277,8 @@ every solution `z` with `z(T) = z(0)` and `z(0) ∈ K` is one of them, `z = x_i`
     exists_periodic_orbit hf hr (hρ i) (hL₂ i) (hD i) (hDl i) (hDc i) (h0 i) (hA i) (hAB i)
       (hBA i) (hr₀ i) (hr₀ρ i) (hr₀L i) hε hε1 (hερ i) (hεL i) (hεC i)
   choose x hx hxper hxb hxu using hex
-  refine ⟨x, fun i => ⟨hx i, hxper i, hxb i⟩, fun z hz hzT hzK => ?_⟩
+  refine ⟨x, fun i => ⟨hx i, hxper i, hxb i⟩, fun z hz hzT i hi => hxu i z hz hzT hi,
+    fun z hz hzT hzK => ?_⟩
   have hav := periodic_fieldAverage_le hf hr.2.2.1 hr.2.2.2.2.2 hε hε1 hz (τ := 0)
     (by rw [zero_add]; exact hzT)
   rcases hK _ hzK with h | ⟨i, hi⟩
@@ -305,7 +309,8 @@ orbits.** Let `f` be as in `Averaging.exists_periodic_orbit` at finitely many ze
 (radii `ρ(i)`, Lipschitz constants `L₂(i)`, invertible `Df̄(y_i*)`), let `K` be compact, and let
 `f̄` have no other zero in `K`. There are `ε₀ > 0` and `C ≥ 0` such that for every `0 < ε ≤ ε₀`
 and every remainder `r` with the constants `ℓ_r, M_r`, the system `ẋ = ε f(x, t) + ε² r(x, t)` has
-`T`-periodic solutions `x_i` with `‖x_i(t) − y_i*‖ ≤ Cε`, and every solution `z` with
+`T`-periodic solutions `x_i` with `‖x_i(t) − y_i*‖ ≤ Cε`, `x_i` is the only solution with
+`z(T) = z(0)` and `‖z(0) − y_i*‖ ≤ r₀` (`r₀ > 0` independent of `ε`), and every solution `z` with
 `z(T) = z(0)` and `z(0) ∈ K` is one of them, `z = x_i`, `‖z(0) − y_i*‖ ≤ Cε`
 (`lower_bound_of_isCompact`, `periodic_orbit_classification`). -/
 @[tmio T, powerlib_foundation] theorem periodic_orbit_classification_compact [CompleteSpace E]
@@ -320,12 +325,14 @@ and every remainder `r` with the constants `ℓ_r, M_r`, the system `ẋ = ε f(
     {A B : ι → E →L[ℝ] E} (hA : ∀ i, HasFDerivAt (fieldAverage f T) (A i) (ystar i))
     (hAB : ∀ i v, A i (B i v) = v) (hBA : ∀ i v, B i (A i v) = v) {K : Set E}
     (hK : IsCompact K) (hzero : ∀ y ∈ K, fieldAverage f T y = 0 → ∃ i, y = ystar i) :
-    ∃ ε₀ C : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ r : E → ℝ → E,
+    ∃ ε₀ C r₀ : ℝ, 0 < ε₀ ∧ 0 ≤ C ∧ 0 < r₀ ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ r : E → ℝ → E,
       (0 < T ∧ 0 ≤ ℓr ∧ Continuous (Function.uncurry r) ∧ (∀ x t, r x (t + T) = r x t) ∧
         (∀ x y t, ‖r x t - r y t‖ ≤ ℓr * ‖x - y‖) ∧ ∀ x t, ‖r x t‖ ≤ Mr) →
       ∃ x : ι → ℝ → E,
         (∀ i, (∀ t, HasDerivAt (x i) (ε • f (x i t) t + ε ^ 2 • r (x i t) t) t) ∧
           (∀ t, x i (t + T) = x i t) ∧ ∀ t, ‖x i t - ystar i‖ ≤ C * ε) ∧
+        (∀ z : ℝ → E, (∀ t, HasDerivAt z (ε • f (z t) t + ε ^ 2 • r (z t) t) t) → z T = z 0 →
+          ∀ i, ‖z 0 - ystar i‖ ≤ r₀ → z = x i) ∧
         ∀ z : ℝ → E, (∀ t, HasDerivAt z (ε • f (z t) t + ε ^ 2 • r (z t) t) t) → z T = z 0 →
           z 0 ∈ K → ∃ i, z = x i ∧ ‖z 0 - ystar i‖ ≤ C * ε := by
   have hT := hf.1
@@ -357,10 +364,11 @@ and every remainder `r` with the constants `ℓ_r, M_r`, the system `ẋ = ε f(
     have := hρ i; have := hr₀0 i; have := hLS0 i
     exact lt_min (lt_min (by positivity) (by positivity)) (lt_min (by positivity) (by positivity))
   obtain ⟨e₀, he₀0, he₀⟩ := exists_le_all he0
+  obtain ⟨R₀, hR₀0, hR₀⟩ := exists_le_all hr₀0
   set ε₀ := min (min 1 (c * ρK * T / (CS + 1))) e₀ with hε₀
   have hε₀0 : 0 < ε₀ := lt_min (lt_min one_pos (by positivity)) he₀0
-  refine ⟨ε₀, max (2 * CB * CS / T + (M + Mr) * T) (CS / (c * T)), hε₀0,
-    le_max_of_le_left (by positivity), fun ε hε hεε₀ r hr => ?_⟩
+  refine ⟨ε₀, max (2 * CB * CS / T + (M + Mr) * T) (CS / (c * T)), R₀, hε₀0,
+    le_max_of_le_left (by positivity), hR₀0, fun ε hε hεε₀ r hr => ?_⟩
   have hε1 : ε ≤ 1 := hεε₀.trans ((min_le_left _ _).trans (min_le_left _ _))
   have hεe : ∀ i, ε ≤ e i := fun i => (hεε₀.trans (min_le_right _ _)).trans (he₀ i)
   have hερ : ∀ i, 2 * ε * (M + Mr) * T ≤ ρ i := fun i => by
@@ -381,8 +389,8 @@ and every remainder `r` with the constants `ℓ_r, M_r`, the system `ẋ = ε f(
       ((hεe i).trans ((min_le_right _ _).trans (min_le_right _ _))))
   have hεK : ε * CS < c * ρK * T :=
     mul_lt_of_le_div_add_one hε hCS0 (hεε₀.trans ((min_le_left _ _).trans (min_le_right _ _)))
-  obtain ⟨x, hx, hcl⟩ := periodic_orbit_classification hf hr hρ hL₂ hD hDl hDc h0 hA hAB hBA hr₀0
-    hr₀ρ hr₀L hc hK' hε hε1 hερ hεL hεC hεK hεr
+  obtain ⟨x, hx, hun, hcl⟩ := periodic_orbit_classification hf hr hρ hL₂ hD hDl hDc h0 hA hAB hBA
+    hr₀0 hr₀ρ hr₀L hc hK' hε hε1 hερ hεL hεC hεK hεr
   have hbd : ∀ i t, ‖x i t - ystar i‖ ≤
       max (2 * CB * CS / T + (M + Mr) * T) (CS / (c * T)) * ε := fun i t => by
     refine ((hx i).2.2 t).trans ?_
@@ -390,7 +398,8 @@ and every remainder `r` with the constants `ℓ_r, M_r`, the system `ẋ = ε f(
     refine mul_le_mul_of_nonneg_right (le_max_of_le_left ?_) hε.le
     gcongr
     exact hCB i
-  refine ⟨x, fun i => ⟨(hx i).1, (hx i).2.1, hbd i⟩, fun z hz hzT hzK => ?_⟩
+  refine ⟨x, fun i => ⟨(hx i).1, (hx i).2.1, hbd i⟩,
+    fun z hz hzT i hi => hun z hz hzT i (hi.trans (hR₀ i)), fun z hz hzT hzK => ?_⟩
   obtain ⟨i, hzi, hi⟩ := hcl z hz hzT hzK
   refine ⟨i, hzi, ?_⟩
   rw [hzi]
@@ -404,8 +413,9 @@ solving `Ẋ = ε f(X, t) + Q y t` on `[0, T]` for `y ∈ K` and near each `y_i*
 there and `‖Q y − Q y'‖ ≤ ηℓ_q ‖X y − X y'‖` near each `y_i*`. Under the smallness conditions of
 `Averaging.exists_periodic_point_perturbed` at every `y_i*` and `ηC_S < cρ_K εT`,
 `ηC_S ≤ c r₀(i) εT`, the period map `y ↦ X y T` has fixed points `y_ε(i)` with
-`‖y_ε(i) − y_i*‖ ≤ 2η‖B(i)‖C_S/(εT)`, and its fixed points in `K` are among them, `y = y_ε(i)` with
-`cεT ‖y − y_i*‖ ≤ ηC_S` (`perturbed_periodic_fieldAverage_le`). -/
+`‖y_ε(i) − y_i*‖ ≤ 2η‖B(i)‖C_S/(εT)`, the only fixed points within `r₀(i)` of `y_i*`, and its
+fixed points in `K` are among them, `y = y_ε(i)` with `cεT ‖y − y_i*‖ ≤ ηC_S`
+(`perturbed_periodic_fieldAverage_le`). -/
 @[tmio T, powerlib_foundation] theorem periodic_point_classification_perturbed [CompleteSpace E]
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M)
@@ -437,6 +447,7 @@ there and `‖Q y − Q y'‖ ≤ ηℓ_q ‖X y − X y'‖` near each `y_i*`. 
     ∃ yε : ι → E,
       (∀ i, ‖yε i - ystar i‖ ≤ 2 * η * ‖B i‖ * stroboConst ℓ M Mq T / (ε * T) ∧
         X (yε i) T = yε i) ∧
+      (∀ i y, ‖y - ystar i‖ ≤ r₀ i → X y T = y → y = yε i) ∧
       ∀ y ∈ K, X y T = y → ∃ i, y = yε i ∧ c * (ε * T) * ‖y - ystar i‖ ≤
         η * stroboConst ℓ M Mq T := by
   have hT := hf.1
@@ -447,7 +458,8 @@ there and `‖Q y − Q y'‖ ≤ ηℓ_q ‖X y − X y'‖` near each `y_i*`. 
       (hAB i) (hBA i) (hr₀ i) (hr₀ρ i) (hr₀L i) hε hε1 hηε hεη hℓq hMq (hερ i) (hηL i) (hηC i)
       hX0 (hX i) (hQ i) (hQl i)
   choose yε hyεb hyεf hyεu using hex
-  refine ⟨yε, fun i => ⟨hyεb i, hyεf i⟩, fun y hy hyT => ?_⟩
+  refine ⟨yε, fun i => ⟨hyεb i, hyεf i⟩, fun i y hy hyT => hyεu i y hy hyT,
+    fun y hy hyT => ?_⟩
   have hav := perturbed_periodic_fieldAverage_le hf hε.le hηε hεη hMq (τ := 0)
     (by rw [zero_add]; exact hXK y hy) (by rw [zero_add]; exact hQK y hy)
     (by rw [zero_add, hX0]; exact hyT)
@@ -475,8 +487,9 @@ let `K` be compact and contain no other zero of `f̄`. There are `ε₀, θ > 0`
 for every `0 < ε ≤ ε₀`, `ε² ≤ η ≤ θε`, and every family `X y` (`X y 0 = y`) solving
 `Ẋ = ε f(X, t) + Q y t` on `[0, T]` for `y ∈ K` and in the balls `‖y − y_i*‖ ≤ ρ(i)/2`, with
 `‖Q y‖ ≤ ηM_q` there and `ηℓ_q`-Lipschitz along pairs of curves in each ball, the period map
-`y ↦ X y T` has fixed points `y_ε(i)` with `‖y_ε(i) − y_i*‖ ≤ Cη/ε`, and every fixed point in `K`
-is one of them (`periodic_point_classification_perturbed`). -/
+`y ↦ X y T` has fixed points `y_ε(i)` with `‖y_ε(i) − y_i*‖ ≤ Cη/ε`, the only fixed points within
+`r₀ > 0` of `y_i*`, and every fixed point in `K` is one of them
+(`periodic_point_classification_perturbed`). -/
 @[tmio T, powerlib_foundation] theorem periodic_point_classification_perturbed_compact
     [CompleteSpace E]
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
@@ -490,7 +503,8 @@ is one of them (`periodic_point_classification_perturbed`). -/
     {A B : ι → E →L[ℝ] E} (hA : ∀ i, HasFDerivAt (fieldAverage f T) (A i) (ystar i))
     (hAB : ∀ i v, A i (B i v) = v) (hBA : ∀ i v, B i (A i v) = v) {K : Set E}
     (hK : IsCompact K) (hzero : ∀ y ∈ K, fieldAverage f T y = 0 → ∃ i, y = ystar i) :
-    ∃ ε₀ θ C : ℝ, 0 < ε₀ ∧ 0 < θ ∧ 0 ≤ C ∧ ∀ ε η, 0 < ε → ε ≤ ε₀ → ε ^ 2 ≤ η → η ≤ θ * ε →
+    ∃ ε₀ θ C r₀ : ℝ, 0 < ε₀ ∧ 0 < θ ∧ 0 ≤ C ∧ 0 < r₀ ∧
+      ∀ ε η, 0 < ε → ε ≤ ε₀ → ε ^ 2 ≤ η → η ≤ θ * ε →
       ∀ X Q : E → ℝ → E, (∀ y, X y 0 = y) →
       (∀ y ∈ K, ∀ t ∈ Icc 0 T, HasDerivAt (X y) (ε • f (X y t) t + Q y t) t) →
       (∀ y ∈ K, ∀ t ∈ Icc 0 T, ‖Q y t‖ ≤ η * Mq) →
@@ -500,6 +514,7 @@ is one of them (`periodic_point_classification_perturbed`). -/
       (∀ i y y', ‖y - ystar i‖ ≤ ρ i / 2 → ‖y' - ystar i‖ ≤ ρ i / 2 → ∀ t ∈ Icc 0 T,
         ‖Q y t - Q y' t‖ ≤ η * ℓq * ‖X y t - X y' t‖) →
       ∃ yε : ι → E, (∀ i, ‖yε i - ystar i‖ ≤ C * (η / ε) ∧ X (yε i) T = yε i) ∧
+        (∀ i y, ‖y - ystar i‖ ≤ r₀ → X y T = y → y = yε i) ∧
         ∀ y ∈ K, X y T = y → ∃ i, y = yε i := by
   have hT := hf.1
   have hℓ := hf.2.1
@@ -533,9 +548,10 @@ is one of them (`periodic_point_classification_perturbed`). -/
     exact lt_min (by positivity) (lt_min (by positivity) (by positivity))
   obtain ⟨e₀, he₀0, he₀⟩ := exists_le_all he0
   obtain ⟨g₀, hg₀0, hg₀⟩ := exists_le_all hg0
+  obtain ⟨R₀, hR₀0, hR₀⟩ := exists_le_all hr₀0
   set θ := min (min 1 (c * ρK * T / (CS + 1))) g₀ with hθ
   have hθ0 : 0 < θ := lt_min (lt_min one_pos (by positivity)) hg₀0
-  refine ⟨min 1 e₀, θ, 2 * CB * CS / T, lt_min one_pos he₀0, hθ0, by positivity,
+  refine ⟨min 1 e₀, θ, 2 * CB * CS / T, R₀, lt_min one_pos he₀0, hθ0, by positivity, hR₀0,
     fun ε η hε hεε₀ hεη hηθ X Q hX0 hXK hQK hX hQ hQl => ?_⟩
   have hε1 : ε ≤ 1 := hεε₀.trans (min_le_left _ _)
   have hθ1 : θ ≤ 1 := (min_le_left _ _).trans (min_le_left _ _)
@@ -579,11 +595,12 @@ is one of them (`periodic_point_classification_perturbed`). -/
       _ ≤ ε * (c * ρK * T * (CS / (CS + 1))) := mul_le_mul_of_nonneg_left h hε.le
       _ < ε * (c * ρK * T * 1) := by gcongr
       _ = c * ρK * (ε * T) := by ring
-  obtain ⟨yε, hyε, hcl⟩ := periodic_point_classification_perturbed hf hρ hL₂ hD hDl hDc h0 hA
+  obtain ⟨yε, hyε, hun, hcl⟩ := periodic_point_classification_perturbed hf hρ hL₂ hD hDl hDc h0 hA
     hAB hBA hr₀0 hr₀ρ hr₀L hc hK' hε hε1 hηε hεη hℓq hMq hερ hηL hηC hηK hηr hX0 hXK hQK
     (fun i y hy => hX i y (hy.trans (hr₀2 i))) (fun i y hy => hQ i y (hy.trans (hr₀2 i)))
     (fun i y y' hy hy' => hQl i y y' (hy.trans (hr₀2 i)) (hy'.trans (hr₀2 i)))
-  refine ⟨yε, fun i => ⟨((hyε i).1).trans ?_, (hyε i).2⟩, fun y hy hyT => ?_⟩
+  refine ⟨yε, fun i => ⟨((hyε i).1).trans ?_, (hyε i).2⟩,
+    fun i y hy hyT => hun i y (hy.trans (hR₀ i)) hyT, fun y hy hyT => ?_⟩
   · have e1 : 2 * η * ‖B i‖ * CS / (ε * T) = 2 * ‖B i‖ * CS / T * (η / ε) := by
       field_simp
     rw [e1]
