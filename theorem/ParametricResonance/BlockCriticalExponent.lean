@@ -47,7 +47,8 @@ Scope.
 * Not covered here: the multiplicity inside each cluster (exactly one eigenvalue, simple, in
   each cluster: `theorem/ParametricResonance/ClusterMultiplicity.lean`, `block_cluster_simple`,
   `frame_cluster_simple`, `averagingN_cluster_simple`, `averagingB_cluster_simple`, through the
-  exact decoupling of `theorem/ParametricResonance/BlockDecoupling.lean`); the localization of the remaining multipliers is pseudospectral, not
+  exact decoupling of `theorem/ParametricResonance/BlockDecoupling.lean`); the localization of
+  the remaining multipliers is pseudospectral, not
   `dist(μ, σ(E)) = O(ε)`, which is false for a non-diagonalizable `E` (the eigenvalues of
   `E + O(ε)` are in general only `O(ε^{1/k})`-close, `k` the size of a Jordan block); the forced
   orbits of `theorem/ParametricResonance/SmoothForcedOrbitSecond.lean` are not instantiated here
