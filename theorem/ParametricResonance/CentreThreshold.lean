@@ -30,7 +30,9 @@ Scope.
 * `centreProd`, `centreSum`, `centreGap`, `centreThreshold` are real-valued functions of
   `(ξ, ε)` (normalized, independent of `ω₀`). The monotonicity, the threshold characterization and
   the band hold for small parameters (existential bounds `δ`, `ε₁`, `ξ₁`; internally
-  `ξ, ε ≤ 1/4`); no claim is made at large depth or damping.
+  `ξ, ε ≤ 1/4`; the explicit threshold constants `ε₁ = 1/(40π)`, `ξ₁ = 1/(125π²)` are
+  `DutyCycleThresholdExplicit.centre_unstable_iff_threshold_explicit`); no claim is made at large
+  depth or damping.
 * Generic mathematics; no model family.
 
 Source: the exact centre criterion `Meissner.centre_threshold_iff` and its stable mirror

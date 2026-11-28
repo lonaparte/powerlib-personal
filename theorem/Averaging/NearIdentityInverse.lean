@@ -32,7 +32,10 @@ Scope.
   continuous, as in `Averaging.hasFDerivAt_strobGen`. For the Lipschitz bound of the remainder:
   `Df(·, t)` is `L₂`-Lipschitz on all of `E`, uniformly in `t`.
 * The transformed curve is defined for an arbitrary curve `x`; it is differentiable at every
-  time at which `x` is. The global hypotheses make the inverse global; no ball is needed.
+  time at which `x` is. The global hypotheses make the inverse global; for a field with these
+  hypotheses only on a ball, the inverse between nested balls and the transformed equation along
+  solutions that stay in the ball are `theorem/Averaging/NearIdentityLocal.lean`
+  (`nearIdentity_bijOn_local`, `transformed_solution_local`, `nearIdRemainder_field_local`).
 * Generic mathematics, no model family.
 
 Source: Bogoliubov–Mitropolsky, *Asymptotic Methods in the Theory of Non-Linear Oscillations*

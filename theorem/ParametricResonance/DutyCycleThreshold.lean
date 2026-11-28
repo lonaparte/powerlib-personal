@@ -19,7 +19,9 @@ The criterion is `C¹` in `(ξ, ε)` near `(0, 0)`, and its depth derivative the
 damping term vanishes with `ξ`. By continuity of the derivative it is positive on a neighbourhood
 (`hasDerivAt_dutyGap_pos`), so the criterion increases strictly with the depth for small `ξ`, `ε`
 (`dutyGap_strictMonoOn`; for `δ ≠ 1/2` neither `ν₁ν₂` nor `ν₁ + ν₂` need decrease with the depth,
-so the explicit bound of the symmetric wave does not carry over, the continuity argument does).
+so the explicit bound of the symmetric wave does not carry over; the continuity argument does,
+and explicit bounds on `√`, `sin`, `sinh` give closed-form constants in
+`DutyCycleThresholdExplicit`).
 It is negative at `ε = 0` for `ξ > 0` and positive at a fixed small depth for small `ξ`, so the
 threshold `ε_c(ξ; δ)` of `DutyCycleLevels.dutyCentreThreshold` is its unique zero in the
 small-depth range: the duty-`δ` centre is Floquet unstable iff `ε > ε_c(ξ; δ)`, Schur stable iff
@@ -36,8 +38,10 @@ Scope.
 * `dutyFreq₁`, `dutyFreq₂`, `dutyMean`, `dutyGap` are real-valued functions of `(δ, ξ, ε)`
   (normalized, independent of `ω₀`). `duty_centre_iff_gap` holds for every `ξ, ε ≥ 0`; the
   derivative sign, the monotonicity and the threshold characterization are proved for a fixed
-  `δ ∈ (0, 1)` and small parameters (existential bounds `ρ`, `ε₁`, `ξ₁`, not explicit); no claim
-  is made at large depth or damping.
+  `δ ∈ (0, 1)` and small parameters (existential bounds `ρ`, `ε₁`, `ξ₁` here; the closed forms
+  `ρ = ε₁ = sin(πδ)/(40π)`, `ξ₁ = sin²(πδ)/(250π²(1 − δ))` are
+  `theorem/ParametricResonance/DutyCycleThresholdExplicit.lean`); no claim is made at large depth
+  or damping.
 * Generic mathematics; no model family.
 
 Source: the exact duty-`δ` centre criterion `DutyCycle.centre_threshold_iff`, the boundary

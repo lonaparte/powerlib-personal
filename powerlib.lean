@@ -33,6 +33,7 @@ import theorem.Averaging.PeriodicOrbitConstants
 import theorem.Averaging.NearIdentity
 import theorem.Averaging.ValidForeverConstants
 import theorem.Averaging.NearIdentityInverse
+import theorem.Averaging.NearIdentityLocal
 import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
@@ -401,6 +402,7 @@ import theorem.ParametricResonance.ForcedOrbitCriticalMultipliers
 import theorem.ParametricResonance.BlockDecoupling
 import theorem.ParametricResonance.ClusterMultiplicity
 import theorem.ParametricResonance.ForcedOrbitClusterMultiplicity
+import theorem.ParametricResonance.DutyCycleThresholdExplicit
 import theorem.Periodic.Commuting
 import theorem.Periodic.Floquet
 import theorem.Periodic.OrbitalStability
