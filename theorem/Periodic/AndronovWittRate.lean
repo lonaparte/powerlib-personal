@@ -46,9 +46,12 @@ Scope.
 * The phase function `Θ_σ` belongs to the point `x_*(σ)` and is defined and Lipschitz on the
   ball `‖ξ − x_*(σ)‖ < δ`, with `Θ_σ(x_*(σ)) = 0`; asymptotic phases are unique only up to the
   periods of `x_*`, and this fixes the branch.
-* The rate `−log ρ/T` itself is not decided: it is attained when the multipliers of modulus `ρ`
-  have no Jordan block, and not in general. The converse uses only the solutions from the ball
-  about `x_*(0)`, sampled at the times `kT`.
+* The rate `−log ρ/T` itself is not decided here (one expects it to be attained when the
+  eigenvalues of modulus `ρ` are semisimple and to fail at a Jordan block; neither is proved).
+  The converse uses only the solutions from the ball about `x_*(0)`, sampled at the times `kT`.
+  The hypothesis and the conclusion on the eigenvalues are the spectral-radius inequalities
+  `ρ(DΠ(p)) < e^{−λT}` resp. `ρ(DΠ(p)) ≤ e^{−λT}` (`spectralRadius_lt_ofReal_iff`,
+  `spectralRadius_le_ofReal_iff`).
 * Generic mathematics; no model family.
 
 Source: A. A. Andronov and A. A. Witt, "Zur Stabilität nach Liapounoff", Phys. Z. Sowjetunion 4
@@ -70,7 +73,8 @@ Results.
   exponential stability at the rate `λ`), `spectrum_sectionMatrix_lt` (the multiplier
   hypothesis bounds the spectrum of `DΠ(p)`), **the theorem** `andronov_witt_rate`.
 * **Optimality**: `orbit_tangent`, `spectrum_sectionMatrix_le_of_decay`,
-  `multipliers_le_of_decay`.
+  `multipliers_le_of_decay`; the spectral-radius forms `spectralRadius_lt_ofReal_iff`,
+  `spectralRadius_le_ofReal_iff`.
 
 Corrections.
 None: a sharpening (the optimal rate, the Lipschitz phase and the optimality of the rate, which
@@ -1056,5 +1060,48 @@ nontrivial multiplier (every smaller rate is attained, no larger one). -/
   rcases eq_or_ne μ 0 with rfl | hμ0
   · simpa using (Real.exp_pos _).le
   · exact hS μ ((mem_spectrum_deflate_iff hMv hw hμ0 hμ1).2 hμ)
+
+/-! ## The spectral radius -/
+
+/-- **The spectral-radius form of the rate hypothesis.** For `q > 0`, the spectral radius of a
+real matrix (of its complexification) is `< q` exactly when every eigenvalue has modulus `< q`;
+so `λ < −log ρ(DΠ(p))/T` is the hypothesis `∀ μ, ‖μ‖ < e^{−λT}` of `asymptoticPhase_rate`. -/
+@[tmio T, powerlib_foundation] theorem spectralRadius_lt_ofReal_iff
+    (A : Matrix (Fin n) (Fin n) ℝ) {q : ℝ} (hq : 0 < q) :
+    spectralRadius ℂ (A.map (algebraMap ℝ ℂ)) < ENNReal.ofReal q ↔
+      ∀ μ ∈ spectrum ℂ (A.map (algebraMap ℝ ℂ)), ‖μ‖ < q := by
+  have hq' : ENNReal.ofReal q = ((Real.toNNReal q : NNReal) : ENNReal) := rfl
+  constructor
+  · intro h μ hμ
+    have hle : (‖μ‖₊ : ENNReal) ≤ spectralRadius ℂ (A.map (algebraMap ℝ ℂ)) := by
+      rw [spectralRadius_eq_of_unital]
+      exact le_iSup₂ (f := fun k (_ : k ∈ spectrum ℂ (A.map (algebraMap ℝ ℂ))) =>
+        (‖k‖₊ : ENNReal)) μ hμ
+    have hlt := hle.trans_lt h
+    rw [hq', ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnnorm,
+      Real.coe_toNNReal _ hq.le] at hlt
+    exact hlt
+  · intro h
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · rw [Subsingleton.elim (A.map (algebraMap ℝ ℂ)) 0, spectrum.spectralRadius_zero]
+      exact ENNReal.ofReal_pos.2 hq
+    · have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+      rw [hq']
+      apply spectrum.spectralRadius_lt_of_forall_lt
+      intro z hz
+      rw [← NNReal.coe_lt_coe, coe_nnnorm, Real.coe_toNNReal _ hq.le]
+      exact h z hz
+
+/-- **The spectral-radius form of the optimality.** For `q ≥ 0`, the spectral radius of a real
+matrix is `≤ q` exactly when every eigenvalue has modulus `≤ q`; so
+`spectrum_sectionMatrix_le_of_decay` says `ρ(DΠ(p)) ≤ e^{−λT}`, i.e. `λ ≤ −log ρ/T`. -/
+@[tmio T, powerlib_foundation] theorem spectralRadius_le_ofReal_iff
+    (A : Matrix (Fin n) (Fin n) ℝ) {q : ℝ} (hq : 0 ≤ q) :
+    spectralRadius ℂ (A.map (algebraMap ℝ ℂ)) ≤ ENNReal.ofReal q ↔
+      ∀ μ ∈ spectrum ℂ (A.map (algebraMap ℝ ℂ)), ‖μ‖ ≤ q := by
+  have hq' : ENNReal.ofReal q = ((Real.toNNReal q : NNReal) : ENNReal) := rfl
+  rw [spectralRadius_eq_of_unital, iSup₂_le_iff]
+  refine forall₂_congr fun μ _ => ?_
+  rw [hq', ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ hq]
 
 end powerlib.Periodic.AndronovWittRate
