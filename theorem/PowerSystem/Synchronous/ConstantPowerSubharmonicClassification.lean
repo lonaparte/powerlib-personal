@@ -47,8 +47,8 @@ Sharpenings.
   finitely many subharmonic orbits; the forced-response orbit is exactly `π/ν`-periodic.
 
 Results.
-* `constAmp_zeros` — the zeros of `constAmp` (`tan²δ₀ ≠ 3`): `0` and the pairs `±w*` on the
-  amplitudes `(d/(2ν) ± s)/β⁰`.
+* `constAmp_zeros`, `constAmp_ncard` — the zeros of `constAmp` (`tan²δ₀ ≠ 3`): `0` and the
+  pairs `±w*` on the amplitudes `(d/(2ν) ± s)/β⁰`; `1 + 2N` of them in the disc `|w| ≤ R`.
 * `constJac_det_ne_zero` — off the first-order boundary and the fold every zero of `constAmp` is
   nondegenerate.
 * `const_classification` — **all small periodic solutions of the constant-power swing**: the
@@ -223,6 +223,38 @@ each of these amplitudes that is positive carries exactly the pair `w*`, `−w*`
   obtain ⟨h1, h2⟩ := Saturation.shift_zeros (σ := b / 2) (Δ := d / (2 * ν)) hc0 hβ
   rw [hc] at h1 h2
   exact ⟨h1, h2⟩
+
+/-- **The number of zeros of the averaged limit field of the constant-power swing in the disc
+`|w| ≤ R`**: off the fold (`(b/2)² < (ν(3 − tan²δ₀)/12)²`), the trivial state and two locked
+states for each of the amplitudes `(d/(2ν) ± s)/β⁰` in `(0, R²]`
+(`Saturation.shift_zeros_ncard`). -/
+@[tmio M, powerlib_domain] theorem constAmp_ncard {b d ν δ₀ : ℝ} (hν : 0 < ν)
+    (hb : (b / 2) ^ 2 < (ν * (3 - Real.tan δ₀ ^ 2) / 12) ^ 2) {R : ℝ} (hR : 0 ≤ R) :
+    {w : ℂ | constAmp b d ν δ₀ w = 0 ∧ ‖w‖ ≤ R}.ncard =
+      1 + 2 * ((if 0 < (d / (2 * ν) + √((ν * (3 - Real.tan δ₀ ^ 2) / 12) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ∧
+          (d / (2 * ν) + √((ν * (3 - Real.tan δ₀ ^ 2) / 12) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ≤ R ^ 2 then 1 else 0) +
+        (if 0 < (d / (2 * ν) - √((ν * (3 - Real.tan δ₀ ^ 2) / 12) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ∧
+          (d / (2 * ν) - √((ν * (3 - Real.tan δ₀ ^ 2) / 12) ^ 2 - (b / 2) ^ 2)) /
+            (-(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2)) ≤ R ^ 2 then 1 else 0)) := by
+  have hβ : -(ν / 48) * (3 + 5 * Real.tan δ₀ ^ 2) ≠ 0 := by
+    have : 0 < 3 + 5 * Real.tan δ₀ ^ 2 := by positivity
+    have : 0 < ν / 48 := by positivity
+    intro h; nlinarith
+  have hc : ‖I * ((ν * (3 - Real.tan δ₀ ^ 2) / 12 : ℝ) : ℂ)‖ ^ 2 =
+      (ν * (3 - Real.tan δ₀ ^ 2) / 12) ^ 2 := by
+    rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs, sq_abs]
+  have hc0 : I * ((ν * (3 - Real.tan δ₀ ^ 2) / 12 : ℝ) : ℂ) ≠ 0 := by
+    intro h
+    rw [h, norm_zero] at hc
+    have : (0 : ℝ) ≤ (b / 2) ^ 2 := sq_nonneg _
+    nlinarith
+  have h := Saturation.shift_zeros_ncard (σ := b / 2) (Δ := d / (2 * ν)) hc0 hβ
+    (by rw [hc]; exact hb) hR
+  rw [hc] at h
+  exact h
 
 /-! ## The classification -/
 

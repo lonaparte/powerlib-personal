@@ -62,9 +62,9 @@ Results.
 * `limitJac_det_ne_zero` — off the first-order boundary and the fold every zero is
   nondegenerate.
 * `scaled_classification` — the cut-off scaled model in real coordinates: the periodic solutions
-  starting in the disc `‖x(0)‖ ≤ R` are the Bogoliubov orbits of the zeros in the disc.
+  starting in the disc `‖x(0)‖ ≤ R` are among the Bogoliubov orbits of the zeros in the disc.
 * `subharmonic_classification` — **all small periodic swing solutions**: for `0 < ε ≤ ε₀` the
-  `2π/ν`-periodic swing solutions starting in the disc of radius `√ε R` are exactly the orbits
+  `2π/ν`-periodic swing solutions starting in the disc of radius `√ε R` are among the orbits
   `(δ_{w*}, δ̇_{w*})` of the zeros `|w*| ≤ R`, with `δ_0 ≡ 0`, the phase-plane tube
   `‖vdp − √ε w*‖ ≤ Cε√ε`, `δ_{−w*}(t) = δ_{w*}(t + π/ν)`, and uniqueness near each `√ε w*`.
 -/

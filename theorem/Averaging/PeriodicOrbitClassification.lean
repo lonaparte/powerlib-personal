@@ -1,4 +1,5 @@
 import theorem.Averaging.PerturbedPeriodicOrbits
+import theorem.PH.Composition
 
 /-! # All periodic solutions in a region: the Bogoliubov orbits are the only ones
 
@@ -64,7 +65,7 @@ Results.
   periodic solution `z` with `z(0) ∈ K` is one of them, `cT‖z(0) − y_i*‖ ≤ εC_S`.
 * `periodic_orbit_classification_compact` — compact `K`, finitely many nondegenerate zeros of
   `f̄` in `K`: there are `ε₀ > 0`, `C ≥ 0`, `r₀ > 0` such that for `0 < ε ≤ ε₀` and every
-  admissible `r` the periodic solutions starting in `K` are exactly the orbits `x_i`,
+  admissible `r` every periodic solution starting in `K` is one of the orbits `x_i`,
   `‖x_i(t) − y_i*‖ ≤ Cε`, each the only periodic solution starting within `r₀` of `y_i*`.
 * `periodic_point_classification_perturbed`, `periodic_point_classification_perturbed_compact`
   — the fixed points in `K` of the period map of a perturbed family are its fixed points near
@@ -124,13 +125,6 @@ end Average
 /-! ## Nondegenerate zeros on a compact set -/
 
 section LowerBound
-
-@[tmio T, powerlib_foundation] private theorem exists_le_all {ι : Type*} [Finite ι] {e : ι → ℝ}
-    (he : ∀ i, 0 < e i) : ∃ e₀, 0 < e₀ ∧ ∀ i, e₀ ≤ e i := by
-  have hev : ∀ᶠ x in 𝓝[>] (0 : ℝ), ∀ i, x ≤ e i :=
-    eventually_all.2 fun i => mem_of_superset (Ioo_mem_nhdsGT (he i)) fun x hx => hx.2.le
-  obtain ⟨e₀, he₀, he₀0⟩ := (hev.and self_mem_nhdsWithin).exists
-  exact ⟨e₀, he₀0, he₀⟩
 
 @[tmio T, powerlib_foundation] private theorem exists_ge_all {ι : Type*} [Finite ι]
     (g : ι → ℝ) : ∃ C, 0 ≤ C ∧ ∀ i, g i ≤ C := by
@@ -219,7 +213,7 @@ with `c ρ_K ≤ ‖F(y)‖` or `c ‖y − y_i*‖ ≤ ‖F(y)‖` for some `i`
     local_lower_bound (h0 i) (hA i) (hBA i) (by rw [hC]; linarith [hCB i])
   choose δ hδ hδl using hloc
   -- a common radius
-  obtain ⟨ρK, hρK0, hρK⟩ := exists_le_all fun i => half_pos (hδ i)
+  obtain ⟨ρK, hρK0, hρK⟩ := PH.exists_pos_lower _ fun i => half_pos (hδ i)
   have hρKδ : ∀ i, ρK < δ i := fun i => (hρK i).trans_lt (half_lt_self (hδ i))
   set S : Set E := {y | ∀ i, ρK ≤ ‖y - ystar i‖} with hS
   have hSc : IsClosed S := by
@@ -401,8 +395,8 @@ and every remainder `r` with the constants `ℓ_r, M_r`, the system `ẋ = ε f(
   have he0 : ∀ i, 0 < e i := fun i => by
     have := hρ i; have := hr₀0 i; have := hLS0 i
     exact lt_min (lt_min (by positivity) (by positivity)) (lt_min (by positivity) (by positivity))
-  obtain ⟨e₀, he₀0, he₀⟩ := exists_le_all he0
-  obtain ⟨R₀, hR₀0, hR₀⟩ := exists_le_all hr₀0
+  obtain ⟨e₀, he₀0, he₀⟩ := PH.exists_pos_lower _ he0
+  obtain ⟨R₀, hR₀0, hR₀⟩ := PH.exists_pos_lower _ hr₀0
   set ε₀ := min (min 1 (c * ρK * T / (CS + 1))) e₀ with hε₀
   have hε₀0 : 0 < ε₀ := lt_min (lt_min one_pos (by positivity)) he₀0
   refine ⟨ε₀, max (2 * CB * CS / T + (M + Mr) * T) (CS / (c * T)), R₀, hε₀0,
@@ -584,9 +578,9 @@ for every `0 < ε ≤ ε₀`, `ε² ≤ η ≤ θε`, and every family `X y` (`X
   have hg0 : ∀ i, 0 < g i := fun i => by
     have := hr₀0 i; have := hLS0 i
     exact lt_min (by positivity) (lt_min (by positivity) (by positivity))
-  obtain ⟨e₀, he₀0, he₀⟩ := exists_le_all he0
-  obtain ⟨g₀, hg₀0, hg₀⟩ := exists_le_all hg0
-  obtain ⟨R₀, hR₀0, hR₀⟩ := exists_le_all hr₀0
+  obtain ⟨e₀, he₀0, he₀⟩ := PH.exists_pos_lower _ he0
+  obtain ⟨g₀, hg₀0, hg₀⟩ := PH.exists_pos_lower _ hg0
+  obtain ⟨R₀, hR₀0, hR₀⟩ := PH.exists_pos_lower _ hr₀0
   set θ := min (min 1 (c * ρK * T / (CS + 1))) g₀ with hθ
   have hθ0 : 0 < θ := lt_min (lt_min one_pos (by positivity)) hg₀0
   refine ⟨min 1 e₀, θ, 2 * CB * CS / T, R₀, lt_min one_pos he₀0, hθ0, by positivity, hR₀0,

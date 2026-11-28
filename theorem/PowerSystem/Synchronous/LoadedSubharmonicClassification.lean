@@ -64,8 +64,8 @@ Sharpenings.
 
 Results.
 * `input_classification` — the amplitude equation with a small input: the clamped solutions
-  starting in the disc `‖w(0)‖ ≤ R` and returning after one period are the orbits of the zeros
-  of `secondAmp` in the disc `|w*| ≤ R + 1`, each unique within `r₀` of its zero.
+  starting in the disc `‖w(0)‖ ≤ R` and returning after one period are among the orbits of the
+  zeros of `secondAmp` in the disc `|w*| ≤ R + 1`, each unique within `r₀` of its zero.
 * `loadedAmp_zeros`, `loadedAmp_ncard` — the zeros of `loadedAmp`: `0` and the pairs `±w*` on
   the amplitudes `(d/(2ν) ± s)/β⁰`; `1 + 2N` of them in the disc `|w| ≤ R`.
 * `loadedJac_det_ne_zero` — off the first-order boundary and the fold every zero of `loadedAmp`
@@ -113,13 +113,6 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) J = 1 := by
     rw [← map_mul, Matrix.nonsing_inv_mul _ hu, map_one]
   exact ⟨DFunLike.congr_fun h1 v, DFunLike.congr_fun h2 v⟩
-
-@[tmio T, powerlib_foundation] private theorem exists_le_all₆ {ι : Type*} [Finite ι]
-    {e : ι → ℝ} (he : ∀ i, 0 < e i) : ∃ e₀, 0 < e₀ ∧ ∀ i, e₀ ≤ e i := by
-  have hev : ∀ᶠ x in 𝓝[>] (0 : ℝ), ∀ i, x ≤ e i :=
-    eventually_all.2 fun i => mem_of_superset (Ioo_mem_nhdsGT (he i)) fun x hx => hx.2.le
-  obtain ⟨e₀, he₀, he₀0⟩ := (hev.and self_mem_nhdsWithin).exists
-  exact ⟨e₀, he₀0, he₀⟩
 
 @[tmio T, powerlib_foundation] private theorem exists_ge_all₆ {ι : Type*} [Finite ι]
     (g : ι → ℝ) : ∃ C, 0 ≤ C ∧ ∀ i, g i ≤ C := by
@@ -247,8 +240,8 @@ one period (`input_orbit`, the transformed equation and
   have hO := fun i : Z => input_orbit hν hK1 hK2 hK3 hA2 hA3 hK0 hmu hlu i.2.1
     (hdeg i.1 i.2.1 i.2.2)
   choose εf Cf rf hεf hCf hrf horbf using hO
-  obtain ⟨ε₁, hε₁0, hε₁⟩ := exists_le_all₆ hεf
-  obtain ⟨r₁, hr₁0, hr₁⟩ := exists_le_all₆ hrf
+  obtain ⟨ε₁, hε₁0, hε₁⟩ := PH.exists_pos_lower _ hεf
+  obtain ⟨r₁, hr₁0, hr₁⟩ := PH.exists_pos_lower _ hrf
   obtain ⟨C, hC0, hC⟩ := exists_ge_all₆ Cf
   set r₀ := min r₁ (1 / 2) with hr₀
   have hr₀0 : 0 < r₀ := lt_min hr₁0 (by norm_num)
