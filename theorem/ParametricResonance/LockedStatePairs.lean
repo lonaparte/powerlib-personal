@@ -12,11 +12,11 @@ states `w*` and `−w*`: from `c z̄ = K z` with `K = (σ + ηA) + j(Δ − βA)
 by half its period. Under a pure frequency shift (`η = 0`, `β ≠ 0`, the Duffing and swing case)
 the zeros are `0` and the pairs on the two amplitudes `A± = (Δ ± s)/β`, `s = √(|c|² − σ²)`
 (`shift_zeros`); off the fold `|c| = σ` the number of zeros in the disc `|z| ≤ R` is `1 + 2N`,
-`N` the number of the roots `A±` in `(0, R²]` (`shift_zeros_ncard`), and every zero is
-nondegenerate (nonzero Jacobian determinant) when moreover `σ² + Δ² ≠ |c|²`, the first-order
-(linear) boundary, at which the trivial state is degenerate (`shift_det_ne_zero`,
-`zero_det_ne_zero`). These are the zeros to which the periodic-orbit theorems
-(`Averaging.periodic_orbit_classification_compact`) apply.
+`N` the number of the roots `A±` in `(0, R²]` (`shift_zeros_ncard`). A zero is degenerate (zero
+Jacobian determinant) exactly when it is the trivial state on the first-order (linear) boundary
+`σ² + Δ² = |c|²` or a locked state at the fold (`shift_det_eq_zero_iff`); off these parameter
+sets all zeros are nondegenerate and the periodic-orbit theorems
+(`Averaging.periodic_orbit_classification_compact`) apply to them.
 
 Scope.
 * The complex amplitude field `Saturation.ampField σ Δ c η β` (real `σ, Δ, η, β`, complex `c`)
@@ -41,8 +41,9 @@ Results.
   `σ² ≤ |c|²`), and each positive `A±` carries exactly a pair `±w`.
 * `shift_zeros_finite` — the zero set is finite.
 * `shift_zeros_ncard` — off the fold (`σ² < |c|²`) the disc `|z| ≤ R` contains `1 + 2N` zeros.
-* `shift_det_ne_zero`, `zero_det_ne_zero` — off the fold every nontrivial zero is nondegenerate;
-  off the first-order boundary `σ² + Δ² = |c|²` the trivial zero is.
+* `shift_det_eq_zero_iff`, `shift_det_ne_zero`, `zero_det_ne_zero` — a zero is degenerate exactly
+  at the first-order boundary `σ² + Δ² = |c|²` (the trivial zero) or at the fold `σ² = |c|²`
+  (the nontrivial zeros).
 -/
 
 noncomputable section
@@ -241,33 +242,58 @@ the amplitude field: the trivial state and a pair `±w` for each of the `N` root
     pair_ncard hc hβ hcs.le (Or.inl rfl) hR, pair_ncard hc hβ hcs.le (Or.inr rfl) hR]
   split_ifs <;> norm_num
 
-/-- **Off the fold, every nontrivial zero is nondegenerate.** Under a pure frequency shift
-(`η = 0`, `β ≠ 0`) with `σ² ≠ |c|²`, the Jacobian of a zero `z ≠ 0` has the determinant
-`4|z|²β(β|z|² − Δ) ≠ 0`; at the fold `σ² = |c|²` it vanishes (`Saturation.det_ampJacobian`, the
-amplitude condition `σ² + (Δ − β|z|²)² = |c|²`). -/
+/-- **The degenerate zeros under a pure frequency shift.** For `β ≠ 0` a zero `z` of the amplitude
+field has a singular Jacobian exactly at the first-order boundary (`z = 0`, `σ² + Δ² = |c|²`:
+the determinant at `0` is `σ² + Δ² − |c|²`, `Saturation.ampJacobian_zero`) or at the fold
+(`z ≠ 0`, `σ² = |c|²`: the determinant is `4|z|²β(β|z|² − Δ)`, `Saturation.det_ampJacobian`, and
+the amplitude condition reads `σ² + (Δ − β|z|²)² = |c|²`). -/
+@[tmio M, powerlib_foundation] theorem shift_det_eq_zero_iff (hβ : β ≠ 0) {z : ℂ}
+    (hz : ampField σ Δ c 0 β z = 0) :
+    (ampJacobian σ Δ c 0 β (toReal z)).det = 0 ↔
+      (z = 0 ∧ σ ^ 2 + Δ ^ 2 = ‖c‖ ^ 2) ∨ (z ≠ 0 ∧ σ ^ 2 = ‖c‖ ^ 2) := by
+  by_cases hz0 : z = 0
+  · subst hz0
+    rw [map_zero, ampJacobian_zero, det_slowFlowMatrix, sub_eq_zero]
+    exact ⟨fun h => Or.inl ⟨rfl, h⟩, fun h => h.elim (fun h => h.2) fun h => (h.1 rfl).elim⟩
+  · have hx : ampSystem σ Δ c 0 β (toReal z) = 0 := by rw [toReal_ampField, hz, map_zero]
+    have hx0 : toReal z ≠ 0 := by rwa [Ne, ContinuousLinearEquiv.map_eq_zero_iff]
+    rw [det_ampJacobian hx hx0, norm_toReal]
+    have hA := (exists_norm_sq_eq_iff (η := 0) (pow_pos (norm_pos_iff.mpr hz0) 2)).mp
+      ⟨z, rfl, hz⟩
+    have hn : 0 < ‖z‖ ^ 2 := pow_pos (norm_pos_iff.mpr hz0) 2
+    have e : 0 * σ - β * Δ + (0 ^ 2 + β ^ 2) * ‖z‖ ^ 2 = β * (β * ‖z‖ ^ 2 - Δ) := by ring
+    rw [e]
+    constructor
+    · intro h
+      refine Or.inr ⟨hz0, ?_⟩
+      have h1 : β * ‖z‖ ^ 2 - Δ = 0 := by
+        rcases mul_eq_zero.mp h with h2 | h2
+        · exact absurd h2 (mul_ne_zero (by norm_num) hn.ne')
+        · exact (mul_eq_zero.mp h2).resolve_left hβ
+      have : Δ - β * ‖z‖ ^ 2 = 0 := by linarith
+      rw [this] at hA
+      linarith
+    · rintro (⟨h, -⟩ | ⟨-, h⟩)
+      · exact (hz0 h).elim
+      · have h1 : (Δ - β * ‖z‖ ^ 2) ^ 2 = 0 := by simp only [zero_mul, add_zero] at hA; linarith
+        have h2 : β * ‖z‖ ^ 2 - Δ = 0 := by
+          have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h1
+          linarith
+        rw [h2, mul_zero, mul_zero]
+
+/-- **Off the fold, every nontrivial zero is nondegenerate**: under a pure frequency shift
+(`η = 0`, `β ≠ 0`) with `σ² ≠ |c|²`, the Jacobian of a zero `z ≠ 0` is invertible
+(`shift_det_eq_zero_iff`). -/
 @[tmio M, powerlib_foundation] theorem shift_det_ne_zero (hβ : β ≠ 0) (hcs : σ ^ 2 ≠ ‖c‖ ^ 2)
     {z : ℂ} (hz : ampField σ Δ c 0 β z = 0) (hz0 : z ≠ 0) :
-    (ampJacobian σ Δ c 0 β (toReal z)).det ≠ 0 := by
-  have hx : ampSystem σ Δ c 0 β (toReal z) = 0 := by rw [toReal_ampField, hz, map_zero]
-  have hx0 : toReal z ≠ 0 := by rwa [Ne, ContinuousLinearEquiv.map_eq_zero_iff]
-  rw [det_ampJacobian hx hx0, norm_toReal]
-  have hA := (exists_norm_sq_eq_iff (η := 0) (pow_pos (norm_pos_iff.mpr hz0) 2)).mp ⟨z, rfl, hz⟩
-  have hn : 0 < ‖z‖ ^ 2 := pow_pos (norm_pos_iff.mpr hz0) 2
-  have hf : β * ‖z‖ ^ 2 - Δ ≠ 0 := by
-    intro h
-    apply hcs
-    have : Δ - β * ‖z‖ ^ 2 = 0 := by linarith
-    rw [this] at hA
-    linarith
-  have e : 0 * σ - β * Δ + (0 ^ 2 + β ^ 2) * ‖z‖ ^ 2 = β * (β * ‖z‖ ^ 2 - Δ) := by ring
-  rw [e]
-  exact mul_ne_zero (mul_ne_zero (by norm_num) hn.ne') (mul_ne_zero hβ hf)
+    (ampJacobian σ Δ c 0 β (toReal z)).det ≠ 0 := fun h =>
+  ((shift_det_eq_zero_iff hβ hz).mp h).elim (fun h => hz0 h.1) fun h => hcs h.2
 
-/-- **Off the first-order boundary, the trivial zero is nondegenerate**: the Jacobian at `0` is
-the slow-flow matrix, of determinant `σ² + Δ² − |c|²` (`Saturation.ampJacobian_zero`). -/
-@[tmio M, powerlib_foundation] theorem zero_det_ne_zero (h : σ ^ 2 + Δ ^ 2 ≠ ‖c‖ ^ 2) :
-    (ampJacobian σ Δ c η β (toReal 0)).det ≠ 0 := by
-  rw [map_zero, ampJacobian_zero, det_slowFlowMatrix]
-  exact sub_ne_zero.mpr h
+/-- **Off the first-order boundary, the trivial zero is nondegenerate** (`η = 0`, `β ≠ 0`,
+`σ² + Δ² ≠ |c|²`, `shift_det_eq_zero_iff`). -/
+@[tmio M, powerlib_foundation] theorem zero_det_ne_zero (hβ : β ≠ 0)
+    (h : σ ^ 2 + Δ ^ 2 ≠ ‖c‖ ^ 2) : (ampJacobian σ Δ c 0 β (toReal 0)).det ≠ 0 := fun h' =>
+  ((shift_det_eq_zero_iff hβ (ampField_zero σ Δ c 0 β)).mp h').elim (fun h'' => h h''.2)
+    fun h'' => h''.1 rfl
 
 end powerlib.ParametricResonance.Saturation
